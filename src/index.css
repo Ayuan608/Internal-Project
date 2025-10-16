@@ -1,0 +1,173 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
+@import "tailwindcss";
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hidden-content {
+  display: none;
+  opacity: 0;
+  height: 0;
+  transition: opacity 0.3s ease, height 0.3s ease;
+  overflow: hidden;
+}
+
+.hidden-content.open {
+  display: block;
+  opacity: 1;
+  height: auto;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #131419 inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.css-jx4txk-MuiDataGrid-root
+  .MuiDataGrid-row--borderBottom
+  .MuiDataGrid-columnHeader,
+.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-filler,
+.css-jx4txk-MuiDataGrid-root
+  .MuiDataGrid-row--borderBottom
+  .MuiDataGrid-scrollbarFiller {
+  border-bottom: 1px solid var(--DataGrid-rowBorderColor);
+  background: #2e3037 !important;
+  color: white !important;
+}
+
+.MuiDataGrid-mainContent {
+  background: #1b1c23 !important;
+  color: white !important;
+}
+
+.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row:hover {
+  background-color: #2e3037 !important;
+}
+
+.MuiDataGrid-columnSeparator.MuiDataGrid-columnSeparator--resizable.MuiDataGrid-columnSeparator--sideRight {
+  display: none;
+}
+
+.MuiToolbar-root.MuiToolbar-gutters.MuiToolbar-regular.MuiTablePagination-toolbar.css-1gak8h1-MuiToolbar-root-MuiTablePagination-toolbar {
+  color: white;
+}
+
+@media (hover: none) {
+  .css-jx4txk-MuiDataGrid-root .MuiDataGrid-columnHeader .MuiDataGrid-menuIcon {
+    width: auto;
+    visibility: visible;
+  }
+}
+
+.css-jx4txk-MuiDataGrid-root.MuiDataGrid-autoHeight {
+  height: auto;
+  border-color: #1b1c23 !important;
+}
+
+.MuiDataGrid-root.MuiDataGrid-root--densityStandard.MuiDataGrid-withBorderColor.MuiDataGridVariables-3851315942.css-jx4txk-MuiDataGrid-root {
+  border: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+
+
+.MuiDataGrid-columnHeaders {
+  background-color: transparent !important;
+}
+
+.MuiDataGrid-columnHeader {
+  background-color: transparent !important;
+}
+
+.MuiDataGrid-columnHeaderTitle {
+  color: inherit !important;
+}
+
+.MuiDataGrid-row:hover,
+.MuiDataGrid-row.Mui-hovered {
+  background-color: transparent !important;
+}
+
+.MuiDataGrid-row.Mui-selected,
+.MuiDataGrid-row.Mui-selected:hover {
+  background-color: transparent !important;
+}
+
+.MuiDataGrid-cell:focus,
+.MuiDataGrid-columnHeader:focus {
+  outline: none !important;
+}
+
+.MuiDataGrid-root,
+.MuiDataGrid-root .MuiDataGrid-main,
+.MuiDataGrid-root .MuiDataGrid-cell,
+.MuiDataGrid-root .MuiDataGrid-columnHeader,
+.MuiDataGrid-root .MuiDataGrid-columnHeaders {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.MuiDataGrid-root .MuiDataGrid-cell:focus,
+.MuiDataGrid-root .MuiDataGrid-cell:focus-within,
+.MuiDataGrid-root .MuiDataGrid-columnHeader:focus,
+.MuiDataGrid-root .MuiDataGrid-columnHeader:focus-within {
+  outline: none !important;
+}
+
+/* Hide header separators / column separators if present */
+.MuiDataGrid-root .MuiDataGrid-columnSeparator {
+  display: none !important;
+}
+
+.MuiDataGrid-root .MuiDataGrid-columnHeader:focus-within {
+  outline: none !important;
+}
+
+.MuiPaper-root.MuiPaper-outlined.MuiPaper-rounded.MuiCard-root.css-fxu9vo-MuiPaper-root-MuiCard-root {
+  background: #05070a;
+  color: white;
+  border-radius: 15px;
+}
+
+.css-1ovwsnd-MuiTableCell-root {
+  border-bottom: 1px solid #2c2f36 !important;
+}
+
+.css-jiabcu-MuiTableCell-root {
+  border-bottom: 1px solid #2c2f36 !important;
+}
+
+.css-kwl8nt-MuiTableCell-root {
+  border-bottom: 1px solid #2c2f36 !important;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: none !important;
+}
+
+.css-bfxsbg-MuiContainer-root {
+  max-width: 100% !important;
+}

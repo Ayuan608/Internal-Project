@@ -1,0 +1,345 @@
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { toast } from "react-hot-toast";
+import axiosInstance from "../Helpers/axiosInstance";
+
+const initialState = {
+  isLoggedIn: localStorage.getItem("isLoggedIn") || false,
+  data: (() => {
+    try {
+      const storedData = localStorage.getItem("data");
+      return storedData ? JSON.parse(storedData) : {};
+    } catch (error) {
+      return {};
+    }
+  })(),
+  role: localStorage.getItem("role") || "",
+  users: [],
+  tempToken: null,
+  require2FA: false,
+};
+
+// function to handle signup
+export const createAccount = createAsyncThunk("/auth/signup", async (data) => {
+  try {
+    let res = axiosInstance.post("user/register", data);
+
+    toast.promise(res, {
+      loading: "Wait! Creating your account",
+      success: (data) => {
+        return data?.data?.message;
+      },
+      error: "Failed to create account",
+    });
+
+    // getting response resolved here
+    res = await res;
+    return res.data;
+  } catch (error) {
+    toast.error(error?.response?.data?.message);
+  }
+});
+export const addAdminAccount = createAsyncThunk(
+  "/auth/signup",
+  async (data) => {
+    try {
+      const res = axiosInstance.post("user/add-admin", data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      toast.promise(res, {
+        loading: "Wait! Adding User account...",
+        success: (data) => {
+          return data?.data?.message;
+        },
+        error: "failed to create a account",
+      });
+      // console.log(res)
+      return (await res).data;
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  }
+);
+// function to handle login
+export const login = createAsyncThunk("auth/login", async (data) => {
+  try {
+    let res = axiosInstance.post("/user/login", data);
+
+    await toast.promise(res, {
+      loading: "Loading...",
+      success: (data) => {
+        return data?.data?.message;
+      },
+      error: "Failed to log in",
+    });
+
+    res = await res;
+    return res.data;
+  } catch (error) {
+    toast.error(error.message);
+  }
+});
+export const verify2FA = createAsyncThunk(
+  "/auth/verify-2fa",
+  async ({ otp }, { rejectWithValue }) => {
+    try {
+      // No need to handle token here - let the interceptor do its job
+      const response = await axiosInstance.post(
+        "user/verify-2fa",
+        { otp },
+        {
+          withCredentials: true
+        }
+      );
+
+      toast.success("2FA verification successful!");
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "2FA verification failed";
+
+      console.error("2FA verification failed:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+// function to handle logout
+export const logout = createAsyncThunk("auth/logout", async () => {
+  try {
+    let res = axiosInstance.post("/user/logout");
+    res = await res;
+    return res.data;
+  } catch (error) {
+    toast.error(error.message);
+  }
+});
+export const deleteUser = createAsyncThunk("user/deleteUser", async (userId, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.delete(`/user/delete/${userId}`);
+    return response.data; 
+  } catch (error) {
+    return rejectWithValue(error.response.data.message || "Failed to delete user");
+  }
+});
+
+// function to fetch user data
+export const getUserData = createAsyncThunk("/user/details", async () => {
+  try {
+    const res = await axiosInstance.get("/user/me");
+    return res?.data;
+  } catch (error) {
+    toast.error(error.message);
+  }
+});
+export const getAllUsers = createAsyncThunk(
+  "/user/getAllUsers",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/user/all");
+      return response.data.users;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch users"
+      );
+    }
+  }
+);
+// function to change user password
+export const changePassword = createAsyncThunk(
+  "/auth/changePassword",
+  async (userPassword) => {
+    try {
+      let res = axiosInstance.post("/user/change-password", userPassword);
+
+      await toast.promise(res, {
+        loading: "Loading...",
+        success: (data) => {
+          return data?.data?.message;
+        },
+        error: "Failed to change password",
+      });
+
+      // getting response resolved here
+      res = await res;
+      return res.data;
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  }
+);
+
+// function to handle forget password
+export const forgetPassword = createAsyncThunk(
+  "auth/forgetPassword",
+  async (email) => {
+    try {
+      let res = axiosInstance.post("/user/reset", { email });
+
+      await toast.promise(res, {
+        loading: "Loading...",
+        success: (data) => {
+          return data?.data?.message;
+        },
+        error: "Failed to send verification email",
+      });
+
+      // getting response resolved here
+      res = await res;
+      return res.data;
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  }
+);
+
+// function to update user profile
+export const updateProfile = createAsyncThunk(
+  "/user/update/profile",
+  async (data) => {
+    try {
+      const formData = data[1];
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      };
+
+      let res = axiosInstance.put(`/user/update/${data[0]}`, formData, config);
+
+      toast.promise(res, {
+        loading: "Updating...",
+        success: (data) => {
+          return data?.data?.message;
+        },
+        error: "Failed to update profile",
+      });
+
+      res = await res;
+      return res.data;
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Upload failed");
+    }
+  }
+);
+
+
+// function to reset the password
+export const resetPassword = createAsyncThunk("/user/reset", async (data) => {
+  try {
+    let res = axiosInstance.post(`/user/reset/${data.resetToken}`, {
+      password: data.password,
+    });
+
+    toast.promise(res, {
+      loading: "Resetting...",
+      success: (data) => {
+        return data?.data?.message;
+      },
+      error: "Failed to reset password",
+    });
+    // getting response resolved here
+    res = await res;
+    return res.data;
+  } catch (error) {
+    toast.error(error?.response?.data?.message);
+  }
+});
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(login.fulfilled, (state, action) => {
+        if (!action.payload) return;
+
+        const { user, token, require2FA } = action.payload;
+
+
+        if (token) {
+          state.tempToken = token;
+          localStorage.setItem('tempAuthToken', token);
+        } else {
+        }
+
+        state.data = user;
+        state.require2FA = require2FA;
+
+        if (!require2FA) {
+          state.isLoggedIn = true;
+          state.token = token;
+          state.role = user.role;
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('data', JSON.stringify(user));
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('role', user.role);
+        }
+      })
+      .addCase(verify2FA.fulfilled, (state, action) => {
+        if (action.payload?.success) {
+          // Store the new token
+          const { token, user } = action.payload;
+
+          // Clear temporary token
+          state.tempToken = null;
+          localStorage.removeItem('tempAuthToken');
+
+          // Set permanent token and user data
+          state.token = token;
+          state.data = user;
+          state.role = user.role;
+          state.isLoggedIn = true;
+          state.require2FA = false;
+
+          // Persist to storage
+          localStorage.setItem('token', token);
+          localStorage.setItem('data', JSON.stringify(user));
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('role', user.role);
+        }
+      })
+      .addCase(verify2FA.rejected, (state, action) => {
+        // Keep 2FA required state
+        state.require2FA = true;
+        state.error = action.payload;
+        // Don't clear tempToken so the user can try again
+      })
+      // for user logout
+      .addCase(logout.fulfilled, (state) => {
+        localStorage.clear();
+        state.isLoggedIn = false;
+        state.data = {};
+      })
+      // for user details
+      .addCase(getUserData.fulfilled, (state, action) => {
+        localStorage.setItem("data", JSON.stringify(action?.payload?.user));
+        localStorage.setItem("isLoggedIn", true);
+        state.isLoggedIn = true;
+        state.data = action?.payload?.user;
+        state.role = action?.payload?.user?.role;
+      })
+
+      .addCase(getAllUsers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.users = action.payload;
+      })
+      .addCase(addAdminAccount.fulfilled, (state, action) => {
+        if (action.payload?.success && state.users) {
+          state.users.push(action.payload.newUser);
+        }
+      });
+  },
+});
+
+export const { } = authSlice.actions;
+export default authSlice.reducer;
