@@ -1,7 +1,7 @@
 // src/redux/notificationSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axiosInstance from '../helpers/axiosInstance';
+import axiosInstance from '../Helpers/axiosInstance';
 
 // Async thunks
 export const fetchUserNotifications = createAsyncThunk(

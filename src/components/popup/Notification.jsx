@@ -1,174 +1,144 @@
-// src/components/popup/Notification.jsx
-
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useRef, useState } from "react";
+import { Inbox, X, Bell } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
 import {
-  fetchUserNotifications,
   markNotificationAsRead,
-  addNotification,
-  addBulkNotifications,
-  clearNotifications,
-} from '../../redux/NotificationSlice';
-import {
-  initializeSocket,
-  onNotificationNew,
-  onNotificationBulk,
-  removeNotificationListeners,
-} from '../../services/socketService';
-import toast from 'react-hot-toast';
-import './Notification.css';
+  fetchUserNotifications,
+} from "../../redux/NotificationSlice";
+import toast from "react-hot-toast";
 
-const Notification = () => {
+const NotificationPopup = () => {
+  const [visible, setVisible] = useState(false);
+  const popupRef = useRef(null);
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+
   const { notifications, unreadCount, loading } = useSelector(
     (state) => state.notifications
   );
 
-  const [isOpen, setIsOpen] = useState(false);
-  const socketInitialized = useRef(false);
 
-  // Memoize callback to prevent recreation on every render
-  const handleNewNotification = useCallback((notification) => {
-    console.log('📬 New notification received:', notification);
-    dispatch(addNotification(notification));
-    toast.success(`New: ${notification.title}`);
-  }, [dispatch]);
 
-  const handleBulkNotifications = useCallback((notifications) => {
-    console.log('📬 Bulk notifications received:', notifications);
-    dispatch(addBulkNotifications(notifications));
-  }, [dispatch]);
+  // Get user ID from auth state
+  const userId = useSelector((state) => state.auth?.data?._id);
 
-  useEffect(() => {
-    if (!user?._id || socketInitialized.current) return;
+  console.log("Notifications:", notifications);
+  console.log("User ID:", userId);
 
-    // Initialize socket connection
-    initializeSocket(user._id);
-    socketInitialized.current = true;
-
-    // Fetch initial notifications
-    dispatch(fetchUserNotifications(user._id));
-
-    // Listen for new notifications
-    onNotificationNew(handleNewNotification);
-
-    // Listen for bulk notifications (when reconnecting with unread)
-    onNotificationBulk(handleBulkNotifications);
-
-    return () => {
-      removeNotificationListeners();
-      socketInitialized.current = false;
-    };
-  }, [user?._id, dispatch, handleNewNotification, handleBulkNotifications]);
-
-  const handleMarkAsRead = async (notificationId) => {
-    try {
-      await dispatch(markNotificationAsRead(notificationId)).unwrap();
-      toast.success('Marked as read');
-    } catch (error) {
-      console.error('Failed to mark as read:', error);
-      toast.error('Failed to mark as read');
+  // Toggle popup and fetch notifications when opening
+  const togglePopup = () => {
+    if (!visible && userId) {
+      // Fetch notifications when opening popup
+      dispatch(fetchUserNotifications(userId));
     }
+    setVisible((prev) => !prev);
   };
 
-  const handleClearAll = async () => {
-    if (window.confirm('Clear all notifications?')) {
-      try {
-        await dispatch(clearNotifications()).unwrap();
-        toast.success('Notifications cleared');
-      } catch (error) {
-        console.error('Failed to clear notifications:', error);
-        toast.error('Failed to clear notifications');
-      }
-    }
-  };
-
-  // Close popup when clicking outside
+  // Close popup on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isOpen && !event.target.closest('.notification-container')) {
-        setIsOpen(false);
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setVisible(false);
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (visible) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  }, [isOpen]);
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [visible]);
+
+  // Mark notification as read
+  const handleMarkAsRead = async (id) => {
+    try {
+      await dispatch(markNotificationAsRead(id)).unwrap();
+      toast.success("Marked as read");
+    } catch (err) {
+      toast.error("Failed to mark as read");
+    }
+  };
 
   return (
-    <div className="notification-container bg-black h-screen w-screen">
-      {/* Notification Bell Icon */}
+    <div className="relative">
+      {/* Notification Bell */}
       <button
-        className="notification-bell"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={togglePopup}
+        className="relative text-white focus:outline-none w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer"
         aria-label="Notifications"
-        aria-expanded={isOpen}
       >
-        <span className="bell-icon">🔔</span>
+        <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="unread-badge" aria-label={`${unreadCount} unread notifications`}>
-            {unreadCount > 99 ? '99+' : unreadCount}
+          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Notification Popup */}
-      {isOpen && (
-        <div className="notification-popup" role="dialog" aria-label="Notifications panel">
-          <div className="notification-header">
-            <h3>Notifications</h3>
-            {notifications.length > 0 && (
-              <button
-                className="clear-btn"
-                onClick={handleClearAll}
-                aria-label="Clear all notifications"
-              >
-                Clear All
-              </button>
-            )}
+      {/* Popup */}
+      {visible && (
+        <div
+          ref={popupRef}
+          className="rounded-xl border border-[#2e3135] bg-[#111113]/95 fixed top-[60px] right-5 w-[380px] max-h-[400px] overflow-y-auto shadow-2xl z-50 animate-fadeIn"
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center px-4 py-3 border-b border-[#2e3135]">
+            <div className="font-semibold text-white flex items-center gap-2">
+              <Inbox size={18} /> Notifications
+            </div>
+            <button
+              onClick={() => setVisible(false)}
+              className="text-gray-400 hover:text-gray-200 transition"
+            >
+              <X size={18} />
+            </button>
           </div>
 
-          <div className="notification-list">
+          {/* Content */}
+          <div className="divide-y divide-[#2e3135]">
             {loading ? (
-              <div className="loading" role="status" aria-live="polite">
-                Loading notifications...
-              </div>
+              <div className="p-4 text-gray-400 text-center">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="empty">No notifications</div>
+              <div className="p-4 text-gray-400 text-center">
+                No notifications
+              </div>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif._id}
-                  className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
-                  role="article"
-                  aria-label={`Notification: ${notif.title}`}
+                  className={`px-4 py-3 transition ${
+                    notif.isRead
+                      ? "bg-transparent hover:bg-[#1b1b1f]"
+                      : "bg-[#1b1b1f] hover:bg-[#232329]"
+                  }`}
                 >
-                  <div className="notification-content">
-                    <h4>{notif.title}</h4>
-                    {notif.nature && <p className="nature">{notif.nature}</p>}
-                    <p className="message">{notif.message}</p>
-                    {notif.sender?.name && (
-                      <small className="sender">From: {notif.sender.name}</small>
-                    )}
-                    {notif.createdAt && (
-                      <small className="timestamp">
+                  <div className="flex justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-white font-medium">{notif.title}</h4>
+                      {notif.nature && (
+                        <p className="text-gray-400 text-xs">{notif.nature}</p>
+                      )}
+                      <p className="text-gray-300 text-sm mt-1">
+                        {notif.message}
+                      </p>
+                      {notif.sender?.name && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          From: {notif.sender.name}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-600 mt-1">
                         {new Date(notif.createdAt).toLocaleString()}
-                      </small>
+                      </p>
+                    </div>
+
+                    {!notif.isRead && (
+                      <button
+                        onClick={() => handleMarkAsRead(notif._id)}
+                        className="text-xs text-blue-400 hover:text-blue-300 ml-2"
+                      >
+                        ✓ Read
+                      </button>
                     )}
                   </div>
-
-                  {!notif.isRead && (
-                    <button
-                      className="read-btn"
-                      onClick={() => handleMarkAsRead(notif._id)}
-                      aria-label={`Mark ${notif.title} as read`}
-                    >
-                      ✓ Mark Read
-                    </button>
-                  )}
                 </div>
               ))
             )}
@@ -179,4 +149,4 @@ const Notification = () => {
   );
 };
 
-export default Notification;
+export default NotificationPopup;
