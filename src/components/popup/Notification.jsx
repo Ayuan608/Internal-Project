@@ -1,37 +1,68 @@
-import { useEffect, useRef, useState } from "react";
-import { Inbox, X, Bell } from "lucide-react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Inbox, X, Bell, Wifi, WifiOff, Send } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   markNotificationAsRead,
   fetchUserNotifications,
 } from "../../redux/NotificationSlice";
 import toast from "react-hot-toast";
+import useSocket from "../../hooks/useSocket";
+import NotificationSendForm from "../NotificationSendForm";
 
 const NotificationPopup = () => {
   const [visible, setVisible] = useState(false);
+  const [showSendForm, setShowSendForm] = useState(false);
   const popupRef = useRef(null);
   const dispatch = useDispatch();
 
+  // Memoize selectors to prevent unnecessary renders
   const { notifications, unreadCount, loading } = useSelector(
-    (state) => state.notifications
+    (state) => state?.notifications
   );
 
 
+console.log(notifications)
 
-  // Get user ID from auth state
   const userId = useSelector((state) => state.auth?.data?._id);
 
-  console.log("Notifications:", notifications);
-  console.log("User ID:", userId);
+  // Initialize socket connection - MEMOIZED
+  const socketConfig = useMemo(() => ({
+    autoConnect: true,
+    enableNotifications: true,
+    onConnectionChange: (status) => {
+      // Connection status handled automatically
+    },
+  }), []);
 
-  // Toggle popup and fetch notifications when opening
-  const togglePopup = () => {
-    if (!visible && userId) {
-      // Fetch notifications when opening popup
-      dispatch(fetchUserNotifications(userId));
-    }
+  const {
+    connectionStatus,
+    isConnected,
+    markNotificationAsRead: markAsReadSocket,
+    fetchNotificationsFallback,
+    error: socketError,
+  } = useSocket(userId, socketConfig);
+
+  // Remove excessive debug logs
+
+  // Toggle popup - MEMOIZED
+  const togglePopup = useCallback(() => {
     setVisible((prev) => !prev);
-  };
+  }, []);
+
+  // Mark as read - MEMOIZED
+  const handleMarkAsRead = useCallback(async (id) => {
+    try {
+      if (isConnected) {
+        markAsReadSocket(id);
+        toast.success("Marked as read");
+      } else {
+        await dispatch(markNotificationAsRead(id)).unwrap();
+        toast.success("Marked as read");
+      }
+    } catch (err) {
+      toast.error("Failed to mark as read");
+    }
+  }, [isConnected, markAsReadSocket, dispatch]);
 
   // Close popup on outside click
   useEffect(() => {
@@ -48,15 +79,7 @@ const NotificationPopup = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [visible]);
 
-  // Mark notification as read
-  const handleMarkAsRead = async (id) => {
-    try {
-      await dispatch(markNotificationAsRead(id)).unwrap();
-      toast.success("Marked as read");
-    } catch (err) {
-      toast.error("Failed to mark as read");
-    }
-  };
+  // Remove duplicate handleMarkAsRead function
 
   return (
     <div className="relative">
@@ -65,6 +88,7 @@ const NotificationPopup = () => {
         onClick={togglePopup}
         className="relative text-white focus:outline-none w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer"
         aria-label="Notifications"
+        title={`Notifications ${isConnected ? "(Real-time)" : "(API)"}`}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -72,6 +96,22 @@ const NotificationPopup = () => {
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
+        {/* Connection Status Indicator */}
+        <div className="absolute -bottom-1 -right-1">
+          {isConnected ? (
+            <Wifi
+              size={12}
+              className="text-green-400"
+              title="Real-time connected"
+            />
+          ) : (
+            <WifiOff
+              size={12}
+              className="text-orange-400"
+              title="Using API fallback"
+            />
+          )}
+        </div>
       </button>
 
       {/* Popup */}
@@ -84,13 +124,40 @@ const NotificationPopup = () => {
           <div className="flex justify-between items-center px-4 py-3 border-b border-[#2e3135]">
             <div className="font-semibold text-white flex items-center gap-2">
               <Inbox size={18} /> Notifications
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  isConnected
+                    ? "bg-green-500/20 text-green-400"
+                    : "bg-orange-500/20 text-orange-400"
+                }`}
+              >
+                {isConnected ? "Live" : "API"}
+              </span>
             </div>
-            <button
-              onClick={() => setVisible(false)}
-              className="text-gray-400 hover:text-gray-200 transition"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSendForm(true)}
+                className="text-xs text-green-400 hover:text-green-300 px-2 py-1 rounded"
+                title="Send notification"
+              >
+                <Send size={16} />
+              </button>
+              {!isConnected && userId && (
+                <button
+                  onClick={() => dispatch(fetchUserNotifications(userId))}
+                  className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded"
+                  title="Refresh notifications"
+                >
+                  ↻
+                </button>
+              )}
+              <button
+                onClick={() => setVisible(false)}
+                className="text-gray-400 hover:text-gray-200 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Content */}
@@ -144,6 +211,14 @@ const NotificationPopup = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Send Form Modal */}
+      {showSendForm && (
+        <NotificationSendForm
+          onClose={() => setShowSendForm(false)}
+          currentUserId={userId}
+        />
       )}
     </div>
   );
