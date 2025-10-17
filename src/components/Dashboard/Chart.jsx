@@ -54,14 +54,27 @@ export default function SessionsChart() {
       }}
     >
       <CardContent>
-        <Typography
-          component="h2"
-          variant="subtitle2"
-          gutterBottom
-          color="white"
-        >
-          Sessions
-        </Typography>
+        <div className="flex justify-between">
+          <Typography
+            component="h2"
+            variant="subtitle2"
+            gutterBottom
+            color="white"
+          >
+            30-Day Performance Trends
+          </Typography>
+          <Typography
+            component="h2"
+            variant="subtitle2"
+            gutterBottom
+            color="white"
+            backgroundColor="grey" 
+            borderRadius={"10px"}
+            padding="4px"
+          >
+            Last 30 Days
+          </Typography>
+        </div>
         <Stack sx={{ justifyContent: "space-between" }}>
           <Stack
             direction="row"

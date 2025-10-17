@@ -1,4 +1,3 @@
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,7 +8,17 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { BanknoteArrowDown, BanknoteArrowUp, ClipboardPlus, Columns3Cog, LayoutDashboard, Megaphone, OctagonAlert, User2, UserCheck } from "lucide-react";
+import {
+  BanknoteArrowDown,
+  BanknoteArrowUp,
+  ClipboardPlus,
+  Columns3Cog,
+  LayoutDashboard,
+  Megaphone,
+  OctagonAlert,
+  User2,
+  UserCheck,
+} from "lucide-react";
 
 // Register the required components
 ChartJS.register(
@@ -119,12 +128,10 @@ export const superAdminButtons = [
   { to: "/dashboard/data", label: "CSR Dashboards", icon: Columns3Cog },
   { to: "/dashboard", label: "Deposit Dashboards", icon: BanknoteArrowUp },
   { to: "/dashboard", label: "Withdrawal ", icon: BanknoteArrowDown },
-
 ];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
   { to: "/checker/alert", label: "Alert", icon: OctagonAlert },
-
 ];
 
 export const leadData = [
@@ -184,7 +191,7 @@ export const leadData = [
 
 export const TeamStats = [
   {
-    title: "Users",
+    title: "CSR Upload progress",
     value: "14k",
     interval: "Last 30 days",
     trend: "up",
@@ -194,7 +201,7 @@ export const TeamStats = [
     ],
   },
   {
-    title: "Conversions",
+    title: "Withdraw Progress",
     value: "325",
     interval: "Last 30 days",
     trend: "down",
@@ -205,7 +212,7 @@ export const TeamStats = [
     ],
   },
   {
-    title: "Event count",
+    title: "Deposit Progress",
     value: "200k",
     interval: "Last 30 days",
     trend: "neutral",
@@ -215,7 +222,7 @@ export const TeamStats = [
     ],
   },
   {
-    title: "Super Admin",
+    title: "Overall Performance",
     value: "23k",
     interval: "Last 30 days",
     trend: "up",

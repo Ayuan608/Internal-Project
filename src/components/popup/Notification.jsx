@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   markNotificationAsRead,
   fetchUserNotifications,
+  getAllNotifications,
 } from "../../redux/NotificationSlice";
 import toast from "react-hot-toast";
 import useSocket from "../../hooks/useSocket";
@@ -16,53 +17,81 @@ const NotificationPopup = () => {
   const dispatch = useDispatch();
 
   // Memoize selectors to prevent unnecessary renders
-  const { notifications, unreadCount, loading } = useSelector(
+  const { notifications, unreadCount, loading, error } = useSelector(
     (state) => state?.notifications
   );
 
-
-console.log(notifications)
-
   const userId = useSelector((state) => state.auth?.data?._id);
+  const userRole = useSelector((state) => state.auth?.role);
 
-  // Initialize socket connection - MEMOIZED
-  const socketConfig = useMemo(() => ({
-    autoConnect: true,
-    enableNotifications: true,
-    onConnectionChange: (status) => {
-      // Connection status handled automatically
-    },
-  }), []);
+  // Debug fetch results
+  useEffect(() => {
+  
+    console.log("User ID:", userId);
+    console.log("User Role:", userRole);
+    console.log("Notifications:", notifications);
+    console.log("Unread Count:", unreadCount);
+    console.log("Loading:", loading);
+    console.log("Error:", error);
+    console.log("Total notifications:", notifications?.length);
+   
+  }, [notifications, unreadCount, loading, error, userId, userRole]);
+
+  const socketConfig = useMemo(
+    () => ({
+      autoConnect: true,
+      enableNotifications: true,
+      onConnectionChange: (status) => {
+        // Connection status handled automatically
+      },
+    }),
+    []
+  );
 
   const {
     connectionStatus,
     isConnected,
     markNotificationAsRead: markAsReadSocket,
+    requestNotificationHistory,
     fetchNotificationsFallback,
     error: socketError,
   } = useSocket(userId, socketConfig);
 
-  // Remove excessive debug logs
-
   // Toggle popup - MEMOIZED
   const togglePopup = useCallback(() => {
+    if (!visible) {
+      // Fetch notifications when opening popup
+      if (userRole === "admin" || userRole === "Admin") {
+        console.log("🔄 Fetching ALL notifications for admin...");
+        dispatch(getAllNotifications());
+      } else if (userId) {
+        console.log("🔄 Fetching USER notifications...");
+        dispatch(fetchUserNotifications(userId));
+      } else {
+        console.log("🔄 No user ID, fetching ALL notifications...");
+        dispatch(getAllNotifications());
+      }
+    }
     setVisible((prev) => !prev);
-  }, []);
+  }, [visible, userId, userRole, dispatch]);
 
   // Mark as read - MEMOIZED
-  const handleMarkAsRead = useCallback(async (id) => {
-    try {
-      if (isConnected) {
-        markAsReadSocket(id);
-        toast.success("Marked as read");
-      } else {
-        await dispatch(markNotificationAsRead(id)).unwrap();
-        toast.success("Marked as read");
+  const handleMarkAsRead = useCallback(
+    async (id) => {
+      try {
+        if (isConnected) {
+          markAsReadSocket(id);
+          toast.success("Marked as read");
+        } else {
+          await dispatch(markNotificationAsRead(id)).unwrap();
+          toast.success("Marked as read");
+        }
+      } catch (err) {
+        toast.error("Failed to mark as read");
       }
-    } catch (err) {
-      toast.error("Failed to mark as read");
-    }
-  }, [isConnected, markAsReadSocket, dispatch]);
+    },
+    [isConnected, markAsReadSocket, dispatch]
+  );
 
   // Close popup on outside click
   useEffect(() => {
@@ -79,7 +108,76 @@ console.log(notifications)
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [visible]);
 
-  // Remove duplicate handleMarkAsRead function
+  // Fetch notifications on mount/connection change
+  useEffect(() => {
+    if (!userId) {
+      console.log(
+        "🔄 No user ID found, fetching ALL notifications on mount..."
+      );
+      dispatch(getAllNotifications());
+      return;
+    }
+
+    if (isConnected) {
+      requestNotificationHistory(50);
+    } else if (userRole === "admin" || userRole === "Admin") {
+      console.log("🔄 Admin user, fetching ALL notifications...");
+      dispatch(getAllNotifications());
+    } else {
+      dispatch(fetchUserNotifications(userId));
+    }
+  }, [userId, isConnected, userRole, requestNotificationHistory, dispatch]);
+
+  // Also refresh when popup is opened if using API (not socket)
+  useEffect(() => {
+    if (visible && !isConnected) {
+      if (userRole === "admin" || userRole === "Admin") {
+        console.log("🔄 Refreshing ALL notifications for admin...");
+        dispatch(getAllNotifications());
+      } else if (userId) {
+        dispatch(fetchUserNotifications(userId));
+      } else {
+        dispatch(getAllNotifications());
+      }
+    }
+  }, [visible, userId, isConnected, userRole, dispatch]);
+
+  // Show toast on incoming real-time notifications
+  const prevCountRef = useRef(notifications.length);
+  useEffect(() => {
+    if (notifications.length > prevCountRef.current && isConnected) {
+      const latest = notifications[0];
+      if (latest) {
+        toast.success(latest.title || "New notification");
+      }
+    }
+    prevCountRef.current = notifications.length;
+  }, [notifications, isConnected]);
+
+  // Update document title with unread count for better visibility/SEO
+  useEffect(() => {
+    const base = "Dashboard";
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) ${base}`;
+    } else {
+      document.title = base;
+    }
+  }, [unreadCount]);
+
+  // Manual refresh function
+  const handleRefresh = useCallback(() => {
+    if (userRole === "admin" || userRole === "Admin") {
+      console.log("🔄 Manual refresh: Fetching ALL notifications...");
+      dispatch(getAllNotifications());
+    } else if (userId) {
+      console.log("🔄 Manual refresh: Fetching user notifications...");
+      dispatch(fetchUserNotifications(userId));
+    } else {
+      console.log("🔄 Manual refresh: Fetching ALL notifications...");
+      dispatch(getAllNotifications());
+    }
+    toast.success("Refreshing notifications...");
+  }, [userId, userRole, dispatch]);
 
   return (
     <div className="relative">
@@ -133,6 +231,11 @@ console.log(notifications)
               >
                 {isConnected ? "Live" : "API"}
               </span>
+              {(userRole === "admin" || userRole === "Admin") && (
+                <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                  Admin
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -142,15 +245,13 @@ console.log(notifications)
               >
                 <Send size={16} />
               </button>
-              {!isConnected && userId && (
-                <button
-                  onClick={() => dispatch(fetchUserNotifications(userId))}
-                  className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded"
-                  title="Refresh notifications"
-                >
-                  ↻
-                </button>
-              )}
+              <button
+                onClick={handleRefresh}
+                className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded"
+                title="Refresh notifications"
+              >
+                ↻
+              </button>
               <button
                 onClick={() => setVisible(false)}
                 className="text-gray-400 hover:text-gray-200 transition"
@@ -163,10 +264,22 @@ console.log(notifications)
           {/* Content */}
           <div className="divide-y divide-[#2e3135]">
             {loading ? (
-              <div className="p-4 text-gray-400 text-center">Loading...</div>
+              <div className="p-4 text-gray-400 text-center">
+                Loading notifications...
+              </div>
+            ) : error ? (
+              <div className="p-4 text-red-400 text-center">
+                Error: {error}
+                <button
+                  onClick={handleRefresh}
+                  className="block mx-auto mt-2 text-xs text-blue-400 hover:text-blue-300"
+                >
+                  Try Again
+                </button>
+              </div>
             ) : notifications.length === 0 ? (
               <div className="p-4 text-gray-400 text-center">
-                No notifications
+                No notifications found
               </div>
             ) : (
               notifications.map((notif) => (
@@ -195,12 +308,18 @@ console.log(notifications)
                       <p className="text-xs text-gray-600 mt-1">
                         {new Date(notif.createdAt).toLocaleString()}
                       </p>
+                      {/* Debug info */}
+                      <p className="text-xs text-gray-500 mt-1">
+                        ID: {notif._id?.substring(0, 8)}... | Read:{" "}
+                        {notif.isRead ? "Yes" : "No"} | Type:{" "}
+                        {notif.type || "default"}
+                      </p>
                     </div>
 
                     {!notif.isRead && (
                       <button
                         onClick={() => handleMarkAsRead(notif._id)}
-                        className="text-xs text-blue-400 hover:text-blue-300 ml-2"
+                        className="text-xs text-blue-400 hover:text-blue-300 ml-2 self-start"
                       >
                         ✓ Read
                       </button>
@@ -209,6 +328,13 @@ console.log(notifications)
                 </div>
               ))
             )}
+          </div>
+
+          {/* Footer with debug info */}
+          <div className="px-4 py-2 border-t border-[#2e3135] text-xs text-gray-500">
+            Total: {notifications.length} | Unread: {unreadCount} | Mode:{" "}
+            {userRole === "admin" || userRole === "Admin" ? "All" : "User"} |
+            Source: {isConnected ? "Socket" : "API"}
           </div>
         </div>
       )}
