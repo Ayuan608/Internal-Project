@@ -9,8 +9,11 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { useNavigate } from "react-router-dom";
+import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
 
 const INITIAL_PAGE_SIZE = 10;
+
+const COLORS = ["#10b981", "#60a5fa", "#f59e0b"];
 
 export default function AttendanceDashboard() {
   const dispatch = useDispatch();
@@ -27,192 +30,208 @@ export default function AttendanceDashboard() {
   console.log(attendanceList);
 
   // Real-time statistics calculation
- const calculateStats = React.useMemo(() => {
-  if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
-    return {
-      // Today's Stats
-      todayWorkedHours: "0h 0m",
-      todayStatus: "No data",
+  const calculateStats = React.useMemo(() => {
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
+      return {
+        // Today's Stats
+        todayWorkedHours: "0h 0m",
+        todayStatus: "No data",
 
-      // Overall Stats
-      daysWorked: 0,
-      totalHoursWorked: "0h 0m",
-      avgDailyHours: "0h 0m",
-      overtimeHours: "0h 0m",
+        // Overall Stats
+        daysWorked: 0,
+        totalHoursWorked: "0h 0m",
+        avgDailyHours: "0h 0m",
+        overtimeHours: "0h 0m",
 
-      // Breakdown
-      totalWorkTime: "0h 0m",
-      totalWcBreak: "0 min",
-      totalSmokeBreak: "0 min",
-      hasPendingPunchOut: false,
+        // Breakdown
+        totalWorkTime: "0h 0m",
+        totalWcBreak: "0 min",
+        totalSmokeBreak: "0 min",
+        hasPendingPunchOut: false,
 
-      // Additional Metrics
-      currentStreak: 0,
-      lastPunchIn: "No data",
-      efficiency: "0%",
-    };
-  }
+        // Additional Metrics
+        currentStreak: 0,
+        lastPunchIn: "No data",
+        efficiency: "0%",
 
-  let totalWorkMinutes = 0;
-  let totalWcMinutes = 0;
-  let totalSmokeMinutes = 0;
-  let pendingPunchOutToday = false;
-  let daysWithWork = 0;
-  let todayWorkMinutes = 0;
-  const today = new Date().toISOString().split("T")[0];
-  let lastPunchInTime: Date | null = null; // ✅ ALREADY GOOD
-  let consecutiveDays = 0;
-  const last7Days = new Set();
+        // Pie Data
+        pieData: [],
+      };
+    }
 
-  // Sort by date to calculate streak
-  const sortedAttendance = [...attendanceList].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+    let totalWorkMinutes = 0;
+    let totalWcMinutes = 0;
+    let totalSmokeMinutes = 0;
+    let pendingPunchOutToday = false;
+    let daysWithWork = 0;
+    let todayWorkMinutes = 0;
+    const today = new Date().toISOString().split("T")[0];
+    let lastPunchInTime: Date | null = null; // ✅ ALREADY GOOD
+    let consecutiveDays = 0;
+    const last7Days = new Set();
 
-  // Calculate various metrics
-  attendanceList.forEach((row: any) => {
-    const rowDate = new Date(row.date).toISOString().split("T")[0];
+    // Sort by date to calculate streak
+    const sortedAttendance = [...attendanceList].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
 
-    // Working hours calculation
-    if (row.workingHours) {
-      const match = row.workingHours.match(/(\d+)h (\d+)m/);
-      if (match) {
-        const minutes = parseInt(match[1]) * 60 + parseInt(match[2]);
-        totalWorkMinutes += minutes;
-        daysWithWork++;
+    // Calculate various metrics
+    attendanceList.forEach((row: any) => {
+      const rowDate = new Date(row.date).toISOString().split("T")[0];
 
-        // Today's work
-        if (rowDate === today) {
-          todayWorkMinutes = minutes;
+      // Working hours calculation
+      if (row.workingHours) {
+        const match = row.workingHours.match(/(\d+)h (\d+)m/);
+        if (match) {
+          const minutes = parseInt(match[1]) * 60 + parseInt(match[2]);
+          totalWorkMinutes += minutes;
+          daysWithWork++;
+
+          // Today's work
+          if (rowDate === today) {
+            todayWorkMinutes = minutes;
+          }
         }
+      }
+
+      // Break calculations
+      if (row.wcStart && row.wcEnd) {
+        try {
+          const start = new Date(row.wcStart);
+          const end = new Date(row.wcEnd);
+          const diff = Math.floor(
+            (end.getTime() - start.getTime()) / (1000 * 60)
+          );
+          totalWcMinutes += diff;
+        } catch {}
+      }
+
+      if (row.smokeStart && row.smokeEnd) {
+        try {
+          const start = new Date(row.smokeStart);
+          const end = new Date(row.smokeEnd);
+          const diff = Math.floor(
+            (end.getTime() - start.getTime()) / (1000 * 60)
+          );
+          totalSmokeMinutes += diff;
+        } catch {}
+      }
+
+      // Pending punch out check
+      if (!row.clockOut && rowDate === today) {
+        pendingPunchOutToday = true;
+      }
+
+      // 🔥 FIXED LAST PUNCH IN
+      if (
+        row.clockIn &&
+        (!lastPunchInTime || new Date(row.clockIn) > lastPunchInTime)
+      ) {
+        lastPunchInTime = new Date(row.clockIn);
+      }
+
+      // Track last 7 days for streak calculation
+      const date = new Date(row.date);
+      const dateStr = date.toISOString().split("T")[0];
+      last7Days.add(dateStr);
+    });
+
+    // Calculate streak
+    const todayDate = new Date();
+    for (let i = 0; i < 7; i++) {
+      const checkDate = new Date(todayDate);
+      checkDate.setDate(todayDate.getDate() - i);
+      const checkDateStr = checkDate.toISOString().split("T")[0];
+      if (last7Days.has(checkDateStr)) {
+        consecutiveDays++;
+      } else {
+        break;
       }
     }
 
-    // Break calculations
-    if (row.wcStart && row.wcEnd) {
-      try {
-        const start = new Date(row.wcStart);
-        const end = new Date(row.wcEnd);
-        const diff = Math.floor(
-          (end.getTime() - start.getTime()) / (1000 * 60)
-        );
-        totalWcMinutes += diff;
-      } catch {}
+    // Formatting functions
+    const formatTime = (minutes: number) => {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours}h ${mins.toString().padStart(2, "0")}m`;
+    };
+
+    const formatShortTime = (minutes: number) => {
+      const hours = (minutes / 60).toFixed(1);
+      return `${hours}h`;
+    };
+
+    // Calculate averages and overtime
+    const avgDailyMinutes =
+      daysWithWork > 0 ? totalWorkMinutes / daysWithWork : 0;
+    const standardHoursPerDay = 8 * 60; // 8 hours in minutes
+    const overtimeMinutes = Math.max(
+      0,
+      totalWorkMinutes - daysWithWork * standardHoursPerDay
+    );
+
+    // Efficiency calculation (work time vs total time)
+    const totalBreakMinutes = totalWcMinutes + totalSmokeMinutes;
+    const totalAvailableMinutes = totalWorkMinutes + totalBreakMinutes;
+    const efficiency =
+      totalAvailableMinutes > 0
+        ? Math.round((totalWorkMinutes / totalAvailableMinutes) * 100)
+        : 0;
+
+    // Today's status
+    let todayStatus = "No work today";
+    if (todayWorkMinutes > 0) {
+      if (pendingPunchOutToday) {
+        todayStatus = "Working...";
+      } else if (todayWorkMinutes >= standardHoursPerDay) {
+        todayStatus = "Completed";
+      } else {
+        todayStatus = "Partial";
+      }
     }
 
-    if (row.smokeStart && row.smokeEnd) {
-      try {
-        const start = new Date(row.smokeStart);
-        const end = new Date(row.smokeEnd);
-        const diff = Math.floor(
-          (end.getTime() - start.getTime()) / (1000 * 60)
-        );
-        totalSmokeMinutes += diff;
-      } catch {}
-    }
+    // 🔥 FIXED LAST PUNCH IN - TYPE SAFE!
+    const lastPunchInFormatted = lastPunchInTime
+      ? lastPunchInTime.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "No data";
 
-    // Pending punch out check
-    if (!row.clockOut && rowDate === today) {
-      pendingPunchOutToday = true;
-    }
+    // Pie data for chart
+    const pieData = [
+      { name: "Work", value: totalWorkMinutes },
+      { name: "WC Break", value: totalWcMinutes },
+      { name: "Smoke Break", value: totalSmokeMinutes },
+    ].filter((item) => item.value > 0);
 
-    // 🔥 FIXED LAST PUNCH IN
-    if (row.clockIn && (!lastPunchInTime || new Date(row.clockIn) > lastPunchInTime)) {
-      lastPunchInTime = new Date(row.clockIn);
-    }
+    return {
+      // Today's Stats
+      todayWorkedHours: formatTime(todayWorkMinutes),
+      todayStatus,
 
-    // Track last 7 days for streak calculation
-    const date = new Date(row.date);
-    const dateStr = date.toISOString().split("T")[0];
-    last7Days.add(dateStr);
-  });
+      // Overall Stats
+      daysWorked: daysWithWork,
+      totalHoursWorked: formatTime(totalWorkMinutes),
+      avgDailyHours: formatShortTime(avgDailyMinutes),
+      overtimeHours: formatTime(overtimeMinutes),
 
-  // Calculate streak
-  const todayDate = new Date();
-  for (let i = 0; i < 7; i++) {
-    const checkDate = new Date(todayDate);
-    checkDate.setDate(todayDate.getDate() - i);
-    const checkDateStr = checkDate.toISOString().split("T")[0];
-    if (last7Days.has(checkDateStr)) {
-      consecutiveDays++;
-    } else {
-      break;
-    }
-  }
+      // Breakdown
+      totalWorkTime: formatTime(totalWorkMinutes),
+      totalWcBreak: `${totalWcMinutes} min`,
+      totalSmokeBreak: `${totalSmokeMinutes} min`,
+      hasPendingPunchOut: pendingPunchOutToday,
 
-  // Formatting functions
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins.toString().padStart(2, "0")}m`;
-  };
+      // Additional Metrics
+      currentStreak: consecutiveDays,
+      lastPunchIn: lastPunchInFormatted, // ✅ FIXED!
+      efficiency: `${efficiency}%`,
 
-  const formatShortTime = (minutes: number) => {
-    const hours = (minutes / 60).toFixed(1);
-    return `${hours}h`;
-  };
-
-  // Calculate averages and overtime
-  const avgDailyMinutes =
-    daysWithWork > 0 ? totalWorkMinutes / daysWithWork : 0;
-  const standardHoursPerDay = 8 * 60; // 8 hours in minutes
-  const overtimeMinutes = Math.max(
-    0,
-    totalWorkMinutes - daysWithWork * standardHoursPerDay
-  );
-
-  // Efficiency calculation (work time vs total time)
-  const totalBreakMinutes = totalWcMinutes + totalSmokeMinutes;
-  const totalAvailableMinutes = totalWorkMinutes + totalBreakMinutes;
-  const efficiency =
-    totalAvailableMinutes > 0
-      ? Math.round((totalWorkMinutes / totalAvailableMinutes) * 100)
-      : 0;
-
-  // Today's status
-  let todayStatus = "No work today";
-  if (todayWorkMinutes > 0) {
-    if (pendingPunchOutToday) {
-      todayStatus = "Working...";
-    } else if (todayWorkMinutes >= standardHoursPerDay) {
-      todayStatus = "Completed";
-    } else {
-      todayStatus = "Partial";
-    }
-  }
-
-  // 🔥 FIXED LAST PUNCH IN - TYPE SAFE!
-  const lastPunchInFormatted = lastPunchInTime
-    ? lastPunchInTime.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-    : "No data";
-
-  return {
-    // Today's Stats
-    todayWorkedHours: formatTime(todayWorkMinutes),
-    todayStatus,
-
-    // Overall Stats
-    daysWorked: daysWithWork,
-    totalHoursWorked: formatTime(totalWorkMinutes),
-    avgDailyHours: formatShortTime(avgDailyMinutes),
-    overtimeHours: formatTime(overtimeMinutes),
-
-    // Breakdown
-    totalWorkTime: formatTime(totalWorkMinutes),
-    totalWcBreak: `${totalWcMinutes} min`,
-    totalSmokeBreak: `${totalSmokeMinutes} min`,
-    hasPendingPunchOut: pendingPunchOutToday,
-
-    // Additional Metrics
-    currentStreak: consecutiveDays,
-    lastPunchIn: lastPunchInFormatted, // ✅ FIXED!
-    efficiency: `${efficiency}%`,
-  };
-}, [attendanceList]);
+      // Pie Data
+      pieData,
+    };
+  }, [attendanceList]);
 
   const [error, setError] = useState(null);
 
@@ -535,6 +554,41 @@ export default function AttendanceDashboard() {
                 </span>
               </div>
             </div>
+
+            {/* Pie Chart for Time Breakdown */}
+            {calculateStats.pieData.length > 0 ? (
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-white mb-4">
+                  Time Breakdown
+                </h4>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={calculateStats.pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label
+                    >
+                      {calculateStats.pieData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center text-gray-400 mb-6">
+                No time data available for chart
+              </div>
+            )}
 
             {/* Status Alert */}
             <div

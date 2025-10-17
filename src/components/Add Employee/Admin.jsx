@@ -16,10 +16,12 @@ import {
 } from "../../redux/authSlice";
 import toast from "react-hot-toast";
 import { DataGrid } from "@mui/x-data-grid";
+
 import MetaData from "../../more/MetaData";
 import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import TeamLeaderStats from "../Dashboard/SuperAdminDashboardRoute/ui/TeamLeaderStats";
 import { UserStats } from "./../../Helpers/Helper";
+import countries from "../../Helpers/countriles";
 
 function Admin() {
   const dispatch = useDispatch();
@@ -36,11 +38,15 @@ function Admin() {
     FullName: "",
     username: "",
     password: "",
+    email: "",
     phone: "",
     department: "",
     dateHired: "",
     role: "",
   });
+  const [selectedCountry, setSelectedCountry] = useState(
+    countries.find((c) => c.dialCode === "+63")
+  );
   const rolePermissions = {
     'Super-Admin': ['Team-Leader', 'User', 'Checker'],
     'Team-Leader': ['User'],
@@ -104,13 +110,14 @@ function Admin() {
 
   const handleAddAdmin = async (e) => {
     e.preventDefault();
-    const { FullName, username, password, phone, department, dateHired, role } =
+    const { FullName, username, email, password, phone, department, dateHired, role } =
       addUser;
 
     if (
       !FullName ||
       !username ||
       !password ||
+      !email ||
       !department ||
       !phone ||
       !dateHired ||
@@ -139,6 +146,7 @@ function Admin() {
         FullName: "",
         username: "",
         password: "",
+        email: "",
         phone: "",
         department: "",
         dateHired: "",
@@ -166,12 +174,13 @@ function Admin() {
     },
     { field: "FullName", headerName: "Name", flex: 1 },
     { field: "username", headerName: "Username", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
     {
       field: "phone",
       headerName: "Phone",
       flex: 1,
       renderCell: (params) => (
-        <span className="text-white">{params?.row?.phone || "N/A"}</span>
+        <span className="text-white">+91{params?.row?.phone || "N/A"}</span>
       ),
     },
     {
@@ -261,6 +270,7 @@ function Admin() {
       {/* <DashboardStats /> */}
       <TeamLeaderStats title="User" data={UserStats} />
       {/* DataGrid Table */}
+
       <div className="h-full w-full rounded-sm overflow-hidden shadow-xl">
         <DataGrid
           rows={rows}
@@ -343,7 +353,7 @@ function Admin() {
 
       {/* Add User Dialog */}
       {isDialogOpen && (
-        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#2e303759] backdrop-blur-3xl rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] border border-[#9E9FA74D] overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-center p-6">
@@ -372,11 +382,24 @@ function Admin() {
                   name="FullName"
                   value={addUser.FullName}
                   onChange={handleUserInput}
-                  placeholder="Enter your full name"
+                  placeholder="Enter employee name"
                   className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </div>
-
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  required
+                  type="text"
+                  name="email"
+                  value={addUser.email}
+                  onChange={handleUserInput}
+                  placeholder="Enter employee email"
+                  className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
@@ -387,7 +410,7 @@ function Admin() {
                     name="username"
                     value={addUser.username}
                     onChange={handleUserInput}
-                    placeholder="jhon_doe"
+                    placeholder="Enter username na"
                     className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400"
                   />
                 </div>
@@ -400,34 +423,55 @@ function Admin() {
                     name="password"
                     value={addUser.password}
                     onChange={handleUserInput}
-                    placeholder="StrongPassword123"
+                    placeholder="Enter password na"
                     className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-300 mb-2 text-sm font-medium">
-                    Phone
-                  </label>
-                  <div className="flex items-center w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white">
-                    <span className="mr-2 text-gray-400">+91</span>
+                <div className="w-full">
+                  <div className="flex items-center bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white w-full">
+                    {/* Country Selector */}
+                    <div className="relative flex items-center mr-2 min-w-[85px]">
+                      <select
+                        value={selectedCountry.dialCode}
+                        onChange={(e) => {
+                          const country = countries.find((c) => c.dialCode === e.target.value);
+                          setSelectedCountry(country);
+                        }}
+                        className="bg-transparent text-white outline-none text-sm cursor-pointer appearance-none  w-full"
+                      >
+                        {countries.map((country, index) => (
+                          <option
+                            key={index}
+                            value={country.dialCode}
+                            className="text-black"
+                          >
+                            {country.flag} {country.dialCode}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Custom Arrow */}
+                      <span className="absolute right-6 text-white pointer-events-none text-sm">▼</span>
+                    </div>
+
+                    {/* Phone Input */}
                     <input
                       type="tel"
                       name="phone"
                       value={addUser.phone}
                       onChange={(e) => {
-                        const onlyDigits = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 10);
+                        const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
                         setAddUser({ ...addUser, phone: onlyDigits });
                       }}
-                      placeholder="1234567890"
+                      placeholder="9168636883"
                       className="bg-transparent outline-none w-full text-white placeholder-gray-400"
                     />
                   </div>
                 </div>
+
 
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">

@@ -88,14 +88,14 @@ const Layout = () => {
                                 <Bell size={20} />
                             </button>
                             <div className="flex items-center gap-3" ref={menuRef}>
-                                {role === "User" || "Checker"&& (
+                            
                                     <button
                                         onClick={() => setIsOpen((o) => !o)}
                                         className="w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer"
                                     >
                                         <User size={20} />
                                     </button>
-                                )}
+                                
                                 {isOpen && (
                                     <div className="absolute right-0 top-12 w-40 border bg-[#2e303759] backdrop-blur-3xl border-[#2e3135] text-white rounded-xl shadow-xl z-50">
                                         <div onClick={handleBindGoogleClick} className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer">
