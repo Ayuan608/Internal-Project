@@ -14,12 +14,14 @@ import Annoucement from "./components/Dashboard/UserDashboard/Annoucement";
 import DashboardRoutes from "./components/Dashboard/SuperAdminDashboardRoute/DashboardRoutes";
 import CheckerDashboard from "./Layout/CheckerDashboard";
 import Alert from "./components/Dashboard/CheckerDashboard/Alert";
+import Notification from "./components/popup/Notification";
+import SendNotificationForm from "./components/popup/SendNotificationForm";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-
+      <Route path="notification" element={<SendNotificationForm />} />
       <Route element={<NotRequireAuth />}>
         <Route path="/login" element={<Login />} />
       </Route>

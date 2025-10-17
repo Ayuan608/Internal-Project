@@ -36,6 +36,7 @@
     "rechart": "^0.0.1",
     "recharts": "^3.2.1",
     "redux": "^5.0.1",
+    "socket.io-client": "^4.8.1",
     "sparkline": "^0.2.0",
     "tailwindcss": "^4.1.13"
   },
