@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { BanknoteArrowDown, BanknoteArrowUp, ClipboardPlus, Columns3Cog, LayoutDashboard, Megaphone, User2, UserCheck } from "lucide-react";
+import { BanknoteArrowDown, BanknoteArrowUp, ClipboardPlus, Columns3Cog, LayoutDashboard, Megaphone, OctagonAlert, User2, UserCheck } from "lucide-react";
 
 // Register the required components
 ChartJS.register(
@@ -118,7 +118,12 @@ export const superAdminButtons = [
   { to: "/dashboard", label: "Attendance", icon: UserCheck },
   { to: "/dashboard/data", label: "CSR Dashboards", icon: Columns3Cog },
   { to: "/dashboard", label: "Deposit Dashboards", icon: BanknoteArrowUp },
-  { to: "/dashboard", label: "Withdrawal Dashboards", icon: BanknoteArrowDown },
+  { to: "/dashboard", label: "Withdrawal ", icon: BanknoteArrowDown },
+
+];
+export const CheckerButtons = [
+  { to: "/checker", label: "Attendence", icon: UserCheck },
+  { to: "/checker/alert", label: "Alert", icon: OctagonAlert },
 
 ];
 

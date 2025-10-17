@@ -302,12 +302,14 @@ function Admin() {
           </ListItemIcon>
           <ListItemText primary="Edit User" />
         </MenuItem>
-        <MenuItem onClick={() => handleDelete(selectedRow?._id)}>
-          <ListItemIcon>
-            <Trash size={16} className="text-white" />
-          </ListItemIcon>
-          <ListItemText primary="Delete" />
-        </MenuItem>
+        {role !== 'Team-Leader' && (
+          <MenuItem onClick={() => handleDelete(selectedRow?._id)}>
+            <ListItemIcon>
+              <Trash size={16} className="text-white" />
+            </ListItemIcon>
+            <ListItemText primary="Delete" />
+          </MenuItem>
+        )}
       </Menu>
 
       {/* QR Code Modal */}

@@ -88,7 +88,7 @@ const Layout = () => {
                                 <Bell size={20} />
                             </button>
                             <div className="flex items-center gap-3" ref={menuRef}>
-                                {role === "User" && (
+                                {role === "User" || "Checker"&& (
                                     <button
                                         onClick={() => setIsOpen((o) => !o)}
                                         className="w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer"

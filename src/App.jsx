@@ -12,18 +12,18 @@ import UserDashboard from "./Layout/UserDashboard";
 import Denied from "./pages/404/Denied";
 import Annoucement from "./components/Dashboard/UserDashboard/Annoucement";
 import DashboardRoutes from "./components/Dashboard/SuperAdminDashboardRoute/DashboardRoutes";
+import CheckerDashboard from "./Layout/CheckerDashboard";
+import Alert from "./components/Dashboard/CheckerDashboard/Alert";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
 
-      {/* Public routes */}
       <Route element={<NotRequireAuth />}>
         <Route path="/login" element={<Login />} />
       </Route>
 
-      {/* Protected routes: Admin roles */}
       <Route
         element={<RequireAuth allowedRoles={["Team-Leader", "Super-Admin"]} />}
       >
@@ -38,7 +38,6 @@ function App() {
         </Route>
       </Route>
 
-      {/* Protected routes: User role */}
       <Route element={<RequireAuth allowedRoles={["User"]} />}>
         <Route path="/user" element={<Layout />}>
           <Route index element={<UserDashboard />} />
@@ -47,7 +46,12 @@ function App() {
           <Route path="setting" element={<Setting />} />
         </Route>
       </Route>
-
+      <Route element={<RequireAuth allowedRoles={["Checker"]} />}>
+        <Route path="/checker" element={<Layout />}>
+          <Route index element={<CheckerDashboard />} />
+          <Route path="alert" element={<Alert />} />
+        </Route>
+      </Route>
       {/* 404 and Denied */}
       <Route path="/denied" element={<Denied />} />
       <Route path="*" element={<Navigate to="/denied" replace />} />

@@ -21,7 +21,7 @@ import UserMenu from "./User";
 import { getUserData } from "../redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import DraftTemplate from "./DraftTemplate";
-import { superAdminButtons } from "../Helpers/Helper";
+import { CheckerButtons, superAdminButtons } from "../Helpers/Helper";
 
 const Menus = ({ toggle, onTitleChange }) => {
   const contentRef = useRef(null);
@@ -64,7 +64,7 @@ const Menus = ({ toggle, onTitleChange }) => {
     ...(role === "Team-Leader"
       ? [
         {
-          to: "/dashboard/add",
+          to: "/dashboard",
           label: "Dashboard",
           icon: <LayoutDashboardIcon absoluteStrokeWidth />,
         },
@@ -143,6 +143,28 @@ const Menus = ({ toggle, onTitleChange }) => {
               {role === "Super-Admin" && (
                 <div className="mt-4 space-y-2">
                   {superAdminButtons.map(({ to, label, icon: Icon }) => {
+                    const isActive = location.pathname === to;
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => onTitleChange(label)}
+                        className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
+                          ${isActive
+                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          }`}
+                      >
+                        <Icon className="text-[20px]" />
+                        <span className="text-[16px] ml-2">{label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+              {role === "Checker" && (
+                <div className="mt-4 space-y-2">
+                  {CheckerButtons.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
