@@ -225,7 +225,7 @@ export default function AttendanceDashboard() {
 
       // Additional Metrics
       currentStreak: consecutiveDays,
-      lastPunchIn: lastPunchInFormatted, // ✅ FIXED!
+      lastPunchIn: lastPunchInFormatted,
       efficiency: `${efficiency}%`,
 
       // Pie Data
