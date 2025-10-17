@@ -9,6 +9,7 @@ export const fetchUserNotifications = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(`/notifications/${userId}`);
+      console.log("res",response.data.notifications)
       return response.data.notifications;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);
