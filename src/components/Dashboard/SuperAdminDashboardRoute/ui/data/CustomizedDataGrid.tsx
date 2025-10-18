@@ -88,7 +88,6 @@ const CustomizedDataGrid = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Common chart configuration with proper TypeScript types
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
