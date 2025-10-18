@@ -4,17 +4,15 @@ import {
   ArrowLeft,
   Bug,
   ClipboardPlus,
-  Database,
-  LayoutDashboard,
   Plus,
   Settings,
   UserPlus,
   ChartLine,
   LayoutDashboardIcon,
-  User,
   AlignStartVertical,
   Megaphone,
-  HardDriveDownload,
+  ChartColumnIncreasing,
+  FileText,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import UserMenu from "./User";
@@ -50,7 +48,15 @@ const Menus = ({ toggle, onTitleChange }) => {
   const navItems = [
     // user
     ...(role === "User"
-      ? [{ to: "/user", label: "Attendence", icon: <AlignStartVertical /> }]
+      ? [{ to: "/user", label: "Attendence", icon: <FileText /> }]
+      : []),
+    ...(role === "User" ? [{ to: "/user/daily-time-record", label: "Daily Time Record", icon: <ChartColumnIncreasing /> }] : []),
+    ...((role === "Team-Leader" && "Super-Admin" || role === "User")
+      ? [{
+        to: role === "User" ? "/user/data" : "/dashboard/data",
+        label: "Performance Board",
+        icon: <ChartLine />
+      }]
       : []),
     ...(role === "User"
       ? [
@@ -61,6 +67,7 @@ const Menus = ({ toggle, onTitleChange }) => {
         },
       ]
       : []),
+      // Team - Leader 
     ...(role === "Team-Leader"
       ? [
         {
@@ -70,13 +77,7 @@ const Menus = ({ toggle, onTitleChange }) => {
         },
       ]
       : []),
-    ...((role === "Team-Leader" && "Super-Admin" || role === "User")
-      ? [{
-        to: role === "User" ? "/user/data" : "/dashboard/data",
-        label: "Data",
-        icon: <Database />
-      }]
-      : []),
+
     ...(role === "Team-Leader"
       ? [{ to: "/dashboard/report", label: "Report", icon: <Bug /> }]
       : []),

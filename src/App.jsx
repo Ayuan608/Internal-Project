@@ -16,6 +16,7 @@ import CheckerDashboard from "./Layout/CheckerDashboard";
 import Alert from "./components/Dashboard/CheckerDashboard/Alert";
 import Notification from "./components/popup/Notification";
 import SendNotificationForm from "./components/popup/SendNotificationForm";
+import DailyTimeRecord from "./components/Dashboard/UserDashboard/DailyTimeRecord";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
       <Route element={<RequireAuth allowedRoles={["User"]} />}>
         <Route path="/user" element={<Layout />}>
           <Route index element={<UserDashboard />} />
+          <Route path="daily-time-record" element={<DailyTimeRecord />} />
           <Route path="data" element={<Data />} />
           <Route path="announcement" element={<Annoucement />} />
           <Route path="setting" element={<Setting />} />
@@ -56,7 +58,7 @@ function App() {
       </Route>
       {/* 404 and Denied */}
       <Route path="/denied" element={<Denied />} />
-      <Route path="*" element={<Navigate to="/denied" replace />} />
+      <Route path="*" element={<Navigate to="/denied" />} />
     </Routes>
   );
 }

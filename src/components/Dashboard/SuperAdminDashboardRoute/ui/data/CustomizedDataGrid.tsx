@@ -124,8 +124,8 @@ const CustomizedDataGrid = () => {
       {
         data: [met, nonMet],
         backgroundColor: [
-          "#10b981",
-          "#ef4444",
+          "#3b82f6", // Green for met quota
+          "#f53a3a", // Red for non-quota
         ],
         borderColor: "#1f2937",
         borderWidth: 2,
