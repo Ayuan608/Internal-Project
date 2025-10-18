@@ -51,10 +51,11 @@ const Menus = ({ toggle, onTitleChange }) => {
       ? [{ to: "/user", label: "Attendence", icon: <FileText /> }]
       : []),
     ...(role === "User" ? [{ to: "/user/daily-time-record", label: "Daily Time Record", icon: <ChartColumnIncreasing /> }] : []),
-    ...((role === "Team-Leader" && "Super-Admin" || role === "User")
+    ...(role === "User" ? [{ to: "/user/performance", label: "Performance Borard", icon: <ChartLine /> }] : []),
+    ...((role === "Team-Leader" && "Super-Admin")
       ? [{
-        to: role === "User" ? "/user/data" : "/dashboard/data",
-        label: "Performance Board",
+        to: "/dashboard/data",
+        label: "Performance",
         icon: <ChartLine />
       }]
       : []),
@@ -67,7 +68,7 @@ const Menus = ({ toggle, onTitleChange }) => {
         },
       ]
       : []),
-      // Team - Leader 
+    // Team - Leader 
     ...(role === "Team-Leader"
       ? [
         {

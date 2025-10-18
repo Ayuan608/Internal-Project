@@ -1,238 +1,235 @@
+import { Download, FolderUp } from 'lucide-react';
 import React, { useState } from 'react';
 
 function DailyTimeRecord() {
-  const [view, setView] = useState('weekly');
+    const [view, setView] = useState('weekly');
 
-  // Sample data for weekly view
-  const weeklyData = {
-    summary: {
-      daysPresent: 5,
-      hoursWorked: '43h 30m',
-      breaks: '6h 15m',
-      attendance: '95%'
-    },
-    records: [
-      {
-        date: 'Mon, Oct 14, 2025',
-        punchIn: '08:00 AM',
-        breaks: '1h 00m',
-        punchOut: '05:00 PM',
-        totalHours: '8h 00m',
-        status: 'Normal'
-      },
-      {
-        date: 'Tue, Oct 15, 2025',
-        punchIn: '08:05 AM',
-        breaks: '1h 15m',
-        punchOut: '05:10 PM',
-        totalHours: '7h 50m',
-        status: 'Overbreak'
-      },
-      {
-        date: 'Wed, Oct 16, 2025',
-        punchIn: '--',
-        breaks: '1h 00m',
-        punchOut: '05:00 PM',
-        totalHours: '--',
-        status: 'Missed Punch In'
-      },
-      {
-        date: 'Thu, Oct 17, 2025',
-        punchIn: '08:00 AM',
-        breaks: '1h 00m',
-        punchOut: '--',
-        totalHours: '--',
-        status: 'Missed Punch Out'
-      },
-      {
-        date: 'Fri, Oct 18, 2025',
-        punchIn: '--',
-        breaks: '--',
-        punchOut: '--',
-        totalHours: '--',
-        status: 'Absent'
-      }
-    ]
-  };
-
-  // Sample data for monthly view
-  const monthlyData = {
-    summary: {
-      daysPresent: 22,
-      hoursWorked: '176h 45m',
-      breaks: '24h 30m',
-      attendance: '92%'
-    },
-    records: [
-      {
-        date: 'Week 1 (Oct 1-7)',
-        punchIn: 'Avg: 08:02 AM',
-        breaks: '7h 30m',
-        punchOut: 'Avg: 05:05 PM',
-        totalHours: '40h 15m',
-        status: 'Normal'
-      },
-      {
-        date: 'Week 2 (Oct 8-14)',
-        punchIn: 'Avg: 08:00 AM',
-        breaks: '6h 00m',
-        punchOut: 'Avg: 05:00 PM',
-        totalHours: '43h 00m',
-        status: 'Normal'
-      },
-      {
-        date: 'Week 3 (Oct 15-21)',
-        punchIn: 'Avg: 08:03 AM',
-        breaks: '5h 45m',
-        punchOut: 'Avg: 05:02 PM',
-        totalHours: '41h 30m',
-        status: 'Normal'
-      },
-      {
-        date: 'Week 4 (Oct 22-28)',
-        punchIn: 'Avg: 08:01 AM',
-        breaks: '5h 15m',
-        punchOut: 'Avg: 05:01 PM',
-        totalHours: '42h 00m',
-        status: 'Normal'
-      },
-      {
-        date: 'Week 5 (Oct 29-31)',
-        punchIn: 'Avg: 08:00 AM',
-        breaks: '--',
-        punchOut: 'Avg: 05:00 PM',
-        totalHours: '10h 00m',
-        status: 'Partial'
-      }
-    ]
-  };
-
-  const currentData = view === 'weekly' ? weeklyData : monthlyData;
-
-  const getStatusColor = (status) => {
-    const colors = {
-      'Normal': 'bg-green-100 text-green-800',
-      'Overbreak': 'bg-yellow-100 text-yellow-800',
-      'Missed Punch In': 'bg-red-100 text-red-800',
-      'Missed Punch Out': 'bg-red-100 text-red-800',
-      'Absent': 'bg-gray-200 text-gray-800',
-      'Partial': 'bg-blue-100 text-blue-800'
+    // Sample data for weekly view
+    const weeklyData = {
+        summary: {
+            daysPresent: 5,
+            hoursWorked: '43h 30m',
+            breaks: '6h 15m',
+            attendance: '95%'
+        },
+        records: [
+            {
+                date: 'Mon, Oct 14, 2025',
+                punchIn: '08:00 AM',
+                breaks: '1h 00m',
+                punchOut: '05:00 PM',
+                totalHours: '8h 00m',
+                status: 'Normal'
+            },
+            {
+                date: 'Tue, Oct 15, 2025',
+                punchIn: '08:05 AM',
+                breaks: '1h 15m',
+                punchOut: '05:10 PM',
+                totalHours: '7h 50m',
+                status: 'Overbreak'
+            },
+            {
+                date: 'Wed, Oct 16, 2025',
+                punchIn: '--',
+                breaks: '1h 00m',
+                punchOut: '05:00 PM',
+                totalHours: '--',
+                status: 'Missed Punch In'
+            },
+            {
+                date: 'Thu, Oct 17, 2025',
+                punchIn: '08:00 AM',
+                breaks: '1h 00m',
+                punchOut: '--',
+                totalHours: '--',
+                status: 'Missed Punch Out'
+            },
+            {
+                date: 'Fri, Oct 18, 2025',
+                punchIn: '--',
+                breaks: '--',
+                punchOut: '--',
+                totalHours: '--',
+                status: 'Absent'
+            }
+        ]
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
 
-  return (
-    <div className='min-h-screen  p-4'>
-      <div className='max-w-full mx-auto'>
-        {/* Header */}
-        <div className='mb-6'>
-          <h1 className='text-3xl font-bold text-gray-800 mb-2'>Daily Time Record (DTR)</h1>
-          <p className='text-gray-600'>View your attendance history - Read Only</p>
+    // Sample data for monthly view
+    const monthlyData = {
+        summary: {
+            daysPresent: 22,
+            hoursWorked: '176h 45m',
+            breaks: '24h 30m',
+            attendance: '92%'
+        },
+        records: [
+            {
+                date: 'Week 1 (Oct 1-7)',
+                punchIn: 'Avg: 08:02 AM',
+                breaks: '7h 30m',
+                punchOut: 'Avg: 05:05 PM',
+                totalHours: '40h 15m',
+                status: 'Normal'
+            },
+            {
+                date: 'Week 2 (Oct 8-14)',
+                punchIn: 'Avg: 08:00 AM',
+                breaks: '6h 00m',
+                punchOut: 'Avg: 05:00 PM',
+                totalHours: '43h 00m',
+                status: 'Normal'
+            },
+            {
+                date: 'Week 3 (Oct 15-21)',
+                punchIn: 'Avg: 08:03 AM',
+                breaks: '5h 45m',
+                punchOut: 'Avg: 05:02 PM',
+                totalHours: '41h 30m',
+                status: 'Normal'
+            },
+            {
+                date: 'Week 4 (Oct 22-28)',
+                punchIn: 'Avg: 08:01 AM',
+                breaks: '5h 15m',
+                punchOut: 'Avg: 05:01 PM',
+                totalHours: '42h 00m',
+                status: 'Normal'
+            },
+            {
+                date: 'Week 5 (Oct 29-31)',
+                punchIn: 'Avg: 08:00 AM',
+                breaks: '--',
+                punchOut: 'Avg: 05:00 PM',
+                totalHours: '10h 00m',
+                status: 'Partial'
+            }
+        ]
+    };
+
+    const currentData = view === 'weekly' ? weeklyData : monthlyData;
+
+    const getStatusColor = (status) => {
+        const colors = {
+            'Normal': 'bg-green-100 text-green-800',
+            'Overbreak': 'bg-yellow-100 text-yellow-800',
+            'Missed Punch In': 'bg-red-100 text-red-800',
+            'Missed Punch Out': 'bg-red-100 text-red-800',
+            'Absent': 'bg-gray-200 text-gray-800',
+            'Partial': 'bg-blue-100 text-blue-800'
+        };
+        return colors[status] || 'bg-gray-100 text-gray-800';
+    };
+
+    return (
+        <div className='min-h-screen  p-4'>
+            <div className='max-w-full mx-auto'>
+                {/* Header */}
+                <div className='mb-6'>
+                    <h1 className='text-3xl font-bold text-white mb-2'>Daily Time Record (DTR)</h1>
+                    <p className='text-gray-500'>View your attendance history - Read Only</p>
+                </div>
+
+                {/* View Toggle and Export */}
+                <div className='border border-gray-500 rounded-lg shadow p-4 mb-6 flex justify-between items-center'>
+                    <div className='flex gap-2'>
+                        <button
+                            onClick={() => setView('weekly')}
+                            className={`px-6 py-2 rounded-lg font-medium transition-colors ${view === 'weekly'
+                                    ? 'bg-[#3b82f6] text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                        >
+                            Weekly View
+                        </button>
+                        <button
+                            onClick={() => setView('monthly')}
+                            className={`px-6 py-2 rounded-lg font-medium transition-colors ${view === 'monthly'
+                                    ? 'bg-[#3b82f6] text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                        >
+                            Monthly View
+                        </button>
+                    </div>
+                    <div className='flex items-center gap-2 text-blue-600'>
+                        <span className='text-sm font-medium'>Read Only - Cannot be edited</span>
+                    </div>
+                </div>
+
+                {/* Summary Cards */}
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
+                    <div className='bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2 border-blue-500'>
+                        <p className='text-sm text-white mb-1'>TOTAL DAYS PRESENT</p>
+                        <p className='text-4xl font-bold text-white mb-2'>{currentData.summary.daysPresent}</p>
+                        <p className='text-sm text-gray-500'>{view === 'weekly' ? 'This week' : 'This month'}</p>
+                    </div>
+
+                    <div className='bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-green-500'>
+                        <p className='text-sm text-white mb-1'>TOTAL HOURS WORKED</p>
+                        <p className='text-4xl font-bold text-white mb-2'>{currentData.summary.hoursWorked}</p>
+                        <p className='text-sm text-gray-500'>{view === 'weekly' ? 'This week' : 'This month'}</p>
+                    </div>
+
+                    <div className='bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-purple-500'>
+                        <p className='text-sm text-white mb-1'>TOTAL BREAKS</p>
+                        <p className='text-4xl font-bold text-white mb-2'>{currentData.summary.breaks}</p>
+                        <p className='text-sm text-gray-500'>{view === 'weekly' ? 'This week' : 'This month'}</p>
+                    </div>
+
+                    <div className='bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-orange-500'>
+                        <p className='text-sm text-white mb-1'>ATTENDANCE RATE</p>
+                        <p className='text-4xl font-bold text-white mb-2'>{currentData.summary.attendance}</p>
+                        <p className='text-sm text-gray-500'>Overall performance</p>
+                    </div>
+                </div>
+
+                {/* DTR Table */}
+                <div className='bg-[#10101b94] border  border-gray-500 rounded-lg shadow text-white'>
+                    <div className='p-6 border-b border-gray-200 flex justify-between items-center'>
+                        <h2 className='text-xl font-semibold text-white'>
+                            {view === 'weekly' ? 'Weekly DTR - Current Week' : 'Monthly DTR - October 2025'}
+                        </h2>
+                        <button className='bg-[#10101bd6] hover:bg-[#10101b] cursor-pointer text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2'>
+                        <FolderUp/>    Export File
+                        </button>
+                    </div>
+
+                    <div className='overflow-x-auto'>
+                        <table className='w-full'>
+                            <thead className='bg-[#3b83f60c]'>
+                                <tr>
+                                    <th className='px-6 py-4 text-left text-sm font-semibold text-white'>DATE</th>
+                                    <th className='px-6 py-4 text-left text-sm font-semibold text-white'>PUNCH IN</th>
+                                    <th className='px-6 py-4 text-left text-sm font-semibold text-white'>BREAKS</th>
+                                    <th className='px-6 py-4 text-left text-sm font-semibold text-white'>PUNCH OUT</th>
+                                    <th className='px-6 py-4 text-left text-sm font-semibold text-white'>TOTAL HOURS</th>
+                                    <th className='px-6 py-4 text-left text-sm font-semibold text-white'>STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentData.records.map((record, index) => (
+                                    <tr key={index} className=' hover:bg-[#10101b]'>
+                                        <td className='px-6 py-4 text-sm text-white'>{record.date}</td>
+                                        <td className='px-6 py-4 text-sm text-white'>{record.punchIn}</td>
+                                        <td className='px-6 py-4 text-sm text-white'>{record.breaks}</td>
+                                        <td className='px-6 py-4 text-sm text-white'>{record.punchOut}</td>
+                                        <td className='px-6 py-4 text-sm text-white'>{record.totalHours}</td>
+                                        <td className='px-6 py-4'>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                                                {record.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        {/* View Toggle and Export */}
-        <div className='bg-white rounded-lg shadow p-4 mb-6 flex justify-between items-center'>
-          <div className='flex gap-2'>
-            <button
-              onClick={() => setView('weekly')}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                view === 'weekly'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Weekly View
-            </button>
-            <button
-              onClick={() => setView('monthly')}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                view === 'monthly'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Monthly View
-            </button>
-          </div>
-          <div className='flex items-center gap-2 text-orange-600'>
-            <span className='text-xl'>🔒</span>
-            <span className='text-sm font-medium'>Read Only - Cannot be edited</span>
-          </div>
-        </div>
-
-        {/* Summary Cards */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
-          <div className='bg-white rounded-lg shadow p-6 border-l-4 border-blue-500'>
-            <p className='text-sm text-gray-600 mb-1'>TOTAL DAYS PRESENT</p>
-            <p className='text-4xl font-bold text-gray-800 mb-2'>{currentData.summary.daysPresent}</p>
-            <p className='text-sm text-gray-500'>{view === 'weekly' ? 'This week' : 'This month'}</p>
-          </div>
-
-          <div className='bg-white rounded-lg shadow p-6 border-l-4 border-green-500'>
-            <p className='text-sm text-gray-600 mb-1'>TOTAL HOURS WORKED</p>
-            <p className='text-4xl font-bold text-gray-800 mb-2'>{currentData.summary.hoursWorked}</p>
-            <p className='text-sm text-gray-500'>{view === 'weekly' ? 'This week' : 'This month'}</p>
-          </div>
-
-          <div className='bg-white rounded-lg shadow p-6 border-l-4 border-purple-500'>
-            <p className='text-sm text-gray-600 mb-1'>TOTAL BREAKS</p>
-            <p className='text-4xl font-bold text-gray-800 mb-2'>{currentData.summary.breaks}</p>
-            <p className='text-sm text-gray-500'>{view === 'weekly' ? 'This week' : 'This month'}</p>
-          </div>
-
-          <div className='bg-white rounded-lg shadow p-6 border-l-4 border-orange-500'>
-            <p className='text-sm text-gray-600 mb-1'>ATTENDANCE RATE</p>
-            <p className='text-4xl font-bold text-gray-800 mb-2'>{currentData.summary.attendance}</p>
-            <p className='text-sm text-gray-500'>Overall performance</p>
-          </div>
-        </div>
-
-        {/* DTR Table */}
-        <div className='bg-white rounded-lg shadow'>
-          <div className='p-6 border-b border-gray-200 flex justify-between items-center'>
-            <h2 className='text-xl font-semibold text-gray-800'>
-              {view === 'weekly' ? 'Weekly DTR - Current Week' : 'Monthly DTR - October 2025'}
-            </h2>
-            <button className='bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2'>
-              <span>📥</span>
-              Export DTR
-            </button>
-          </div>
-
-          <div className='overflow-x-auto'>
-            <table className='w-full'>
-              <thead className='bg-gray-50'>
-                <tr>
-                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>DATE</th>
-                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>PUNCH IN</th>
-                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>BREAKS</th>
-                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>PUNCH OUT</th>
-                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>TOTAL HOURS</th>
-                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.records.map((record, index) => (
-                  <tr key={index} className='border-b border-gray-200 hover:bg-gray-50'>
-                    <td className='px-6 py-4 text-sm text-gray-800'>{record.date}</td>
-                    <td className='px-6 py-4 text-sm text-gray-800'>{record.punchIn}</td>
-                    <td className='px-6 py-4 text-sm text-gray-800'>{record.breaks}</td>
-                    <td className='px-6 py-4 text-sm text-gray-800'>{record.punchOut}</td>
-                    <td className='px-6 py-4 text-sm text-gray-800'>{record.totalHours}</td>
-                    <td className='px-6 py-4'>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default DailyTimeRecord;
