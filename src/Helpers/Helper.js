@@ -9,13 +9,14 @@ import {
   Legend,
 } from "chart.js";
 import {
-  BanknoteArrowDown,
+  Antenna,
   BanknoteArrowUp,
+  Blend,
   ClipboardPlus,
   Columns3Cog,
   LayoutDashboard,
-  Megaphone,
   OctagonAlert,
+  Proportions,
   User2,
   UserCheck,
 } from "lucide-react";
@@ -122,12 +123,22 @@ export const rows = [
 
 export const superAdminButtons = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/dashboard/report", label: "Reports", icon: ClipboardPlus },
-  { to: "/dashboard/add", label: "Add Emp.", icon: User2 },
-  { to: "/dashboard/attendance", label: "Attendance", icon: UserCheck },
-  { to: "/dashboard/data", label: "CSR Dashboards", icon: Columns3Cog },
-  { to: "/dashboard/deposit", label: "Deposit Dashboards", icon: BanknoteArrowUp },
-  { to: "/dashboard/withdraw", label: "Withdrawal ", icon: BanknoteArrowDown },
+  { to: "/dashboard/department", label: "Department", icon: ClipboardPlus },
+  { to: "/dashboard/non-quota", label: "Non-Quota Dashboard", icon: User2 },
+  { to: "/dashboard/quotaSetting", label: "Quota Settings", icon: UserCheck },
+  { to: "/dashboard/directory", label: "Directory", icon: Columns3Cog },
+  {
+    to: "/dashboard/announcement",
+    label: "Announcements",
+    icon: BanknoteArrowUp,
+  },
+  { to: "/dashboard/reports", label: "Reports", icon: Proportions },
+  {
+    to: "/dashboard/overallAttendance",
+    label: "Overall Attendance",
+    icon: Blend,
+  },
+  { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
 ];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },

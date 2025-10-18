@@ -3,19 +3,26 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../Helpers/axiosInstance";
 
-// Fetch ALL notifications (primary method)
+// Fetch ALL notifications - FIXED TO MATCH BACKEND ROUTE
 export const getAllNotifications = createAsyncThunk(
-  "notifications/getAll",
+  "notifications/all",
   async (_, { rejectWithValue }) => {
     try {
-      console.log("Fetching all notifications...");
-      const response = await axiosInstance.get(`/notifications`);
-      console.log("All notifications response:", response.data);
-      const notifications = response.data.notifications || response.data;
-      console.log("Total notifications fetched:", notifications.length);
+      console.log("📡 Fetching all notifications from /notifications/all...");
+      // FIXED: Backend route is /notifications/all not /notifications
+      const response = await axiosInstance.get(`/notifications/all`);
+      console.log("✅ Response received:", response.data);
+
+      // Handle different response formats
+      const notifications =
+        response.data.notifications || response.data.data || response.data;
+      console.log("📊 Total notifications fetched:", notifications.length);
+      console.log("📋 First notification:", notifications[0]);
+
       return notifications;
     } catch (error) {
-      console.error("Error fetching all notifications:", error);
+      console.error("❌ Error fetching all notifications:", error);
+      console.error("❌ Error response:", error.response?.data);
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch notifications"
       );
@@ -23,14 +30,23 @@ export const getAllNotifications = createAsyncThunk(
   }
 );
 
-// Fetch user-specific notifications (fallback)
+// Fetch user-specific notifications - FIXED TO MATCH BACKEND ROUTE
 export const fetchUserNotifications = createAsyncThunk(
   "notifications/fetchUser",
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get(`/notification/${userId}`);
-      return response.data.notifications || response.data;
+      console.log("📡 Fetching user notifications for:", userId);
+      // Backend route is /notifications/:userId
+      const response = await axiosInstance.get(`/notifications/${userId}`);
+      console.log("✅ User notifications response:", response.data);
+
+      const notifications =
+        response.data.notifications || response.data.data || response.data;
+      console.log("📊 User notifications count:", notifications.length);
+
+      return notifications;
     } catch (error) {
+      console.error("❌ Error fetching user notifications:", error);
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch user notifications"
       );
@@ -38,17 +54,18 @@ export const fetchUserNotifications = createAsyncThunk(
   }
 );
 
-// Mark notification as read
+// Mark notification as read - FIXED TO MATCH BACKEND ROUTE
 export const markNotificationAsRead = createAsyncThunk(
   "notifications/markAsRead",
   async (notificationId, { rejectWithValue }) => {
     try {
       console.log("📝 Marking notification as read:", notificationId);
+      // Backend route is /notifications/:notificationId/read
       const response = await axiosInstance.patch(
         `/notifications/${notificationId}/read`
       );
-
-      return response.data.notification;
+      console.log("✅ Notification marked as read:", response.data);
+      return response.data.notification || response.data;
     } catch (error) {
       console.error("❌ Error marking notification as read:", error);
       return rejectWithValue(
@@ -146,17 +163,26 @@ const notificationSlice = createSlice({
         console.log("⏳ Loading all notifications...");
       })
       .addCase(getAllNotifications.fulfilled, (state, action) => {
-        state.notifications = action.payload;
+        // Ensure action.payload is an array
+        const notifications = Array.isArray(action.payload)
+          ? action.payload
+          : [];
+
+        state.notifications = notifications;
         state.loading = false;
-        state.unreadCount = action.payload.filter((n) => !n.isRead).length;
+        state.unreadCount = notifications.filter((n) => !n.isRead).length;
         state.connectionType = "api";
         state.lastFetched = new Date().toISOString();
-        console.log("✅ All notifications loaded:", action.payload.length);
+
+        console.log("✅ All notifications loaded successfully!");
+        console.log("📊 Total notifications:", notifications.length);
         console.log("📊 Unread count:", state.unreadCount);
+        console.log("📋 Sample notification:", notifications[0]);
       })
       .addCase(getAllNotifications.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.notifications = []; // Clear on error
         console.error("❌ Failed to load all notifications:", action.payload);
       });
 
@@ -168,16 +194,23 @@ const notificationSlice = createSlice({
         console.log("⏳ Loading user notifications...");
       })
       .addCase(fetchUserNotifications.fulfilled, (state, action) => {
-        state.notifications = action.payload;
+        const notifications = Array.isArray(action.payload)
+          ? action.payload
+          : [];
+
+        state.notifications = notifications;
         state.loading = false;
-        state.unreadCount = action.payload.filter((n) => !n.isRead).length;
+        state.unreadCount = notifications.filter((n) => !n.isRead).length;
         state.connectionType = "api";
         state.lastFetched = new Date().toISOString();
-        console.log("✅ User notifications loaded:", action.payload.length);
+
+        console.log("✅ User notifications loaded:", notifications.length);
+        console.log("📊 Unread count:", state.unreadCount);
       })
       .addCase(fetchUserNotifications.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.notifications = []; // Clear on error
         console.error("❌ Failed to load user notifications:", action.payload);
       });
 
@@ -187,14 +220,17 @@ const notificationSlice = createSlice({
         console.log("⏳ Marking notification as read...");
       })
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
+        const updatedNotif = action.payload;
         const notification = state.notifications.find(
-          (n) => n._id === action.payload._id
+          (n) => n._id === updatedNotif._id
         );
+
         if (notification) {
           notification.isRead = true;
-          notification.readAt = action.payload.readAt;
+          notification.readAt = updatedNotif.readAt;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
-          console.log("✅ Notification marked as read:", action.payload._id);
+          console.log("✅ Notification marked as read:", updatedNotif._id);
+          console.log("📊 New unread count:", state.unreadCount);
         }
       })
       .addCase(markNotificationAsRead.rejected, (state, action) => {
