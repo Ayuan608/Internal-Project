@@ -61,10 +61,13 @@ export default function Announcement() {
   const [selected, setSelected] = useState(null);
 
   return (
-    <div className="min-h-screen  p-2">
+    <div className="min-h-screen px-2 mt-4">
       <div className="max-w-[90%]  mx-auto">
-        <h1 className="text-3xl font-semibold text-white mb-8 pb-4 border-b-2 border-gray-500">
-          Announcements
+        <h1 className="font-semibold text-white mb-8 pb-4 border-b-2 border-gray-500">
+          <p className="text-3xl"> Announcements</p>
+          <div className="text-white/70 mb-2">
+            Create and manage company-wide announcements
+          </div>
         </h1>
 
         <div className="space-y-4">

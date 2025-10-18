@@ -5,10 +5,9 @@ import TeamLeaderStats from "./SuperAdminDashboardRoute/ui/TeamLeaderStats";
 import { TeamStats } from "../../Helpers/Helper";
 import CustomizedDataGrid from "./SuperAdminDashboardRoute/ui/data/CustomizedDataGrid";
 import ExampleIosSwitch from "./SuperAdminDashboardRoute/ui/Switch";
+import StatsPage from "./SuperAdminDashboardRoute/ui/StatsPage";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("Daily");
-
   return (
     <>
       <div className="min-h-screen text-gray-100 bg-black">
@@ -18,7 +17,7 @@ export default function Dashboard() {
         >
           <div className="flex justify-between">
             <div className="flex justify-start items-start mb-4">
-              <div className="relative w-full max-w-[400px]">
+              <div className="relative w-full max-w-[600px]">
                 <input
                   type="text"
                   placeholder="Search, contacts, deals, campaigns..."
@@ -31,23 +30,13 @@ export default function Dashboard() {
           </div>
 
           <div className="p-2 bg-[#282e3c38] rounded-xl mb-4">
-            <div className="flex gap-2 mb-6 bg-[#f5f6fa09] max-w-[255px] p-1 rounded-full">
-              {["CSR", "WithDraw", "Deposit"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? "bg-[#d9d9d935] rounded-full text-white"
-                      : "bg-transparent text-gray-400 hover:text-gray-300"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+            <StatsPage />
 
-            <TeamLeaderStats title="Team Leader" data={TeamStats} />
+            <TeamLeaderStats
+              title="Dashboard Overview"
+              SecondaryTitle="Monitor real-time metrics and performance across all departments"
+              data={TeamStats}
+            />
           </div>
         </div>
         <div className="flex gap-6 mt-2 overflow-y-auto px-2">

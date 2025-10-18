@@ -30,7 +30,7 @@ function RecentAnnoucement() {
             {visible && (
                 <div
                     ref={popupRef}
-                    className="rounded-xl border border-[#2e3135] bg-[#111113]/95 backdrop-blur-sm fixed top-[60px] right-5 w-[420px] max-h-[550px] overflow-hidden shadow-2xl z-50 animate-fadeIn p-4 text-white"
+                    className="rounded-xl border border-[#2e3135] bg-[#111113]/95 backdrop-blur-sm fixed top-[60px] right-5 w-[420px] max-h-[550px] overflow-hidden shadow-2xl z-50 animate-fade p-4 text-white"
                 >
                     <h3 className="text-lg font-semibold mb-2">Recent Announcements</h3>
                     <div className="space-y-4  py-4  text-sm text-gray-300 border-t border-gray-500 w-full">

@@ -124,7 +124,7 @@ export const rows = [
 export const superAdminButtons = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/dashboard/department", label: "Department", icon: ClipboardPlus },
-  { to: "/dashboard/non-quota", label: "Non-Quota Dashboard", icon: User2 },
+  { to: "/dashboard/nonQuta", label: "Non-Quota", icon: User2 },
   { to: "/dashboard/quotaSetting", label: "Quota Settings", icon: UserCheck },
   { to: "/dashboard/directory", label: "Directory", icon: Columns3Cog },
   {
@@ -132,7 +132,7 @@ export const superAdminButtons = [
     label: "Announcements",
     icon: BanknoteArrowUp,
   },
-  { to: "/dashboard/reports", label: "Reports", icon: Proportions },
+  { to: "/dashboard/report", label: "Reports", icon: Proportions },
   {
     to: "/dashboard/overallAttendance",
     label: "Overall Attendance",
@@ -286,3 +286,105 @@ export const UserStats = [
     ],
   },
 ];
+
+export const weeklyData = {
+  summary: {
+    daysPresent: 5,
+    hoursWorked: "43h 30m",
+    breaks: "6h 15m",
+    attendance: "95%",
+  },
+  records: [
+    {
+      date: "Mon, Oct 14, 2025",
+      punchIn: "08:00 AM",
+      breaks: "1h 00m",
+      punchOut: "05:00 PM",
+      totalHours: "8h 00m",
+      status: "Normal",
+    },
+    {
+      date: "Tue, Oct 15, 2025",
+      punchIn: "08:05 AM",
+      breaks: "1h 15m",
+      punchOut: "05:10 PM",
+      totalHours: "7h 50m",
+      status: "Overbreak",
+    },
+    {
+      date: "Wed, Oct 16, 2025",
+      punchIn: "--",
+      breaks: "1h 00m",
+      punchOut: "05:00 PM",
+      totalHours: "--",
+      status: "Missed Punch In",
+    },
+    {
+      date: "Thu, Oct 17, 2025",
+      punchIn: "08:00 AM",
+      breaks: "1h 00m",
+      punchOut: "--",
+      totalHours: "--",
+      status: "Missed Punch Out",
+    },
+    {
+      date: "Fri, Oct 18, 2025",
+      punchIn: "--",
+      breaks: "--",
+      punchOut: "--",
+      totalHours: "--",
+      status: "Absent",
+    },
+  ],
+};
+
+export const monthlyData = {
+  summary: {
+    daysPresent: 22,
+    hoursWorked: "176h 45m",
+    breaks: "24h 30m",
+    attendance: "92%",
+  },
+  records: [
+    {
+      date: "Week 1 (Oct 1-7)",
+      punchIn: "Avg: 08:02 AM",
+      breaks: "7h 30m",
+      punchOut: "Avg: 05:05 PM",
+      totalHours: "40h 15m",
+      status: "Normal",
+    },
+    {
+      date: "Week 2 (Oct 8-14)",
+      punchIn: "Avg: 08:00 AM",
+      breaks: "6h 00m",
+      punchOut: "Avg: 05:00 PM",
+      totalHours: "43h 00m",
+      status: "Normal",
+    },
+    {
+      date: "Week 3 (Oct 15-21)",
+      punchIn: "Avg: 08:03 AM",
+      breaks: "5h 45m",
+      punchOut: "Avg: 05:02 PM",
+      totalHours: "41h 30m",
+      status: "Normal",
+    },
+    {
+      date: "Week 4 (Oct 22-28)",
+      punchIn: "Avg: 08:01 AM",
+      breaks: "5h 15m",
+      punchOut: "Avg: 05:01 PM",
+      totalHours: "42h 00m",
+      status: "Normal",
+    },
+    {
+      date: "Week 5 (Oct 29-31)",
+      punchIn: "Avg: 08:00 AM",
+      breaks: "--",
+      punchOut: "Avg: 05:00 PM",
+      totalHours: "10h 00m",
+      status: "Partial",
+    },
+  ],
+};

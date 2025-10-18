@@ -4,20 +4,23 @@ import Layout from "./Layout/Layout";
 import Dashboard from "./components/Dashboard/Dashboard";
 import NotRequireAuth from "./components/Auth/NotRequireAuth";
 import RequireAuth from "./components/Auth/RequireAuth";
-import Report from "./components/Report/Report";
-import Admin from "./components/Add Employee/Admin";
 import Setting from "./pages/Setting";
-import Data from "./components/Data/Data";
 import UserDashboard from "./Layout/UserDashboard";
 import Denied from "./pages/404/Denied";
 import Annoucement from "./components/Dashboard/UserDashboard/Annoucement";
-import DashboardRoutes from "./components/Dashboard/SuperAdminDashboardRoute/DashboardRoutes";
 import CheckerDashboard from "./Layout/CheckerDashboard";
 import Alert from "./components/Dashboard/CheckerDashboard/Alert";
-import Notification from "./components/popup/Notification";
 import SendNotificationForm from "./components/popup/SendNotificationForm";
 import DailyTimeRecord from "./components/Dashboard/UserDashboard/DailyTimeRecord";
 import PerformanceDashboard from "./components/Dashboard/UserDashboard/PerformanceDashboard";
+import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
+import NonQuota from "./components/Dashboard/SuperAdminDashboardRoute/NonQuota";
+import QuotaSetting from "./components/Dashboard/SuperAdminDashboardRoute/QuotaSetting";
+import Directory from "./components/Dashboard/SuperAdminDashboardRoute/Directory";
+import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
+import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
+import OverallAttendance from "./components/Dashboard/SuperAdminDashboardRoute/OverallAttendance";
+import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/ActivityLogs";
 
 function App() {
   return (
@@ -33,12 +36,15 @@ function App() {
       >
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="data" element={<Data />} />
+          <Route path="department" element={<Department />} />
+          <Route path="nonQuta" element={<NonQuota />} />
+          <Route path="quotaSetting" element={<QuotaSetting />} />
+          <Route path="directory" element={<Directory />} />
+          <Route path="announcement" element={<Announcement />} />
           <Route path="report" element={<Report />} />
-          <Route path="add" element={<Admin />} />
+          <Route path="overallAttendance" element={<OverallAttendance />} />
+          <Route path="activityLogs" element={<ActivityLogs />} />
           <Route path="setting" element={<Setting />} />
-
-          {DashboardRoutes()}
         </Route>
       </Route>
 
