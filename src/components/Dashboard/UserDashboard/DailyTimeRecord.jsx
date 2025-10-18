@@ -1,112 +1,10 @@
 import { Download, FolderUp } from "lucide-react";
 import React, { useState } from "react";
+import SuperAdminData from "../SuperAdminDashboardRoute/ui/SuperAdminData";
+import { monthlyData, weeklyData } from "../../../Helpers/Helper";
 
 function DailyTimeRecord() {
   const [view, setView] = useState("weekly");
-
-  // Sample data for weekly view
-  const weeklyData = {
-    summary: {
-      daysPresent: 5,
-      hoursWorked: "43h 30m",
-      breaks: "6h 15m",
-      attendance: "95%",
-    },
-    records: [
-      {
-        date: "Mon, Oct 14, 2025",
-        punchIn: "08:00 AM",
-        breaks: "1h 00m",
-        punchOut: "05:00 PM",
-        totalHours: "8h 00m",
-        status: "Normal",
-      },
-      {
-        date: "Tue, Oct 15, 2025",
-        punchIn: "08:05 AM",
-        breaks: "1h 15m",
-        punchOut: "05:10 PM",
-        totalHours: "7h 50m",
-        status: "Overbreak",
-      },
-      {
-        date: "Wed, Oct 16, 2025",
-        punchIn: "--",
-        breaks: "1h 00m",
-        punchOut: "05:00 PM",
-        totalHours: "--",
-        status: "Missed Punch In",
-      },
-      {
-        date: "Thu, Oct 17, 2025",
-        punchIn: "08:00 AM",
-        breaks: "1h 00m",
-        punchOut: "--",
-        totalHours: "--",
-        status: "Missed Punch Out",
-      },
-      {
-        date: "Fri, Oct 18, 2025",
-        punchIn: "--",
-        breaks: "--",
-        punchOut: "--",
-        totalHours: "--",
-        status: "Absent",
-      },
-    ],
-  };
-
-  // Sample data for monthly view
-  const monthlyData = {
-    summary: {
-      daysPresent: 22,
-      hoursWorked: "176h 45m",
-      breaks: "24h 30m",
-      attendance: "92%",
-    },
-    records: [
-      {
-        date: "Week 1 (Oct 1-7)",
-        punchIn: "Avg: 08:02 AM",
-        breaks: "7h 30m",
-        punchOut: "Avg: 05:05 PM",
-        totalHours: "40h 15m",
-        status: "Normal",
-      },
-      {
-        date: "Week 2 (Oct 8-14)",
-        punchIn: "Avg: 08:00 AM",
-        breaks: "6h 00m",
-        punchOut: "Avg: 05:00 PM",
-        totalHours: "43h 00m",
-        status: "Normal",
-      },
-      {
-        date: "Week 3 (Oct 15-21)",
-        punchIn: "Avg: 08:03 AM",
-        breaks: "5h 45m",
-        punchOut: "Avg: 05:02 PM",
-        totalHours: "41h 30m",
-        status: "Normal",
-      },
-      {
-        date: "Week 4 (Oct 22-28)",
-        punchIn: "Avg: 08:01 AM",
-        breaks: "5h 15m",
-        punchOut: "Avg: 05:01 PM",
-        totalHours: "42h 00m",
-        status: "Normal",
-      },
-      {
-        date: "Week 5 (Oct 29-31)",
-        punchIn: "Avg: 08:00 AM",
-        breaks: "--",
-        punchOut: "Avg: 05:00 PM",
-        totalHours: "10h 00m",
-        status: "Partial",
-      },
-    ],
-  };
 
   const currentData = view === "weekly" ? weeklyData : monthlyData;
 
@@ -166,46 +64,7 @@ function DailyTimeRecord() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-4 border-l-2 border-blue-500">
-            <p className="text-sm text-white mb-1">TOTAL DAYS PRESENT</p>
-            <p className="text-4xl font-bold text-white mb-2">
-              {currentData.summary.daysPresent}
-            </p>
-            <p className="text-sm text-gray-500">
-              {view === "weekly" ? "This week" : "This month"}
-            </p>
-          </div>
-
-          <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-green-500">
-            <p className="text-sm text-white mb-1">TOTAL HOURS WORKED</p>
-            <p className="text-4xl font-bold text-white mb-2">
-              {currentData.summary.hoursWorked}
-            </p>
-            <p className="text-sm text-gray-500">
-              {view === "weekly" ? "This week" : "This month"}
-            </p>
-          </div>
-
-          <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-purple-500">
-            <p className="text-sm text-white mb-1">TOTAL BREAKS</p>
-            <p className="text-4xl font-bold text-white mb-2">
-              {currentData.summary.breaks}
-            </p>
-            <p className="text-sm text-gray-500">
-              {view === "weekly" ? "This week" : "This month"}
-            </p>
-          </div>
-
-          <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-orange-500">
-            <p className="text-sm text-white mb-1">ATTENDANCE RATE</p>
-            <p className="text-4xl font-bold text-white mb-2">
-              {currentData.summary.attendance}
-            </p>
-            <p className="text-sm text-gray-500">Overall performance</p>
-          </div>
-        </div>
+        <SuperAdminData />
 
         {/* DTR Table */}
         <div className="bg-[#10101b94] border  border-gray-500 rounded-lg shadow text-white">
