@@ -132,7 +132,7 @@ const WeeklyPerformanceChart = () => {
   };
 
   return (
-    <div className="rounded-xl p-2 shadow-lg border border-gray-700 mb-4 max-w-[450px]">
+    <div className="rounded-xl p-2 shadow-lg border border-gray-700 max-w-[450px]">
       <div className="h-80">
         <Bar data={chartData} options={chartOptions} />
       </div>

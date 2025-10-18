@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
+import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
@@ -179,10 +180,10 @@ const CustomizedDataGrid = () => {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-full">
           {/* CSR Department Quota */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
-            <div className="h-64">
+            <div>
               <Doughnut
                 data={createChartData(
                   dashboardData.csrQuota.met,
@@ -209,7 +210,7 @@ const CustomizedDataGrid = () => {
 
           {/* Deposit Department Quota */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
-            <div className="h-64">
+            <div>
               <Doughnut
                 data={createChartData(
                   dashboardData.depositQuota.met,
@@ -236,7 +237,7 @@ const CustomizedDataGrid = () => {
 
           {/* Withdrawal Department Quota */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
-            <div className="h-64">
+            <div>
               <Doughnut
                 data={createChartData(
                   dashboardData.withdrawalQuota.met,
@@ -260,6 +261,7 @@ const CustomizedDataGrid = () => {
               {dashboardData.withdrawalQuota.nonMet}% Not Met
             </div>
           </div>
+          <WeeklyPerformanceChart />
         </div>
 
         {/* Last Updated */}
