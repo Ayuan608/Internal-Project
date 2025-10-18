@@ -1,53 +1,3 @@
-// import * as React from "react";
-// import { DataGrid } from "@mui/x-data-grid";
-// import { rows, columns } from "../data/GridData";
-
-// export function CustomizedDataGrid() {
-//   return (
-//     <DataGrid
-//       sx={{ width: "75%", overflow: "auto" }}
-//       checkboxSelection
-//       rows={rows}
-//       columns={columns}
-//       getRowClassName={(params) =>
-//         params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
-//       }
-//       initialState={{
-//         pagination: { paginationModel: { pageSize: 20 } },
-//       }}
-//       pageSizeOptions={[10, 20, 50]}
-//       disableColumnResize
-//       density="compact"
-//       slotProps={{
-//         filterPanel: {
-//           filterFormProps: {
-//             logicOperatorInputProps: {
-//               variant: "outlined",
-//               size: "small",
-//             },
-//             columnInputProps: {
-//               variant: "outlined",
-//               size: "small",
-//               sx: { mt: "auto" },
-//             },
-//             operatorInputProps: {
-//               variant: "outlined",
-//               size: "small",
-//               sx: { mt: "auto" },
-//             },
-//             valueInputProps: {
-//               InputComponentProps: {
-//                 variant: "outlined",
-//                 size: "small",
-//               },
-//             },
-//           },
-//         },
-//       }}
-//     />
-//   );
-// }
-
 import React, { useState, useEffect } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
@@ -137,13 +87,13 @@ const CustomizedDataGrid = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Common chart configuration
+  // Common chart configuration with proper TypeScript types
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "bottom",
+        position: "bottom" as const,
         labels: {
           color: "#e5e7eb",
           font: {
@@ -157,7 +107,7 @@ const CustomizedDataGrid = () => {
         color: "#f8fafc",
         font: {
           size: 16,
-          weight: "bold",
+          weight: "bold" as const,
         },
         padding: {
           bottom: 10,
@@ -168,7 +118,7 @@ const CustomizedDataGrid = () => {
   };
 
   // Chart data configuration
-  const createChartData = (met: any, nonMet: any, title: any) => ({
+  const createChartData = (met: number, nonMet: number, title: string) => ({
     labels: ["Quota Met", "Non-Quota"],
     datasets: [
       {
@@ -185,7 +135,7 @@ const CustomizedDataGrid = () => {
   });
 
   return (
-    <div className=" text-white mt-6">
+    <div className="text-white mt-6">
       <div className="px-2">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
