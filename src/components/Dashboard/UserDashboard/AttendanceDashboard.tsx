@@ -26,8 +26,6 @@ export default function AttendanceDashboard() {
   const { attendanceList, isLoading } = useSelector(
     (state: any) => state.attendance
   );
-
-  // Real-time statistics calculation
   const calculateStats = React.useMemo(() => {
     if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
       return {

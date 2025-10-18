@@ -350,7 +350,7 @@ const AttendanceDashboard = () => {
                           />
                           <div className="ml-4">
                             <div className="text-sm font-medium text-white">{item.user.FullName || 'N/A'}</div>
-                            <div className="text-sm text-slate-400">{item.user._id.replace(/\D/g, "").slice(0, 5) || 'N/A'}</div>
+                            <div className="text-sm text-slate-400">{item.user._id.replace(/\D/g, "").slice(0, 5,"...") || 'N/A'}</div>
                           </div>
                         </div>
                       </td>

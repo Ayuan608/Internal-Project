@@ -17,6 +17,7 @@ import Alert from "./components/Dashboard/CheckerDashboard/Alert";
 import Notification from "./components/popup/Notification";
 import SendNotificationForm from "./components/popup/SendNotificationForm";
 import DailyTimeRecord from "./components/Dashboard/UserDashboard/DailyTimeRecord";
+import PerformanceDashboard from "./components/Dashboard/UserDashboard/PerformanceDashboard";
 
 function App() {
   return (
@@ -45,7 +46,7 @@ function App() {
         <Route path="/user" element={<Layout />}>
           <Route index element={<UserDashboard />} />
           <Route path="daily-time-record" element={<DailyTimeRecord />} />
-          <Route path="data" element={<Data />} />
+          <Route path="performance" element={<PerformanceDashboard />} />
           <Route path="announcement" element={<Annoucement />} />
           <Route path="setting" element={<Setting />} />
         </Route>

@@ -39,13 +39,9 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-.css-jx4txk-MuiDataGrid-root
-  .MuiDataGrid-row--borderBottom
-  .MuiDataGrid-columnHeader,
+.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-columnHeader,
 .css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-filler,
-.css-jx4txk-MuiDataGrid-root
-  .MuiDataGrid-row--borderBottom
-  .MuiDataGrid-scrollbarFiller {
+.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-scrollbarFiller {
   border-bottom: 1px solid var(--DataGrid-rowBorderColor);
   background: #2e3037 !important;
   color: white !important;
@@ -170,4 +166,8 @@ input:-webkit-autofill:active {
 
 .css-bfxsbg-MuiContainer-root {
   max-width: 100% !important;
+}
+
+button {
+  cursor: pointer;
 }
