@@ -50,7 +50,7 @@ export default function Dashboard() {
         </div>
         <div className="flex gap-6 mt-2 overflow-y-auto ">
           <Charts />
-          <Data />
+          {/* <Data /> */}
         </div>
         <p className="text-white text-lg font-semibold my-5">User Details</p>
         <div className="flex gap-5">

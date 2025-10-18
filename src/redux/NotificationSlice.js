@@ -8,11 +8,29 @@ export const fetchUserNotifications = createAsyncThunk(
   "notifications/fetchUser",
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get(`/notifications/${userId}`);
-      console.log("res",response.data.notifications)
+      // Align with backend route naming (singular 'notification')
+      const response = await axiosInstance.get(`/notification/${userId}`);
       return response.data.notifications;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+// New: Get all notifications (without user ID)
+export const getAllNotifications = createAsyncThunk(
+  "notifications/getAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log("Fetching all notifications...");
+      const response = await axiosInstance.get(`/notifications`);
+      console.log("All notifications response:", response.data);
+      return response.data.notifications || response.data;
+    } catch (error) {
+      console.error("Error fetching all notifications:", error);
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch notifications"
+      );
     }
   }
 );
@@ -39,7 +57,7 @@ const notificationSlice = createSlice({
     loading: false,
     error: null,
     lastFetched: null,
-    connectionType: "unknown", // 'socket', 'api', 'unknown'
+    connectionType: "unknown",
   },
   reducers: {
     // Add new notification from socket
@@ -104,7 +122,7 @@ const notificationSlice = createSlice({
   },
 
   extraReducers: (builder) => {
-    // Fetch notifications
+    // Fetch user notifications
     builder
       .addCase(fetchUserNotifications.pending, (state) => {
         state.loading = true;
@@ -116,10 +134,34 @@ const notificationSlice = createSlice({
         state.unreadCount = action.payload.filter((n) => !n.isRead).length;
         state.connectionType = "api";
         state.lastFetched = new Date().toISOString();
+        console.log("User notifications fetched:", action.payload);
       })
       .addCase(fetchUserNotifications.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        console.error("User notifications fetch failed:", action.payload);
+      });
+
+    // Get all notifications
+    builder
+      .addCase(getAllNotifications.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getAllNotifications.fulfilled, (state, action) => {
+        state.notifications = action.payload;
+        state.loading = false;
+        state.unreadCount = action.payload.filter((n) => !n.isRead).length;
+        state.connectionType = "api";
+        state.lastFetched = new Date().toISOString();
+        console.log("All notifications fetched successfully:", action.payload);
+        console.log("Total notifications:", action.payload.length);
+        console.log("Unread count:", state.unreadCount);
+      })
+      .addCase(getAllNotifications.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        console.error("All notifications fetch failed:", action.payload);
       });
 
     // Mark as read
@@ -131,6 +173,7 @@ const notificationSlice = createSlice({
         notification.isRead = true;
         notification.readAt = action.payload.readAt;
         state.unreadCount = Math.max(0, state.unreadCount - 1);
+        console.log("Notification marked as read:", action.payload._id);
       }
     });
   },
