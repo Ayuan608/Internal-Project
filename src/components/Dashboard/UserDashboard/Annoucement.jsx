@@ -71,7 +71,7 @@ export default function Announcement() {
           {announcements.map((announcement) => (
             <div
               key={announcement.id}
-              className="text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border- border-gray-500 overflow-hidden"
+              className="text-white rounded-lg shadow-[10px_] hover:shadow-md transition-all duration-200  border-l-2  border-gray-500  overflow-hidden"
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">

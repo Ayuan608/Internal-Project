@@ -192,7 +192,7 @@ export default function AttendanceDashboard() {
 
     // 🔥 FIXED LAST PUNCH IN - TYPE SAFE!
     const lastPunchInFormatted = lastPunchInTime
-      ? lastPunchInTime.toLocaleTimeString("en-US", {
+      ?new Date(lastPunchInTime).toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
