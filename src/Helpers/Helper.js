@@ -124,10 +124,10 @@ export const superAdminButtons = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/dashboard/report", label: "Reports", icon: ClipboardPlus },
   { to: "/dashboard/add", label: "Add Emp.", icon: User2 },
-  { to: "/dashboard", label: "Attendance", icon: UserCheck },
+  { to: "/dashboard/attendance", label: "Attendance", icon: UserCheck },
   { to: "/dashboard/data", label: "CSR Dashboards", icon: Columns3Cog },
-  { to: "/dashboard", label: "Deposit Dashboards", icon: BanknoteArrowUp },
-  { to: "/dashboard", label: "Withdrawal ", icon: BanknoteArrowDown },
+  { to: "/dashboard/deposit", label: "Deposit Dashboards", icon: BanknoteArrowUp },
+  { to: "/dashboard/withdraw", label: "Withdrawal ", icon: BanknoteArrowDown },
 ];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
