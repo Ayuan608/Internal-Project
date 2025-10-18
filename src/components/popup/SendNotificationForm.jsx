@@ -46,7 +46,7 @@ console.log(userId,"ud")
   };
 
   return (
-    <div className="p-4 bg-gray-800 text-white rounded-xl max-w-md">
+    <div className="p-4 bg-gray-800 text-white rounded-xl max-w-4xl">
       <h2 className="text-xl font-bold mb-2">Send Notification</h2>
       <form onSubmit={handleSend} className="flex flex-col gap-2">
         <input
