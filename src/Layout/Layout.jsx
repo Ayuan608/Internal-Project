@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
     Ban,
-    Bell,
     ChevronsLeft,
     ChevronsRight,
     LogOut,
-    Megaphone,
     User,
 } from "lucide-react";
 import { Outlet } from "react-router-dom";
@@ -13,6 +11,7 @@ import Menus from "../Menus/SubMenus";
 import NotificationPopup from "../components/popup/Notification";
 import { useSelector } from "react-redux";
 import BindGoogleModal from "./BIndGoogle";
+import RecentAnnoucement from "../components/popup/RecentAnnoucement";
 
 const Layout = () => {
     const menuRef = useRef(null);
@@ -82,13 +81,8 @@ const Layout = () => {
                         <div className="flex items-center gap-4">
                             {/* Simply use NotificationPopup component */}
                             <NotificationPopup />
-                            <div className="relative w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer">
-                                <Megaphone />
-
-                                {/* Notification Dot */}
-                                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                            </div>
-
+                    
+                            <RecentAnnoucement />
                             <div className="flex items-center gap-3" ref={menuRef}>
                                 {role === "User" || role === "Checker" ? (
                                     <button
@@ -99,7 +93,7 @@ const Layout = () => {
                                     </button>
                                 ) : null}
                                 {isOpen && (
-                                    <div className="absolute right-0 top-12 w-40 border bg-[#2e303759] backdrop-blur-3xl border-[#2e3135] text-white rounded-xl shadow-xl z-50">
+                                    <div className="absolute right-0 top-[60px] animate-fadeIn w-40 border bg-[#111113]/95 backdrop-blur-3xl border-[#2e3135] text-white rounded-xl shadow-xl z-50">
                                         <div
                                             onClick={handleBindGoogleClick}
                                             className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer"
