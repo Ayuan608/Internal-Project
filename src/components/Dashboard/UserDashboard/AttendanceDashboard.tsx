@@ -26,6 +26,8 @@ export default function AttendanceDashboard() {
   const { attendanceList, isLoading } = useSelector(
     (state: any) => state.attendance
   );
+
+  // Real-time statistics calculation
   const calculateStats = React.useMemo(() => {
     if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
       return {
@@ -188,7 +190,7 @@ export default function AttendanceDashboard() {
 
     // 🔥 FIXED LAST PUNCH IN - TYPE SAFE!
     const lastPunchInFormatted = lastPunchInTime
-      ?new Date(lastPunchInTime).toLocaleTimeString("en-US", {
+      ? new Date(lastPunchInTime).toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
