@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { Search } from "lucide-react";
 import Charts from "./Chart";
-import Data from "./Data";
 import TeamLeaderStats from "./SuperAdminDashboardRoute/ui/TeamLeaderStats";
-import ChartUserByCountry from "./SuperAdminDashboardRoute/ui/ChartUserByCountry";
 import { TeamStats } from "../../Helpers/Helper";
 import CustomizedDataGrid from "./SuperAdminDashboardRoute/ui/data/CustomizedDataGrid";
-import WeeklyPerformanceChart from "./SuperAdminDashboardRoute/ui/WeeklyPerformanceChart";
+import ExampleIosSwitch from "./SuperAdminDashboardRoute/ui/Switch";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("Daily");
@@ -18,15 +16,18 @@ export default function Dashboard() {
           className=" top-0 rounded-lg p-2 z-auto backdrop-blur-3xl "
           style={{ zIndex: 9 }}
         >
-          <div className="flex justify-start items-start mb-4">
-            <div className="relative w-full max-w-[400px]">
-              <input
-                type="text"
-                placeholder="Search, contacts, deals, campaigns..."
-                className="bg-[#f5f6fa13] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
-              />
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />
+          <div className="flex justify-between">
+            <div className="flex justify-start items-start mb-4">
+              <div className="relative w-full max-w-[400px]">
+                <input
+                  type="text"
+                  placeholder="Search, contacts, deals, campaigns..."
+                  className="bg-[#f5f6fa13] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
+                />
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />
+              </div>
             </div>
+            <ExampleIosSwitch />
           </div>
 
           <div className="p-2 bg-[#282e3c38] rounded-xl mb-4">
@@ -54,10 +55,6 @@ export default function Dashboard() {
         </div>
 
         <CustomizedDataGrid />
-
-        <div className="mt-5">
-          <WeeklyPerformanceChart />
-        </div>
       </div>
     </>
   );
