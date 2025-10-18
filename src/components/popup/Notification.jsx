@@ -21,6 +21,7 @@ const NotificationPopup = () => {
     (state) => state?.notifications
   );
 
+  
   const userId = useSelector((state) => state.auth?.data?._id);
   const userRole = useSelector((state) => state.auth?.role);
 
