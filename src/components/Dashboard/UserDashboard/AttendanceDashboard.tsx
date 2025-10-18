@@ -374,7 +374,7 @@ export default function AttendanceDashboard() {
           <div className="grid grid-cols-4 gap-4 mb-6">
             <StatCard
               icon={Calendar}
-              title="Today"
+              title="Total Working Hours"
               value={calculateStats.todayWorkedHours}
               subtitle={calculateStats.todayStatus}
               color="blue"
@@ -388,9 +388,9 @@ export default function AttendanceDashboard() {
             />
             <StatCard
               icon={TrendingUp}
-              title="Avg Daily"
+              title="Staus"
               value={calculateStats.avgDailyHours}
-              subtitle="Hours per day"
+              subtitle="Currently Working"
               color="orange"
             />
             <StatCard
@@ -579,7 +579,7 @@ export default function AttendanceDashboard() {
                         />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    {/* <Tooltip /> */}
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
