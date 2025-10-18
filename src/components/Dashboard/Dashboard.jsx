@@ -3,9 +3,10 @@ import { Search } from "lucide-react";
 import Charts from "./Chart";
 import Data from "./Data";
 import TeamLeaderStats from "./SuperAdminDashboardRoute/ui/TeamLeaderStats";
-import { CustomizedDataGrid } from "./SuperAdminDashboardRoute/ui/data/CustomizedDataGrid";
 import ChartUserByCountry from "./SuperAdminDashboardRoute/ui/ChartUserByCountry";
 import { TeamStats } from "../../Helpers/Helper";
+import CustomizedDataGrid from "./SuperAdminDashboardRoute/ui/data/CustomizedDataGrid";
+import WeeklyPerformanceChart from "./SuperAdminDashboardRoute/ui/WeeklyPerformanceChart";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("Daily");
@@ -29,8 +30,8 @@ export default function Dashboard() {
           </div>
 
           <div className="p-2 bg-[#282e3c38] rounded-xl mb-4">
-            <div className="flex gap-2 mb-6 bg-[#f5f6fa09] max-w-[230px] p-1 rounded-full">
-              {["Daily", "Week", "Month"].map((tab) => (
+            <div className="flex gap-2 mb-6 bg-[#f5f6fa09] max-w-[255px] p-1 rounded-full">
+              {["CSR", "WithDraw", "Deposit"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -48,14 +49,14 @@ export default function Dashboard() {
             <TeamLeaderStats title="Team Leader" data={TeamStats} />
           </div>
         </div>
-        <div className="flex gap-6 mt-2 overflow-y-auto ">
+        <div className="flex gap-6 mt-2 overflow-y-auto px-2">
           <Charts />
-          {/* <Data /> */}
         </div>
-        <p className="text-white text-lg font-semibold my-5">User Details</p>
-        <div className="flex gap-5">
-          <CustomizedDataGrid />
-          <ChartUserByCountry />
+
+        <CustomizedDataGrid />
+
+        <div className="mt-5">
+          <WeeklyPerformanceChart />
         </div>
       </div>
     </>
