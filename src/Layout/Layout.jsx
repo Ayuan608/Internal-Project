@@ -55,10 +55,10 @@ const Layout = () => {
 
     return (
         <>
-            <div className="relative w-screen h-screen overflow-hidden text-white bg-black">
+            <div className="relative w-screen h-screen overflow-hidden text-white bg-[#0B0C10]">
                 {/* Sidebar */}
                 <div
-                    className="fixed top-0 left-0 h-full transition-all duration-300 z-10 flex flex-col bg-white dark:bg-[#00010B]"
+                    className="fixed top-0 left-0 h-full border-r [border-color:#9E9FA74D] transition-all duration-300 z-10 flex flex-col bg-white dark:bg-[#00010B]"
                     style={{ width: `${sidebarWidth}px` }}
                 >
                     <div className="absolute top-2 right-2 cursor-pointer text-[#1C2B49] dark:text-gray-300 dark:hover:text-white transition z-20">

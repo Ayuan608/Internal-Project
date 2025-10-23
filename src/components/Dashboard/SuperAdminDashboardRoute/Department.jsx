@@ -81,7 +81,7 @@ const Department = () => {
   };
 
   return (
-    <div className="mt-5">
+    <div className="pt-5 p-1">
 
       {/* Title */}
       <div className="flex justify-between items-center mt-6">

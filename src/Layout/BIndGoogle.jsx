@@ -40,7 +40,7 @@ const BindGoogleModal = ({ isOpen, onClose, qrCodeUrl }) => {
     };
     
     return (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center">
             <div className=" w-[480px] max-w-full rounded-2xl shadow-2xl border border-[var(--box-border)] bg-[#3b83f60e] p-6 z-10 text-gray-200" >
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold">Bind Google</h2>
