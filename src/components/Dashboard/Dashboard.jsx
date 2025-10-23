@@ -17,7 +17,7 @@ export default function Dashboard() {
         >
           <div className="flex justify-between">
             <div className="flex justify-start items-start mb-4">
-              <div className="relative w-full max-w-[400px]">
+              <div className="relative w-full max-w-[600px]">
                 <input
                   type="text"
                   placeholder="Search, contacts, deals, campaigns..."

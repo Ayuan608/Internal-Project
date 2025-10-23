@@ -12,14 +12,18 @@ import NotificationPopup from "../components/popup/Notification";
 import { useSelector } from "react-redux";
 import BindGoogleModal from "./BIndGoogle";
 import RecentAnnoucement from "../components/popup/RecentAnnoucement";
+import { logout } from "../redux/authSlice";
+import ProfileModal from "../components/popup/ProfileModal";
 
 const Layout = () => {
     const menuRef = useRef(null);
     const [toggle, setToggle] = useState(true);
+    const [activeTab, setActiveTab] = useState("CSR");
     const [isOpen, setIsOpen] = useState(false);
     const { role } = useSelector((state) => state.auth);
     const userData = useSelector((state) => state?.auth?.data);
     const [isBindModalOpen, setBindModalOpen] = useState(false);
+    const [open, setOpen] = useState(false);
 
     const handleToggle = () => {
         setToggle(!toggle);
@@ -42,7 +46,11 @@ const Layout = () => {
         document.addEventListener("mousedown", onClickOutside);
         return () => document.removeEventListener("mousedown", onClickOutside);
     }, []);
-
+    const handleLogout = async (event) => {
+        event.preventDefault();
+        const res = await dispatch(logout());
+        if (res?.payload?.success) navigate("/");
+    };
     const sidebarWidth = toggle ? 240 : 80;
 
     return (
@@ -75,37 +83,60 @@ const Layout = () => {
                 >
                     {/* Header */}
                     <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-black">
-                        <h1 className="text-sm font-semibold text-white">
-                            CRM Dashboard - Contacts & Customer Management
-                        </h1>
+                        {role !== "Admin" && role !== "Super-Admin" && (
+                            <h1 className="text-sm font-semibold text-white">
+                                CRM Dashboard - Contacts & Customer Management
+                            </h1>
+                        )}
+                        {(role === "Admin" || role === "Super-Admin") && (
+                            <div className="flex justify-start gap-4 pb-1">
+                                {["CSR", "Deposit", "Withdrawal"].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-3 py-1 rounded-md text-white font-medium transition-colors  ease-in-out duration-300 hover:shadow-xl transform 
+                                            ${activeTab === tab
+                                                ? "bg-[var(--main-color)]"
+                                                : "bg-[var(--main-color)] hover:bg-blue-500"
+                                            }`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-4">
                             {/* Simply use NotificationPopup component */}
                             <NotificationPopup />
-                    
+
                             <RecentAnnoucement />
                             <div className="flex items-center gap-3" ref={menuRef}>
-                                {role === "User" || role === "Checker" ? (
-                                    <button
-                                        onClick={() => setIsOpen((o) => !o)}
-                                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer"
-                                    >
-                                        <User size={20} />
-                                    </button>
-                                ) : null}
+                                <button
+                                    onClick={() => setIsOpen((o) => !o)}
+                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer"
+                                >
+                                    <User size={20} />
+                                </button>
+
                                 {isOpen && (
                                     <div className="absolute right-0 top-[60px] animate-fadeIn w-40 border bg-[#111113]/95 backdrop-blur-3xl border-[#2e3135] text-white rounded-xl shadow-xl z-50">
+                                        <div onClick={() => setOpen(true)} onKeyDown={(e) => e.key === "Enter" && setOpen(true)} tabIndex={0} className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer">
+                                            <User />  Profile
+                                        </div>
                                         <div
                                             onClick={handleBindGoogleClick}
                                             className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer"
                                         >
                                             <Ban size={20} /> Bind Google
                                         </div>
-                                        <div className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer">
+                                        <div onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer">
                                             <LogOut size={20} />
                                             Logout
                                         </div>
                                     </div>
                                 )}
+                                <ProfileModal isOpen={open} onClose={() => setOpen(false)} user={userData}  />
                             </div>
                         </div>
                     </div>

@@ -7,7 +7,7 @@ const SuperAdminData = () => {
   const currentData = view === "weekly" ? weeklyData : monthlyData;
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-4 border-l-2 border-blue-500">
+      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-4 border-l-4 border-[var(--box-border)]">
         <p className="text-sm text-white mb-1">TOTAL DAYS PRESENT</p>
         <p className="text-4xl font-bold text-white mb-2">
           {currentData.summary.daysPresent}
@@ -17,7 +17,7 @@ const SuperAdminData = () => {
         </p>
       </div>
 
-      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-green-500">
+      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-4 border-[var(--box-border)]">
         <p className="text-sm text-white mb-1">TOTAL HOURS WORKED</p>
         <p className="text-4xl font-bold text-white mb-2">
           {currentData.summary.hoursWorked}
@@ -27,7 +27,7 @@ const SuperAdminData = () => {
         </p>
       </div>
 
-      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-purple-500">
+      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-4 border-[var(--box-border)]">
         <p className="text-sm text-white mb-1">TOTAL BREAKS</p>
         <p className="text-4xl font-bold text-white mb-2">
           {currentData.summary.breaks}
@@ -37,7 +37,7 @@ const SuperAdminData = () => {
         </p>
       </div>
 
-      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-2  border-orange-500">
+      <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-4 border-[var(--box-border)]">
         <p className="text-sm text-white mb-1">ATTENDANCE RATE</p>
         <p className="text-4xl font-bold text-white mb-2">
           {currentData.summary.attendance}

@@ -19,7 +19,7 @@ import UserMenu from "./User";
 import { getUserData } from "../redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import DraftTemplate from "./DraftTemplate";
-import { CheckerButtons, superAdminButtons } from "../Helpers/Helper";
+import { AdminRoutes, CheckerButtons, superAdminButtons } from "../Helpers/Helper";
 
 const Menus = ({ toggle, onTitleChange }) => {
   const contentRef = useRef(null);
@@ -82,9 +82,11 @@ const Menus = ({ toggle, onTitleChange }) => {
     ...(role === "Team-Leader"
       ? [{ to: "/dashboard/report", label: "Report", icon: <Bug /> }]
       : []),
-    ...(role === "Team-Leader"
-      ? [{ to: "/dashboard/add", label: "Add", icon: <UserPlus /> }]
-      : []),
+    ...(
+      ["Super-Admin"].includes(role)
+        ? [{ to: "/dashboard/add", label: "Add", icon: <UserPlus /> }]
+        : []
+    ),
   ];
 
   useEffect(() => {
@@ -164,6 +166,30 @@ const Menus = ({ toggle, onTitleChange }) => {
                   })}
                 </div>
               )}
+              {role === "Admin" && (
+                <div className="mt-4 space-y-2">
+                  {AdminRoutes.map(({ to, label, icon: Icon }) => {
+                    const isActive = location.pathname === to;
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => onTitleChange(label)}
+                        className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
+                          ${isActive
+                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          }`}
+                      >
+                        <Icon className="text-[20px]" />
+                        <span className="text-[16px] ml-2">{label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+
               {role === "Checker" && (
                 <div className="mt-4 space-y-2">
                   {CheckerButtons.map(({ to, label, icon: Icon }) => {
@@ -238,7 +264,15 @@ const Menus = ({ toggle, onTitleChange }) => {
 
             {toggle && (
               <Link
-                to={role === "User" ? "/user/setting" : "/dashboard/setting"}
+                to={
+                  role === "User"
+                    ? "/user/setting"
+                    : role === "Admin"
+                      ? "/admin/setting"
+                      : role === "Super-Admin"
+                        ? "/dashboard/setting"
+                        : "/default/setting"
+                }
                 onClick={() => { }}
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
@@ -270,6 +304,7 @@ const Menus = ({ toggle, onTitleChange }) => {
               </Link>
             </div>
           ))}
+
           <div className="absolute bottom-4 left-6 flex justify-center items-center z-10">
             <div className="flex flex-col gap-4 relative">
               <Link to={"setting"}>

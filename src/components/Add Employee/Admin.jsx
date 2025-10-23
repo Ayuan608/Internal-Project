@@ -43,15 +43,19 @@ function Admin() {
     department: "",
     dateHired: "",
     role: "",
+    salary: "",
+    workingHour: "",
+    Shift: "",
   });
   const [selectedCountry, setSelectedCountry] = useState(
     countries.find((c) => c.dialCode === "+63")
   );
   const rolePermissions = {
-    'Super-Admin': ['Team-Leader', 'User', 'Checker'],
-    'Team-Leader': ['User'],
+    'Super-Admin': ['Team-Leader', 'Admin', 'User', 'Checker'],
+    'Admin': ['Team-Leader', 'User', 'Checker'],
   };
   const allowedRoles = rolePermissions[role] || [];
+  
   useEffect(() => {
     console.log("Current User Role:", role);
     console.log("Allowed Roles:", allowedRoles);
@@ -64,6 +68,7 @@ function Admin() {
       </div>
     );
   }
+  
   useEffect(() => {
     dispatch(getAllUsers());
   }, [dispatch]);
@@ -93,6 +98,7 @@ function Admin() {
       handleMenuClose();
     }
   };
+  
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this data?"
@@ -110,7 +116,7 @@ function Admin() {
 
   const handleAddAdmin = async (e) => {
     e.preventDefault();
-    const { FullName, username, email, password, phone, department, dateHired, role } =
+    const { FullName, username, email, password, phone, department, dateHired, role, salary, workingHour, Shift } =
       addUser;
 
     if (
@@ -121,7 +127,10 @@ function Admin() {
       !department ||
       !phone ||
       !dateHired ||
-      !role
+      !role ||
+      !salary ||
+      !workingHour ||
+      !Shift
     ) {
       toast.error("Please fill all the details");
       return;
@@ -150,7 +159,10 @@ function Admin() {
         phone: "",
         department: "",
         dateHired: "",
-        role: ""
+        role: "",
+        salary: "",
+        workingHour: "",
+        Shift: "",
       });
       setIsDialogOpen(false);
       dispatch(getAllUsers());
@@ -195,9 +207,16 @@ function Admin() {
         return <span className="text-white">{formattedDate}</span>;
       },
     },
-
     { field: "department", headerName: "Department", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
+    {
+      field: "Shift",
+      headerName: "Shift",
+      flex: 1,
+      renderCell: (params) => (
+        <span className="text-white">{params?.row?.Shift || "N/A"}</span>
+      ),
+    },
     {
       field: "status",
       headerName: "Status",
@@ -229,6 +248,7 @@ function Admin() {
       filterable: false,
     },
   ];
+  
   const rows = (users || []).map((user, index) => ({
     id: user?._id ?? index,
     ...user,
@@ -267,10 +287,10 @@ function Admin() {
           </button>
         </div>
       </div>
-      {/* <DashboardStats /> */}
+      
       <TeamLeaderStats title="User" data={UserStats} />
-      {/* DataGrid Table */}
 
+      {/* DataGrid Table */}
       <div className="h-full w-full rounded-sm overflow-hidden shadow-xl">
         <DataGrid
           rows={rows}
@@ -386,13 +406,14 @@ function Admin() {
                   className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </div>
+              
               <div>
                 <label className="block text-gray-300 mb-2 text-sm font-medium">
                   Email
                 </label>
                 <input
                   required
-                  type="text"
+                  type="email"
                   name="email"
                   value={addUser.email}
                   onChange={handleUserInput}
@@ -400,6 +421,7 @@ function Admin() {
                   className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
@@ -410,8 +432,8 @@ function Admin() {
                     name="username"
                     value={addUser.username}
                     onChange={handleUserInput}
-                    placeholder="Enter username na"
-                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400"
+                    placeholder="Enter username"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
                 <div>
@@ -423,14 +445,17 @@ function Admin() {
                     name="password"
                     value={addUser.password}
                     onChange={handleUserInput}
-                    placeholder="Enter password na"
-                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400"
+                    placeholder="Enter password"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="w-full">
+                  <label className="block text-gray-300 mb-2 text-sm font-medium">
+                    Phone Number
+                  </label>
                   <div className="flex items-center bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white w-full">
                     {/* Country Selector */}
                     <div className="relative flex items-center mr-2 min-w-[85px]">
@@ -440,7 +465,7 @@ function Admin() {
                           const country = countries.find((c) => c.dialCode === e.target.value);
                           setSelectedCountry(country);
                         }}
-                        className="bg-transparent text-white outline-none text-sm cursor-pointer appearance-none  w-full"
+                        className="bg-transparent text-white outline-none text-sm cursor-pointer appearance-none w-full"
                       >
                         {countries.map((country, index) => (
                           <option
@@ -452,8 +477,6 @@ function Admin() {
                           </option>
                         ))}
                       </select>
-
-                      {/* Custom Arrow */}
                       <span className="absolute right-6 text-white pointer-events-none text-sm">▼</span>
                     </div>
 
@@ -472,7 +495,6 @@ function Admin() {
                   </div>
                 </div>
 
-
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
                     Department
@@ -481,10 +503,10 @@ function Admin() {
                     name="department"
                     value={addUser.department}
                     onChange={handleUserInput}
-                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   >
                     <option value="">Select Department</option>
-                    <option value="CSR">CSR Deparment</option>
+                    <option value="CSR">CSR Department</option>
                     <option value="Deposit">Deposit Department</option>
                     <option value="Withdraw">WithDraw Department</option>
                   </select>
@@ -492,7 +514,6 @@ function Admin() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
                     Role
@@ -501,7 +522,7 @@ function Admin() {
                     name="role"
                     value={addUser.role}
                     onChange={handleUserInput}
-                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   >
                     <option value="">Select Role</option>
                     {allowedRoles.map(roleOption => (
@@ -511,6 +532,7 @@ function Admin() {
                     ))}
                   </select>
                 </div>
+                
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
                     Date Hired
@@ -520,11 +542,58 @@ function Admin() {
                     name="dateHired"
                     value={addUser.dateHired}
                     onChange={handleUserInput}
-                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-300 mb-2 text-sm font-medium">
+                    Salary
+                  </label>
+                  <input
+                    type="number"
+                    name="salary"
+                    value={addUser.salary}
+                    onChange={handleUserInput}
+                    placeholder="Enter salary"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-300 mb-2 text-sm font-medium">
+                    Working Hours
+                  </label>
+                  <input
+                    type="text"
+                    name="workingHour"
+                    value={addUser.workingHour}
+                    onChange={handleUserInput}
+                    placeholder="e.g., 9 AM - 5 PM"
+                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">
+                  Shift
+                </label>
+                <select
+                  name="Shift"
+                  value={addUser.Shift}
+                  onChange={handleUserInput}
+                  className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                >
+                  <option value="">Select Shift</option>
+                  <option value="Morning">Morning</option>
+                  <option value="Evening">Evening</option>
+                  <option value="Night">Night</option>
+                  <option value="Rotational">Rotational</option>
+                </select>
+              </div>
 
               <div className="flex justify-end gap-3 pt-4">
                 <button

@@ -2,6 +2,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
 @import "tailwindcss";
 
+:root {
+  --main-color: #3B82F6;
+  --hover-color: #2764BA;
+  --body-color: #E0E0E0;
+  --box-color: #232b3e62;
+  --box-border: #9E9FA74D;
+}
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -172,11 +180,18 @@ button {
   cursor: pointer;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fadeAnimate {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.25s ease-in-out;
+.animate-fade {
+  animation: fadeAnimate 0.25s ease-in-out;
 }

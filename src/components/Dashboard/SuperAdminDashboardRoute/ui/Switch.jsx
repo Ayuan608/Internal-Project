@@ -37,9 +37,9 @@ export default function ExampleIosSwitch() {
             "--Switch-thumbWidth": "32px",
           },
           [`&.${switchClasses.checked}`]: {
-            "--Switch-trackBackground": "rgb(48 209 88)",
+            "--Switch-trackBackground": "#3b82f6",
             "&:hover": {
-              "--Switch-trackBackground": "rgb(48 209 88)",
+              "--Switch-trackBackground": "#3178ea",
             },
           },
         })}

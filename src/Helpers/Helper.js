@@ -11,14 +11,22 @@ import {
 import {
   Antenna,
   BanknoteArrowUp,
+  BarChart3,
   Blend,
+  Building2,
+  CalendarCheck2,
   ClipboardPlus,
   Columns3Cog,
+  FileText,
+  KeyRound,
   LayoutDashboard,
+  Megaphone,
   OctagonAlert,
   Proportions,
+  Settings,
   User2,
   UserCheck,
+  Users,
 } from "lucide-react";
 
 // Register the required components
@@ -31,6 +39,31 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+export const superAdminButtons = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard/department", label: "Department", icon: ClipboardPlus },
+  { to: "/dashboard/nonQuta", label: "Non-Quota", icon: BarChart3 },
+  { to: "/dashboard/quotaSetting", label: "Quota Settings", icon: UserCheck },
+  { to: "/dashboard/add", label: "Directory", icon: Columns3Cog },
+  { to: "/dashboard/announcement", label: "Announcements", icon: BanknoteArrowUp, },
+  { to: "/dashboard/report", label: "Reports", icon: Proportions },
+  { to: "/dashboard/overallAttendance", label: "Overall Attendance", icon: Blend, },
+  { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
+];
+export const AdminRoutes = [
+  { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/department", label: "Department", icon: Building2 },
+  { to: "/admin/quotaSetting", label: "Quota Settings", icon: Settings },
+  { to: "/admin/directory", label: "Employee Directory", icon: Users },
+  { to: "/admin/announcement", label: "Annoucement", icon: Megaphone },
+  { to: "/admin/report", label: "Case Report", icon: FileText },
+  { to: "/admin/overallAttendance", label: "Overall Attendence ", icon: CalendarCheck2 },
+  { to: "/admin/login", label: "Login Credentails", icon: KeyRound },
+]
+export const CheckerButtons = [
+  { to: "/checker", label: "Attendence", icon: UserCheck },
+  { to: "/checker/alert", label: "Alert", icon: OctagonAlert },
+];
 export const userData = {
   labels: ["QUOTA", "NON-QUOTA"],
   datasets: [
@@ -121,29 +154,6 @@ export const rows = [
   },
 ];
 
-export const superAdminButtons = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/dashboard/department", label: "Department", icon: ClipboardPlus },
-  { to: "/dashboard/nonQuta", label: "Non-Quota", icon: User2 },
-  { to: "/dashboard/quotaSetting", label: "Quota Settings", icon: UserCheck },
-  { to: "/dashboard/directory", label: "Directory", icon: Columns3Cog },
-  {
-    to: "/dashboard/announcement",
-    label: "Announcements",
-    icon: BanknoteArrowUp,
-  },
-  { to: "/dashboard/report", label: "Reports", icon: Proportions },
-  {
-    to: "/dashboard/overallAttendance",
-    label: "Overall Attendance",
-    icon: Blend,
-  },
-  { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
-];
-export const CheckerButtons = [
-  { to: "/checker", label: "Attendence", icon: UserCheck },
-  { to: "/checker/alert", label: "Alert", icon: OctagonAlert },
-];
 
 export const leadData = [
   {
@@ -387,4 +397,12 @@ export const monthlyData = {
       status: "Partial",
     },
   ],
+};
+
+export const overallAttendance = {
+  presentToday: 142,
+  absentToday: 8,
+  lateArrivals: 5,
+  onLeave: 3,
+  attendanceRate: "95%"
 };
