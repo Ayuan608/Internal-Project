@@ -100,6 +100,35 @@ export default function AttendanceDashboard() {
     return todayRecord && todayRecord.clockOut;
   }, [attendanceList]);
 
+  // Check if user has punched in today
+  const hasPunchedInToday = React.useMemo(() => {
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
+      return false;
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const todayRecord = attendanceList.find((row: any) => {
+      const rowDate = new Date(row.date).toISOString().split("T")[0];
+      return rowDate === today;
+    });
+
+    return todayRecord && todayRecord.clockIn;
+  }, [attendanceList]);
+
+  // Calculate current status
+  const currentStatus = React.useMemo(() => {
+    if (hasPunchedOutToday) {
+      return "Punched Out";
+    }
+    if (activeTimer) {
+      return `On ${activeTimer.type === "smoke" ? "Smoke Break" : "WC Break"}`;
+    }
+    if (hasPunchedInToday) {
+      return "Currently Working";
+    }
+    return "Ready";
+  }, [hasPunchedOutToday, activeTimer, hasPunchedInToday]);
+
   // Start break timer
   const startBreak = (type: "smoke" | "wc") => {
     // Check if user has already punched out today
@@ -483,7 +512,7 @@ export default function AttendanceDashboard() {
       }
     >
       <div className="flex justify-between items-start gap-6">
-        <div className="w-[62%]">
+        <div>
           {!userId ? (
             <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg mb-4">
               <p className="text-yellow-300">
@@ -496,105 +525,142 @@ export default function AttendanceDashboard() {
             </div>
           ) : null}
 
-          {/* Break Timer Section */}
-          {activeTimer && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl">
+          {/* Current Status Banner */}
+          <div>
+            <div className="mb-6 p-4 bg-[rgba(59,130,246,0.03)] border-l-2 text-white rounded-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <div
+                    className={`w-3 h-3 rounded-full animate-pulse ${
+                      currentStatus === "Ready"
+                        ? "bg-gray-500"
+                        : currentStatus === "Currently Working"
+                        ? "bg-green-500"
+                        : currentStatus.includes("Break")
+                        ? "bg-orange-500"
+                        : "bg-red-500"
+                    }`}
+                  ></div>
                   <span className="text-white font-semibold">
-                    {activeTimer.type === "smoke" ? "Smoke Break" : "WC Break"}{" "}
-                    Timer
+                    Current Status
                   </span>
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {formatTime(timeLeft)}
+                  {currentStatus}
                 </div>
-                <button
-                  onClick={endBreak}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                >
-                  <Square size={16} />
-                  End Break
-                </button>
               </div>
               <div className="mt-2 text-sm text-gray-300">
-                Time remaining for your{" "}
-                {activeTimer.type === "smoke" ? "smoke" : "WC"} break
+                {currentStatus === "Ready" && "Ready to punch in for the day"}
+                {currentStatus === "Currently Working" &&
+                  "You are currently working"}
+                {currentStatus.includes("Break") && "You are on a break"}
+                {currentStatus === "Punched Out" &&
+                  "You have completed your work for today"}
               </div>
             </div>
-          )}
 
-          {/* Break Controls */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-orange-300 font-semibold">
-                  Smoke Break
-                </span>
-                <span className="text-xs text-gray-400">
-                  {breakCounts.smoke}/3 used today
-                </span>
+            {/* Break Timer Section */}
+            {activeTimer && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-white font-semibold">
+                      {activeTimer.type === "smoke"
+                        ? "Smoke Break"
+                        : "WC Break"}{" "}
+                      Timer
+                    </span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">
+                    {formatTime(timeLeft)}
+                  </div>
+                  <button
+                    onClick={endBreak}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                  >
+                    <Square size={16} />
+                    End Break
+                  </button>
+                </div>
+                <div className="mt-2 text-sm text-gray-300">
+                  Time remaining for your{" "}
+                  {activeTimer.type === "smoke" ? "smoke" : "WC"} break
+                </div>
               </div>
-              <button
-                onClick={() => startBreak("smoke")}
-                disabled={isSmokeBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
-                  isSmokeBreakDisabled
-                    ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                    : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
-                }`}
-              >
-                <Play size={16} />
-                {hasPunchedOutToday
-                  ? "Punch Out Completed"
-                  : breakCounts.smoke >= 3
-                  ? "Daily Limit Reached"
-                  : "Start Smoke Break"}
-              </button>
-              {hasPunchedOutToday ? (
-                <div className="mt-2 text-xs text-orange-300 text-center">
-                  Breaks disabled after punch out
-                </div>
-              ) : breakCounts.smoke >= 3 ? (
-                <div className="mt-2 text-xs text-orange-300 text-center">
-                  Limit resets tomorrow
-                </div>
-              ) : null}
-            </div>
+            )}
 
-            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-blue-300 font-semibold">WC Break</span>
-                <span className="text-xs text-gray-400">
-                  {breakCounts.wc}/3 used today
-                </span>
+            {/* Break Controls */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-orange-300 font-semibold">
+                    Smoke Break
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {breakCounts.smoke}/3 used today
+                  </span>
+                </div>
+                <button
+                  onClick={() => startBreak("smoke")}
+                  disabled={isSmokeBreakDisabled}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
+                    isSmokeBreakDisabled
+                      ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                      : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
+                  }`}
+                >
+                  <Play size={16} />
+                  {hasPunchedOutToday
+                    ? "Punch Out Completed"
+                    : breakCounts.smoke >= 3
+                    ? "Daily Limit Reached"
+                    : "Start Smoke Break"}
+                </button>
+                {hasPunchedOutToday ? (
+                  <div className="mt-2 text-xs text-orange-300 text-center">
+                    Breaks disabled after punch out
+                  </div>
+                ) : breakCounts.smoke >= 3 ? (
+                  <div className="mt-2 text-xs text-orange-300 text-center">
+                    Limit resets tomorrow
+                  </div>
+                ) : null}
               </div>
-              <button
-                onClick={() => startBreak("wc")}
-                disabled={isWcBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
-                  isWcBreakDisabled
-                    ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                    : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
-                }`}
-              >
-                <Play size={16} />
-                {hasPunchedOutToday
-                  ? "Punch Out Completed"
-                  : breakCounts.wc >= 3
-                  ? "Daily Limit Reached"
-                  : "Start WC Break"}
-              </button>
-              {hasPunchedOutToday ? (
-                <div className="mt-2 text-xs text-blue-300 text-center">
-                  Breaks disabled after punch out
+
+              <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-blue-300 font-semibold">WC Break</span>
+                  <span className="text-xs text-gray-400">
+                    {breakCounts.wc}/3 used today
+                  </span>
                 </div>
-              ) : breakCounts.wc >= 3 ? (
-                <div className="mt-2 text-xs text-blue-300 text-center">
-                  Limit resets tomorrow
-                </div>
-              ) : null}
+                <button
+                  onClick={() => startBreak("wc")}
+                  disabled={isWcBreakDisabled}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
+                    isWcBreakDisabled
+                      ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                      : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
+                  }`}
+                >
+                  <Play size={16} />
+                  {hasPunchedOutToday
+                    ? "Punch Out Completed"
+                    : breakCounts.wc >= 3
+                    ? "Daily Limit Reached"
+                    : "Start WC Break"}
+                </button>
+                {hasPunchedOutToday ? (
+                  <div className="mt-2 text-xs text-blue-300 text-center">
+                    Breaks disabled after punch out
+                  </div>
+                ) : breakCounts.wc >= 3 ? (
+                  <div className="mt-2 text-xs text-blue-300 text-center">
+                    Limit resets tomorrow
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -616,9 +682,9 @@ export default function AttendanceDashboard() {
             />
             <StatCard
               icon={TrendingUp}
-              title="Status"
+              title="Avg Daily Hours"
               value={calculateStats.avgDailyHours}
-              subtitle="Currently Working"
+              subtitle="Average per day"
               color="orange"
             />
             <StatCard

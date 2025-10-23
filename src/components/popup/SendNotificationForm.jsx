@@ -29,7 +29,6 @@ console.log(userId,"ud")
       }).unwrap();
       alert("✅ Notification sent!");
     } catch (err) {
-      console.error(err);
       alert("❌ Failed to send");
     }
   };

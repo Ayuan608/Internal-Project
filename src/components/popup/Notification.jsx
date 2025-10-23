@@ -24,20 +24,6 @@ const NotificationPopup = () => {
   const userId = useSelector((state) => state.auth?.data?._id);
   const userRole = useSelector((state) => state.auth?.role);
 
-  // Debug: Log current state
-  useEffect(() => {
-    console.log("═══════════════════════════════════════");
-    console.log("🔍 NOTIFICATION STATE DEBUG:");
-    console.log("User ID:", userId);
-    console.log("User Role:", userRole);
-    console.log("Total Notifications:", notifications?.length);
-    console.log("Unread Count:", unreadCount);
-    console.log("Loading:", loading);
-    console.log("Error:", error);
-    console.log("Notifications Array:", notifications);
-    console.log("═══════════════════════════════════════");
-  }, [notifications, unreadCount, loading, error, userId, userRole]);
-
   const socketConfig = useMemo(
     () => ({
       autoConnect: true,
@@ -58,7 +44,6 @@ const NotificationPopup = () => {
 
   // Primary function to fetch ALL notifications
   const fetchAllNotifications = useCallback(() => {
-    console.log("🔄 Fetching ALL notifications...");
     dispatch(getAllNotifications());
   }, [dispatch]);
 
@@ -418,7 +403,7 @@ const NotificationPopup = () => {
       )}
 
       {/* Custom Scrollbar Styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

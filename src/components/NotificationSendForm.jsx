@@ -39,9 +39,6 @@ const NotificationSendForm = ({ onClose, currentUserId }) => {
     }
 
     setLoading(true);
-    console.log("📤 Sending notification...");
-    console.log("Send to all:", sendToAll);
-    console.log("Form data:", formData);
 
     try {
       let response;
@@ -125,10 +122,6 @@ const NotificationSendForm = ({ onClose, currentUserId }) => {
         onClose();
       }, 500);
     } catch (error) {
-      console.error("❌ Error sending notification:", error);
-      console.error("❌ Error response:", error.response?.data);
-      console.error("❌ Error status:", error.response?.status);
-      console.error("❌ Request URL:", error.config?.url);
 
       const errorMessage =
         error.response?.data?.message ||
