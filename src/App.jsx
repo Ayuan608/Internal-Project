@@ -7,7 +7,6 @@ import RequireAuth from "./components/Auth/RequireAuth";
 import Setting from "./pages/Setting";
 import UserDashboard from "./Layout/UserDashboard";
 import Denied from "./pages/404/Denied";
-import Annoucement from "./components/Dashboard/UserDashboard/Annoucement";
 import CheckerDashboard from "./Layout/CheckerDashboard";
 import Alert from "./components/Dashboard/CheckerDashboard/Alert";
 import SendNotificationForm from "./components/popup/SendNotificationForm";
@@ -16,7 +15,6 @@ import PerformanceDashboard from "./components/Dashboard/UserDashboard/Performan
 import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
 import NonQuota from "./components/Dashboard/SuperAdminDashboardRoute/NonQuota";
 import QuotaSetting from "./components/Dashboard/SuperAdminDashboardRoute/QuotaSetting";
-import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
 import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import OverallAttendance from "./components/Dashboard/SuperAdminDashboardRoute/OverallAttendance";
 import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/ActivityLogs";
@@ -24,6 +22,7 @@ import Admin from "./components/Add Employee/Admin";
 import LoginCredentials from "./components/Dashboard/AdminDashboard/LoginCredentials";
 import EmployeeDirectory from "./components/Dashboard/AdminDashboard/EmployeeDirectory";
 import CaseReport from "./components/Dashboard/AdminDashboard/CaseReport";
+import { Announcement } from "./components/Dashboard/UserDashboard/Annoucement";
 
 function App() {
   return (
@@ -72,7 +71,7 @@ function App() {
           <Route index element={<UserDashboard />} />
           <Route path="daily-time-record" element={<DailyTimeRecord />} />
           <Route path="performance" element={<PerformanceDashboard />} />
-          <Route path="announcement" element={<Annoucement />} />
+          <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
         </Route>
       </Route>
