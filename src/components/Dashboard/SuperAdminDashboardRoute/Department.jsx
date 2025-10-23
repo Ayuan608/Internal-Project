@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import ExampleIosSwitch from "./ui/Switch";
-import StatsPage from "./ui/StatsPage";
 import SuperAdminData from "./ui/SuperAdminData";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);

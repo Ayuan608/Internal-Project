@@ -5,7 +5,7 @@ const QuotaSetting = () => {
   const [quotas, setQuotas] = useState({
     csr: { morning: 50, night: 45 },
     deposit: { morning: 45, night: 40 },
-    withdrawal: { morning: 35, night: 30 }
+    withdrawal: { morning: 35, night: 30 },
   });
 
   const [tempQuotas, setTempQuotas] = useState({ ...quotas });
@@ -15,24 +15,24 @@ const QuotaSetting = () => {
   const defaultQuotas = {
     csr: { morning: 50, night: 45 },
     deposit: { morning: 45, night: 40 },
-    withdrawal: { morning: 35, night: 30 }
+    withdrawal: { morning: 35, night: 30 },
   };
 
   const handleInputChange = (dept, shift, value) => {
     const numValue = value === "" ? "" : Math.max(0, parseInt(value) || 0);
-    setTempQuotas(prev => ({
+    setTempQuotas((prev) => ({
       ...prev,
       [dept]: {
         ...prev[dept],
-        [shift]: numValue
-      }
+        [shift]: numValue,
+      },
     }));
   };
 
   const handleSaveChanges = (dept) => {
-    setQuotas(prev => ({
+    setQuotas((prev) => ({
       ...prev,
-      [dept]: tempQuotas[dept]
+      [dept]: tempQuotas[dept],
     }));
     setShowSuccessMessage(dept);
     setTimeout(() => setShowSuccessMessage(null), 3000);
@@ -49,11 +49,11 @@ const QuotaSetting = () => {
   const departments = [
     { key: "csr", name: "CSR Department" },
     { key: "deposit", name: "Deposit Department" },
-    { key: "withdrawal", name: "Withdrawal Department" }
+    { key: "withdrawal", name: "Withdrawal Department" },
   ];
 
   const ResetAlert = () => (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-2">
       <div className="bg-white rounded-lg shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
         <div className="p-6">
           <div className="flex items-start gap-4">
@@ -65,7 +65,8 @@ const QuotaSetting = () => {
                 Reset All Quotas?
               </h3>
               <p className="text-gray-600 text-sm">
-              Do you really want to reset the quota settings for all departments to their default values? This action cannot be undo.
+                Do you really want to reset the quota settings for all
+                departments to their default values? This action cannot be undo.
               </p>
             </div>
             <button
@@ -98,19 +99,21 @@ const QuotaSetting = () => {
     <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-top duration-300 z-50">
       <CheckCircle className="w-5 h-5" />
       <span className="font-medium">
-        {dept === "all" 
-          ? "All quotas reset successfully!" 
-          : `${departments.find(d => d.key === dept)?.name} saved successfully!`}
+        {dept === "all"
+          ? "All quotas reset successfully!"
+          : `${
+              departments.find((d) => d.key === dept)?.name
+            } saved successfully!`}
       </span>
     </div>
   );
 
   return (
-    <div className="min-h-screen  p-4 md:p-8">
+    <div className="min-h-screen  p-2">
       {showResetAlert && <ResetAlert />}
       {showSuccessMessage && <SuccessMessage dept={showSuccessMessage} />}
-      
-      <div className="max-w-[90%] mx-auto">
+
+      <div>
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
             Quota Settings
@@ -129,7 +132,7 @@ const QuotaSetting = () => {
               <div className="bg-[#131415] p-5">
                 <h2 className="text-xl font-bold text-white">{name}</h2>
               </div>
-              
+
               <div className="p-6 space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-white mb-2">
@@ -138,7 +141,9 @@ const QuotaSetting = () => {
                   <input
                     type="number"
                     value={tempQuotas[key].morning}
-                    onChange={(e) => handleInputChange(key, "morning", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(key, "morning", e.target.value)
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-white font-medium"
                     min="0"
                   />
@@ -151,7 +156,9 @@ const QuotaSetting = () => {
                   <input
                     type="number"
                     value={tempQuotas[key].night}
-                    onChange={(e) => handleInputChange(key, "night", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(key, "night", e.target.value)
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-white font-medium"
                     min="0"
                   />
@@ -159,7 +166,7 @@ const QuotaSetting = () => {
 
                 <button
                   onClick={() => handleSaveChanges(key)}
-                  className="w-full bg-[var(--main-color)] text-white font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
+                  className="w-full bg-blue-900 text-white font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
                 >
                   Save Changes
                 </button>
@@ -171,7 +178,7 @@ const QuotaSetting = () => {
         <div className="flex justify-end">
           <button
             onClick={() => setShowResetAlert(true)}
-            className="bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg"
+            className="bg-[#10131f] text-white font-medium py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg"
           >
             Reset All to Default
           </button>
