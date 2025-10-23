@@ -4,7 +4,15 @@ import { useEffect, useState, useCallback } from "react";
 import PageContainer from "./PageContainer";
 import { getUserAttendance } from "../../../redux/attendenceSlice";
 import { ButtonGroup } from "../../CommonButton/Button";
-import { TriangleAlert, Clock, Calendar, TrendingUp, Zap } from "lucide-react";
+import {
+  TriangleAlert,
+  Clock,
+  Calendar,
+  TrendingUp,
+  Zap,
+  Play,
+  Square,
+} from "lucide-react";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -27,6 +35,124 @@ export default function AttendanceDashboard() {
     (state: any) => state.attendance
   );
 
+  // Timer states
+  const [activeTimer, setActiveTimer] = useState<{
+    type: "smoke" | "wc";
+    startTime: Date;
+  } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
+
+  // Break counts with daily reset
+  const [breakCounts, setBreakCounts] = useState<{
+    smoke: number;
+    wc: number;
+    lastReset: string;
+  }>(() => {
+    const today = new Date().toDateString();
+    return { smoke: 0, wc: 0, lastReset: today };
+  });
+
+  // Check and reset break counts daily
+  useEffect(() => {
+    const today = new Date().toDateString();
+    if (breakCounts.lastReset !== today) {
+      setBreakCounts({ smoke: 0, wc: 0, lastReset: today });
+    }
+  }, [breakCounts.lastReset]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!activeTimer) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setActiveTimer(null);
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeTimer]);
+
+  // Format time for display (mm:ss)
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Check if user has punched out today
+  const hasPunchedOutToday = React.useMemo(() => {
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
+      return false;
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const todayRecord = attendanceList.find((row: any) => {
+      const rowDate = new Date(row.date).toISOString().split("T")[0];
+      return rowDate === today;
+    });
+
+    return todayRecord && todayRecord.clockOut;
+  }, [attendanceList]);
+
+  // Start break timer
+  const startBreak = (type: "smoke" | "wc") => {
+    // Check if user has already punched out today
+    if (hasPunchedOutToday) {
+      alert(
+        "You have already punched out for today. Breaks are not allowed after punch out."
+      );
+      return;
+    }
+
+    // Check if already have 3 breaks today
+    const todayBreaks = breakCounts[type];
+
+    if (todayBreaks >= 3) {
+      alert(
+        `Maximum ${
+          type === "smoke" ? "smoke" : "WC"
+        } breaks (3) reached for today! Please wait until tomorrow.`
+      );
+      return;
+    }
+
+    // Check if another timer is active
+    if (activeTimer) {
+      alert(
+        `Please finish your ${
+          activeTimer.type === "smoke" ? "smoke" : "WC"
+        } break first!`
+      );
+      return;
+    }
+
+    setActiveTimer({ type, startTime: new Date() });
+    setTimeLeft(300); // 5 minutes
+  };
+
+  // End break timer
+  const endBreak = () => {
+    if (!activeTimer) return;
+
+    const breakType = activeTimer.type;
+    setBreakCounts((prev) => ({
+      ...prev,
+      [breakType]: prev[breakType] + 1,
+    }));
+
+    setActiveTimer(null);
+    setTimeLeft(300);
+
+    // Here you would typically dispatch an action to save the break data
+    console.log(`${breakType} break completed`);
+  };
+
   // Real-time statistics calculation
   const calculateStats = React.useMemo(() => {
     if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
@@ -43,8 +169,8 @@ export default function AttendanceDashboard() {
 
         // Breakdown
         totalWorkTime: "0h 0m",
-        totalWcBreak: "0 min",
-        totalSmokeBreak: "0 min",
+        totalWcBreak: `${breakCounts.wc * 5} min`,
+        totalSmokeBreak: `${breakCounts.smoke * 5} min`,
         hasPendingPunchOut: false,
 
         // Additional Metrics
@@ -58,13 +184,13 @@ export default function AttendanceDashboard() {
     }
 
     let totalWorkMinutes = 0;
-    let totalWcMinutes = 0;
-    let totalSmokeMinutes = 0;
+    let totalWcMinutes = breakCounts.wc * 5; // Add current session breaks
+    let totalSmokeMinutes = breakCounts.smoke * 5; // Add current session breaks
     let pendingPunchOutToday = false;
     let daysWithWork = 0;
     let todayWorkMinutes = 0;
     const today = new Date().toISOString().split("T")[0];
-    let lastPunchInTime: Date | null = null; // ✅ ALREADY GOOD
+    let lastPunchInTime: Date | null = null;
     let consecutiveDays = 0;
     const last7Days = new Set();
 
@@ -120,7 +246,6 @@ export default function AttendanceDashboard() {
         pendingPunchOutToday = true;
       }
 
-      // 🔥 FIXED LAST PUNCH IN
       if (
         row.clockIn &&
         (!lastPunchInTime || new Date(row.clockIn) > lastPunchInTime)
@@ -188,7 +313,6 @@ export default function AttendanceDashboard() {
       }
     }
 
-    // 🔥 FIXED LAST PUNCH IN - TYPE SAFE!
     const lastPunchInFormatted = lastPunchInTime
       ? new Date(lastPunchInTime).toLocaleTimeString("en-US", {
           hour: "2-digit",
@@ -229,7 +353,7 @@ export default function AttendanceDashboard() {
       // Pie Data
       pieData,
     };
-  }, [attendanceList]);
+  }, [attendanceList, breakCounts]);
 
   const [error, setError] = useState(null);
 
@@ -273,7 +397,7 @@ export default function AttendanceDashboard() {
     }
   };
 
-  const formatTime = (timeStr: any) => {
+  const formatTimeDisplay = (timeStr: any) => {
     if (!timeStr) return "-";
     try {
       const date = new Date(timeStr);
@@ -318,18 +442,16 @@ export default function AttendanceDashboard() {
     color?: string;
   }) => {
     const colorClasses: Record<string, string> = {
-      blue: "bg-blue-500/20 border-blue-500/30 text-blue-300",
-      green: "bg-green-500/20 border-green-500/30 text-green-300",
-      orange: "bg-orange-500/20 border-orange-500/30 text-orange-300",
-      purple: "bg-purple-500/20 border-purple-500/30 text-purple-300",
+      blue: "bg-[rgba(59,130,246,0.03)] border-l-2",
+      green: "bg-[rgba(59,130,246,0.03)] border-l-2",
+      orange: "bg-[rgba(59,130,246,0.03)] border-l-2",
+      purple: "bg-[rgba(59,130,246,0.03)] border-l-2",
     };
 
     const selectedColor = colorClasses[color] || colorClasses.blue;
 
     return (
-      <div
-        className={`p-4 rounded-xl border ${selectedColor} backdrop-blur-sm`}
-      >
+      <div className={`p-4 rounded-xl  ${selectedColor} backdrop-blur-sm`}>
         <div className="flex items-center gap-3 mb-2">
           <Icon size={20} className="opacity-80" />
           <span className="text-sm font-medium text-gray-300">{title}</span>
@@ -339,10 +461,16 @@ export default function AttendanceDashboard() {
       </div>
     );
   };
+
+  // Check if break buttons should be disabled
+  const isSmokeBreakDisabled =
+    activeTimer !== null || breakCounts.smoke >= 3 || hasPunchedOutToday;
+  const isWcBreakDisabled =
+    activeTimer !== null || breakCounts.wc >= 3 || hasPunchedOutToday;
+
   return (
     <PageContainer
       title="Attendance Dashboard"
-      breadcrumbs={[{ title: "Attendance Dashboard" }]}
       actions={
         <div className="flex items-center gap-2">
           <Tooltip title="Refresh Data">
@@ -368,6 +496,108 @@ export default function AttendanceDashboard() {
             </div>
           ) : null}
 
+          {/* Break Timer Section */}
+          {activeTimer && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-white font-semibold">
+                    {activeTimer.type === "smoke" ? "Smoke Break" : "WC Break"}{" "}
+                    Timer
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {formatTime(timeLeft)}
+                </div>
+                <button
+                  onClick={endBreak}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                >
+                  <Square size={16} />
+                  End Break
+                </button>
+              </div>
+              <div className="mt-2 text-sm text-gray-300">
+                Time remaining for your{" "}
+                {activeTimer.type === "smoke" ? "smoke" : "WC"} break
+              </div>
+            </div>
+          )}
+
+          {/* Break Controls */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-orange-300 font-semibold">
+                  Smoke Break
+                </span>
+                <span className="text-xs text-gray-400">
+                  {breakCounts.smoke}/3 used today
+                </span>
+              </div>
+              <button
+                onClick={() => startBreak("smoke")}
+                disabled={isSmokeBreakDisabled}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
+                  isSmokeBreakDisabled
+                    ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                    : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
+                }`}
+              >
+                <Play size={16} />
+                {hasPunchedOutToday
+                  ? "Punch Out Completed"
+                  : breakCounts.smoke >= 3
+                  ? "Daily Limit Reached"
+                  : "Start Smoke Break"}
+              </button>
+              {hasPunchedOutToday ? (
+                <div className="mt-2 text-xs text-orange-300 text-center">
+                  Breaks disabled after punch out
+                </div>
+              ) : breakCounts.smoke >= 3 ? (
+                <div className="mt-2 text-xs text-orange-300 text-center">
+                  Limit resets tomorrow
+                </div>
+              ) : null}
+            </div>
+
+            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-blue-300 font-semibold">WC Break</span>
+                <span className="text-xs text-gray-400">
+                  {breakCounts.wc}/3 used today
+                </span>
+              </div>
+              <button
+                onClick={() => startBreak("wc")}
+                disabled={isWcBreakDisabled}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
+                  isWcBreakDisabled
+                    ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                    : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
+                }`}
+              >
+                <Play size={16} />
+                {hasPunchedOutToday
+                  ? "Punch Out Completed"
+                  : breakCounts.wc >= 3
+                  ? "Daily Limit Reached"
+                  : "Start WC Break"}
+              </button>
+              {hasPunchedOutToday ? (
+                <div className="mt-2 text-xs text-blue-300 text-center">
+                  Breaks disabled after punch out
+                </div>
+              ) : breakCounts.wc >= 3 ? (
+                <div className="mt-2 text-xs text-blue-300 text-center">
+                  Limit resets tomorrow
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           {/* Real-time Stats Grid */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             <StatCard
@@ -386,7 +616,7 @@ export default function AttendanceDashboard() {
             />
             <StatCard
               icon={TrendingUp}
-              title="Staus"
+              title="Status"
               value={calculateStats.avgDailyHours}
               subtitle="Currently Working"
               color="orange"
@@ -456,11 +686,11 @@ export default function AttendanceDashboard() {
                           {formatDate(row.date)}
                         </td>
                         <td className="px-4 py-3 text-[#e2e8f0]">
-                          {formatTime(row.clockIn)}
+                          {formatTimeDisplay(row.clockIn)}
                         </td>
                         <td className="px-4 py-3 text-[#e2e8f0]">
                           {row.clockOut ? (
-                            formatTime(row.clockOut)
+                            formatTimeDisplay(row.clockOut)
                           ) : (
                             <span className="text-orange-400">
                               Not punched out
@@ -522,6 +752,44 @@ export default function AttendanceDashboard() {
               </div>
             </div>
 
+            {/* Break Counts */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="text-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                <div className="text-2xl font-bold text-orange-300">
+                  {breakCounts.smoke}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Smoke Breaks Today
+                </div>
+                {hasPunchedOutToday ? (
+                  <div className="text-xs text-orange-300 mt-1">
+                    Day Completed
+                  </div>
+                ) : breakCounts.smoke >= 3 ? (
+                  <div className="text-xs text-orange-300 mt-1">
+                    Limit Reached
+                  </div>
+                ) : null}
+              </div>
+              <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <div className="text-2xl font-bold text-blue-300">
+                  {breakCounts.wc}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  WC Breaks Today
+                </div>
+                {hasPunchedOutToday ? (
+                  <div className="text-xs text-blue-300 mt-1">
+                    Day Completed
+                  </div>
+                ) : breakCounts.wc >= 3 ? (
+                  <div className="text-xs text-blue-300 mt-1">
+                    Limit Reached
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
             {/* Detailed Breakdown */}
             <div className="space-y-3 mb-6">
               <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
@@ -577,7 +845,6 @@ export default function AttendanceDashboard() {
                         />
                       ))}
                     </Pie>
-                    {/* <Tooltip /> */}
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
