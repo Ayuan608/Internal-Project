@@ -82,11 +82,6 @@ const Menus = ({ toggle, onTitleChange }) => {
     ...(role === "Team-Leader"
       ? [{ to: "/dashboard/report", label: "Report", icon: <Bug /> }]
       : []),
-    ...(
-      ["Super-Admin"].includes(role)
-        ? [{ to: "/dashboard/add", label: "Add", icon: <UserPlus /> }]
-        : []
-    ),
   ];
 
   useEffect(() => {

@@ -19,9 +19,8 @@ import { DataGrid } from "@mui/x-data-grid";
 
 import MetaData from "../../more/MetaData";
 import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
-import TeamLeaderStats from "../Dashboard/SuperAdminDashboardRoute/ui/TeamLeaderStats";
-import { UserStats } from "./../../Helpers/Helper";
 import countries from "../../Helpers/countriles";
+import SuperAdminData from "./../Dashboard/SuperAdminDashboardRoute/ui/SuperAdminData";
 
 function Admin() {
   const dispatch = useDispatch();
@@ -51,11 +50,11 @@ function Admin() {
     countries.find((c) => c.dialCode === "+63")
   );
   const rolePermissions = {
-    'Super-Admin': ['Team-Leader', 'Admin', 'User', 'Checker'],
-    'Admin': ['Team-Leader', 'User', 'Checker'],
+    "Super-Admin": ["Team-Leader", "Admin", "User", "Checker"],
+    Admin: ["Team-Leader", "User", "Checker"],
   };
   const allowedRoles = rolePermissions[role] || [];
-  
+
   useEffect(() => {
     console.log("Current User Role:", role);
     console.log("Allowed Roles:", allowedRoles);
@@ -68,7 +67,7 @@ function Admin() {
       </div>
     );
   }
-  
+
   useEffect(() => {
     dispatch(getAllUsers());
   }, [dispatch]);
@@ -98,7 +97,7 @@ function Admin() {
       handleMenuClose();
     }
   };
-  
+
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this data?"
@@ -116,8 +115,19 @@ function Admin() {
 
   const handleAddAdmin = async (e) => {
     e.preventDefault();
-    const { FullName, username, email, password, phone, department, dateHired, role, salary, workingHour, Shift } =
-      addUser;
+    const {
+      FullName,
+      username,
+      email,
+      password,
+      phone,
+      department,
+      dateHired,
+      role,
+      salary,
+      workingHour,
+      Shift,
+    } = addUser;
 
     if (
       !FullName ||
@@ -223,10 +233,11 @@ function Admin() {
       flex: 1,
       renderCell: (params) => (
         <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${params.row.status === "Active"
-            ? "bg-green-500/20 text-green-400"
-            : "bg-yellow-500/20 text-yellow-400"
-            }`}
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            params.row.status === "Active"
+              ? "bg-green-500/20 text-green-400"
+              : "bg-yellow-500/20 text-yellow-400"
+          }`}
         >
           {params.row.status}
         </span>
@@ -248,18 +259,18 @@ function Admin() {
       filterable: false,
     },
   ];
-  
+
   const rows = (users || []).map((user, index) => ({
     id: user?._id ?? index,
     ...user,
   }));
 
   return (
-    <div className="min-h-[92.7vh] pt-5 flex flex-col gap-6 text-white bg-gradient-to-br">
+    <div className="min-h-[92.7vh] flex flex-col gap-6 text-white bg-gradient-to-br p-2">
       <MetaData title="Admin Dashboard - User Management" />
 
       {/* Header and Filters */}
-      <div className="overflow-x-auto rounded-xl shadow-2xl px-4 py-4 flex justify-between items-center flex-wrap gap-4">
+      <div className="overflow-x-auto rounded-xl shadow-2xl py-4 flex justify-between items-center flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">
             User Management
@@ -287,8 +298,8 @@ function Admin() {
           </button>
         </div>
       </div>
-      
-      <TeamLeaderStats title="User" data={UserStats} />
+
+      <SuperAdminData />
 
       {/* DataGrid Table */}
       <div className="h-full w-full rounded-sm overflow-hidden shadow-xl">
@@ -332,7 +343,7 @@ function Admin() {
           </ListItemIcon>
           <ListItemText primary="Edit User" />
         </MenuItem>
-        {role !== 'Team-Leader' && (
+        {role !== "Team-Leader" && (
           <MenuItem onClick={() => handleDelete(selectedRow?._id)}>
             <ListItemIcon>
               <Trash size={16} className="text-white" />
@@ -406,7 +417,7 @@ function Admin() {
                   className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-gray-300 mb-2 text-sm font-medium">
                   Email
@@ -421,7 +432,7 @@ function Admin() {
                   className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
@@ -462,7 +473,9 @@ function Admin() {
                       <select
                         value={selectedCountry.dialCode}
                         onChange={(e) => {
-                          const country = countries.find((c) => c.dialCode === e.target.value);
+                          const country = countries.find(
+                            (c) => c.dialCode === e.target.value
+                          );
                           setSelectedCountry(country);
                         }}
                         className="bg-transparent text-white outline-none text-sm cursor-pointer appearance-none w-full"
@@ -477,7 +490,9 @@ function Admin() {
                           </option>
                         ))}
                       </select>
-                      <span className="absolute right-6 text-white pointer-events-none text-sm">▼</span>
+                      <span className="absolute right-6 text-white pointer-events-none text-sm">
+                        ▼
+                      </span>
                     </div>
 
                     {/* Phone Input */}
@@ -486,7 +501,9 @@ function Admin() {
                       name="phone"
                       value={addUser.phone}
                       onChange={(e) => {
-                        const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        const onlyDigits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
                         setAddUser({ ...addUser, phone: onlyDigits });
                       }}
                       placeholder="9168636883"
@@ -525,14 +542,14 @@ function Admin() {
                     className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   >
                     <option value="">Select Role</option>
-                    {allowedRoles.map(roleOption => (
+                    {allowedRoles.map((roleOption) => (
                       <option key={roleOption} value={roleOption}>
                         {roleOption}
                       </option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
                     Date Hired
@@ -561,7 +578,7 @@ function Admin() {
                     className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm font-medium">
                     Working Hours

@@ -10,6 +10,10 @@
   --box-border: #9e9fa74d;
 }
 
+.border_gray {
+  border: 1px solid var(--box-border);
+}
+
 .bg_primary {
   background-color: var(--main-color);
 }
@@ -200,4 +204,25 @@ button {
 
 .animate-fade {
   animation: fadeAnimate 0.25s ease-in-out;
+}
+
+.MuiDataGrid-row {
+  border: 1px solid var(--box-border) !important;
+}
+.MuiDataGrid-mainContent {
+  background-color: black !important;
+}
+
+.css-jx4txk-MuiDataGrid-root
+  .MuiDataGrid-row--borderBottom
+  .MuiDataGrid-columnHeader {
+  background-color: black !important;
+}
+
+.MuiDataGrid-row--borderBottom {
+  border: 1px solid var(--box-border) !important;
+}
+
+.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row:hover {
+  background-color: transparent !important;
 }
