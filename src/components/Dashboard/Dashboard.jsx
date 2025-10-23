@@ -1,11 +1,9 @@
-import React, { useState } from "react";
 import { Search } from "lucide-react";
 import Charts from "./Chart";
 import TeamLeaderStats from "./SuperAdminDashboardRoute/ui/TeamLeaderStats";
 import { TeamStats } from "../../Helpers/Helper";
 import CustomizedDataGrid from "./SuperAdminDashboardRoute/ui/data/CustomizedDataGrid";
 import ExampleIosSwitch from "./SuperAdminDashboardRoute/ui/Switch";
-import StatsPage from "./SuperAdminDashboardRoute/ui/StatsPage";
 
 export default function Dashboard() {
   return (
@@ -30,8 +28,6 @@ export default function Dashboard() {
           </div>
 
           <div className="p-2 bg-[#282e3c38] rounded-xl mb-4">
-            <StatsPage />
-
             <TeamLeaderStats
               title="Dashboard Overview"
               SecondaryTitle="Monitor real-time metrics and performance across all departments"

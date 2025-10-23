@@ -27,6 +27,8 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "framer-motion": "^12.23.24",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-chartjs-2": "^5.3.0",
@@ -41,7 +43,8 @@
     "redux": "^5.0.1",
     "socket.io-client": "^4.8.1",
     "sparkline": "^0.2.0",
-    "tailwindcss": "^4.1.13"
+    "tailwindcss": "^4.1.13",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

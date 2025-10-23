@@ -1,10 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
-import TeamLeaderStats from "./ui/TeamLeaderStats";
-import { TeamStats } from "../../../Helpers/Helper";
-import StatsPage from "./ui/StatsPage";
+
 import ExampleIosSwitch from "./ui/Switch";
-import PerformanceTrendChart from "../Chart";
-import { Download, Search, Filter, Calendar } from 'lucide-react';
+import { Calendar } from "lucide-react";
 import AttendenceData from "../AdminDashboard/AttendenceData";
 import WeeklyAttendanceTrendChart from "../AdminDashboard/WeeklyAttendenceChart";
 const attendanceData = [
@@ -16,7 +13,7 @@ const attendanceData = [
     punchIn: "08:00 AM",
     breaks: "1h 15m",
     punchOut: "05:00 PM",
-    status: "Overbreak"
+    status: "Overbreak",
   },
   {
     id: 2,
@@ -26,7 +23,7 @@ const attendanceData = [
     punchIn: "06:05 AM",
     breaks: "1h 00m",
     punchOut: "05:02 PM",
-    status: "Normal"
+    status: "Normal",
   },
   {
     id: 3,
@@ -36,7 +33,7 @@ const attendanceData = [
     punchIn: "08:00 AM",
     breaks: "1h 00m",
     punchOut: "--",
-    status: "Missed Punch Out"
+    status: "Missed Punch Out",
   },
   {
     id: 4,
@@ -46,7 +43,7 @@ const attendanceData = [
     punchIn: "--",
     breaks: "--",
     punchOut: "--",
-    status: "Absent"
+    status: "Absent",
   },
   {
     id: 5,
@@ -56,7 +53,7 @@ const attendanceData = [
     punchIn: "07:58 AM",
     breaks: "1h 00m",
     punchOut: "05:00 PM",
-    status: "Normal"
+    status: "Normal",
   },
   {
     id: 6,
@@ -66,7 +63,7 @@ const attendanceData = [
     punchIn: "--",
     breaks: "1h 00m",
     punchOut: "05:03 PM",
-    status: "Missed Punch In"
+    status: "Missed Punch In",
   },
   {
     id: 7,
@@ -76,7 +73,7 @@ const attendanceData = [
     punchIn: "08:15 AM",
     breaks: "1h 30m",
     punchOut: "05:15 PM",
-    status: "Overbreak"
+    status: "Overbreak",
   },
   {
     id: 8,
@@ -86,7 +83,7 @@ const attendanceData = [
     punchIn: "08:00 AM",
     breaks: "1h 00m",
     punchOut: "05:00 PM",
-    status: "Normal"
+    status: "Normal",
   },
   {
     id: 9,
@@ -96,9 +93,8 @@ const attendanceData = [
     punchIn: "08:02 AM",
     breaks: "55m",
     punchOut: "05:00 PM",
-    status: "Normal"
+    status: "Normal",
   },
-
 ];
 
 // Schedule data for the bottom table
@@ -112,11 +108,34 @@ const scheduleData = [
     schedule: "16:00 - 04:00",
     remarks: "12 hrs",
     schedule_days: {
-      nov4: 'D', nov5: 'N', nov6: 'N', nov7: 'D', nov8: 'D', nov9: 'RD', nov10: 'N',
-      nov11: 'D', nov12: 'N', nov13: 'D', nov14: 'N', nov15: 'RD', nov16: 'N', nov17: 'D',
-      nov18: 'N', nov19: 'D', nov20: 'N', nov21: 'RD', nov22: 'D', nov23: 'N', nov24: 'D',
-      nov25: 'N', nov26: 'RD', nov27: 'D', nov28: 'N', nov29: 'D', nov30: 'N'
-    }
+      nov4: "D",
+      nov5: "N",
+      nov6: "N",
+      nov7: "D",
+      nov8: "D",
+      nov9: "RD",
+      nov10: "N",
+      nov11: "D",
+      nov12: "N",
+      nov13: "D",
+      nov14: "N",
+      nov15: "RD",
+      nov16: "N",
+      nov17: "D",
+      nov18: "N",
+      nov19: "D",
+      nov20: "N",
+      nov21: "RD",
+      nov22: "D",
+      nov23: "N",
+      nov24: "D",
+      nov25: "N",
+      nov26: "RD",
+      nov27: "D",
+      nov28: "N",
+      nov29: "D",
+      nov30: "N",
+    },
   },
   {
     id: 2,
@@ -127,11 +146,34 @@ const scheduleData = [
     schedule: "16:00 - 04:00",
     remarks: "12 hrs",
     schedule_days: {
-      nov4: 'D', nov5: 'D', nov6: 'RD', nov7: 'N', nov8: 'N', nov9: 'N', nov10: 'D',
-      nov11: 'D', nov12: 'RD', nov13: 'N', nov14: 'N', nov15: 'D', nov16: 'D', nov17: 'RD',
-      nov18: 'N', nov19: 'N', nov20: 'D', nov21: 'D', nov22: 'RD', nov23: 'N', nov24: 'N',
-      nov25: 'D', nov26: 'D', nov27: 'RD', nov28: 'N', nov29: 'N', nov30: 'D'
-    }
+      nov4: "D",
+      nov5: "D",
+      nov6: "RD",
+      nov7: "N",
+      nov8: "N",
+      nov9: "N",
+      nov10: "D",
+      nov11: "D",
+      nov12: "RD",
+      nov13: "N",
+      nov14: "N",
+      nov15: "D",
+      nov16: "D",
+      nov17: "RD",
+      nov18: "N",
+      nov19: "N",
+      nov20: "D",
+      nov21: "D",
+      nov22: "RD",
+      nov23: "N",
+      nov24: "N",
+      nov25: "D",
+      nov26: "D",
+      nov27: "RD",
+      nov28: "N",
+      nov29: "N",
+      nov30: "D",
+    },
   },
   {
     id: 3,
@@ -142,11 +184,34 @@ const scheduleData = [
     schedule: "16:00 - 04:00",
     remarks: "12 hrs",
     schedule_days: {
-      nov4: 'N', nov5: 'N', nov6: 'D', nov7: 'RD', nov8: 'N', nov9: 'N', nov10: 'D',
-      nov11: 'RD', nov12: 'N', nov13: 'D', nov14: 'N', nov15: 'N', nov16: 'RD', nov17: 'D',
-      nov18: 'N', nov19: 'RD', nov20: 'D', nov21: 'N', nov22: 'N', nov23: 'D', nov24: 'RD',
-      nov25: 'N', nov26: 'D', nov27: 'N', nov28: 'RD', nov29: 'D', nov30: 'N'
-    }
+      nov4: "N",
+      nov5: "N",
+      nov6: "D",
+      nov7: "RD",
+      nov8: "N",
+      nov9: "N",
+      nov10: "D",
+      nov11: "RD",
+      nov12: "N",
+      nov13: "D",
+      nov14: "N",
+      nov15: "N",
+      nov16: "RD",
+      nov17: "D",
+      nov18: "N",
+      nov19: "RD",
+      nov20: "D",
+      nov21: "N",
+      nov22: "N",
+      nov23: "D",
+      nov24: "RD",
+      nov25: "N",
+      nov26: "D",
+      nov27: "N",
+      nov28: "RD",
+      nov29: "D",
+      nov30: "N",
+    },
   },
   {
     id: 4,
@@ -157,11 +222,34 @@ const scheduleData = [
     schedule: "16:00 - 04:00",
     remarks: "12 hrs",
     schedule_days: {
-      nov4: 'D', nov5: 'D', nov6: 'N', nov7: 'N', nov8: 'RD', nov9: 'D', nov10: 'D',
-      nov11: 'N', nov12: 'N', nov13: 'RD', nov14: 'D', nov15: 'D', nov16: 'N', nov17: 'N',
-      nov18: 'RD', nov19: 'D', nov20: 'D', nov21: 'N', nov22: 'N', nov23: 'RD', nov24: 'D',
-      nov25: 'D', nov26: 'N', nov27: 'N', nov28: 'RD', nov29: 'D', nov30: 'D'
-    }
+      nov4: "D",
+      nov5: "D",
+      nov6: "N",
+      nov7: "N",
+      nov8: "RD",
+      nov9: "D",
+      nov10: "D",
+      nov11: "N",
+      nov12: "N",
+      nov13: "RD",
+      nov14: "D",
+      nov15: "D",
+      nov16: "N",
+      nov17: "N",
+      nov18: "RD",
+      nov19: "D",
+      nov20: "D",
+      nov21: "N",
+      nov22: "N",
+      nov23: "RD",
+      nov24: "D",
+      nov25: "D",
+      nov26: "N",
+      nov27: "N",
+      nov28: "RD",
+      nov29: "D",
+      nov30: "D",
+    },
   },
   {
     id: 5,
@@ -172,69 +260,94 @@ const scheduleData = [
     schedule: "16:00 - 04:00",
     remarks: "12 hrs",
     schedule_days: {
-      nov4: 'D', nov5: 'N', nov6: 'D', nov7: 'N', nov8: 'RD', nov9: 'N', nov10: 'N',
-      nov11: 'D', nov12: 'N', nov13: 'RD', nov14: 'D', nov15: 'N', nov16: 'D', nov17: 'N',
-      nov18: 'RD', nov19: 'N', nov20: 'D', nov21: 'N', nov22: 'D', nov23: 'RD', nov24: 'N',
-      nov25: 'D', nov26: 'N', nov27: 'D', nov28: 'N', nov29: 'RD', nov30: 'N'
-    }
-  }
+      nov4: "D",
+      nov5: "N",
+      nov6: "D",
+      nov7: "N",
+      nov8: "RD",
+      nov9: "N",
+      nov10: "N",
+      nov11: "D",
+      nov12: "N",
+      nov13: "RD",
+      nov14: "D",
+      nov15: "N",
+      nov16: "D",
+      nov17: "N",
+      nov18: "RD",
+      nov19: "N",
+      nov20: "D",
+      nov21: "N",
+      nov22: "D",
+      nov23: "RD",
+      nov24: "N",
+      nov25: "D",
+      nov26: "N",
+      nov27: "D",
+      nov28: "N",
+      nov29: "RD",
+      nov30: "N",
+    },
+  },
 ];
 
 const days = [
-  { day: 'FRI', date: 'NOV 4', key: 'nov4' },
-  { day: 'SAT', date: 'NOV 5', key: 'nov5' },
-  { day: 'SUN', date: 'NOV 6', key: 'nov6' },
-  { day: 'MON', date: 'NOV 7', key: 'nov7' },
-  { day: 'TUE', date: 'NOV 8', key: 'nov8' },
-  { day: 'WED', date: 'NOV 9', key: 'nov9' },
-  { day: 'THU', date: 'NOV 10', key: 'nov10' },
-  { day: 'FRI', date: 'NOV 11', key: 'nov11' },
-  { day: 'SAT', date: 'NOV 12', key: 'nov12' },
-  { day: 'SUN', date: 'NOV 13', key: 'nov13' },
-  { day: 'MON', date: 'NOV 14', key: 'nov14' },
-  { day: 'TUE', date: 'NOV 15', key: 'nov15' },
-  { day: 'WED', date: 'NOV 16', key: 'nov16' },
-  { day: 'THU', date: 'NOV 17', key: 'nov17' },
-  { day: 'FRI', date: 'NOV 18', key: 'nov18' },
-  { day: 'SAT', date: 'NOV 19', key: 'nov19' },
-  { day: 'SUN', date: 'NOV 20', key: 'nov20' },
-  { day: 'MON', date: 'NOV 21', key: 'nov21' },
-  { day: 'TUE', date: 'NOV 22', key: 'nov22' },
-  { day: 'WED', date: 'NOV 23', key: 'nov23' },
-  { day: 'THU', date: 'NOV 24', key: 'nov24' },
-  { day: 'FRI', date: 'NOV 25', key: 'nov25' },
-  { day: 'SAT', date: 'NOV 26', key: 'nov26' },
-  { day: 'SUN', date: 'NOV 27', key: 'nov27' },
-  { day: 'MON', date: 'NOV 28', key: 'nov28' },
-  { day: 'TUE', date: 'NOV 29', key: 'nov29' },
-  { day: 'WED', date: 'NOV 30', key: 'nov30' }
+  { day: "FRI", date: "NOV 4", key: "nov4" },
+  { day: "SAT", date: "NOV 5", key: "nov5" },
+  { day: "SUN", date: "NOV 6", key: "nov6" },
+  { day: "MON", date: "NOV 7", key: "nov7" },
+  { day: "TUE", date: "NOV 8", key: "nov8" },
+  { day: "WED", date: "NOV 9", key: "nov9" },
+  { day: "THU", date: "NOV 10", key: "nov10" },
+  { day: "FRI", date: "NOV 11", key: "nov11" },
+  { day: "SAT", date: "NOV 12", key: "nov12" },
+  { day: "SUN", date: "NOV 13", key: "nov13" },
+  { day: "MON", date: "NOV 14", key: "nov14" },
+  { day: "TUE", date: "NOV 15", key: "nov15" },
+  { day: "WED", date: "NOV 16", key: "nov16" },
+  { day: "THU", date: "NOV 17", key: "nov17" },
+  { day: "FRI", date: "NOV 18", key: "nov18" },
+  { day: "SAT", date: "NOV 19", key: "nov19" },
+  { day: "SUN", date: "NOV 20", key: "nov20" },
+  { day: "MON", date: "NOV 21", key: "nov21" },
+  { day: "TUE", date: "NOV 22", key: "nov22" },
+  { day: "WED", date: "NOV 23", key: "nov23" },
+  { day: "THU", date: "NOV 24", key: "nov24" },
+  { day: "FRI", date: "NOV 25", key: "nov25" },
+  { day: "SAT", date: "NOV 26", key: "nov26" },
+  { day: "SUN", date: "NOV 27", key: "nov27" },
+  { day: "MON", date: "NOV 28", key: "nov28" },
+  { day: "TUE", date: "NOV 29", key: "nov29" },
+  { day: "WED", date: "NOV 30", key: "nov30" },
 ];
 
 const getScheduleColor = (value) => {
   switch (value) {
-    case 'D':
-      return 'bg-yellow-200 text-yellow-900';
-    case 'N':
-      return 'bg-green-200 text-green-900';
-    case 'RD':
-      return 'bg-red-400 text-white';
+    case "D":
+      return "bg-yellow-200 text-yellow-900";
+    case "N":
+      return "bg-green-200 text-green-900";
+    case "RD":
+      return "bg-red-400 text-white";
     default:
-      return 'bg-gray-100 text-gray-600';
+      return "bg-gray-100 text-gray-600";
   }
 };
 
 const OverallAttendance = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSection, setSelectedSection] = useState('All');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSection, setSelectedSection] = useState("All");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Filter data based on search and section
   const filteredData = useMemo(() => {
-    return attendanceData.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return attendanceData.filter((item) => {
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.department.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSection = selectedSection === 'All' || item.department === selectedSection;
+      const matchesSection =
+        selectedSection === "All" || item.department === selectedSection;
       return matchesSearch && matchesSection;
     });
   }, [searchTerm, selectedSection]);
@@ -242,17 +355,17 @@ const OverallAttendance = () => {
   // Get status badge color
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Normal':
-        return 'bg-green-100 text-green-800';
-      case 'Overbreak':
-        return 'bg-orange-100 text-orange-800';
-      case 'Absent':
-        return 'bg-gray-100 text-gray-800';
-      case 'Missed Punch In':
-      case 'Missed Punch Out':
-        return 'bg-red-100 text-red-800';
+      case "Normal":
+        return "bg-green-100 text-green-800";
+      case "Overbreak":
+        return "bg-orange-100 text-orange-800";
+      case "Absent":
+        return "bg-gray-100 text-gray-800";
+      case "Missed Punch In":
+      case "Missed Punch Out":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -280,35 +393,46 @@ const OverallAttendance = () => {
       background: #f1f5f9;
     }
   `;
-const scrollLeft = () => {
+  const scrollLeft = () => {
     if (tableRef.current) {
-      tableRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      tableRef.current.scrollBy({ left: -300, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (tableRef.current) {
-      tableRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+      tableRef.current.scrollBy({ left: 300, behavior: "smooth" });
     }
   };
   const exportToExcel = () => {
-    alert('Excel export functionality - Connect to backend or use library like xlsx');
+    alert(
+      "Excel export functionality - Connect to backend or use library like xlsx"
+    );
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Date', 'Department', 'Punch In', 'Breaks', 'Punch Out', 'Status'];
+    const headers = [
+      "Name",
+      "Date",
+      "Department",
+      "Punch In",
+      "Breaks",
+      "Punch Out",
+      "Status",
+    ];
     const csvContent = [
-      headers.join(','),
-      ...filteredData.map(row =>
-        `${row.name},${row.date},${row.department},${row.punchIn},${row.breaks},${row.punchOut},${row.status}`
-      )
-    ].join('\n');
+      headers.join(","),
+      ...filteredData.map(
+        (row) =>
+          `${row.name},${row.date},${row.department},${row.punchIn},${row.breaks},${row.punchOut},${row.status}`
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'attendance.csv';
+    a.download = "attendance.csv";
     a.click();
   };
   return (
@@ -328,7 +452,9 @@ const scrollLeft = () => {
           {/* Header Section */}
           <div className="flex justify-between items-start mb-8">
             {/* Title */}
-            <h1 className="text-2xl font-semibold text-white">Daily Time Record (DTR)</h1>
+            <h1 className="text-2xl font-semibold text-white">
+              Daily Time Record (DTR)
+            </h1>
 
             {/* Right side - Search, Date and Export */}
             <div className="flex flex-col gap-4">
@@ -375,26 +501,59 @@ const scrollLeft = () => {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-[rgba(59,131,246,0.06)]">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">NAME ↕</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">DATE ↕</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">DEPARTMENT ↕</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">PUNCH IN ↕</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">BREAKS ↕</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">PUNCH OUT ↕</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">STATUS ↕</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    NAME ↕
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    DATE ↕
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    DEPARTMENT ↕
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    PUNCH IN ↕
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    BREAKS ↕
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    PUNCH OUT ↕
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
+                    STATUS ↕
+                  </th>
                 </tr>
               </thead>
               <tbody className="  bg-[rgba(59,130,246,0.03)] divide-y divide-[#9E9FA74D]">
                 {filteredData.map((row) => (
-                  <tr key={row.id} className="hover:bg-[#3b83f610] transition-colors">
-                    <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">{row.name}</td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">{row.date}</td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">{row.department}</td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">{row.punchIn}</td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">{row.breaks}</td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">{row.punchOut}</td>
+                  <tr
+                    key={row.id}
+                    className="hover:bg-[#3b83f610] transition-colors"
+                  >
+                    <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
+                      {row.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
+                      {row.date}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
+                      {row.department}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
+                      {row.punchIn}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
+                      {row.breaks}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
+                      {row.punchOut}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-block px-4 py-1.5 rounded-md text-xs font-semibold ${getStatusColor(row.status)}`}>
+                      <span
+                        className={`inline-block px-4 py-1.5 rounded-md text-xs font-semibold ${getStatusColor(
+                          row.status
+                        )}`}
+                      >
                         {row.status}
                       </span>
                     </td>
@@ -404,11 +563,12 @@ const scrollLeft = () => {
             </table>
           </div>
 
-
           <div className="bg-[rgba(59,130,246,0.03)] rounded-lg shadow p-4 mt-0.5">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-white">Section:</label>
+                <label className="text-sm font-medium text-white">
+                  Section:
+                </label>
                 <select
                   value={selectedSection}
                   onChange={(e) => setSelectedSection(e.target.value)}
@@ -451,19 +611,22 @@ const scrollLeft = () => {
 
       {/* Filter Section */}
 
-<style>{scrollbarStyles}</style>
-      <div className="bg-white rounded-lg shadow-lg h-full flex flex-col">
+      <style>{scrollbarStyles}</style>
+      <div className="bg-white rounded-lg shadow-lg h-full flex flex-col mt-3">
         {/* Scroll hint with buttons */}
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center justify-between">
-          <span className="text-sm text-blue-800">← → Scroll to see all Attendence Details | ↑ ↓ Scroll to see all employees</span>
+        <div className=" border-b border-blue-200 px-4 py-2 flex items-center justify-between">
+          <span className="text-sm text-blue-800">
+            ← → Scroll to see all Attendence Details | ↑ ↓ Scroll to see all
+            employees
+          </span>
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={scrollLeft}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
             >
               ← Left
             </button>
-            <button 
+            <button
               onClick={scrollRight}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
             >
@@ -476,10 +639,14 @@ const scrollLeft = () => {
             <thead className="sticky top-0 z-10">
               <tr>
                 <th className="bg-blue-900 text-white px-3 py-3 text-left font-semibold border-r border-blue-800 sticky left-0 z-20 min-w-[70px]">
-                  HEAD<br/>COUNT
+                  HEAD
+                  <br />
+                  COUNT
                 </th>
                 <th className="bg-blue-900 text-white px-3 py-3 text-left font-semibold border-r border-blue-800 sticky left-[70px] z-20 min-w-[90px]">
-                  DATE<br/>HIRED
+                  DATE
+                  <br />
+                  HIRED
                 </th>
                 <th className="bg-blue-900 text-white px-3 py-3 text-left font-semibold border-r border-blue-800 sticky left-[160px] z-20 min-w-[100px]">
                   TEAM
@@ -497,15 +664,23 @@ const scrollLeft = () => {
                   REMARKS
                 </th>
                 {days.map((day, idx) => (
-                  <th key={idx} className="bg-blue-900 text-white px-3 py-3 text-center font-semibold border-r border-blue-800 min-w-[60px]">
-                    {day.day}<br/>{day.date}
+                  <th
+                    key={idx}
+                    className="bg-blue-900 text-white px-3 py-3 text-center font-semibold border-r border-blue-800 min-w-[60px]"
+                  >
+                    {day.day}
+                    <br />
+                    {day.date}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {scheduleData.map((row, idx) => (
-                <tr key={row.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr
+                  key={row.id}
+                  className="border-b border-gray-200 hover:bg-gray-50"
+                >
                   <td className="px-3 py-3 text-center font-medium text-gray-900 border-r border-gray-200 bg-white sticky left-0 z-10">
                     {idx + 1}
                   </td>
@@ -528,9 +703,11 @@ const scrollLeft = () => {
                     {row.remarks}
                   </td>
                   {days.map((day, dayIdx) => (
-                    <td 
-                      key={dayIdx} 
-                      className={`px-3 py-3 text-center font-semibold border-r border-gray-200 ${getScheduleColor(row.schedule_days[day.key])}`}
+                    <td
+                      key={dayIdx}
+                      className={`px-3 py-3 text-center font-semibold border-r border-gray-200 ${getScheduleColor(
+                        row.schedule_days[day.key]
+                      )}`}
                     >
                       {row.schedule_days[day.key]}
                     </td>
@@ -540,7 +717,7 @@ const scrollLeft = () => {
             </tbody>
           </table>
         </div>
-        
+
         <div className="border-t border-gray-200 p-4 bg-gray-50">
           <div className="flex gap-6 text-sm">
             <div className="flex items-center gap-2">
