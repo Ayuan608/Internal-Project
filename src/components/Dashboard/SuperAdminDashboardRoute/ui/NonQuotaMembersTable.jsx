@@ -3,8 +3,10 @@ import { Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { useSelector } from "react-redux";
 
 const NonQuotaMembersTable = () => {
+  const { nonQuotaUsers } = useSelector((state) => state.quota);
   const data = [
     {
       date: "2025-10-17",
@@ -123,7 +125,7 @@ const NonQuotaMembersTable = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((member, index) => (
+            {nonQuotaUsers.map((member, index) => (
               <tr key={index} className="">
                 <td className="px-4 py-2 border-b border-[#9e9fa74d]">{member.date}</td>
                 <td className="px-4 py-2 border-b border-[#9e9fa74d]">{member.name}</td>
@@ -132,9 +134,8 @@ const NonQuotaMembersTable = () => {
                 <td className="px-4 py-2 border-b border-[#9e9fa74d]">{member.output}</td>
                 <td className="px-4 py-2 border-b border-[#9e9fa74d]">{member.target}</td>
                 <td
-                  className={`px-4 py-2 border-b border-[#9e9fa74d] font-medium ${
-                    member.variance < 0 ? "text-red-500" : "text-green-600"
-                  }`}
+                  className={`px-4 py-2 border-b border-[#9e9fa74d] font-medium ${member.variance < 0 ? "text-red-500" : "text-green-600"
+                    }`}
                 >
                   {member.variance}
                 </td>

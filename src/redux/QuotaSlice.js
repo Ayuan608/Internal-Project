@@ -17,17 +17,16 @@ export const createQuota = createAsyncThunk(
     "quota/create",
     async ({ department, morning, night }) => {
         const response = await axiosInstance.post(
-            `/quota/department/create/${department}`,
+            `/quota/create/${department}`,
             { morning, night }
         );
-        toast.success(response.data.message);
         return response.data;
     }
 );
 
 // Get all department quotas
 export const getAllQuotas = createAsyncThunk("quota/getAll", async () => {
-    const response = await axiosInstance.get("/quota/department/all");
+    const response = await axiosInstance.get("/quota/all");
     return response.data;
 });
 
@@ -42,8 +41,7 @@ export const getDepartmentQuota = createAsyncThunk(
 
 // Reset all quotas to default
 export const resetAllQuotas = createAsyncThunk("quota/resetAll", async () => {
-    const response = await axiosInstance.post("/quota/department/reset/all");
-    toast.success(response.data.message);
+    const response = await axiosInstance.post("/quota/reset/all");
     return response.data;
 });
 

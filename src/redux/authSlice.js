@@ -93,7 +93,6 @@ export const verify2FA = createAsyncThunk(
         }
       );
 
-      toast.success("2FA verification successful!");
       return response.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message ||

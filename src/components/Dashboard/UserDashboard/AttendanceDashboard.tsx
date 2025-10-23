@@ -594,7 +594,7 @@ export default function AttendanceDashboard() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-orange-300 font-semibold">
+                  <span className="text-sky-300 font-semibold">
                     Smoke Break
                   </span>
                   <span className="text-xs text-gray-400">
@@ -618,11 +618,11 @@ export default function AttendanceDashboard() {
                     : "Start Smoke Break"}
                 </button>
                 {hasPunchedOutToday ? (
-                  <div className="mt-2 text-xs text-orange-300 text-center">
+                  <div className="mt-2 text-xs text-sky-300 text-center">
                     Breaks disabled after punch out
                   </div>
                 ) : breakCounts.smoke >= 3 ? (
-                  <div className="mt-2 text-xs text-orange-300 text-center">
+                  <div className="mt-2 text-xs text-sky-300 text-center">
                     Limit resets tomorrow
                   </div>
                 ) : null}
@@ -820,15 +820,15 @@ export default function AttendanceDashboard() {
 
             {/* Break Counts */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                <div className="text-2xl font-bold text-orange-300">
+              <div className="text-center p-3 bg-gray-800/50 rounded-lg border border-gray-800/50">
+                <div className="text-2xl font-bold text-white-300">
                   {breakCounts.smoke}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
                   Smoke Breaks Today
                 </div>
                 {hasPunchedOutToday ? (
-                  <div className="text-xs text-orange-300 mt-1">
+                  <div className="text-xs text-sky-300 mt-1">
                     Day Completed
                   </div>
                 ) : breakCounts.smoke >= 3 ? (
