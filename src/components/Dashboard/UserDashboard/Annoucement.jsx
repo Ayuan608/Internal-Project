@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 
 const announcements = [
   {
@@ -59,16 +60,113 @@ We apologize for any inconvenience this may cause.`,
 
 export default function Announcement() {
   const [selected, setSelected] = useState(null);
-
+  const role = useSelector((state) => state.auth?.role);
+  const [createAnnouncement, setCreateAnnouncement] = useState(false)
   return (
     <div className="min-h-screen px-2 mt-4">
       <div className="max-w-[90%]  mx-auto">
-        <h1 className="font-semibold text-white mb-8 pb-4 border-b-2 border-gray-500">
-          <p className="text-3xl"> Announcements</p>
-          <div className="text-white/70 mb-2">
-            Create and manage company-wide announcements
+        <div className="flex justify-between items-center mb-8 pb-4 border-b-2 border-gray-500">
+          <div>
+            <h1 className="font-semibold text-white text-3xl">Announcements</h1>
+            <div className="text-white/70">
+              Create and manage company-wide announcements
+            </div>
           </div>
-        </h1>
+          {role && role === "Admin" && "Super-Admin" && (
+            <button onClick={() => setCreateAnnouncement(true)} className="bg-[#3b82f6] text-white px-4 py-2 rounded-lg font-medium">
+              Create Announcement
+            </button>
+          )}
+          {/* Create Announcement Modal */}
+          {createAnnouncement && (
+            <div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+              onClick={() => setCreateAnnouncement(false)}
+            >
+              <div
+                className="bg-[#1a1d2e] rounded-2xl w-full max-w-2xl border border-gray-500 shadow-2xl overflow-hidden transform transition-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-8 py-6 border-b border-gray-500 flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-white">
+                    Create Announcement
+                  </h2>
+                  <button
+                    onClick={() => setCreateAnnouncement(false)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="p-8 max-h-[500px] overflow-y-auto space-y-6">
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Title</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 bg-[#10131f] text-white border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                      placeholder="Enter announcement title"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Creator Name</label>
+                    <input
+                      type="text"
+                      defaultValue="Super Admin"
+                      className="w-full px-4 py-2 bg-[#10131f] text-white border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Details</label>
+                    <textarea
+                      rows="6"
+                      className="w-full px-4 py-2 bg-[#10131f] text-white border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                      placeholder="Enter announcement details"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Recipients</label>
+                    <select className="w-full px-4 py-2 bg-[#10131f] text-white border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-colors">
+                      <option>All Members</option>
+                      <option>Team Leaders</option>
+                      <option>CSR Department</option>
+                      <option>IT Department</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Upload Media/File</label>
+                    <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
+                      <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-gray-400">Click to upload or drag and drop</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-8 py-4 flex justify-end gap-3 border-t border-gray-500">
+                  <button
+                    onClick={() => setCreateAnnouncement(false)}
+                    className="px-6 py-2 border border-gray-600 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
+                  >
+                    Save Draft
+                  </button>
+                  <button
+                    className="px-6 py-2 bg-[#3b82f6] text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 font-medium"
+                  >
+                    Publish Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="space-y-4">
           {announcements.map((announcement) => (

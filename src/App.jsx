@@ -16,11 +16,14 @@ import PerformanceDashboard from "./components/Dashboard/UserDashboard/Performan
 import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
 import NonQuota from "./components/Dashboard/SuperAdminDashboardRoute/NonQuota";
 import QuotaSetting from "./components/Dashboard/SuperAdminDashboardRoute/QuotaSetting";
-import Directory from "./components/Dashboard/SuperAdminDashboardRoute/Directory";
 import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
 import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import OverallAttendance from "./components/Dashboard/SuperAdminDashboardRoute/OverallAttendance";
 import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/ActivityLogs";
+import Admin from "./components/Add Employee/Admin";
+import LoginCredentials from "./components/Dashboard/AdminDashboard/LoginCredentials";
+import EmployeeDirectory from "./components/Dashboard/AdminDashboard/EmployeeDirectory";
+import CaseReport from "./components/Dashboard/AdminDashboard/CaseReport";
 
 function App() {
   return (
@@ -30,7 +33,7 @@ function App() {
       <Route element={<NotRequireAuth />}>
         <Route path="/login" element={<Login />} />
       </Route>
-
+      {/* SUPER-ADMIN ROUTES */}
       <Route
         element={<RequireAuth allowedRoles={["Team-Leader", "Super-Admin"]} />}
       >
@@ -39,7 +42,7 @@ function App() {
           <Route path="department" element={<Department />} />
           <Route path="nonQuta" element={<NonQuota />} />
           <Route path="quotaSetting" element={<QuotaSetting />} />
-          <Route path="directory" element={<Directory />} />
+          <Route path="add" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="report" element={<Report />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
@@ -47,7 +50,23 @@ function App() {
           <Route path="setting" element={<Setting />} />
         </Route>
       </Route>
-
+      {/* ADMIN ROUTES */}
+      <Route
+        element={<RequireAuth allowedRoles={["Admin"]} />}
+      >
+        <Route path="/admin" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="login" element={<LoginCredentials />} />
+          <Route path="department" element={<Department />} />
+          <Route path="quotaSetting" element={<QuotaSetting />} />
+          <Route path="directory" element={<EmployeeDirectory />} />
+          <Route path="announcement" element={<Announcement />} />
+          <Route path="report" element={<CaseReport />} />
+           <Route path="setting" element={<Setting />} />
+          <Route path="overallAttendance" element={<OverallAttendance />} />
+        </Route>
+      </Route>
+      {/* USER ROUTES */}
       <Route element={<RequireAuth allowedRoles={["User"]} />}>
         <Route path="/user" element={<Layout />}>
           <Route index element={<UserDashboard />} />
@@ -57,6 +76,7 @@ function App() {
           <Route path="setting" element={<Setting />} />
         </Route>
       </Route>
+      {/* CHECKER ROUTES */}
       <Route element={<RequireAuth allowedRoles={["Checker"]} />}>
         <Route path="/checker" element={<Layout />}>
           <Route index element={<CheckerDashboard />} />

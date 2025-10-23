@@ -88,7 +88,6 @@ const CustomizedDataGrid = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Common chart configuration with proper TypeScript types
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -183,7 +182,7 @@ const CustomizedDataGrid = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-full">
           {/* CSR Department Quota */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
-            <div>
+            <div className="h-72 w-72 items-center justify-center">
               <Doughnut
                 data={createChartData(
                   dashboardData.csrQuota.met,
@@ -210,7 +209,7 @@ const CustomizedDataGrid = () => {
 
           {/* Deposit Department Quota */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
-            <div>
+            <div className="h-72 w-72">
               <Doughnut
                 data={createChartData(
                   dashboardData.depositQuota.met,
@@ -237,7 +236,7 @@ const CustomizedDataGrid = () => {
 
           {/* Withdrawal Department Quota */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
-            <div>
+            <div className="h-72 w-72">
               <Doughnut
                 data={createChartData(
                   dashboardData.withdrawalQuota.met,

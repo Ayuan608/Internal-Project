@@ -41,7 +41,7 @@ const BindGoogleModal = ({ isOpen, onClose, qrCodeUrl }) => {
     
     return (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-            <div className="bg-[#070d17] text-white rounded-lg w-96 p-4 shadow-lg">
+            <div className=" w-[480px] max-w-full rounded-2xl shadow-2xl border border-[var(--box-border)] bg-[#3b83f60e] p-6 z-10 text-gray-200" >
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold">Bind Google</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -72,16 +72,16 @@ const BindGoogleModal = ({ isOpen, onClose, qrCodeUrl }) => {
 
                 <div className="flex justify-end gap-3">
                     <button
-                        className="border border-gray-300 px-4 py-1 rounded hover:bg-gray-100"
+                        className="px-6 py-2 border hover:bg-white hover:text-black text-white rounded-lg transition-colors duration-200 font-medium shadow-sm"
                         onClick={onClose}
                     >
                         Cancel
                     </button>
                     <button
-                        className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
+                        className="bg-sky-400 text-white px-4 py-1 rounded hover:bg-sky-500"
                         onClick={handleSubmit}
                     >
-                        Ok
+                        Okay
                     </button>
                 </div>
             </div>
