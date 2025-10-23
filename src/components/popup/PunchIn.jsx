@@ -156,18 +156,14 @@ const PunchIn = ({ popupRef, visible }) => {
         <div className="font-semibold text-white mb-2 py-3">Punch-In/Out</div>
         <Inbox />
       </div>
-      {/* Work
-         Break - 30 minutes to 1 hour
-         Wc - 5minutes [ 3 times ]
-         Smoke 5minutes [ 3 times ]
-         Off work */}
+
       <div className="text-sm text-[#cbd5e1] px-4 mt-3 space-y-2">
         {[
-          ["work", "Work"],
+          ["work", "Punch/In"],
           ["break", "Break"],
           ["coffee", "Wc"],
           ["bathroom", "Smoke"],
-          ["off", "Off Break"],
+          ["off", "Punch/Out"],
         ].map(([key, label]) => (
           <div key={key} className="flex items-center justify-between w-full">
             <p className="text-lg font-semibold">{label}</p>

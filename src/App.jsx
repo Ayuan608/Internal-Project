@@ -22,7 +22,7 @@ import Admin from "./components/Add Employee/Admin";
 import LoginCredentials from "./components/Dashboard/AdminDashboard/LoginCredentials";
 import EmployeeDirectory from "./components/Dashboard/AdminDashboard/EmployeeDirectory";
 import CaseReport from "./components/Dashboard/AdminDashboard/CaseReport";
-import { Announcement } from "./components/Dashboard/UserDashboard/Annoucement";
+import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
 
 function App() {
   return (

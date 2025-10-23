@@ -8,21 +8,12 @@ export const getAllNotifications = createAsyncThunk(
   "notifications/all",
   async (_, { rejectWithValue }) => {
     try {
-      console.log("📡 Fetching all notifications from /notifications/all...");
-      // FIXED: Backend route is /notifications/all not /notifications
       const response = await axiosInstance.get(`/notifications/all`);
-      console.log("✅ Response received:", response.data);
 
-      // Handle different response formats
       const notifications =
         response.data.notifications || response.data.data || response.data;
-      console.log("📊 Total notifications fetched:", notifications.length);
-      console.log("📋 First notification:", notifications[0]);
-
       return notifications;
     } catch (error) {
-      console.error("❌ Error fetching all notifications:", error);
-      console.error("❌ Error response:", error.response?.data);
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch notifications"
       );
@@ -160,7 +151,6 @@ const notificationSlice = createSlice({
       .addCase(getAllNotifications.pending, (state) => {
         state.loading = true;
         state.error = null;
-        console.log("⏳ Loading all notifications...");
       })
       .addCase(getAllNotifications.fulfilled, (state, action) => {
         // Ensure action.payload is an array
@@ -183,7 +173,6 @@ const notificationSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         state.notifications = []; // Clear on error
-        console.error("❌ Failed to load all notifications:", action.payload);
       });
 
     // Fetch user notifications (fallback)

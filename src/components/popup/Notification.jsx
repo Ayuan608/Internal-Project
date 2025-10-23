@@ -24,20 +24,6 @@ const NotificationPopup = () => {
   const userId = useSelector((state) => state.auth?.data?._id);
   const userRole = useSelector((state) => state.auth?.role);
 
-  // Debug: Log current state
-  useEffect(() => {
-    console.log("═══════════════════════════════════════");
-    console.log("🔍 NOTIFICATION STATE DEBUG:");
-    console.log("User ID:", userId);
-    console.log("User Role:", userRole);
-    console.log("Total Notifications:", notifications?.length);
-    console.log("Unread Count:", unreadCount);
-    console.log("Loading:", loading);
-    console.log("Error:", error);
-    console.log("Notifications Array:", notifications);
-    console.log("═══════════════════════════════════════");
-  }, [notifications, unreadCount, loading, error, userId, userRole]);
-
   const socketConfig = useMemo(
     () => ({
       autoConnect: true,
@@ -58,7 +44,6 @@ const NotificationPopup = () => {
 
   // Primary function to fetch ALL notifications
   const fetchAllNotifications = useCallback(() => {
-    console.log("🔄 Fetching ALL notifications...");
     dispatch(getAllNotifications());
   }, [dispatch]);
 
@@ -84,11 +69,9 @@ const NotificationPopup = () => {
         if (isConnected) {
           console.log("🔌 Using socket to mark as read");
           markAsReadSocket(id);
-          toast.success("Marked as read");
         } else {
           console.log("📡 Using API to mark as read");
           await dispatch(markNotificationAsRead(id)).unwrap();
-          toast.success("Marked as read");
         }
       } catch (err) {
         console.error("❌ Error marking as read:", err);
@@ -145,10 +128,7 @@ const NotificationPopup = () => {
       const latest = notifications[0];
       if (latest && !latest.isRead) {
         console.log("🔔 New notification received:", latest.title);
-        toast.success(latest.title || "New notification", {
-          icon: "🔔",
-          duration: 4000,
-        });
+       
       }
     }
     prevCountRef.current = notifications.length;
@@ -418,7 +398,7 @@ const NotificationPopup = () => {
       )}
 
       {/* Custom Scrollbar Styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
