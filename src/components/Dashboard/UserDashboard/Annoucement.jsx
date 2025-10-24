@@ -305,6 +305,7 @@
 
 
 
+import { Plus } from "lucide-react";
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -363,6 +364,17 @@ During this time, all services will be temporarily unavailable. Please plan your
 
 We apologize for any inconvenience this may cause.`,
   },
+  {
+    id: 5,
+    date: "September 19, 2025",
+    title: "Christmas Raffle Draw",
+    creator: "Super Admin",
+    details: `Hello Team,
+
+Effective immediately, the daily quota for CSR department has been updated to 50 tasks for morning shift and 45 tasks for night shift. Please adjust your workflow accordingly.
+
+Let's maintain our excellent performance!`,
+  },
 ];
 
 export default function Announcement() {
@@ -371,7 +383,7 @@ export default function Announcement() {
   const [createAnnouncement, setCreateAnnouncement] = useState(false)
   return (
     <div className="min-h-screen px-2 mt-4">
-      <div className="max-w-full p-2 mx-auto">
+      <div className="w-full mx-auto">
         <div className="flex justify-between items-center mb-8 pb-4">
           <div>
             <h1 className="font-semibold text-white text-3xl">Announcements</h1>
@@ -379,11 +391,11 @@ export default function Announcement() {
               Create and manage company-wide announcements
             </div>
           </div>
-          {role && role === "Admin" && "Super-Admin" && (
-            <button onClick={() => setCreateAnnouncement(true)} className="bg-[#3b82f6] text-white px-4 py-2 rounded-lg font-medium">
-              Create Announcement
-            </button>
-          )}
+          {/* {role && role === "Admin" && role === "Super-Admin" && ( */}
+          <button onClick={() => setCreateAnnouncement(true)} className="bg-[#3b82f6] flex text-white px-4 py-2 rounded-lg font-medium">
+            <Plus /> Create Announcement
+          </button>
+          {/* )} */}
           {/* Create Announcement Modal */}
           {createAnnouncement && (
             <div
@@ -475,7 +487,7 @@ export default function Announcement() {
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="gap-4 grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
           {announcements.map((announcement) => (
             <div
               key={announcement.id}

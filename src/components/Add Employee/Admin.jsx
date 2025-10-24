@@ -319,7 +319,7 @@ function Admin() {
         onClose={handleMenuClose}
         PaperProps={{
           className:
-            "bg-[#fff] text-white rounded-lg shadow-lg border border-gray-700",
+            "bg-[#1e1f26] text-white rounded-lg shadow-lg border border-gray-700",
           style: { minWidth: 180 },
         }}
         anchorOrigin={{
