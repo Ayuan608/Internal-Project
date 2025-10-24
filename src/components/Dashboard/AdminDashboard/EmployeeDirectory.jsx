@@ -11,6 +11,9 @@ import {
   X,
   Download,
   FileText,
+  UserX,
+  Calendar,
+  UserCheck,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -186,6 +189,19 @@ function EmployeeDirectory() {
     setShowMenu(null);
   };
 
+  // Team Leader specific functions
+  const handleDeactivate = (employee) => {
+    // Implement deactivate functionality
+    alert(`Deactivating employee: ${employee.FullName}`);
+    setShowMenu(null);
+  };
+
+  const handleRestDay = (employee) => {
+    // Implement rest day functionality
+    alert(`Setting rest day for: ${employee.FullName}`);
+    setShowMenu(null);
+  };
+
   const resetForm = () => {
     setAddUser({
       FullName: "",
@@ -289,14 +305,7 @@ function EmployeeDirectory() {
 
         {/* Search and Filters */}
         <div className="flex gap-4 flex-wrap">
-          {/* <div className="relative flex-1 min-w-[300px]">
-            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search employees..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              </div> */}
+
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -312,11 +321,10 @@ function EmployeeDirectory() {
               <button
                 key={dept}
                 onClick={() => setSelectedDepartment(dept)}
-                className={`px-4 py-2 rounded-lg transition-all border border-transparent ${
-                  selectedDepartment === dept
-                    ? "border-white text-white shadow-lg"
-                    : "bg-[#10131f] text-white "
-                }`}
+                className={`px-4 py-2 rounded-lg transition-all border border-transparent ${selectedDepartment === dept
+                  ? "border-white text-white shadow-lg"
+                  : "bg-[#10131f] text-white "
+                  }`}
               >
                 {dept}
               </button>
@@ -324,45 +332,6 @@ function EmployeeDirectory() {
           </div>
         </div>
       </div>
-
-      {/* Stats */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Employees</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">{totalEmployees}</p>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <span className="text-3xl">👥</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Active Employees</p>
-              <p className="text-3xl font-bold text-green-600 mt-1">{activeEmployees}</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <span className="text-3xl">✅</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Withdrawn</p>
-              <p className="text-3xl font-bold text-orange-600 mt-1">{withdrawnEmployees}</p>
-            </div>
-            <div className="bg-orange-100 p-3 rounded-full">
-              <span className="text-3xl">⚠️</span>
-            </div>
-          </div>
-        </div>
-      </div> */}
 
       {/* Employee Table */}
       <div className=" rounded-xl border border-[var(--box-border)]  shadow-xl overflow-hidden">
@@ -372,11 +341,15 @@ function EmployeeDirectory() {
               <tr>
                 <th className="px-6 py-4 text-left">Avatar</th>
                 <th className="px-6 py-4 text-left">Name</th>
-                <th className="px-6 py-4 text-left">Working Hours</th>
+                <th className="px-6 py-4 text-left whitespace-nowrap">Working Hours</th>
                 <th className="px-6 py-4 text-left">Salary</th>
                 <th className="px-6 py-4 text-left">Department</th>
                 <th className="px-6 py-4 text-left">Role</th>
                 <th className="px-6 py-4 text-left">Shift</th>
+                {/* Status column added for Team Leader */}
+                {role === "Team-Leader" && (
+                  <th className="px-6 py-4 text-left">Status</th>
+                )}
                 <th className="px-6 py-4 text-left">Phone</th>
                 <th className="px-6 py-4 text-left">Email</th>
                 <th className="px-6 py-4 text-left">Actions</th>
@@ -385,7 +358,7 @@ function EmployeeDirectory() {
             <tbody>
               {!users || users.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="text-center py-12 text-gray-500">
+                  <td colSpan={role === "Team-Leader" ? "11" : "10"} className="text-center py-12 text-gray-500">
                     <FileText
                       size={48}
                       className="mx-auto mb-3 text-gray-300"
@@ -398,7 +371,7 @@ function EmployeeDirectory() {
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="text-center py-12 text-gray-500">
+                  <td colSpan={role === "Team-Leader" ? "11" : "10"} className="text-center py-12 text-gray-500">
                     <Search size={48} className="mx-auto mb-3 text-gray-300" />
                     <p className="text-lg">No matching employees</p>
                     <p className="text-sm">
@@ -410,9 +383,8 @@ function EmployeeDirectory() {
                 filteredEmployees.map((emp, index) => (
                   <tr
                     key={emp._id}
-                    className={`border-b border-[var(--box-border)] hover:bg-[#3b83f610] transition-colors ${
-                      index % 2 === 0 ? "bg-[#3b83f60b]" : "bg-[#3b83f60b]"
-                    }`}
+                    className={`border-b border-[var(--box-border)] hover:bg-[#3b83f610] transition-colors ${index % 2 === 0 ? "bg-[#3b83f60b]" : "bg-[#3b83f60b]"
+                      }`}
                   >
                     <td className="px-6 py-4">
                       <img
@@ -424,7 +396,7 @@ function EmployeeDirectory() {
                     <td className="px-6 py-4 font-medium text-white capitalize">
                       {emp.FullName}
                     </td>
-                    <td className="px-6 py-4 text-white">
+                    <td className="px-6 py-4 text-white whitespace-nowrap">
                       {emp.workingHour || "N/A"}
                     </td>
                     <td className="px-6 py-4 text-white font-semibold">
@@ -432,25 +404,37 @@ function EmployeeDirectory() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          emp.department === "CSR"
-                            ? "bg-blue-100 text-blue-700"
-                            : emp.department === "Deposit"
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${emp.department === "CSR"
+                          ? "bg-blue-100 text-blue-700"
+                          : emp.department === "Deposit"
                             ? "bg-green-100 text-green-700"
                             : "bg-orange-100 text-orange-700"
-                        }`}
+                          }`}
                       >
                         {emp.department}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                      <span className="px-3 py-1 rounded-full text-xs whitespace-nowrap font-semibold bg-purple-100 text-purple-700">
                         {emp.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-white">
                       {emp.Shift || "N/A"}
                     </td>
+                    {/* Status field for Team Leader */}
+                    {role === "Team-Leader" && (
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${emp.status === "Active"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                            }`}
+                        >
+                          {emp.status || "Active"}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-6 py-4 text-white">+91 {emp.phone}</td>
                     <td className="px-6 py-4 text-white text-sm">
                       {emp.email}
@@ -467,28 +451,58 @@ function EmployeeDirectory() {
 
                       {showMenu === emp._id && (
                         <div className="absolute right-0 mt-2 w-48 bg-[#3b83f60b] rounded-lg shadow-xl border border-gray-200 z-10">
-                          <button
-                            onClick={() => handleEdit(emp)}
-                            className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                          >
-                            <Edit size={16} className="text-blue-500" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleQRCode(emp)}
-                            className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                          >
-                            <QrCode size={16} className="text-green-500" />
-                            <span>QR Code</span>
-                          </button>
-                          {role !== "Team-Leader" && (
-                            <button
-                              onClick={() => handleDelete(emp._id)}
-                              className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left text-red-600"
-                            >
-                              <Trash size={16} />
-                              <span>Delete</span>
-                            </button>
+                          {/* For Team Leader - Show different menu */}
+                          {role === "Team-Leader" ? (
+                            <>
+                              <button
+                                onClick={() => handleEdit(emp)}
+                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
+                              >
+                                <Edit size={16} className="text-blue-500" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeactivate(emp)}
+                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
+                              >
+                                <UserX size={16} className="text-orange-500" />
+                                <span>Deactivate</span>
+                              </button>
+                              <button
+                                onClick={() => handleRestDay(emp)}
+                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
+                              >
+                                <Calendar size={16} className="text-green-500" />
+                                <span>Rest Day</span>
+                              </button>
+                            </>
+                          ) : (
+                            /* For other roles - Show original menu */
+                            <>
+                              <button
+                                onClick={() => handleEdit(emp)}
+                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
+                              >
+                                <Edit size={16} className="text-blue-500" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                onClick={() => handleQRCode(emp)}
+                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
+                              >
+                                <QrCode size={16} className="text-green-500" />
+                                <span>QR Code</span>
+                              </button>
+                              {role !== "Team-Leader" && (
+                                <button
+                                  onClick={() => handleDelete(emp._id)}
+                                  className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left text-red-600"
+                                >
+                                  <Trash size={16} />
+                                  <span>Delete</span>
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       )}

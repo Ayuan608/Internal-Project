@@ -19,7 +19,12 @@ import UserMenu from "./User";
 import { getUserData } from "../redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import DraftTemplate from "./DraftTemplate";
-import { AdminRoutes, CheckerButtons, superAdminButtons } from "../Helpers/Helper";
+import {
+  AdminRoutes,
+  CheckerButtons,
+  superAdminButtons,
+  TeamButtons,
+} from "../Helpers/Helper";
 
 const Menus = ({ toggle, onTitleChange }) => {
   const contentRef = useRef(null);
@@ -50,37 +55,33 @@ const Menus = ({ toggle, onTitleChange }) => {
     ...(role === "User"
       ? [{ to: "/user", label: "Attendence", icon: <FileText /> }]
       : []),
-    ...(role === "User" ? [{ to: "/user/daily-time-record", label: "Daily Time Record", icon: <ChartColumnIncreasing /> }] : []),
-    ...(role === "User" ? [{ to: "/user/performance", label: "Performance Borard", icon: <ChartLine /> }] : []),
-    ...((role === "Team-Leader" && "Super-Admin")
-      ? [{
-        to: "/dashboard/data",
-        label: "Performance",
-        icon: <ChartLine />
-      }]
+    ...(role === "User"
+      ? [
+          {
+            to: "/user/daily-time-record",
+            label: "Daily Time Record",
+            icon: <ChartColumnIncreasing />,
+          },
+        ]
       : []),
     ...(role === "User"
       ? [
-        {
-          to: "/user/announcement",
-          label: "Announcement",
-          icon: <Megaphone />,
-        },
-      ]
-      : []),
-    // Team - Leader 
-    ...(role === "Team-Leader"
-      ? [
-        {
-          to: "/dashboard",
-          label: "Dashboard",
-          icon: <LayoutDashboardIcon absoluteStrokeWidth />,
-        },
-      ]
+          {
+            to: "/user/performance",
+            label: "Performance Borard",
+            icon: <ChartLine />,
+          },
+        ]
       : []),
 
-    ...(role === "Team-Leader"
-      ? [{ to: "/dashboard/report", label: "Report", icon: <Bug /> }]
+    ...(role === "User"
+      ? [
+          {
+            to: "/user/announcement",
+            label: "Announcement",
+            icon: <Megaphone />,
+          },
+        ]
       : []),
   ];
 
@@ -106,10 +107,7 @@ const Menus = ({ toggle, onTitleChange }) => {
             <div className="absolute bottom-[-5%] left-[20%] w-36 h-36 rounded-full bg-[#3B82F6] opacity-70 blur-[70px]" />
           </div>
           <div>
-            <Link
-
-              className="flex items-center gap-2 py-3 mt-2 px-4 border-b border-[#9E9FA74D]"
-            >
+            <Link className="flex items-center gap-2 py-3 mt-2 px-4 border-b border-[#9E9FA74D]">
               <ArrowLeft
                 className="text-white opacity-80 bg-[#3b83f61a] rounded-full"
                 size={20}
@@ -128,9 +126,10 @@ const Menus = ({ toggle, onTitleChange }) => {
                     to={to}
                     onClick={() => onTitleChange(label)}
                     className={`flex items-center space-x-[12px] cursor-pointer px-[12px] py-[10px] rounded-lg transition-all duration-200
-                      ${isActive
-                        ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                        : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                      ${
+                        isActive
+                          ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                          : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                       }`}
                   >
                     <span className="text-[20px]">{icon}</span>
@@ -149,31 +148,10 @@ const Menus = ({ toggle, onTitleChange }) => {
                         to={to}
                         onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${isActive
-                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
-                          }`}
-                      >
-                        <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-              {role === "Admin" && (
-                <div className="mt-4 space-y-2">
-                  {AdminRoutes.map(({ to, label, icon: Icon }) => {
-                    const isActive = location.pathname === to;
-                    return (
-                      <Link
-                        key={to}
-                        to={to}
-                        onClick={() => onTitleChange(label)}
-                        className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${isActive
-                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          ${
+                            isActive
+                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                           }`}
                       >
                         <Icon className="text-[20px]" />
@@ -184,6 +162,29 @@ const Menus = ({ toggle, onTitleChange }) => {
                 </div>
               )}
 
+              {role === "Admin" && (
+                <div className="mt-4 space-y-2">
+                  {AdminRoutes.map(({ to, label, icon: Icon }) => {
+                    const isActive = location.pathname === to;
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => onTitleChange(label)}
+                        className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
+                          ${
+                            isActive
+                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          }`}
+                      >
+                        <Icon className="text-[20px]" />
+                        <span className="text-[16px] ml-2">{label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
 
               {role === "Checker" && (
                 <div className="mt-4 space-y-2">
@@ -195,9 +196,34 @@ const Menus = ({ toggle, onTitleChange }) => {
                         to={to}
                         onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${isActive
-                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          ${
+                            isActive
+                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          }`}
+                      >
+                        <Icon className="text-[20px]" />
+                        <span className="text-[16px] ml-2">{label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {role === "Team-Leader" && (
+                <div className="mt-4 space-y-2">
+                  {TeamButtons.map(({ to, label, icon: Icon }) => {
+                    const isActive = location.pathname === to;
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => onTitleChange(label)}
+                        className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
+                          ${
+                            isActive
+                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                           }`}
                       >
                         <Icon className="text-[20px]" />
@@ -263,12 +289,12 @@ const Menus = ({ toggle, onTitleChange }) => {
                   role === "User"
                     ? "/user/setting"
                     : role === "Admin"
-                      ? "/admin/setting"
-                      : role === "Super-Admin"
-                        ? "/dashboard/setting"
-                        : "/default/setting"
+                    ? "/admin/setting"
+                    : role === "Super-Admin"
+                    ? "/dashboard/setting"
+                    : "/default/setting"
                 }
-                onClick={() => { }}
+                onClick={() => {}}
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
                 <Settings className="w-5 h-5" />
@@ -280,7 +306,10 @@ const Menus = ({ toggle, onTitleChange }) => {
       ) : (
         <div className="py-2">
           <div className="absolute inset-0 -z-10"></div>
-          <Link to={"/"} className="flex justify-center items-center mt-10 z-10">
+          <Link
+            to={"/"}
+            className="flex justify-center items-center mt-10 z-10"
+          >
             <img
               src={logo}
               alt="communication-center"

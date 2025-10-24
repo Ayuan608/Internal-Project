@@ -82,7 +82,6 @@ const Login = () => {
               navigate("/admin");
               break;
             case "Super-Admin":
-            case "Team-Leader":
               navigate("/dashboard");
               break;
             case "Checker":
@@ -90,6 +89,9 @@ const Login = () => {
               break;
             case "User":
               navigate("/user");
+              break;
+            case "Team-Leader":
+              navigate("/team");
               break;
             default:
               navigate("/login");
@@ -139,9 +141,8 @@ const Login = () => {
                 type="text"
                 name="username"
                 placeholder="Username"
-                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${
-                  errors.username ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${errors.username ? "border-red-500" : "border-gray-300"
+                  }`}
                 value={loginData.username}
                 onChange={handleInputChange}
               />
@@ -158,9 +159,8 @@ const Login = () => {
                 type="password"
                 name="password"
                 placeholder="Password"
-                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${errors.password ? "border-red-500" : "border-gray-300"
+                  }`}
                 ref={passwordRef}
                 value={loginData.password}
                 onChange={handleInputChange}
@@ -193,9 +193,8 @@ const Login = () => {
               name="otp"
               placeholder="Enter 6-digit code"
               maxLength={6}
-              className={`p-3 bg-gray-700 focus:outline-none rounded-lg text-center text-lg tracking-widest ${
-                errors.otp ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`p-3 bg-gray-700 focus:outline-none rounded-lg text-center text-lg tracking-widest ${errors.otp ? "border-red-500" : "border-gray-300"
+                }`}
               value={otp}
               onChange={handleOtpChange}
             />

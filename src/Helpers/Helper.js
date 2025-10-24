@@ -46,9 +46,17 @@ export const superAdminButtons = [
   { to: "/dashboard/nonQuta", label: "Non-Quota", icon: BarChart3 },
   { to: "/dashboard/quotaSetting", label: "Quota Settings", icon: UserCheck },
   { to: "/dashboard/add", label: "Directory", icon: Columns3Cog },
-  { to: "/dashboard/announcement", label: "Announcements", icon: BanknoteArrowUp, },
+  {
+    to: "/dashboard/announcement",
+    label: "Announcements",
+    icon: BanknoteArrowUp,
+  },
   { to: "/dashboard/report", label: "Reports", icon: Proportions },
-  { to: "/dashboard/overallAttendance", label: "Overall Attendance", icon: Blend, },
+  {
+    to: "/dashboard/overallAttendance",
+    label: "Overall Attendance",
+    icon: Blend,
+  },
   { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
 ];
 export const AdminRoutes = [
@@ -58,13 +66,31 @@ export const AdminRoutes = [
   { to: "/admin/directory", label: "Employee Directory", icon: Users },
   { to: "/admin/announcement", label: "Annoucement", icon: Megaphone },
   { to: "/admin/report", label: "Case Report", icon: FileText },
-  { to: "/admin/overallAttendance", label: "Overall Attendence ", icon: CalendarCheck2 },
+  {
+    to: "/admin/overallAttendance",
+    label: "Overall Attendence ",
+    icon: CalendarCheck2,
+  },
   { to: "/admin/login", label: "Login Credentails", icon: KeyRound },
-]
+];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
   { to: "/checker/report", label: "Report", icon: ReportIcon },
 ];
+
+export const TeamButtons = [
+  { to: "/team", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/team/employeeDirectory", label: "Employee Directory", icon: Users },
+  { to: "/team/restday", label: "Schedule & Rest day", icon: User2 },
+  { to: "/team/non-quotamember", label: "Non-Quota Members", icon: FileText },
+  {
+    to: "/team/attendancerecords",
+    label: "Attendance Records",
+    icon: CalendarCheck2,
+  },
+  { to: "/team/Performance", label: "Team Performance", icon: KeyRound },
+];
+
 export const userData = {
   labels: ["QUOTA", "NON-QUOTA"],
   datasets: [
@@ -77,6 +103,7 @@ export const userData = {
     },
   ],
 };
+
 export const lineData = {
   labels: ["MON", "TUE", "WED", "THUR", "FRI", "SAT", "SUN"],
   datasets: [
@@ -122,6 +149,7 @@ export const columns = [
   { field: "target", headerName: "TARGET QUOTA", width: 150 },
   { field: "variance", headerName: "VARIANCE", width: 100 },
 ];
+
 export const rows = [
   {
     id: 1,
@@ -154,7 +182,6 @@ export const rows = [
     variance: -20,
   },
 ];
-
 
 export const leadData = [
   {
@@ -254,6 +281,29 @@ export const TeamStats = [
     ],
   },
 ];
+export const LeaderStats = [
+  {
+    title: "This Week",
+    value: "+12% ↑",
+    trend: "up",
+  },
+  {
+    title: "This Month",
+    value: "+8.5% ↑",
+    trend: "up",
+  },
+  {
+    title: "Efficiency",
+    value: "-2.3% ↓",
+    trend: "down",
+  },
+  {
+    title: "CSAT Score",
+    value: "+5.2% ↑",
+    trend: "up",
+  },
+];
+
 export const UserStats = [
   {
     title: "Users",
@@ -405,5 +455,5 @@ export const overallAttendance = {
   absentToday: 8,
   lateArrivals: 5,
   onLeave: 3,
-  attendanceRate: "95%"
+  attendanceRate: "95%",
 };
