@@ -1,5 +1,3 @@
-// src/redux/notificationSlice.js
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../Helpers/axiosInstance";
 
@@ -9,7 +7,6 @@ export const getAllNotifications = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(`/notifications/all`);
-
       const notifications =
         response.data.notifications || response.data.data || response.data;
       return notifications;
