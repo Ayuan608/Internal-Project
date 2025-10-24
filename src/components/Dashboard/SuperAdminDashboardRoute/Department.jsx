@@ -4,6 +4,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import ExampleIosSwitch from "./ui/Switch";
 import SuperAdminData from "./ui/SuperAdminData";
 import HourlyProgressChart from "./ui/HourlyProgressChart";
+import NonQuota from './NonQuota';
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
@@ -97,9 +98,7 @@ const Department = () => {
             {currentData.quotaMet}% Met • {currentData.nonQuota}% Not Met
           </div>
         </div>
-        <div className="w-full h-full">
-          <HourlyProgressChart />
-        </div>
+        <NonQuota />
       </div>
     </div>
   );

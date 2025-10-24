@@ -234,9 +234,9 @@ function Admin() {
       renderCell: (params) => (
         <span
           className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            params.row.status === "Active"
+            params.row.status === "active"
               ? "bg-green-500/20 text-green-400"
-              : "bg-yellow-500/20 text-yellow-400"
+              : "bg-red-500/20 text-red-400"
           }`}
         >
           {params.row.status}
@@ -319,7 +319,7 @@ function Admin() {
         onClose={handleMenuClose}
         PaperProps={{
           className:
-            "bg-[#1e1f26] text-white rounded-lg shadow-lg border border-gray-700",
+            "bg-[#fff] text-white rounded-lg shadow-lg border border-gray-700",
           style: { minWidth: 180 },
         }}
         anchorOrigin={{

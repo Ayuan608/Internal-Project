@@ -12,6 +12,7 @@
 
 .border_gray {
   border: 1px solid var(--box-border);
+  opacity: 0.8;
 }
 
 .bg_primary {
