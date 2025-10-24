@@ -28,6 +28,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
+import ReportIcon from "./Icons";
 
 // Register the required components
 ChartJS.register(
@@ -62,7 +63,7 @@ export const AdminRoutes = [
 ]
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
-  { to: "/checker/alert", label: "Alert", icon: OctagonAlert },
+  { to: "/checker/report", label: "Report", icon: ReportIcon },
 ];
 export const userData = {
   labels: ["QUOTA", "NON-QUOTA"],

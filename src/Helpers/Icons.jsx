@@ -131,3 +131,25 @@ export const GreenDollarIcon = () => {
     </svg>
   );
 };
+
+
+// ReportIcon.jsx
+const ReportIcon = (props) => (
+  <svg
+    width={props.size || 24}
+    height={props.size || 24}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <path d="M14 2v6h6"/>
+    <rect x="8" y="13" width="1.6" height="4.5" rx="0.2"/>
+    <rect x="11" y="10" width="1.6" height="7.5" rx="0.2"/>
+    <rect x="14" y="8" width="1.6" height="9.5" rx="0.2"/>
+  </svg>
+);
+export default ReportIcon;

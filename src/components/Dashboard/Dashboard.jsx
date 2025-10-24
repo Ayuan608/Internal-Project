@@ -15,10 +15,10 @@ export default function Dashboard() {
         >
           <div className="flex justify-between">
             <div className="flex justify-start items-start mb-4">
-              <div className="relative w-full max-w-[600px]">
+              <div className="relative w-full ">
                 <input
                   type="text"
-                  placeholder="Search, contacts, deals, campaigns..."
+                  placeholder="search, contacts, deals, campaigns..."
                   className="bg-[#f5f6fa13] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
                 />
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />

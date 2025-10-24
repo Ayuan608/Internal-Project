@@ -8,7 +8,6 @@ import Setting from "./pages/Setting";
 import UserDashboard from "./Layout/UserDashboard";
 import Denied from "./pages/404/Denied";
 import CheckerDashboard from "./Layout/CheckerDashboard";
-import Alert from "./components/Dashboard/CheckerDashboard/Alert";
 import SendNotificationForm from "./components/popup/SendNotificationForm";
 import DailyTimeRecord from "./components/Dashboard/UserDashboard/DailyTimeRecord";
 import PerformanceDashboard from "./components/Dashboard/UserDashboard/PerformanceDashboard";
@@ -23,6 +22,7 @@ import LoginCredentials from "./components/Dashboard/AdminDashboard/LoginCredent
 import EmployeeDirectory from "./components/Dashboard/AdminDashboard/EmployeeDirectory";
 import CaseReport from "./components/Dashboard/AdminDashboard/CaseReport";
 import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
+import CheckReport from "./components/Dashboard/CheckerDashboard/CheckReport";
 
 function App() {
   return (
@@ -61,7 +61,7 @@ function App() {
           <Route path="directory" element={<EmployeeDirectory />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="report" element={<CaseReport />} />
-           <Route path="setting" element={<Setting />} />
+          <Route path="setting" element={<Setting />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
         </Route>
       </Route>
@@ -79,7 +79,7 @@ function App() {
       <Route element={<RequireAuth allowedRoles={["Checker"]} />}>
         <Route path="/checker" element={<Layout />}>
           <Route index element={<CheckerDashboard />} />
-          <Route path="alert" element={<Alert />} />
+          <Route path="report" element={<CheckReport />} />
         </Route>
       </Route>
       {/* 404 and Denied */}
