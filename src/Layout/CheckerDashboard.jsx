@@ -1,101 +1,19 @@
 import React, { useMemo, useRef, useState } from "react";
 
-import { Calendar } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle, Clock, Coffee, Download, Search, XCircle } from "lucide-react";
 import ExampleIosSwitch from "../components/Dashboard/SuperAdminDashboardRoute/ui/Switch";
 
 const attendanceData = [
-  {
-    id: 1,
-    name: "Daryl Carboado",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "08:00 AM",
-    breaks: "1h 15m",
-    punchOut: "05:00 PM",
-    status: "Overbreak",
-  },
-  {
-    id: 2,
-    name: "Ayun Daef",
-    date: "2025-10-17",
-    department: "Deposit",
-    punchIn: "06:05 AM",
-    breaks: "1h 00m",
-    punchOut: "05:02 PM",
-    status: "Normal",
-  },
-  {
-    id: 3,
-    name: "Ashish Prabhakar",
-    date: "2025-10-17",
-    department: "Withdrawal",
-    punchIn: "08:00 AM",
-    breaks: "1h 00m",
-    punchOut: "--",
-    status: "Missed Punch Out",
-  },
-  {
-    id: 4,
-    name: "David Kumar",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "--",
-    breaks: "--",
-    punchOut: "--",
-    status: "Absent",
-  },
-  {
-    id: 5,
-    name: "David Chein",
-    date: "2025-10-17",
-    department: "Deposit",
-    punchIn: "07:58 AM",
-    breaks: "1h 00m",
-    punchOut: "05:00 PM",
-    status: "Normal",
-  },
-  {
-    id: 6,
-    name: "Madhu Kumari",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "--",
-    breaks: "1h 00m",
-    punchOut: "05:03 PM",
-    status: "Missed Punch In",
-  },
-  {
-    id: 7,
-    name: "Khushi Kumari",
-    date: "2025-10-17",
-    department: "Withdrawal",
-    punchIn: "08:15 AM",
-    breaks: "1h 30m",
-    punchOut: "05:15 PM",
-    status: "Overbreak",
-  },
-  {
-    id: 8,
-    name: "Lekh Raj ",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "08:00 AM",
-    breaks: "1h 00m",
-    punchOut: "05:00 PM",
-    status: "Normal",
-  },
-  {
-    id: 9,
-    name: "Chandan Aheer",
-    date: "2025-10-17",
-    department: "Deposit",
-    punchIn: "08:02 AM",
-    breaks: "55m",
-    punchOut: "05:00 PM",
-    status: "Normal",
-  },
+  { id: 1, name: 'Daryl Carbonado', date: '2025-10-17', department: 'CSR', punchIn: '08:00 AM', breaks: '1h 15m', punchOut: '05:00 PM', overtime: '0h', status: 'Overbreak' },
+  { id: 2, name: 'Ayun Daef', date: '2025-10-17', department: 'Deposit', punchIn: '06:05 AM', breaks: '1h 00m', punchOut: '05:02 PM', overtime: '2h 57m', status: 'Normal' },
+  { id: 3, name: 'Ashish Prabhakar', date: '2025-10-17', department: 'Withdrawal', punchIn: '08:00 AM', breaks: '1h 00m', punchOut: '--', overtime: '0h', status: 'Missed Punch Out' },
+  { id: 4, name: 'David Kumar', date: '2025-10-17', department: 'CSR', punchIn: '--', breaks: '--', punchOut: '--', overtime: '0h', status: 'Absent' },
+  { id: 5, name: 'David Chen', date: '2025-10-17', department: 'Deposit', punchIn: '07:58 AM', breaks: '1h 00m', punchOut: '05:00 PM', overtime: '1h 02m', status: 'Normal' },
+  { id: 6, name: 'Madhu Kumari', date: '2025-10-17', department: 'CSR', punchIn: '--', breaks: '1h 00m', punchOut: '05:03 PM', overtime: '0h', status: 'Missed Punch In' },
+  { id: 7, name: 'Khushi Kumari', date: '2025-10-17', department: 'Withdrawal', punchIn: '08:15 AM', breaks: '1h 30m', punchOut: '05:15 PM', overtime: '15m', status: 'Overbreak' },
+  { id: 8, name: 'Lekh Raj', date: '2025-10-17', department: 'CSR', punchIn: '08:00 AM', breaks: '1h 00m', punchOut: '05:00 PM', overtime: '0h', status: 'Normal' },
+  { id: 9, name: 'Chandan Aheer', date: '2025-10-17', department: 'Deposit', punchIn: '08:02 AM', breaks: '55m', punchOut: '05:00 PM', overtime: '0h', status: 'Normal' },
 ];
-
 // Schedule data for the bottom table
 const scheduleData = [
   {
@@ -319,7 +237,12 @@ const days = [
   { day: "TUE", date: "NOV 29", key: "nov29" },
   { day: "WED", date: "NOV 30", key: "nov30" },
 ];
-
+const stats = [
+  { label: 'Present Today', value: '145', icon: <CheckCircle size={20} />, color: '#22c55e' },
+  { label: 'Late Arrivals', value: '12', icon: <Clock size={20} />, color: '#f59e0b' },
+  { label: 'Absent', value: '8', icon: <XCircle size={20} />, color: '#ef4444' },
+  { label: 'On-break', value: '23', icon: <Coffee size={20} />, color: '#3b82f6' }
+];
 const getScheduleColor = (value) => {
   switch (value) {
     case "D":
@@ -334,11 +257,9 @@ const getScheduleColor = (value) => {
 };
 
 const OverallAttendance = () => {
-  const [activeTab, setActiveTab] = useState("CSR");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSection, setSelectedSection] = useState("All");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
 
   // Filter data based on search and section
   const filteredData = useMemo(() => {
@@ -351,22 +272,28 @@ const OverallAttendance = () => {
       return matchesSearch && matchesSection;
     });
   }, [searchTerm, selectedSection]);
+  const getAvatar = (name) => {
+    const letters = name.replace(/\s+/g, '');
+    return letters.charAt(0) + letters.charAt(letters.length - 1);
+  };
+  const getStatusLabel = (status) => status;
+  const getStatusIcon = (status) => {
+    if (status === 'Normal') return <CheckCircle size={14} />;
+    if (status === 'Absent') return <XCircle size={14} />;
+    return <AlertCircle size={14} />;
+  };
 
-  // Get status badge color
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Normal":
-        return "bg-green-100 text-green-800";
-      case "Overbreak":
-        return "bg-orange-100 text-orange-800";
-      case "Absent":
-        return "bg-gray-100 text-gray-800";
-      case "Missed Punch In":
-      case "Missed Punch Out":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    const colors = {
+      'Normal': { bg: '#22c55e22', text: '#22c55e', border: '#22c55e' },
+      'Absent': { bg: '#ef444422', text: '#ef4444', border: '#ef4444' },
+      'Overbreak': { bg: '#f59e0b22', text: '#f59e0b', border: '#f59e0b' },
+      'Missed Punch In': { bg: '#ec489922', text: '#ec4899', border: '#ec4899' },
+      'Missed Punch Out': { bg: '#a855f722', text: '#a855f7', border: '#a855f7' },
+      'On-break': { bg: '#3b82f622', text: '#3b82f6', border: '#3b82f6' },
+      'Late Arrival': { bg: '#f59e0b22', text: '#f59e0b', border: '#f59e0b' }
+    };
+    return colors[status] || colors['Normal'];
   };
 
   const tableRef = useRef(null);
@@ -441,182 +368,175 @@ const OverallAttendance = () => {
         <ExampleIosSwitch />
       </div>
 
-      <div className="max-w-full pt-8 mx-auto">
-        {/* Main Card */}
-        <div className="bg-[#121212]  rounded-lg shadow-lg p-6">
-          {/* Header Section */}
-          <div className="flex justify-between items-start mb-8">
-            {/* Title */}
-            <h1 className="text-2xl font-semibold text-white">
+      <div className="min-h-screen p-5 font-sans  text-white">
+        <div className="max-w-[1400px] mx-auto">
+
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold mb-1">
               Daily Time Record (DTR)
-              <div className="h-[60px] flex items-center justify-between  border-b mt-4 border-gray-700 shrink-0 sticky top-0 z-10 ">
-                <div className="flex gap-2  max-w-[255px] p-1 rounded-full">
-                  {["CSR", "WithDraw", "Deposit"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === tab
-                        ? "bg-[#d9d9d935] rounded-full text-white"
-                        : "bg-transparent text-gray-400 hover:text-gray-300"
-                        }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </h1>
+            <p className="text-sm text-slate-400">
+              Tracking 2 employees for 10/24/2025
+            </p>
+          </div>
 
-            {/* Right side - Search, Date and Export */}
-            <div className="flex flex-col gap-4">
-              {/* Search Bar */}
-              <div className="relative w-80">
-                <input
-                  type="text"
-                  placeholder="Search employee..."
-                  value={searchTerm}
-                  className="w-full pl-4 pr-4 py-2.5 border border-[var(--box-border)] rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
+          {/* Top bar */}
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px] max-w-[400px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input
+                type="text"
+                placeholder="Search employee..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-10 py-2 bg-slate-800/40 border border-slate-800 rounded-lg text-sm outline-none placeholder:text-slate-500"
+              />
+            </div>
 
-              {/* Date Display and Export Buttons */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value="10/22/2025"
-                    readOnly
-                    className="w-32 px-3 py-2 border border-[var(--box-border)] rounded-md text-sm  text-center"
-                  />
-                  <Calendar className="w-5 h-5 text-gray-400" />
-                </div>
+            {/* Right Controls */}
+            <div className="flex items-center gap-3">
+              <select
+                onChange={(e) => setFilterDepartment(e.target.value)}
+                className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm cursor-pointer outline-none"
+              >
+                <option value="all">All Departments</option>
+                <option value="CSR">CSR</option>
+                <option value="Deposit">Deposit</option>
+                <option value="Withdrawal">Withdrawal</option>
+              </select>
 
-                <button
-                  onClick={exportToExcel}
-                  className="px-5 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm font-medium"
-                >
-                  Export Excel
-                </button>
-                <button
-                  onClick={exportToCSV}
-                  className="px-5 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm font-medium"
-                >
-                  Export CSV
-                </button>
-              </div>
+              <button
+                onClick={exportToExcel}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 rounded-lg text-sm font-semibold hover:bg-green-600"
+              >
+                <Download size={16} />
+                Export Excel
+              </button>
+
+              <button
+                onClick={exportToCSV}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 rounded-lg text-sm font-semibold hover:bg-blue-600"
+              >
+                <Download size={16} />
+                Export CSV
+              </button>
             </div>
           </div>
 
+          {/* Stat Cards */}
+          <div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(250px,1fr))] mb-6">
+            {stats.map((stat, idx) => (
+              <div
+                key={idx}
+                className="relative bg-slate-900/20 p-5 rounded-xl border border-slate-700 overflow-hidden"
+              >
+                <div className="absolute top-4 right-4 opacity-30" style={{ color: stat.color }}>
+                  {React.cloneElement(stat.icon, { size: 40 })}
+                </div>
+
+                <div className="text-3xl font-bold mb-1">{stat.value}</div>
+                <div className="text-xs text-slate-400">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
           {/* Table */}
-          <div className="overflow-x-auto rounded-lg border border-[var(--box-border)] shadow-sm">
-            <table className="min-w-full">
+          <div className="bg-slate-800/40 rounded-xl border border-slate-800 overflow-hidden">
+            <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-[rgba(59,131,246,0.06)]">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    NAME
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    DATE
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    DEPARTMENT
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    PUNCH IN
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    BREAKS
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    PUNCH OUT
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    STATUS
-                  </th>
+                <tr className="bg-slate-900/40 border-b border-slate-700">
+                  {["NAME", "DATE", "DEPARTMENT", "PUNCH IN", "BREAKS", "PUNCH OUT", "OVERTIME", "STATUS"]
+                    .map((th, i) => (
+                      <th
+                        key={i}
+                        className="p-4 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide"
+                      >
+                        {th}
+                      </th>
+                    ))}
                 </tr>
               </thead>
-              <tbody className="  bg-[rgba(59,130,246,0.03)] divide-y divide-[#9E9FA74D]">
-                {filteredData.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-[#3b83f610] transition-colors"
-                  >
-                    <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
-                      {row.name}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                      {row.date}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                      {row.department}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                      {row.punchIn}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                      {row.breaks}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                      {row.punchOut}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-block px-4 py-1.5 rounded-md text-xs font-semibold ${getStatusColor(
-                          row.status
-                        )}`}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+
+              <tbody>
+                {filteredData.map((record) => {
+                  const statusColor = getStatusColor(record.status);
+                  const avatar = getAvatar(record.name);
+
+                  return (
+                    <tr
+                      key={record.id}
+                      className="border-b border-slate-800 transition-all bg-slate-900/30 hover:bg-slate-800/40 cursor-pointer"
+                    >
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm border"
+                            style={{
+                              background: `${statusColor.border}33`,
+                              color: statusColor.text,
+                              borderColor: `${statusColor.border}55`,
+                            }}
+                          >
+                            {avatar}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold">
+                              {record.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500">
+                              ID: EM{String(record.id).padStart(5, '0')}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4 text-sm text-slate-300">
+                        {record.date}
+                      </td>
+
+                      <td className="p-4">
+                        <span className="px-3 py-1 text-xs border border-slate-700 bg-slate-900 text-slate-400 rounded-md">
+                          {record.department}
+                        </span>
+                      </td>
+
+                      <td className="p-4 font-medium text-sm">{record.punchIn}</td>
+                      <td className="p-4 text-sm text-slate-300">{record.breaks}</td>
+                      <td className="p-4 font-medium text-sm">{record.punchOut}</td>
+
+                      <td className="p-4">
+                        <span
+                          className={`text-sm ${record.overtime !== "0h"
+                              ? "text-green-500 font-semibold"
+                              : "text-slate-500"
+                            }`}
+                        >
+                          {record.overtime}
+                        </span>
+                      </td>
+
+                      <td className="p-4">
+                        <span
+                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border"
+                          style={{
+                            background: statusColor.bg,
+                            color: statusColor.text,
+                            borderColor: `${statusColor.border}55`,
+                          }}
+                        >
+                          {getStatusIcon(record.status)}
+                          {getStatusLabel(record.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          <div className="bg-[rgba(59,130,246,0.03)] rounded-lg shadow p-4 mt-0.5">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-white">
-                  Section:
-                </label>
-                <select
-                  value={selectedSection}
-                  onChange={(e) => setSelectedSection(e.target.value)}
-                  className="border border-gray-300 bg-black/60 text-white rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="All">All</option>
-                  <option value="CSR">CSR</option>
-                  <option value="Deposit">Deposit</option>
-                  <option value="Withdrawal">Withdrawal</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-white">Date:</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-white">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-                />
-                <button className="px-4 py-1 bg-blue-900 text-white rounded hover:bg-blue-800 transition-colors text-sm">
-                  Filter
-                </button>
-              </div>
-
-              <button className="ml-auto px-4 py-1 bg-blue-900 text-white rounded hover:bg-blue-800 transition-colors text-sm">
-                ⬇ Export to Excel
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 

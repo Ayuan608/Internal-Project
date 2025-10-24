@@ -2,14 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
-  Bug,
   ClipboardPlus,
   Plus,
   Settings,
-  UserPlus,
   ChartLine,
-  LayoutDashboardIcon,
-  AlignStartVertical,
   Megaphone,
   ChartColumnIncreasing,
   FileText,
@@ -57,31 +53,31 @@ const Menus = ({ toggle, onTitleChange }) => {
       : []),
     ...(role === "User"
       ? [
-          {
-            to: "/user/daily-time-record",
-            label: "Daily Time Record",
-            icon: <ChartColumnIncreasing />,
-          },
-        ]
+        {
+          to: "/user/daily-time-record",
+          label: "Daily Time Record",
+          icon: <ChartColumnIncreasing />,
+        },
+      ]
       : []),
     ...(role === "User"
       ? [
-          {
-            to: "/user/performance",
-            label: "Performance Borard",
-            icon: <ChartLine />,
-          },
-        ]
+        {
+          to: "/user/performance",
+          label: "Performance Borard",
+          icon: <ChartLine />,
+        },
+      ]
       : []),
 
     ...(role === "User"
       ? [
-          {
-            to: "/user/announcement",
-            label: "Announcement",
-            icon: <Megaphone />,
-          },
-        ]
+        {
+          to: "/user/announcement",
+          label: "Announcement",
+          icon: <Megaphone />,
+        },
+      ]
       : []),
   ];
 
@@ -126,10 +122,9 @@ const Menus = ({ toggle, onTitleChange }) => {
                     to={to}
                     onClick={() => onTitleChange(label)}
                     className={`flex items-center space-x-[12px] cursor-pointer px-[12px] py-[10px] rounded-lg transition-all duration-200
-                      ${
-                        isActive
-                          ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                          : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                      ${isActive
+                        ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                        : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                       }`}
                   >
                     <span className="text-[20px]">{icon}</span>
@@ -148,10 +143,9 @@ const Menus = ({ toggle, onTitleChange }) => {
                         to={to}
                         onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${
-                            isActive
-                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          ${isActive
+                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                           }`}
                       >
                         <Icon className="text-[20px]" />
@@ -172,10 +166,9 @@ const Menus = ({ toggle, onTitleChange }) => {
                         to={to}
                         onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${
-                            isActive
-                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          ${isActive
+                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                           }`}
                       >
                         <Icon className="text-[20px]" />
@@ -196,10 +189,9 @@ const Menus = ({ toggle, onTitleChange }) => {
                         to={to}
                         onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${
-                            isActive
-                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          ${isActive
+                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                           }`}
                       >
                         <Icon className="text-[20px]" />
@@ -220,10 +212,9 @@ const Menus = ({ toggle, onTitleChange }) => {
                         to={to}
                         onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
-                          ${
-                            isActive
-                              ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
-                              : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
+                          ${isActive
+                            ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
+                            : "text-[#778092] hover:bg-[#3b83f605] hover:border-l-2 hover:border-blue-500"
                           }`}
                       >
                         <Icon className="text-[20px]" />
@@ -234,31 +225,33 @@ const Menus = ({ toggle, onTitleChange }) => {
                 </div>
               )}
             </div>
+            {role === "Super-Admin" && (
 
-            <div className="mt-2 space-y-2">
-              <button
-                onClick={toggleContent}
-                className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm transition-all duration-200 hover:bg-[#3b83f620]"
-              >
-                <Plus size={18} /> Announcement
-              </button>
+              <div className="mt-2 space-y-2">
+                <button
+                  onClick={toggleContent}
+                  className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm transition-all duration-200 hover:bg-[#3b83f620]"
+                >
+                  <Plus size={18} /> Announcement
+                </button>
 
-              <div ref={contentRef} className="hidden-content">
-                <div className="draft-template">
-                  <button
-                    className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm hover:bg-[#3b83f620]"
-                    onClick={() => setShowDraftPopup(true)}
-                  >
-                    <ClipboardPlus size={18} /> Draft Template
-                  </button>
+                <div ref={contentRef} className="hidden-content">
+                  <div className="draft-template">
+                    <button
+                      className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm hover:bg-[#3b83f620]"
+                      onClick={() => setShowDraftPopup(true)}
+                    >
+                      <ClipboardPlus size={18} /> Draft Template
+                    </button>
 
-                  <DraftTemplate
-                    showDraftPopup={showDraftPopup}
-                    setShowDraftPopup={setShowDraftPopup}
-                  />
+                    <DraftTemplate
+                      showDraftPopup={showDraftPopup}
+                      setShowDraftPopup={setShowDraftPopup}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex-shrink-0 border-t border-gray-700 px-4 py-3">
@@ -289,12 +282,16 @@ const Menus = ({ toggle, onTitleChange }) => {
                   role === "User"
                     ? "/user/setting"
                     : role === "Admin"
-                    ? "/admin/setting"
-                    : role === "Super-Admin"
-                    ? "/dashboard/setting"
-                    : "/default/setting"
+                      ? "/admin/setting"
+                      : role === "Super-Admin"
+                        ? "/dashboard/setting"
+                        : role === "Team-Leader"
+                          ? "/team/setting"
+                          : role === "Checker"
+                            ? "/checker/setting"
+                            : "/default/setting"
                 }
-                onClick={() => {}}
+                onClick={() => { }}
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
                 <Settings className="w-5 h-5" />

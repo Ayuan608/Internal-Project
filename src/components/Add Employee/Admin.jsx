@@ -293,7 +293,7 @@ function Admin() {
             onClick={() => setIsDialogOpen(true)}
             className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border-0 px-4 py-1.5 rounded-lg font-semibold text-lg cursor-pointer transition-all ease-in-out duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
           >
-            <Plus className="inline w-4 h-4" />
+            <Plus className="inline w-4 h-4 text-white" />
             Add User
           </button>
         </div>

@@ -27,15 +27,15 @@ const WeeklyPerformanceChart = () => {
       {
         label: "CSR",
         data: [85, 78, 92, 88],
-        backgroundColor: "#10b981", // Emerald
+        backgroundColor: "#3b82f6", // Blue
         borderColor: "#10b981",
         borderWidth: 1,
       },
       {
         label: "Deposit",
         data: [92, 85, 88, 95],
-        backgroundColor: "#3b82f6", // Blue
         borderColor: "#3b82f6",
+        backgroundColor: "#10b981", // Emerald
         borderWidth: 1,
       },
       {

@@ -285,7 +285,7 @@ const OverallAttendance = () => {
           </div>
 
           {/* Filter Section */}
-          <div className="bg-[rgba(59,130,246,0.03)] rounded-lg shadow p-4 mb-6 border border-gray-700">
+          <div className="bg-[rgba(59,130,246,0.03)] rounded-lg shadow p-4 mb-6 border border-slate-800">
             <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
               {/* Department Filter */}
               <div className="flex items-center gap-2">

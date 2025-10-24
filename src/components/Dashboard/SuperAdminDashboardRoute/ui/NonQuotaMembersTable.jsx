@@ -182,7 +182,7 @@ const NonQuotaMembersTable = () => {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left border_gray rounded-lg whitespace-nowrap">
+        <table className="min-w-full text-sm text-left border border-slate-900 rounded-lg whitespace-nowrap">
           <thead className="text-white font-semibold">
             <tr>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DATE</th>
@@ -204,7 +204,7 @@ const NonQuotaMembersTable = () => {
               </tr>
             ) : (
               filteredData.map((member, index) => (
-                <tr key={index} className="hover:bg-[#1a1f36] transition-colors">
+                <tr key={index} className="hover:bg-[#1a1f3664] transition-colors">
                   <td className="px-4 py-2 border-b border-[#9e9fa74d]/40">{member.date}</td>
                   <td className="px-4 py-2 border-b border-[#9e9fa74d]/40 font-medium text-white">
                     {member.name}

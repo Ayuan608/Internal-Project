@@ -13,8 +13,8 @@ export default function Dashboard() {
           className=" top-0 rounded-lg p-2 z-auto backdrop-blur-3xl "
           style={{ zIndex: 9 }}
         >
-          <div className="flex justify-between">
-            <div className="flex justify-start items-start mb-4">
+          <div className="flex justify-between ">
+            <div className="flex justify-start w-[30%] items-start mb-4">
               <div className="relative w-full ">
                 <input
                   type="text"

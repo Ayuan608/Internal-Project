@@ -26,6 +26,7 @@ import RestDay from './components/Dashboard/TeamLeaderDashboard/RestDay';
 import AttendanceRecords from "./components/Dashboard/TeamLeaderDashboard/AttendanceRecords";
 import Performance from "./components/Dashboard/TeamLeaderDashboard/Performance";
 import CheckReport from "./components/Dashboard/CheckerDashboard/CheckReport";
+import EmployeeSchedule from "./components/Dashboard/CheckerDashboard/Schedule";
 
 function App() {
   return (
@@ -57,7 +58,7 @@ function App() {
           <Route path="login" element={<LoginCredentials />} />
           <Route path="department" element={<Department />} />
           <Route path="quotaSetting" element={<QuotaSetting />} />
-          <Route path="directory" element={<EmployeeDirectory />} />
+          <Route path="directory" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
@@ -77,7 +78,9 @@ function App() {
       <Route element={<RequireAuth allowedRoles={["Checker"]} />}>
         <Route path="/checker" element={<Layout />}>
           <Route index element={<CheckerDashboard />} />
+          <Route path="schedule" element={<EmployeeSchedule />} />
           <Route path="report" element={<CheckReport />} />
+          <Route path="setting" element={<Setting />} />
         </Route>
       </Route>
       {/* TEAM LEADER ROUTES */}
@@ -89,6 +92,7 @@ function App() {
           <Route path="non-quotamember" element={<NonQuota />} />
           <Route path="attendancerecords" element={<AttendanceRecords />} />
           <Route path="Performance" element={<Performance />} />
+          <Route path="setting" element={<Setting />} />
         </Route>
       </Route>
       {/* 404 and Denied */}

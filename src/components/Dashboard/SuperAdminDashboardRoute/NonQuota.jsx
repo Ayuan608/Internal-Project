@@ -2,7 +2,7 @@ import NonQuotaMembersTable from "./ui/NonQuotaMembersTable";
 
 const NonQuota = () => {
   return (
-    <div className="h-full border_gray rounded-2xl py-3">
+    <div className="h-full  rounded-2xl py-3">
       <div className="flex justify-between items-start">
         <div className="px-3">
           <div className="text-white mb-2">Non-Quota Dashboard</div>

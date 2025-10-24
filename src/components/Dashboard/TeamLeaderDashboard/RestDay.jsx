@@ -87,7 +87,7 @@ export default function RestDay() {
                         <td className="px-3 py-2 text-sm">{r.schedule}</td>
                         <td className="px-3 py-2 text-sm">{r.remark}</td>
                         <td className="px-3 py-2">
-                          <div className="flex gap-1 ">
+                          <div className="flex gap-1 flex gap-1 w-full flex-wrap justify-between ">
                             {r.pattern.map((p, i) => (
                               <div
                                 key={i}

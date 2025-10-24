@@ -261,15 +261,24 @@ const AttendanceChartMonth = () => {
                     employees
                 </span>
                 <div className="flex gap-2">
+                    <select
+                        className="bg-[var(--main-color)] text-white text-sm px-4 py-2 rounded-lg outline-none border border-[var(--box-border)] focus:border-blue-500 transition-colors    appearance-none "
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                    >
+                        <option value="">Filter by Department</option>
+                        <option value="CSR">CSR</option>
+                        <option value="Deposit">Deposit</option>
+                        <option value="Withdrawal">Withdrawal</option>
+                    </select>
                     <button
                         onClick={scrollLeft}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                        className="bg-[var(--main-color)] hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
                     >
                         ← Left
                     </button>
                     <button
                         onClick={scrollRight}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                        className="bg-[var(--main-color)] hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
                     >
                         Right →
                     </button>

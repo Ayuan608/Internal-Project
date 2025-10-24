@@ -14,6 +14,7 @@ import {
   BarChart3,
   Blend,
   Building2,
+  Calendar,
   CalendarCheck2,
   ClipboardPlus,
   Columns3Cog,
@@ -74,6 +75,7 @@ export const AdminRoutes = [
 ];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
+  { to: "/checker/schedule", label: "Schedule", icon: Calendar },
   { to: "/checker/report", label: "Report", icon: ReportIcon },
 ];
 

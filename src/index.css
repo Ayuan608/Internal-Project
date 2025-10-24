@@ -190,6 +190,9 @@ input:-webkit-autofill:active {
 button {
   cursor: pointer;
 }
+/* svg{
+  color: #778092;
+} */
 
 @keyframes fadeAnimate {
   from {

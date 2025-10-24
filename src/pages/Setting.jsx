@@ -159,12 +159,12 @@ function Setting() {
                     <label className="cursor-pointer" htmlFor="image_uploads">
                         {previewImage ? (
                             <img
-                                className="w-28 h-28 rounded-full m-auto"
+                                className="w-28 h-28  rounded-full m-auto"
                                 src={previewImage}
                                 alt="preview image"
                             />
                         ) : (
-                            <User className="w-28 text-black dark:text-white h-28 rounded-full m-auto" />
+                            <User className="w-22  border-2 border-slate-800  text-gray-500 h-22 rounded-full m-auto" />
                         )}
                     </label>
                     <input
