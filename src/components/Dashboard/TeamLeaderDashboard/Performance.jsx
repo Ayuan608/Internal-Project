@@ -84,28 +84,34 @@ const Performance = () => {
                     <thead className="bg-[rgba(59,130,246,0.03)] border-b border-gray-700">
                         <tr>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                NAME
+                                Member
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                SHIFT
+                                Date
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                COMPLETED
+                                Completed Convo
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                MESSAGES
+                                Total Effective
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                FRT (SEC)
+                                Total Message
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                POSITIVE %
+                                Missed Chats
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                MISTAKES
+                                Ave. Online Time
                             </th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                QUOTA
+                                1st Response
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                Positive rates
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                Negatives
                             </th>
                         </tr>
                     </thead>

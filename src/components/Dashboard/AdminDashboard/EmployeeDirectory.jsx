@@ -260,11 +260,7 @@ function EmployeeDirectory() {
     URL.revokeObjectURL(url);
   };
 
-  const activeEmployees =
-    users?.filter((emp) => emp.status === "Active").length || 0;
-  const withdrawnEmployees =
-    users?.filter((emp) => emp.status === "Withdrawn").length || 0;
-  const totalEmployees = users?.length || 0;
+
 
   const rolePermissions = {
     "Super-Admin": ["Team-Leader", "Admin", "User", "Checker"],
@@ -275,7 +271,7 @@ function EmployeeDirectory() {
   return (
     <div className="min-h-screen p-6">
       {/* Header */}
-      <div className="bg-[#f5f6fa13] rounded-2xl shadow-xl p-6 mb-6">
+      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-3xl font-bold text-WHITE flex items-center gap-2">
@@ -306,31 +302,18 @@ function EmployeeDirectory() {
               placeholder="Search by name or username..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 "
+              className="w-full pl-10 pr-4 py-2.5 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 "
             />
           </div>
-          <div className="flex gap-2">
-            {["All", "CSR", "Deposit", "Withdraw"].map((dept) => (
-              <button
-                key={dept}
-                onClick={() => setSelectedDepartment(dept)}
-                className={`px-4 py-2 rounded-lg transition-all border border-transparent ${selectedDepartment === dept
-                  ? "border-white text-white shadow-lg"
-                  : "bg-[#10131f] text-white "
-                  }`}
-              >
-                {dept}
-              </button>
-            ))}
-          </div>
+     
         </div>
       </div>
 
       {/* Employee Table */}
-      <div className=" rounded-xl border border-[var(--box-border)]  shadow-xl overflow-hidden">
+      <div className=" rounded-xl border border-slate-800 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#f5f6fa13] text-white">
+            <thead className="bg-slate-900/50 text-white">
               <tr>
                 <th className="px-6 py-4 text-left">Avatar</th>
                 <th className="px-6 py-4 text-left">Name</th>
@@ -376,7 +359,7 @@ function EmployeeDirectory() {
                 filteredEmployees.map((emp, index) => (
                   <tr
                     key={emp._id}
-                    className={`border-b border-[var(--box-border)] hover:bg-[#3b83f610] transition-colors ${index % 2 === 0 ? "bg-[#3b83f60b]" : "bg-[#3b83f60b]"
+                    className={`border-b border-slate-800 text-[14px] font-semibold hover:bg-[#3b83f610] transition-colors ${index % 2 === 0 ? "bg-[#3b83f60b]" : "bg-[#3b83f60b]"
                       }`}
                   >
                     <td className="px-6 py-4">
@@ -421,7 +404,7 @@ function EmployeeDirectory() {
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${emp.status === "Active"
                             ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
                             }`}
                         >
                           {emp.status || "Active"}
@@ -508,244 +491,8 @@ function EmployeeDirectory() {
         </div>
       </div>
 
-      {/* Add/Edit Employee Modal */}
-      {isDialogOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className=" rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-2xl font-bold text-white">
-                {isEditMode ? "Edit Employee" : "Add Employee"}
-              </h2>
-              <button
-                onClick={resetForm}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
 
-            <form onSubmit={handleAddEmployee} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="FullName"
-                    value={addUser.FullName}
-                    onChange={handleUserInput}
-                    placeholder="Enter full name"
-                    className="w-full border border-gray-300 bg-[#10131f] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Username *
-                  </label>
-                  <input
-                    type="text"
-                    name="username"
-                    value={addUser.username}
-                    onChange={handleUserInput}
-                    placeholder="Enter username"
-                    className="w-full border border-gray-300 bg-[#10131f] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={addUser.email}
-                    onChange={handleUserInput}
-                    placeholder="Enter email"
-                    className="w-full border border-gray-300 bg-[#10131f] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Password {!isEditMode && "*"}
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={addUser.password}
-                    onChange={handleUserInput}
-                    placeholder={
-                      isEditMode
-                        ? "Leave blank to keep current"
-                        : "Enter password"
-                    }
-                    className="w-full border border-gray-300 bg-[#10131f] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 "
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={addUser.phone}
-                    onChange={handleUserInput}
-                    placeholder="9168636883"
-                    className="w-full border border-gray-300 bg-[#10131f] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Department *
-                  </label>
-                  <select
-                    name="department"
-                    value={addUser.department}
-                    onChange={handleUserInput}
-                    className="w-full border border-gray-600 bg-[#10131f] text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                    required
-                  >
-                    <option value="">Select Department</option>
-                    <option value="CSR">CSR Department</option>
-                    <option value="Deposit">Deposit Department</option>
-                    <option value="Withdraw">Withdraw Department</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Role *
-                  </label>
-                  <select
-                    name="role"
-                    value={addUser.role}
-                    onChange={handleUserInput}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 bg-[#10131f] appearance-none"
-                    required
-                  >
-                    <option value="">Select Role</option>
-                    {allowedRoles.map((roleOption) => (
-                      <option key={roleOption} value={roleOption}>
-                        {roleOption}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Date Hired *
-                  </label>
-                  <input
-                    type="date"
-                    name="dateHired"
-                    value={addUser.dateHired}
-                    onChange={handleUserInput}
-                    className="w-full border border-gray-300 rounded-lg bg-[#10131f] px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Salary *
-                  </label>
-                  <input
-                    type="text"
-                    name="salary"
-                    value={addUser.salary}
-                    onChange={handleUserInput}
-                    placeholder="$45,000"
-                    className="w-full border border-gray-300 rounded-lg bg-[#10131f] px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Working Hours *
-                  </label>
-                  <input
-                    type="text"
-                    name="workingHour"
-                    value={addUser.workingHour}
-                    onChange={handleUserInput}
-                    placeholder="9:00 AM - 5:00 PM"
-                    className="w-full border border-gray-300 rounded-lg bg-[#10131f] px-4 py-2 focus:outline-none focus:ring-2 "
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white mb-2 font-medium">
-                    Shift *
-                  </label>
-                  <select
-                    name="Shift"
-                    value={addUser.Shift}
-                    onChange={handleUserInput}
-                    className="w-full border border-gray-600 bg-[#10131f] text-white rounded-lg px-4 py-2 border-none outline-none focus:ring-2  appearance-none"
-                    required
-                  >
-                    <option value="">Select Shift</option>
-                    <option value="Morning">Morning</option>
-                    <option value="Evening">Evening</option>
-                    <option value="Night">Night</option>
-                    <option value="Rotational">Rotational</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-6 py-2 rounded-lg  border text-white hover:bg-white hover:text-black font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-lg border text-white hover:bg-white hover:text-black
-                   font-medium shadow-lg"
-                >
-                  {isEditMode ? "Update" : "Add Employee"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* QR Code Modal */}
-      {qrModalOpen && qrCodeImage && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-              Employee QR Code
-            </h2>
-            <div className="bg-gray-50 p-4 rounded-xl mb-6">
-              <img src={qrCodeImage} alt="QR Code" className="w-full h-auto" />
-            </div>
-            <button
-              onClick={() => setQrModalOpen(false)}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

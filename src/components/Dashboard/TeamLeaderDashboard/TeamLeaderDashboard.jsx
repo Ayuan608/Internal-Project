@@ -80,7 +80,7 @@ export default function TeamLeaderDashboard() {
             <ExampleIosSwitch />
           </div>
 
-          <div className="p-2 bg-[#282e3c38] rounded-xl mb-4 border_gray">
+          <div className="p-2 bg-[#282e3c38] rounded-xl mb-4 ">
             <TeamLeaderStats title="⚡ Performance Trends" data={LeaderStats} />
           </div>
         </div>
