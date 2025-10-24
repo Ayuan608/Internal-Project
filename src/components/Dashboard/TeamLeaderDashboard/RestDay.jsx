@@ -40,11 +40,11 @@ export default function RestDay() {
       </div>
 
       <div className="relative z-10 flex">
- 
+
 
         {/* Main content */}
         <main className="flex-1 p-6 lg:pl-8">
-   
+
 
           {/* KPI strip */}
           <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -60,7 +60,7 @@ export default function RestDay() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-md font-semibold">Schedule & Attendance</h2>
                 <div className="flex items-center gap-2">
-      
+
                 </div>
               </div>
 
@@ -70,7 +70,7 @@ export default function RestDay() {
                     <tr className="text-xs text-slate-400">
                       <th className="px-3 py-2 text-left">#</th>
                       <th className="px-3 py-2 text-left">Date Hired</th>
-            
+
                       <th className="px-3 py-2 text-left">Name</th>
                       <th className="px-3 py-2 text-left">Schedule</th>
                       <th className="px-3 py-2 text-left">Remarks</th>
@@ -82,18 +82,17 @@ export default function RestDay() {
                       <tr key={r.id} className="odd:bg-slate-900/20">
                         <td className="px-3 py-2 text-sm">{r.headCount}</td>
                         <td className="px-3 py-2 text-sm">{r.dateHired}</td>
-              
+
                         <td className="px-3 py-2 text-sm">{r.name}</td>
                         <td className="px-3 py-2 text-sm">{r.schedule}</td>
                         <td className="px-3 py-2 text-sm">{r.remark}</td>
                         <td className="px-3 py-2">
-                          <div className="flex gap-1 flex gap-1 w-full flex-wrap justify-between ">
+                          <div className="flex gap-1  w-full flex-wrap justify-between ">
                             {r.pattern.map((p, i) => (
                               <div
                                 key={i}
-                                className={`w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-semibold ${
-                                  p === 0 ? "bg-yellow-300 text-black" : p === 1 ? "bg-green-300 text-black" : p === 2 ? "bg-sky-400 text-white" : "bg-red-600 text-white"
-                                }`}
+                                className={`w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-semibold ${p === 0 ? "bg-yellow-300 text-black" : p === 1 ? "bg-green-300 text-black" : p === 2 ? "bg-sky-400 text-white" : "bg-red-600 text-white"
+                                  }`}
                                 title={`Day ${i + 1}`}>
                                 {p === 0 ? "D" : p === 1 ? "N" : p === 2 ? "RD" : "A"}
                               </div>
@@ -111,7 +110,7 @@ export default function RestDay() {
           </section>
 
           {/* Non-Quota Dashboard */}
-         
+
         </main>
       </div>
 
