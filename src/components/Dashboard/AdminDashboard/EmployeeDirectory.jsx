@@ -273,7 +273,7 @@ function EmployeeDirectory() {
   const allowedRoles = rolePermissions[role] || [];
 
   return (
-    <div className="min-h-screen  p-6">
+    <div className="min-h-screen p-6">
       {/* Header */}
       <div className="bg-[#f5f6fa13] rounded-2xl shadow-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
