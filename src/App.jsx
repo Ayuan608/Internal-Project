@@ -20,7 +20,6 @@ import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/Activi
 import Admin from "./components/Add Employee/Admin";
 import LoginCredentials from "./components/Dashboard/AdminDashboard/LoginCredentials";
 import EmployeeDirectory from "./components/Dashboard/AdminDashboard/EmployeeDirectory";
-import CaseReport from "./components/Dashboard/AdminDashboard/CaseReport";
 import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
 import TeamLeaderDashboard from "./components/Dashboard/TeamLeaderDashboard/TeamLeaderDashboard";
 import RestDay from './components/Dashboard/TeamLeaderDashboard/RestDay';
@@ -60,7 +59,6 @@ function App() {
           <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="directory" element={<EmployeeDirectory />} />
           <Route path="announcement" element={<Announcement />} />
-          <Route path="report" element={<CaseReport />} />
           <Route path="setting" element={<Setting />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
         </Route>

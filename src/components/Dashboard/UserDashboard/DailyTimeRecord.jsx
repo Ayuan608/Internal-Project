@@ -35,7 +35,7 @@ function DailyTimeRecord() {
           </div>
 
           {/* ✅ View Toggle */}
-          <div className="border border-gray-500 rounded-lg shadow p-4 mb-6 flex justify-between items-center">
+          <div className=" rounded-lg shadow p-4 mb-6 flex justify-between items-center">
             <div className="flex gap-2">
               <button
                 onClick={() => setView("weekly")}
@@ -69,7 +69,7 @@ function DailyTimeRecord() {
 
           {/* ✅ DTR Table */}
           <div className="bg-[#10101b94] border border-gray-500 rounded-lg shadow text-white">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div className="p-6   flex justify-between items-center">
               <h2 className="text-xl font-semibold text-white">
                 {view === "weekly"
                   ? "Weekly DTR - Current Week"
@@ -122,7 +122,7 @@ function DailyTimeRecord() {
 
       </div>
         {/* ✅ INFO ALERT BAR (As shown in screenshot) */}
-        <div className="bg-blue-50 border pt-4 border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+        <div className=" border-l-2 pt-4 border-blue-200 text-white mx-4 bg-[rgba(59,131,246,0.06)]  px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
           <Info className="w-5 h-5 mt-[2px]" />
           <p className="text-sm">
             <span className="font-semibold">Information:</span> This is your

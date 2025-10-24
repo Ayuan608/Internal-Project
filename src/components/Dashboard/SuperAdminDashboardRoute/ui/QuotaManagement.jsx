@@ -2,8 +2,8 @@ import React, { useState } from "react";
 
 const QuotaManagement = () => {
   const [currentValue, setCurrentValue] = useState(45);
-  const minValue = 20;
-  const maxValue = 100;
+  const minValue = 1000;
+  const maxValue = 2000;
 
   const handleSliderChange = (e) => {
     setCurrentValue(parseInt(e.target.value));
@@ -14,7 +14,7 @@ const QuotaManagement = () => {
   };
 
   return (
-    <div className="w-full my-5 px-2 bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg border_gray p-1">
+    <div className="w-full my-5 px-2 bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg  p-1">
       {/* Header */}
       <h1 className="text-2xl font-bold text-white mb-6 mt-3">
         ⚙️ Quota Management
@@ -23,7 +23,7 @@ const QuotaManagement = () => {
       {/* Shift Sections */}
       <div className="space-x-4 mb-8 grid grid-cols-2">
         {/* 9-Hour Shift */}
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div className="p-4 rounded-lg">
           <div className="flex justify-between items-center mb-2">
             <span className="font-semibold text-white">9-Hour Shift</span>
             <span className="text-sm text-gray-500">Auto</span>
@@ -34,7 +34,7 @@ const QuotaManagement = () => {
         </div>
 
         {/* 12-Hour Shift */}
-        <div className="p-4 border_gray rounded-lg">
+        <div className="p-4 rounded-lg">
           <div className="flex justify-between items-center mb-2">
             <span className="font-semibold text-white">12-Hour Shift</span>
             <span className="text-sm text-gray-500">Auto</span>
@@ -45,7 +45,7 @@ const QuotaManagement = () => {
         </div>
       </div>
 
-      <div className="border-t border-gray-700 pt-6">
+      <div className=" pt-6">
         {/* Manual Adjustment Header */}
         <h2 className="text-xl font-semibold text-white mb-4">
           Manual Adjustment

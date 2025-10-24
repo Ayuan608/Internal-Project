@@ -87,7 +87,7 @@ const Layout = () => {
                         )}
                         {(role === "Admin" || role === "Super-Admin") && (
                             <div className="flex gap-2 bg-[#f5f6fa09] max-w-[255px] p-1 rounded-full">
-                                {["CSR", "WithDraw", "Deposit"].map((tab) => (
+                                {["CSR", "Withdraw", "Deposit"].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}

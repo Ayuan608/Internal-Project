@@ -156,48 +156,12 @@ const CaseReport = () => {
           </button>
         </div>
 
-        {/* Report Types Grid */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            Available Reports
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {reportsList.map((report) => {
-              const Icon = report.icon;
-              return (
-                <div
-                  key={report.id}
-                  className="bg-[#3b83f60e]backdrop-blur-sm rounded-lg p-6 border border-[var(--box-border)] hover:border-slate-600 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`p-3 rounded-lg border ${colorClasses[report.color]}`}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-blue-400 transition-colors">
-                        {report.title}
-                      </h3>
-                      <p className="text-slate-400 text-sm mb-3">
-                        {report.description}
-                      </p>
-                      <button className="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center gap-1">
-                        Generate Report
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      
 
         {/* Recent Exports */}
         <div className="bg-[#3b83f60e] backdrop-blur-sm rounded-lg p-4 md:p-6 border border-[var(--box-border)]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">Recent Exports</h2>
+            <h2 className="text-xl font-semibold text-white">Active Cases</h2>
             <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
               View All
             </button>

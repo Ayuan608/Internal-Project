@@ -65,7 +65,6 @@ export const AdminRoutes = [
   { to: "/admin/quotaSetting", label: "Quota Settings", icon: Settings },
   { to: "/admin/directory", label: "Employee Directory", icon: Users },
   { to: "/admin/announcement", label: "Annoucement", icon: Megaphone },
-  { to: "/admin/report", label: "Case Report", icon: FileText },
   {
     to: "/admin/overallAttendance",
     label: "Overall Attendence ",

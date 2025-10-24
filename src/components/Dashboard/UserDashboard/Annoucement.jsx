@@ -371,8 +371,8 @@ export default function Announcement() {
   const [createAnnouncement, setCreateAnnouncement] = useState(false)
   return (
     <div className="min-h-screen px-2 mt-4">
-      <div className="max-w-[90%]  mx-auto">
-        <div className="flex justify-between items-center mb-8 pb-4 border-b-2 border-gray-500">
+      <div className="max-w-full p-2 mx-auto">
+        <div className="flex justify-between items-center mb-8 pb-4">
           <div>
             <h1 className="font-semibold text-white text-3xl">Announcements</h1>
             <div className="text-white/70">

@@ -197,7 +197,7 @@ function PerformanceDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Daily Time Record</h1>
+            <h1 className="text-3xl font-bold text-white">Performance Dashboard</h1>
             <p className="text-slate-500 mt-1">
               Performance Dashboard - Current{" "}
               {viewType === "weekly" ? "Week" : "Month"}
@@ -305,7 +305,7 @@ function PerformanceDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="">
-                <tr className="border-b border-slate-200">
+                <tr className="">
                   <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                     Date
                   </th>
@@ -358,11 +358,7 @@ function PerformanceDashboard() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-block px-2 py-1 rounded text-lg font-medium ${
-                          row.missed > 3
-                            ? "bg-red-100 text-red-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
+                        className={`inline-block px-2 py-1 rounded text-lg font-medium text-white`}
                       >
                         {row.missed}
                       </span>
@@ -372,32 +368,24 @@ function PerformanceDashboard() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-block px-2 py-1 rounded text-sm font-medium ${
-                          row.frt > 12
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
+                        className={`inline-block px-2 py-1 rounded text-sm font-medium text-white`}
                       >
                         {row.frt}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-sm font-medium">
+                      <span className="inline-block px-2 py-1 rounded text-white text-sm font-medium">
                         {row.positive}%
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-2 py-1 rounded bg-red-100 text-red-700 text-sm font-medium">
+                      <span className="inline-block px-2 py-1 rounded text-white text-sm font-medium">
                         {row.negative}%
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-block px-2 py-1 rounded text-sm font-medium ${
-                          row.mistakes > 2
-                            ? "bg-red-100 text-red-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
+                        className={`inline-block px-2 py-1 rounded text-sm font-medium text-white}`}
                       >
                         {row.mistakes}
                       </span>
@@ -408,7 +396,7 @@ function PerformanceDashboard() {
                   </tr>
                 ))}
                 {/* Total Row */}
-                <tr className=" font-bold border-t-1 border-slate-500">
+                <tr className=" font-bold ">
                   <td className="px-6 py-4 text-sm text-white">
                     {viewType === "weekly" ? "Weekly" : "Monthly"} Total
                   </td>
