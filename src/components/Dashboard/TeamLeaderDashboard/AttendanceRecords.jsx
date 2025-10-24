@@ -1,7 +1,3 @@
-
-
-
-import React from 'react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import AttendanceChartMonth from '../SuperAdminDashboardRoute/ui/AttendanceChartMonth';
 
@@ -43,14 +39,14 @@ const AttendanceRecords = () => {
 
     return (
         <>
-            <div className="w-full bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg border_gray overflow-hidden m-2">
+            <div className="w-[calc(100vw - 240px)] bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg border_gray overflow-hidden m-2">
                 {/* Table Header */}
                 <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-white">Attendance Records</h2>
                 </div>
 
                 {/* Table Container */}
-                <div className="overflow-x-auto overflow-hidden">
+                <div className="overflow-x-auto">
                     <table className="w-full">
                         {/* Table Head */}
                         <thead className="bg-[rgba(59,130,246,0.03)] border-b border-gray-200">
@@ -142,7 +138,7 @@ const AttendanceRecords = () => {
                 </div>
 
                 {/* Table Footer */}
-                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-3 border-t border-gray-200 ">
+                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-3 border-t border-gray-200">
                     <div className="flex justify-between items-center">
                         <div className="text-sm text-white">
                             Showing {attendanceData.length} records
@@ -153,7 +149,7 @@ const AttendanceRecords = () => {
                     </div>
                 </div>
             </div>
-            <div  className='p-2'>
+            <div className='p-2'>
                 <AttendanceChartMonth />
             </div>
         </>

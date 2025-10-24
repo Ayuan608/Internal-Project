@@ -273,7 +273,7 @@ function EmployeeDirectory() {
   const allowedRoles = rolePermissions[role] || [];
 
   return (
-    <div className="min-h-screen  p-6">
+    <div className="min-h-screen p-6">
       {/* Header */}
       <div className="bg-[#f5f6fa13] rounded-2xl shadow-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -292,13 +292,6 @@ function EmployeeDirectory() {
             >
               <Download size={18} />
               Export CSV
-            </button>
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className="bg-[#3B82F6] text-white px-5 py-2 rounded-lg flex items-center gap-2 transition-all shadow-lg"
-            >
-              <Plus size={18} />
-              Add Employee
             </button>
           </div>
         </div>

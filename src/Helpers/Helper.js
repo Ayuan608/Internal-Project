@@ -43,7 +43,7 @@ ChartJS.register(
 export const superAdminButtons = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/dashboard/department", label: "Department", icon: ClipboardPlus },
-  { to: "/dashboard/nonQuta", label: "Non-Quota", icon: BarChart3 },
+
   { to: "/dashboard/quotaSetting", label: "Quota Settings", icon: UserCheck },
   { to: "/dashboard/add", label: "Directory", icon: Columns3Cog },
   {
@@ -285,21 +285,41 @@ export const LeaderStats = [
     title: "This Week",
     value: "+12% ↑",
     trend: "up",
+    trend: "up",
+    data: [
+      200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,
+      380, 360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920,
+    ],
   },
   {
     title: "This Month",
     value: "+8.5% ↑",
     trend: "up",
+    trend: "up",
+    data: [
+      200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,
+      380, 360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920,
+    ],
   },
   {
     title: "Efficiency",
     value: "-2.3% ↓",
     trend: "down",
+    trend: "down",
+    data: [
+      200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,
+      380, 360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920,
+    ],
   },
   {
     title: "CSAT Score",
     value: "+5.2% ↑",
     trend: "up",
+    trend: "up",
+    data: [
+      200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,
+      380, 360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920,
+    ],
   },
 ];
 
