@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -7,14 +6,13 @@ import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
-import { areaElementClasses } from "@mui/x-charts/LineChart";
 
 export type StatCardProps = {
   title: string;
   value: string;
-  interval?: string;
+  interval: string;
   trend: "up" | "down" | "neutral";
-  data?: number[];
+  data: number[];
 };
 
 function getDaysInMonth(month: number, year: number) {
@@ -30,17 +28,6 @@ function getDaysInMonth(month: number, year: number) {
     i += 1;
   }
   return days;
-}
-
-function AreaGradient({ color, id }: { color: string; id: string }) {
-  return (
-    <defs>
-      <linearGradient id={id} x1="50%" y1="0%" x2="50%" y2="100%">
-        <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-        <stop offset="100%" stopColor={color} stopOpacity={0} />
-      </linearGradient>
-    </defs>
-  );
 }
 
 export default function StatCard({
@@ -80,7 +67,7 @@ export default function StatCard({
 
   return (
     <Card variant="outlined" sx={{ height: "100%", flexGrow: 1 }}>
-      <CardContent sx={{ borderLeft: "2px solid white",borderRadius:"12px" }}>
+      <CardContent sx={{ borderLeft: "2px solid white", borderRadius: "12px" }}>
         <Typography component="h2" variant="subtitle2" gutterBottom>
           {title}
         </Typography>
@@ -106,7 +93,6 @@ export default function StatCard({
             <SparkLineChart
               color={chartColor}
               data={data || []}
-              area
               showHighlight
               showTooltip
               xAxis={{
@@ -114,13 +100,14 @@ export default function StatCard({
                 data: daysInWeek,
               }}
               sx={{
-                [`& .${areaElementClasses.root}`]: {
-                  fill: `url(#area-gradient-${value})`,
+                "& path": {
+                  fill: "none",
+                },
+                "& .MuiAreaElement-root": {
+                  display: "none",
                 },
               }}
-            >
-              <AreaGradient color={chartColor} id={`area-gradient-${value}`} />
-            </SparkLineChart>
+            />
           </Box>
         </Stack>
       </CardContent>
