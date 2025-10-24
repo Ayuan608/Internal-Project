@@ -12,9 +12,9 @@ import { areaElementClasses } from "@mui/x-charts/LineChart";
 export type StatCardProps = {
   title: string;
   value: string;
-  interval: string;
+  interval?: string;
   trend: "up" | "down" | "neutral";
-  data: number[];
+  data?: number[];
 };
 
 function getDaysInMonth(month: number, year: number) {
@@ -80,7 +80,7 @@ export default function StatCard({
 
   return (
     <Card variant="outlined" sx={{ height: "100%", flexGrow: 1 }}>
-      <CardContent>
+      <CardContent sx={{ borderLeft: "2px solid white",borderRadius:"12px" }}>
         <Typography component="h2" variant="subtitle2" gutterBottom>
           {title}
         </Typography>
@@ -105,13 +105,13 @@ export default function StatCard({
           <Box sx={{ width: "100%", height: 50 }}>
             <SparkLineChart
               color={chartColor}
-              data={data}
+              data={data || []}
               area
               showHighlight
               showTooltip
               xAxis={{
                 scaleType: "band",
-                data: daysInWeek, // Use the correct property 'data' for xAxis
+                data: daysInWeek,
               }}
               sx={{
                 [`& .${areaElementClasses.root}`]: {

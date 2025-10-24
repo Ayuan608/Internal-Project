@@ -115,13 +115,13 @@ const NonQuotaMembersTable = () => {
         <table className="min-w-full text-sm text-left border_gray rounded-lg">
           <thead className="text-white font-semibold">
             <tr>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">DATE ⬍</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">NAME ⬍</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">ROLE ⬍</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">DEPARTMENT ⬍</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">OUTPUT ⬍</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">TARGET ⬍</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]">VARIANCE ⬍</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">DATE</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">NAME</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">ROLE</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">DEPARTMENT</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">OUTPUT</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">TARGET</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]">VARIANCE</th>
             </tr>
           </thead>
           <tbody>

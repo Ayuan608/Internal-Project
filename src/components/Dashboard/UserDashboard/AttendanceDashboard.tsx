@@ -23,6 +23,33 @@ const INITIAL_PAGE_SIZE = 10;
 
 const COLORS = ["#10b981", "#60a5fa", "#f59e0b"];
 
+// Helper functions to manage break counts in localStorage
+const getStoredBreakCounts = () => {
+  const today = new Date().toDateString();
+  const stored = localStorage.getItem(`breakCounts_${today}`);
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  return { smoke: 0, wc: 0, lastReset: today };
+};
+
+const setStoredBreakCounts = (counts: { smoke: number; wc: number; lastReset: string }) => {
+  const today = new Date().toDateString();
+  localStorage.setItem(`breakCounts_${today}`, JSON.stringify({ ...counts, lastReset: today }));
+};
+
+// Helper to manage break history in localStorage
+const getStoredBreakHistory = () => {
+  const stored = localStorage.getItem('breakHistory');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const addToBreakHistory = (breakRecord: any) => {
+  const history = getStoredBreakHistory();
+  const updatedHistory = [breakRecord, ...history].slice(0, 50); // Keep last 50 records
+  localStorage.setItem('breakHistory', JSON.stringify(updatedHistory));
+};
+
 export default function AttendanceDashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -42,23 +69,30 @@ export default function AttendanceDashboard() {
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
 
-  // Break counts with daily reset
+  // Break counts with localStorage persistence
   const [breakCounts, setBreakCounts] = useState<{
     smoke: number;
     wc: number;
     lastReset: string;
-  }>(() => {
-    const today = new Date().toDateString();
-    return { smoke: 0, wc: 0, lastReset: today };
-  });
+  }>(() => getStoredBreakCounts());
+
+  // Break history state
+  const [breakHistory, setBreakHistory] = useState<any[]>(() => getStoredBreakHistory());
 
   // Check and reset break counts daily
   useEffect(() => {
     const today = new Date().toDateString();
     if (breakCounts.lastReset !== today) {
-      setBreakCounts({ smoke: 0, wc: 0, lastReset: today });
+      const resetCounts = { smoke: 0, wc: 0, lastReset: today };
+      setBreakCounts(resetCounts);
+      setStoredBreakCounts(resetCounts);
     }
   }, [breakCounts.lastReset]);
+
+  // Update localStorage when breakCounts change
+  useEffect(() => {
+    setStoredBreakCounts(breakCounts);
+  }, [breakCounts]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -170,16 +204,95 @@ export default function AttendanceDashboard() {
     if (!activeTimer) return;
 
     const breakType = activeTimer.type;
+    const endTime = new Date();
+    const duration = Math.floor((endTime.getTime() - activeTimer.startTime.getTime()) / 1000);
+    
+    // Create break record
+    const breakRecord = {
+      id: Date.now().toString(),
+      type: breakType,
+      startTime: activeTimer.startTime,
+      endTime: endTime,
+      duration: duration,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    // Update break counts
     setBreakCounts((prev) => ({
       ...prev,
       [breakType]: prev[breakType] + 1,
     }));
 
+    // Add to break history
+    addToBreakHistory(breakRecord);
+    setBreakHistory(getStoredBreakHistory());
+
     setActiveTimer(null);
     setTimeLeft(300);
 
-    // Here you would typically dispatch an action to save the break data
-    console.log(`${breakType} break completed`);
+    console.log(`${breakType} break completed: ${duration} seconds`);
+  };
+
+  // Calculate break time for display
+  const calculateBreakTime = (start: any, end: any) => {
+    if (!start || !end) {
+      // Check if we have break history for this date
+      const rowDate = new Date().toISOString().split('T')[0];
+      const todayBreaks = breakHistory.filter(breakRecord => 
+        breakRecord.date === rowDate && breakRecord.type === "smoke"
+      );
+      
+      if (todayBreaks.length > 0) {
+        const totalSeconds = todayBreaks.reduce((total, record) => total + record.duration, 0);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}m ${seconds}s`;
+      }
+      return "-";
+    }
+    
+    try {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "-";
+      const diff = Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
+      );
+      return `${diff} min`;
+    } catch {
+      return "-";
+    }
+  };
+
+  // Calculate WC break time for display
+  const calculateWcBreakTime = (start: any, end: any) => {
+    if (!start || !end) {
+      // Check if we have break history for this date
+      const rowDate = new Date().toISOString().split('T')[0];
+      const todayBreaks = breakHistory.filter(breakRecord => 
+        breakRecord.date === rowDate && breakRecord.type === "wc"
+      );
+      
+      if (todayBreaks.length > 0) {
+        const totalSeconds = todayBreaks.reduce((total, record) => total + record.duration, 0);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}m ${seconds}s`;
+      }
+      return "-";
+    }
+    
+    try {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "-";
+      const diff = Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
+      );
+      return `${diff} min`;
+    } catch {
+      return "-";
+    }
   };
 
   // Real-time statistics calculation
@@ -288,6 +401,17 @@ export default function AttendanceDashboard() {
       last7Days.add(dateStr);
     });
 
+    // Add current session breaks from localStorage history
+    const todayBreaks = breakHistory.filter(record => record.date === today);
+    todayBreaks.forEach(record => {
+      const minutes = Math.floor(record.duration / 60);
+      if (record.type === 'wc') {
+        totalWcMinutes += minutes;
+      } else if (record.type === 'smoke') {
+        totalSmokeMinutes += minutes;
+      }
+    });
+
     // Calculate streak
     const todayDate = new Date();
     for (let i = 0; i < 7; i++) {
@@ -382,7 +506,7 @@ export default function AttendanceDashboard() {
       // Pie Data
       pieData,
     };
-  }, [attendanceList, breakCounts]);
+  }, [attendanceList, breakCounts, breakHistory]);
 
   const [error, setError] = useState(null);
 
@@ -406,10 +530,14 @@ export default function AttendanceDashboard() {
 
   useEffect(() => {
     loadData();
+    // Load break history from localStorage on component mount
+    setBreakHistory(getStoredBreakHistory());
   }, [loadData]);
 
   const handleRefresh = () => {
     loadData();
+    // Reload break history on refresh
+    setBreakHistory(getStoredBreakHistory());
   };
 
   const formatDate = (dateStr: any) => {
@@ -436,21 +564,6 @@ export default function AttendanceDashboard() {
         minute: "2-digit",
         hour12: true,
       });
-    } catch {
-      return "-";
-    }
-  };
-
-  const calculateBreakTime = (start: any, end: any) => {
-    if (!start || !end) return "-";
-    try {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "-";
-      const diff = Math.floor(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
-      );
-      return `${diff} min`;
     } catch {
       return "-";
     }
@@ -711,10 +824,10 @@ export default function AttendanceDashboard() {
                       Punch Out
                     </th>
                     <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">
-                      WC
+                      WC Break
                     </th>
                     <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">
-                      Smoke
+                      Smoke Break
                     </th>
                     <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">
                       Working Hours
@@ -764,7 +877,7 @@ export default function AttendanceDashboard() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-center text-[#60a5fa]">
-                          {calculateBreakTime(row.wcStart, row.wcEnd)}
+                          {calculateWcBreakTime(row.wcStart, row.wcEnd)}
                         </td>
                         <td className="px-4 py-3 text-center text-[#f59e0b]">
                           {calculateBreakTime(row.smokeStart, row.smokeEnd)}

@@ -23,6 +23,10 @@ import LoginCredentials from "./components/Dashboard/AdminDashboard/LoginCredent
 import EmployeeDirectory from "./components/Dashboard/AdminDashboard/EmployeeDirectory";
 import CaseReport from "./components/Dashboard/AdminDashboard/CaseReport";
 import Announcement from "./components/Dashboard/UserDashboard/Annoucement";
+import TeamLeaderDashboard from "./components/Dashboard/TeamLeaderDashboard/TeamLeaderDashboard";
+import RestDay from './components/Dashboard/TeamLeaderDashboard/RestDay';
+import AttendanceRecords from "./components/Dashboard/TeamLeaderDashboard/AttendanceRecords";
+import Performance from "./components/Dashboard/TeamLeaderDashboard/Performance";
 
 function App() {
   return (
@@ -33,9 +37,7 @@ function App() {
         <Route path="/login" element={<Login />} />
       </Route>
       {/* SUPER-ADMIN ROUTES */}
-      <Route
-        element={<RequireAuth allowedRoles={["Team-Leader", "Super-Admin"]} />}
-      >
+      <Route element={<RequireAuth allowedRoles={["Super-Admin"]} />}>
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="department" element={<Department />} />
@@ -50,9 +52,7 @@ function App() {
         </Route>
       </Route>
       {/* ADMIN ROUTES */}
-      <Route
-        element={<RequireAuth allowedRoles={["Admin"]} />}
-      >
+      <Route element={<RequireAuth allowedRoles={["Admin"]} />}>
         <Route path="/admin" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="login" element={<LoginCredentials />} />
@@ -61,7 +61,7 @@ function App() {
           <Route path="directory" element={<EmployeeDirectory />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="report" element={<CaseReport />} />
-           <Route path="setting" element={<Setting />} />
+          <Route path="setting" element={<Setting />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
         </Route>
       </Route>
@@ -80,6 +80,17 @@ function App() {
         <Route path="/checker" element={<Layout />}>
           <Route index element={<CheckerDashboard />} />
           <Route path="alert" element={<Alert />} />
+        </Route>
+      </Route>
+      {/* TEAM LEADER ROUTES */}
+      <Route element={<RequireAuth allowedRoles={["Team-Leader"]} />}>
+        <Route path="/team" element={<Layout />}>
+          <Route index element={<TeamLeaderDashboard />} />
+          <Route path="employeeDirectory" element={<EmployeeDirectory />} />
+          <Route path="restday" element={<RestDay />} />
+          <Route path="non-quotamember" element={<NonQuota />} />
+          <Route path="attendancerecords" element={<AttendanceRecords />} />
+          <Route path="Performance" element={<Performance />} />
         </Route>
       </Route>
       {/* 404 and Denied */}
