@@ -487,7 +487,7 @@ export default function Announcement() {
           )}
         </div>
 
-        <div className="gap-4 grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+        <div className="gap-4 grid lg:grid-cols-2 md:grid-cols-2 grid-cols-1">
           {announcements.map((announcement) => (
             <div
               key={announcement.id}
