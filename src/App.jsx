@@ -14,7 +14,6 @@ import PerformanceDashboard from "./components/Dashboard/UserDashboard/Performan
 import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
 import NonQuota from "./components/Dashboard/SuperAdminDashboardRoute/NonQuota";
 import QuotaSetting from "./components/Dashboard/SuperAdminDashboardRoute/QuotaSetting";
-import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import OverallAttendance from "./components/Dashboard/SuperAdminDashboardRoute/OverallAttendance";
 import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/ActivityLogs";
 import Admin from "./components/Add Employee/Admin";
@@ -26,7 +25,7 @@ import RestDay from './components/Dashboard/TeamLeaderDashboard/RestDay';
 import AttendanceRecords from "./components/Dashboard/TeamLeaderDashboard/AttendanceRecords";
 import Performance from "./components/Dashboard/TeamLeaderDashboard/Performance";
 import CheckReport from "./components/Dashboard/CheckerDashboard/CheckReport";
-import EmployeeSchedule from "./components/Dashboard/CheckerDashboard/Schedule";
+import Storage from "./components/Dashboard/SuperAdminDashboardRoute/Storage";
 import EmployeeOfTheMonthAdmin from "./components/Dashboard/SuperAdminDashboardRoute/ui/EmployeeOfTheMonth";
 
 function App() {
@@ -51,6 +50,8 @@ function App() {
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="activityLogs" element={<ActivityLogs />} />
           <Route path="setting" element={<Setting />} />
+          <Route path="login" element={<LoginCredentials />} />
+          <Route path="storage" element={<Storage />} />
         </Route>
       </Route>
       {/* ADMIN ROUTES */}

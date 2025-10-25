@@ -34,9 +34,6 @@ const PunchIn = ({ popupRef, visible }) => {
     if (todayAttendance) {
       setToggles({
         work: !!todayAttendance.punchIn && !todayAttendance.punchOut,
-        break: !!todayAttendance.break && !todayAttendance.breakBack,
-        wc: !!todayAttendance.wc && !todayAttendance.wcBack,
-        smoke: !!todayAttendance.smoke && !todayAttendance.smokeBack,
         off: !!todayAttendance.punchOut,
       });
     }
@@ -160,9 +157,6 @@ const PunchIn = ({ popupRef, visible }) => {
       <div className="text-sm text-[#cbd5e1] px-4 mt-3 space-y-2">
         {[
           ["work", "Punch/In"],
-          ["break", "Break"],
-          ["coffee", "Wc"],
-          ["bathroom", "Smoke"],
           ["off", "Punch/Out"],
         ].map(([key, label]) => (
           <div key={key} className="flex items-center justify-between w-full">

@@ -862,7 +862,7 @@ export default function AttendanceDashboard() {
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sky-300 font-semibold">
+                  <span className="text-red-500 font-semibold">
                     Smoke Break
                   </span>
                   <span className="text-xs text-gray-400">
@@ -904,7 +904,7 @@ export default function AttendanceDashboard() {
 
               <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-blue-300 font-semibold">WC Break</span>
+                  <span className="text-yellow-500 font-semibold">WC Break</span>
                   <span className="text-xs text-gray-400">
                     {breakCounts.wc}/3 used today
                   </span>
@@ -944,7 +944,7 @@ export default function AttendanceDashboard() {
 
               <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-purple-300 font-semibold">
+                  <span className="text-blue-500 font-semibold">
                     Lunch Break
                   </span>
                   <span className="text-xs text-gray-400">

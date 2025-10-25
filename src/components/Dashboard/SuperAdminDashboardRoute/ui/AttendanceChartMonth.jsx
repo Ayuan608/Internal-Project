@@ -396,13 +396,6 @@ import React from "react";
 
 
 export default function RestDay() {
-    const kpis = {
-        rules_per_day: 324,
-        sla_hit_pct: 97.6,
-        rule_failures: 2,
-        avg_action_latency_ms: 420,
-    };
-
     const attendance = Array.from({ length: 5 }).map((_, i) => ({
         id: i + 1,
         headCount: i + 1,
@@ -413,7 +406,7 @@ export default function RestDay() {
         schedule: "16:00 - 04:00",
         remark: "12 hrs",
         pattern: new Array(31).fill(0).map((__, idx) => {
-            const v = (i + idx) % 4; // 0=Day,1=Night,2=Rest,3=Holiday
+            const v = (i + idx) % 4;
             return v;
         }),
     }));
@@ -437,15 +430,6 @@ export default function RestDay() {
 
                 {/* Main content */}
                 <main className="flex-1 p-2 mt-4">
-
-
-                    {/* KPI strip */}
-                    <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <MetricCard label="Rules / day" value={kpis.rules_per_day} delta="+12%" />
-                        <MetricCard label="SLA Hit" value={`${kpis.sla_hit_pct}%`} delta="-0.4%" />
-                        <MetricCard label="Rule Failures" value={kpis.rule_failures} delta="0" />
-                        <MetricCard label="Avg Action Latency" value={`${kpis.avg_action_latency_ms} ms`} delta="-5%" />
-                    </section>
 
                     {/* Attendance grid card */}
                     <section className="mb-6">
