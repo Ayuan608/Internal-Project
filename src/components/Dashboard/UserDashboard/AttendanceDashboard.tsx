@@ -759,6 +759,7 @@ export default function AttendanceDashboard() {
           <Tooltip title="Request Day Off">
             <IconButton onClick={() => setShowDayOffModal(true)}>
               <CalendarX className="text-white" />
+              <p className="text-white text-base ms-2">Request DayOff</p>
             </IconButton>
           </Tooltip>
           <Tooltip title="Refresh Data">
