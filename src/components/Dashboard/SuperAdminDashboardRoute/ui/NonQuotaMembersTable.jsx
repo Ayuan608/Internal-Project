@@ -128,11 +128,36 @@ const NonQuotaMembersTable = () => {
   return (
     <div className="shadow-md rounded-lg px-3 w-full">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
-        <h2 className="text-lg font-semibold text-white">Non-Quota Members</h2>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-
+      <div className="flex justify-between items-center lg:flex-row  lg:items-center gap-4 mb-4 mt-4">
+        <div className="flex flex-wrap gap-2">
+          <span className="text-sm text-white mr-2">Quick filter:</span>
+          {departments.filter(dept => dept !== "All").map((dept) => (
+            <button
+              key={dept}
+              onClick={() => setSelectedDepartment(dept)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedDepartment === dept
+                ? dept === "CSR"
+                  ? "bg-blue-500 text-white"
+                  : dept === "Deposit"
+                    ? "bg-green-500 text-white"
+                    : "bg-orange-500 text-white"
+                : "bg-gray-700 text-white-300 hover:bg-gray-600"
+                }`}
+            >
+              {dept}
+            </button>
+          ))}
+          <button
+            onClick={() => setSelectedDepartment("All")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedDepartment === "All"
+              ? "bg-purple-500 text-white"
+              : "bg-gray-700 text-white-300 hover:bg-gray-600"
+              }`}
+          >
+            All Departments
+          </button>
+        </div>
+        <div className="flex sm:flex-row gap-3 w-full lg:w-auto">
           <div className="flex gap-2">
             <button
               onClick={exportToExcel}
@@ -201,12 +226,11 @@ const NonQuotaMembersTable = () => {
                   </td>
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 text-white-300">{member.role}</td>
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      member.department === "CSR"
-                        ? "bg-blue-900/30 text-blue-300"
-                        : member.department === "Deposit"
-                          ? "bg-green-900/30 text-green-300"
-                          : "bg-orange-900/30 text-orange-300"
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${member.department === "CSR"
+                      ? "bg-blue-900/30 text-blue-300"
+                      : member.department === "Deposit"
+                        ? "bg-green-900/30 text-green-300"
+                        : "bg-orange-900/30 text-orange-300"
                       }`}>
                       {member.department}
                     </span>
@@ -218,9 +242,8 @@ const NonQuotaMembersTable = () => {
                     {member.target}
                   </td>
                   <td
-                    className={`px-4 py-2 border-b border-[#9e9fa74d]/40 font-bold ${
-                      member.variance < 0 ? "text-red-400" : "text-green-400"
-                    }`}
+                    className={`px-4 py-2 border-b border-[#9e9fa74d]/40 font-bold ${member.variance < 0 ? "text-red-400" : "text-green-400"
+                      }`}
                   >
                     {member.variance > 0 ? `+${member.variance}` : member.variance}
                   </td>
@@ -241,36 +264,7 @@ const NonQuotaMembersTable = () => {
       </div>
 
       {/* Quick Filter */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <span className="text-sm text-white mr-2">Quick filter:</span>
-        {departments.filter(dept => dept !== "All").map((dept) => (
-          <button
-            key={dept}
-            onClick={() => setSelectedDepartment(dept)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-              selectedDepartment === dept
-                ? dept === "CSR"
-                  ? "bg-blue-500 text-white"
-                  : dept === "Deposit"
-                    ? "bg-green-500 text-white"
-                    : "bg-orange-500 text-white"
-                : "bg-gray-700 text-white-300 hover:bg-gray-600"
-            }`}
-          >
-            {dept}
-          </button>
-        ))}
-        <button
-          onClick={() => setSelectedDepartment("All")}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-            selectedDepartment === "All"
-              ? "bg-purple-500 text-white"
-              : "bg-gray-700 text-white-300 hover:bg-gray-600"
-          }`}
-        >
-          All Departments
-        </button>
-      </div>
+
 
       {/* Modal */}
       {isModalOpen && selectedEmployee && (
@@ -297,8 +291,8 @@ const NonQuotaMembersTable = () => {
                   <span className="font-semibold text-white-900">Employee:</span> {selectedEmployee.name}
                 </div>
                 <div className="text-sm text-white mt-1">
-                  <span className="font-semibold text-white-900">Output:</span> {selectedEmployee.output} | 
-                  <span className="font-semibold text-white-900"> Target:</span> {selectedEmployee.target} | 
+                  <span className="font-semibold text-white-900">Output:</span> {selectedEmployee.output} |
+                  <span className="font-semibold text-white-900"> Target:</span> {selectedEmployee.target} |
                   <span className={`font-semibold ${selectedEmployee.variance < 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {' '}Variance: {selectedEmployee.variance}
                   </span>
@@ -326,7 +320,7 @@ const NonQuotaMembersTable = () => {
                 <input
                   type="email"
                   value={formData.to}
-                  onChange={(e) => setFormData({...formData, to: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, to: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -339,7 +333,7 @@ const NonQuotaMembersTable = () => {
                 <input
                   type="email"
                   value={formData.cc}
-                  onChange={(e) => setFormData({...formData, cc: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, cc: e.target.value })}
                   placeholder="manager@mytechliance.com"
                   className="w-full px-3 py-2 border border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -352,7 +346,7 @@ const NonQuotaMembersTable = () => {
                 </label>
                 <textarea
                   value={formData.message}
-                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   rows={6}
                   className="w-full px-3 py-2 border border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 />
@@ -365,7 +359,7 @@ const NonQuotaMembersTable = () => {
                 </label>
                 <select
                   value={formData.priority}
-                  onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="Low">Low</option>
