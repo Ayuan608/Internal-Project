@@ -85,27 +85,9 @@ const Layout = () => {
                                 CRM Dashboard - Contacts & Customer Management
                             </h1>
                         )}
-                        {(role === "Admin" || role === "Super-Admin") && (
-                            <div className="flex gap-2 bg-[#f5f6fa09] max-w-[255px] p-1 rounded-full">
-                                {["CSR", "Withdraw", "Deposit"].map((tab) => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setActiveTab(tab)}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === tab
-                                            ? "bg-[#d9d9d935] rounded-full text-white"
-                                            : "bg-transparent text-gray-400 hover:text-gray-300"
-                                            }`}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
 
-                        <div className="flex items-center gap-4">
-                            {/* Simply use NotificationPopup component */}
+                        <div className="flex items-center gap-4 absolute right-0">
                             <NotificationPopup />
-
                             <RecentAnnoucement />
                             <div className="flex items-center gap-3" ref={menuRef}>
                                 <button
