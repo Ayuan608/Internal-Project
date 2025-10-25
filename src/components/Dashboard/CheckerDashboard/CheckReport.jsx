@@ -101,7 +101,7 @@ function CheckReport() {
             <div className='min-h-[92.7vh] pt-5 flex flex-col gap-6 text-white px-4'>
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Daily Reports</h1>
+                        <h1 className="text-3xl font-bold text-white mb-2"> Reports</h1>
                         <p className="text-gray-400">Streamline your workflow by sending and tracking daily reports to ensure consistent team performance.</p>
                     </div>
                     {role !== "Super-Admin" && <button
@@ -177,7 +177,7 @@ function CheckReport() {
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm p-4'>
                     <div className='bg-[#2a2a2a] text-white rounded-2xl shadow-2xl w-full max-w-xl border border-gray-700 max-h-[90vh] overflow-y-auto'>
                         <div className='sticky top-0 bg-[#2a2a2a] border-b border-gray-700 px-6 py-4 flex justify-between items-center'>
-                            <h2 className='text-xl font-bold'>Daily Report to Super Admin</h2>
+                            <h2 className='text-xl font-bold'> Report to Super Admin</h2>
                             <button
                                 onClick={() => setIsReportModal(false)}
                                 className='text-gray-400 hover:text-white transition-colors'

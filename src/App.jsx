@@ -27,6 +27,7 @@ import AttendanceRecords from "./components/Dashboard/TeamLeaderDashboard/Attend
 import Performance from "./components/Dashboard/TeamLeaderDashboard/Performance";
 import CheckReport from "./components/Dashboard/CheckerDashboard/CheckReport";
 import EmployeeSchedule from "./components/Dashboard/CheckerDashboard/Schedule";
+import Storage from "./components/Dashboard/SuperAdminDashboardRoute/Storage";
 
 function App() {
   return (
@@ -49,6 +50,8 @@ function App() {
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="activityLogs" element={<ActivityLogs />} />
           <Route path="setting" element={<Setting />} />
+          <Route path="login" element={<LoginCredentials />} />
+          <Route path="storage" element={<Storage />} />
         </Route>
       </Route>
       {/* ADMIN ROUTES */}

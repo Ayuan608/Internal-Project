@@ -21,6 +21,7 @@ import {
   Clock,
   Coffee,
   Columns3Cog,
+  DatabaseZap,
   FileText,
   KeyRound,
   LayoutDashboard,
@@ -62,6 +63,9 @@ export const superAdminButtons = [
     label: "Overall Attendance",
     icon: Blend,
   },
+
+  { to: "/dashboard/login", label: "Login Credentials", icon: KeyRound },
+  { to: "/dashboard/storage", label: "Storage", icon: DatabaseZap },
   { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
 ];
 export const AdminRoutes = [

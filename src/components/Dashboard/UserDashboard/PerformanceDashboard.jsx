@@ -1,500 +1,329 @@
 import React, { useState } from "react";
 import {
-  Download,
+  CheckCircle,
+  MessageSquare,
+  Clock,
   TrendingUp,
   TrendingDown,
-  Clock,
-  MessageSquare,
-  CheckCircle,
   AlertCircle,
 } from "lucide-react";
 
-function PerformanceDashboard() {
-  const [viewType, setViewType] = useState("weekly");
+const PerformanceDashboard = () => {
+  const [viewMode, setViewMode] = useState("weekly");
   const [showStats, setShowStats] = useState(true);
 
   const weeklyData = [
-    {
-      date: "Mon, Oct 14",
-      completed: 48,
-      effective: 45,
-      messages: 236,
-      missed: 3,
-      online: 480,
-      frt: 12,
-      positive: 94.5,
-      negative: 5.5,
-      mistakes: 2,
-      quota: 50,
-    },
-    {
-      date: "Tue, Oct 15",
-      completed: 52,
-      effective: 50,
-      messages: 258,
-      missed: 2,
-      online: 485,
-      frt: 10,
-      positive: 96.2,
-      negative: 3.8,
-      mistakes: 1,
-      quota: 50,
-    },
-    {
-      date: "Wed, Oct 16",
-      completed: 45,
-      effective: 42,
-      messages: 221,
-      missed: 5,
-      online: 475,
-      frt: 15,
-      positive: 91.3,
-      negative: 8.7,
-      mistakes: 3,
-      quota: 50,
-    },
-    {
-      date: "Thu, Oct 17",
-      completed: 50,
-      effective: 48,
-      messages: 245,
-      missed: 2,
-      online: 490,
-      frt: 11,
-      positive: 95.8,
-      negative: 4.2,
-      mistakes: 1,
-      quota: 50,
-    },
-    {
-      date: "Fri, Oct 18",
-      completed: 47,
-      effective: 44,
-      messages: 232,
-      missed: 4,
-      online: 482,
-      frt: 13,
-      positive: 93.1,
-      negative: 6.9,
-      mistakes: 2,
-      quota: 50,
-    },
+    { date: "Mon, Oct 14", completed: 48, effective: 45, messages: 236, missed: 3, online: 480, frt: 12, positive: 94.5, negative: 5.5, mistakes: 2, quota: 50 },
+    { date: "Tue, Oct 15", completed: 52, effective: 50, messages: 258, missed: 2, online: 485, frt: 10, positive: 96.2, negative: 3.8, mistakes: 1, quota: 50 },
+    { date: "Wed, Oct 16", completed: 45, effective: 42, messages: 221, missed: 5, online: 475, frt: 15, positive: 91.3, negative: 8.7, mistakes: 3, quota: 50 },
+    { date: "Thu, Oct 17", completed: 50, effective: 48, messages: 245, missed: 2, online: 490, frt: 11, positive: 95.8, negative: 4.2, mistakes: 1, quota: 50 },
+    { date: "Fri, Oct 18", completed: 47, effective: 44, messages: 232, missed: 4, online: 482, frt: 13, positive: 93.1, negative: 6.9, mistakes: 2, quota: 50 },
   ];
 
-  const monthlyData = [
-    {
-      date: "Week 1",
-      completed: 235,
-      effective: 220,
-      messages: 1150,
-      missed: 15,
-      online: 2380,
-      frt: 12.5,
-      positive: 94.2,
-      negative: 5.8,
-      mistakes: 8,
-      quota: 250,
-    },
-    {
-      date: "Week 2",
-      completed: 242,
-      effective: 229,
-      messages: 1192,
-      missed: 16,
-      online: 2412,
-      frt: 12.2,
-      positive: 94.2,
-      negative: 5.8,
-      mistakes: 9,
-      quota: 250,
-    },
-    {
-      date: "Week 3",
-      completed: 228,
-      effective: 215,
-      messages: 1105,
-      missed: 18,
-      online: 2350,
-      frt: 13.1,
-      positive: 93.5,
-      negative: 6.5,
-      mistakes: 11,
-      quota: 250,
-    },
-    {
-      date: "Week 4",
-      completed: 250,
-      effective: 238,
-      messages: 1220,
-      missed: 12,
-      online: 2450,
-      frt: 11.8,
-      positive: 95.1,
-      negative: 4.9,
-      mistakes: 7,
-      quota: 250,
-    },
-  ];
-
-  const currentData = viewType === "weekly" ? weeklyData : monthlyData;
-
-  const calculateTotal = (field) => {
-    return currentData.reduce((sum, row) => sum + row[field], 0);
+  const weeklyTotal = {
+    date: "Weekly Total",
+    completed: 242,
+    effective: 229,
+    messages: 1192,
+    missed: 16,
+    online: 2412,
+    frt: 12.2,
+    positive: 94.2,
+    negative: 5.8,
+    mistakes: 9,
+    quota: 250,
   };
 
-  const calculateAverage = (field) => {
-    const total = currentData.reduce((sum, row) => sum + row[field], 0);
-    return (total / currentData.length).toFixed(1);
-  };
-
-  const todayData = weeklyData[weeklyData.length - 1];
-  const yesterdayData = weeklyData[weeklyData.length - 2];
-
-  const comparisonStats = [
-    {
-      label: "COMPLETED",
-      value: todayData.completed,
-      change: todayData.completed - yesterdayData.completed,
-      comparison: yesterdayData.completed,
-    },
-    {
-      label: "EFFECTIVE",
-      value: todayData.effective,
-      change: todayData.effective - yesterdayData.effective,
-      comparison: yesterdayData.effective,
-    },
-    {
-      label: "MESSAGES",
-      value: todayData.messages,
-      change: todayData.messages - yesterdayData.messages,
-      comparison: yesterdayData.messages,
-    },
-    {
-      label: "FRT (SECS)",
-      value: todayData.frt,
-      change: todayData.frt - yesterdayData.frt,
-      comparison: yesterdayData.frt,
-      inverse: true,
-    },
-    {
-      label: "POSITIVE %",
-      value: `${todayData.positive}%`,
-      change: (todayData.positive - yesterdayData.positive).toFixed(1),
-      comparison: yesterdayData.positive,
-    },
-    {
-      label: "MISTAKES",
-      value: todayData.mistakes,
-      change: todayData.mistakes - yesterdayData.mistakes,
-      comparison: yesterdayData.mistakes,
-      inverse: true,
-    },
+  const comparisonData = [
+    { label: "COMPLETED", value: 47, change: -3, previous: 50 },
+    { label: "EFFECTIVE", value: 44, change: -4, previous: 48 },
+    { label: "MESSAGES", value: 232, change: -13, previous: 245 },
+    { label: "FRT (SECS)", value: 13, change: 2, previous: 11 },
+    { label: "POSITIVE %", value: "93.1%", change: -2.7, previous: 95.8 },
+    { label: "MISTAKES", value: 2, change: 1, previous: 1 },
   ];
 
   return (
-    <div className="min-h-screen  p-6">
-      <div className="max-w-full mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Performance Dashboard</h1>
-            <p className="text-slate-500 mt-1">
-              Performance Dashboard - Current{" "}
-              {viewType === "weekly" ? "Week" : "Month"}
-            </p>
-          </div>
-          <button className="flex items-center gap-2 bg-[rgba(59,130,246,0.03)] border_gray text-white px-4 py-2 rounded-lg transition-colors shadow-md">
-            <Download size={18} />
-            Export Performance
-          </button>
-        </div>
+    <div className="min-h-screen  p-8">
+      <div className="max-w-[1800px] mx-auto space-y-6">
 
-        {/* Toggle Buttons */}
-        <div className="flex gap-3 mb-6">
-          <button
-            onClick={() => setViewType("weekly")}
-            className={`px-6 py-2 rounded-lg font-medium transition-all border ${
-              viewType === "weekly"
-                ? "bg-[rgba(59,130,246,0.03)] text-white shadow-md  border=gray-500"
-                : "text-white/70  border-gray-500"
-            }`}
-          >
-            Weekly View
-          </button>
-          <button
-            onClick={() => setViewType("monthly")}
-            className={`px-6 py-2 rounded-lg font-medium transition-all border ${
-              viewType === "monthly"
-                ? "bg-[rgba(59,130,246,0.03)] text-white shadow-md  border=gray-500"
-                : "text-white/70  border-gray-500"
-            }`}
-          >
-            Monthly View
-          </button>
+        {/* Header Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setViewMode("weekly")}
+              className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                viewMode === "weekly"
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30"
+                  : "bg-slate-800/50 backdrop-blur-sm text-slate-300 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600"
+              }`}
+            >
+              Weekly View
+            </button>
+
+            <button
+              onClick={() => setViewMode("monthly")}
+              className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                viewMode === "monthly"
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30"
+                  : "bg-slate-800/50 backdrop-blur-sm text-slate-300 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600"
+              }`}
+            >
+              Monthly View
+            </button>
+          </div>
+
           <button
             onClick={() => setShowStats(!showStats)}
-            className={`ml-auto px-6 py-2 rounded-lg font-medium transition-all border_gray ${
-              showStats
-                ? "bg-[rgba(59,130,246,0.03)]  text-white shadow-md"
-                : "bg-white text-slate-600 hover:bg-slate-100"
-            }`}
+            className="px-6 py-3 bg-slate-800/50 backdrop-blur-sm text-slate-300 border border-slate-700/50 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all duration-300 font-semibold"
           >
             {showStats ? "Hide Stats" : "Show Stats"}
           </button>
         </div>
 
-        {/* Comparison Stats */}
-
-        {/* Performance Metrics Cards */}
+        {/* Stats Cards */}
         {showStats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <div className="border-l-2 bg-[rgba(59,130,246,0.03)]  rounded-xl p-6 text-white shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <CheckCircle size={32} />
-                <span className="text-blue-100 text-sm font-medium">Total</span>
+          <div className="grid grid-cols-4 gap-5">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300">
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-emerald-500/10 rounded-xl">
+                  <CheckCircle className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
+                </div>
+                <span className="text-slate-400 text-sm font-medium">Total</span>
               </div>
-              <div className="text-3xl font-bold mb-1">
-                {calculateTotal("completed")}
-              </div>
-              <div className="text-blue-100 text-sm">Completed Tasks</div>
+              <h3 className="text-5xl font-bold text-white mb-2 tracking-tight">242</h3>
+              <p className="text-slate-400 font-medium">Completed Tasks</p>
             </div>
 
-            <div className="border-l-2 bg-[rgba(59,130,246,0.03)] rounded-xl p-6 text-white shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <MessageSquare size={32} />
-                <span className="text-emerald-100 text-sm font-medium">
-                  Total
-                </span>
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-blue-500/10 rounded-xl">
+                  <MessageSquare className="w-8 h-8 text-blue-400" strokeWidth={2.5} />
+                </div>
+                <span className="text-slate-400 text-sm font-medium">Total</span>
               </div>
-              <div className="text-3xl font-bold mb-1">
-                {calculateTotal("messages")}
-              </div>
-              <div className="text-emerald-100 text-sm">Messages Handled</div>
+              <h3 className="text-5xl font-bold text-white mb-2 tracking-tight">1192</h3>
+              <p className="text-slate-400 font-medium">Messages Handled</p>
             </div>
 
-            <div className="border-l-2 bg-[rgba(59,130,246,0.03)]  rounded-xl p-6 text-white shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <Clock size={32} />
-                <span className="text-purple-100 text-sm font-medium">
-                  Average
-                </span>
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-purple-500/10 rounded-xl">
+                  <Clock className="w-8 h-8 text-purple-400" strokeWidth={2.5} />
+                </div>
+                <span className="text-slate-400 text-sm font-medium">Average</span>
               </div>
-              <div className="text-3xl font-bold mb-1">
-                {calculateAverage("frt")}s
-              </div>
-              <div className="text-purple-100 text-sm">Response Time</div>
+              <h3 className="text-5xl font-bold text-white mb-2 tracking-tight">12.2s</h3>
+              <p className="text-slate-400 font-medium">Response Time</p>
             </div>
 
-            <div className="border-l-2 bg-[rgba(59,130,246,0.03)]  rounded-xl p-6 text-white shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <AlertCircle size={32} />
-                <span className="text-amber-100 text-sm font-medium">
-                  Average
-                </span>
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300">
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-amber-500/10 rounded-xl">
+                  <AlertCircle className="w-8 h-8 text-amber-400" strokeWidth={2.5} />
+                </div>
+                <span className="text-slate-400 text-sm font-medium">Average</span>
               </div>
-              <div className="text-3xl font-bold mb-1">
-                {calculateAverage("positive")}%
-              </div>
-              <div className="text-amber-100 text-sm">Positive Rate</div>
+              <h3 className="text-5xl font-bold text-white mb-2 tracking-tight">94.2%</h3>
+              <p className="text-slate-400 font-medium">Positive Rate</p>
             </div>
           </div>
         )}
 
         {/* Data Table */}
-        <div className=" rounded-xl shadow-md overflow-hidden border border-gray-500">
+        <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="">
-                <tr className="">
-                  <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Date
+              <thead>
+                <tr className="border-b border-slate-800/50 bg-slate-800/40">
+                  <th className="text-left px-6 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    DATE
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Completed
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    COMPLETED
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Effective
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    EFFECTIVE
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Messages
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    MESSAGES
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Missed
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    MISSED
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Online (Min)
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    ONLINE (MIN)
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    FRT (Sec)
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    FRT (SEC)
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Positive %
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    POSITIVE %
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Negative %
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    NEGATIVE %
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Mistakes
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    MISTAKES
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                    Quota
+                  <th className="text-center px-4 py-4 text-slate-200 font-bold text-xs uppercase tracking-wider">
+                    QUOTA
                   </th>
                 </tr>
               </thead>
+
               <tbody>
-                {currentData.map((row, idx) => (
-                  <tr key={idx} className=" transition-colors">
-                    <td className="px-6 py-4 text-[16px] font-medium text-white">
+                {weeklyData.map((row, index) => (
+                  <tr
+                    key={index}
+                    className="border-b border-slate-800/30 hover:bg-slate-700/20 transition-all duration-200"
+                  >
+                    <td className="px-6 py-5 text-white font-semibold">
                       {row.date}
                     </td>
-                    <td className="px-6 py-4 text-center text-[16px] text-white">
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
                       {row.completed}
                     </td>
-                    <td className="px-6 py-4 text-center text-[16px] text-white">
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
                       {row.effective}
                     </td>
-                    <td className="px-6 py-4 text-center text-[16px] text-white">
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
                       {row.messages}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-lg font-medium text-white`}
-                      >
-                        {row.missed}
-                      </span>
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
+                      {row.missed}
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-white">
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
                       {row.online}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-sm font-medium text-white`}
-                      >
-                        {row.frt}
-                      </span>
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
+                      {row.frt}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-2 py-1 rounded text-white text-sm font-medium">
-                        {row.positive}%
-                      </span>
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
+                      {row.positive}%
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-2 py-1 rounded text-white text-sm font-medium">
-                        {row.negative}%
-                      </span>
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
+                      {row.negative}%
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-sm font-medium text-white}`}
-                      >
-                        {row.mistakes}
-                      </span>
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
+                      {row.mistakes}
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-white">
+                    <td className="px-4 py-5 text-center text-slate-200 font-medium">
                       {row.quota}
                     </td>
                   </tr>
                 ))}
-                {/* Total Row */}
-                <tr className=" font-bold ">
-                  <td className="px-6 py-4 text-sm text-white">
-                    {viewType === "weekly" ? "Weekly" : "Monthly"} Total
+
+                <tr className="border-t-0 border-slate-800 bg-slate-900/40">
+                  <td className="px-6 py-5 text-white font-bold text-lg">
+                    {weeklyTotal.date}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("completed")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.completed}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("effective")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.effective}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("messages")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.messages}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("missed")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.missed}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("online")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.online}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateAverage("frt")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.frt}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateAverage("positive")}%
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.positive}%
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateAverage("negative")}%
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.negative}%
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("mistakes")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.mistakes}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm text-white">
-                    {calculateTotal("quota")}
+                  <td className="px-4 py-5 text-center text-white font-bold text-lg">
+                    {weeklyTotal.quota}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-      </div>
-      {showStats && viewType === "weekly" && (
-        <div className="mt-6">
-          <div className=" rounded-xl shadow-md  ">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">
-                Performance Trends & Analysis
-              </h2>
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                Today vs Previous
-              </span>
-            </div>
-            <p className="text-sm text-white mb-6">
-              Today (Oct 18) vs Yesterday (Oct 17)
-            </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {comparisonStats.map((stat, idx) => {
-                const isPositive = stat.inverse
-                  ? stat.change < 0
-                  : stat.change > 0;
-                return (
+        {/* Performance Trends */}
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold text-white">
+              Performance Trends & Analysis
+            </h2>
+            <button className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-blue-500/30">
+              Today vs Previous
+            </button>
+          </div>
+
+          <p className="text-slate-400 font-medium">
+            Today (Oct 18) vs Yesterday (Oct 17)
+          </p>
+
+          <div className="grid grid-cols-6 gap-4">
+            {comparisonData.map((item, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-xl p-5 hover:border-slate-600 hover:shadow-lg transition-all duration-300"
+              >
+                <p className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-4">
+                  {item.label}
+                </p>
+
+                <h3 className="text-4xl font-bold text-white mb-4 tracking-tight">
+                  {item.value}
+                </h3>
+
+                <div className="space-y-1">
                   <div
-                    key={idx}
-                    className="p-4 rounded-lg border border-gray-500"
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${
+                      item.change < 0
+                        ? "bg-red-500/15 border border-red-500/20"
+                        : "bg-green-500/15 border border-green-500/20"
+                    }`}
                   >
-                    <div className="text-xs text-white font-medium mb-2">
-                      {stat.label}
-                    </div>
-                    <div className="text-2xl font-bold text-white mb-2">
-                      {stat.value}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded ${
-                          isPositive
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {isPositive ? (
-                          <TrendingUp size={14} />
-                        ) : (
-                          <TrendingDown size={14} />
-                        )}
-                        {Math.abs(stat.change)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      vs {stat.comparison} yesterday
-                    </div>
+                    {item.change < 0 ? (
+                      <TrendingDown
+                        className="w-3.5 h-3.5 text-red-400"
+                        strokeWidth={2.5}
+                      />
+                    ) : (
+                      <TrendingUp
+                        className="w-3.5 h-3.5 text-green-400"
+                        strokeWidth={2.5}
+                      />
+                    )}
+
+                    <span
+                      className={`text-sm font-bold ${
+                        item.change < 0 ? "text-red-400" : "text-green-400"
+                      }`}
+                    >
+                      {Math.abs(item.change)}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+
+                  <p className="text-slate-500 text-xs font-medium">
+                    vs {item.previous} yesterday
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
-}
+};
 
 export default PerformanceDashboard;
