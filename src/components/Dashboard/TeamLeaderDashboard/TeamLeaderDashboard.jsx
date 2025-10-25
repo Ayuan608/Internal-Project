@@ -67,8 +67,8 @@ export default function TeamLeaderDashboard() {
           style={{ zIndex: 9 }}
         >
           <div className="flex justify-between">
-            <div className="flex justify-start items-start mb-4">
-              <div className="relative w-full max-w-[600px]">
+            <div className="flex justify-start w-[25%] items-start mb-4">
+              <div className="relative w-full ">
                 <input
                   type="text"
                   placeholder="Search, contacts, deals, campaigns..."

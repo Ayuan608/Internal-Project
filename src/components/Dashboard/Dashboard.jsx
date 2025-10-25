@@ -19,7 +19,7 @@ export default function Dashboard() {
                 <input
                   type="text"
                   placeholder="search, contacts, deals, campaigns..."
-                  className="bg-[#f5f6fa13] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
+                  className="bg-[#f5f6fa09] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
                 />
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />
               </div>

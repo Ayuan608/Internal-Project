@@ -1,55 +1,24 @@
-import React, { useState, useEffect } from "react";
-import {
-  Search,
-  Plus,
-  Phone,
-  Mail,
-  MoreVertical,
-  Edit,
-  Trash,
-  QrCode,
-  X,
-  Download,
-  FileText,
-  UserX,
-  Calendar,
-  UserCheck,
-} from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  addAdminAccount,
-  deleteUser,
-  getAllUsers,
-} from "../../../redux/authSlice";
+import React, { useState, useEffect } from 'react';
+import { Search, Edit2, Calendar, UserCheck, Users, X } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAllUsers } from '../../../redux/authSlice';
 
-function EmployeeDirectory() {
+const EmployeeDirectory = () => {
   const dispatch = useDispatch();
   const { users } = useSelector((state) => state?.auth);
-  const role = useSelector((state) => state.auth?.role);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("All");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [qrCodeImage, setQrCodeImage] = useState(null);
+  
+  const [isRestDayModalOpen, setIsRestDayModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [showMenu, setShowMenu] = useState(null);
-
-  const [addUser, setAddUser] = useState({
-    FullName: "",
-    username: "",
-    password: "",
-    email: "",
-    phone: "",
-    department: "",
-    dateHired: "",
-    role: "",
-    salary: "",
-    workingHour: "",
-    Shift: "",
-  });
+  const [restDayReason, setRestDayReason] = useState('');
+  const [restDayDate, setRestDayDate] = useState('');
+  
+  // Deactivate Confirmation Modal State
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
+  const [employeeToDeactivate, setEmployeeToDeactivate] = useState(null);
 
   // Fetch all users on component mount
   useEffect(() => {
@@ -62,439 +31,387 @@ function EmployeeDirectory() {
 
     let filtered = [...users];
 
-    if (selectedDepartment !== "All") {
-      filtered = filtered.filter(
-        (emp) => emp.department === selectedDepartment
-      );
+    // Filter by status
+    if (activeFilter !== 'All') {
+      filtered = filtered.filter((emp) => emp.status === activeFilter);
     }
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Search filter
+    if (searchTerm.trim()) {
+      const query = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (emp) =>
           emp.FullName?.toLowerCase().includes(query) ||
-          emp.role?.toLowerCase().includes(query) ||
-          emp.department?.toLowerCase().includes(query) ||
-          emp.email?.toLowerCase().includes(query)
+          emp.email?.toLowerCase().includes(query) ||
+          emp.phone?.toLowerCase().includes(query)
       );
     }
 
     setFilteredEmployees(filtered);
-  }, [searchQuery, selectedDepartment, users]);
+  }, [searchTerm, activeFilter, users]);
 
-  const handleUserInput = (e) => {
-    const { name, value } = e.target;
-    setAddUser((prev) => ({ ...prev, [name]: value }));
+  const handleStatusToggle = async (employee) => {
+    if (employee.status === 'Active') {
+      setEmployeeToDeactivate(employee);
+      setIsDeactivateModalOpen(true);
+    } else {
+      // Directly activate
+      const response = await dispatch(
+        updateUserStatus({
+          userId: employee._id,
+          status: 'Active',
+        })
+      );
+
+      if (response?.payload?.success) {
+        dispatch(getAllUsers());
+      } else {
+        alert(response?.payload?.message || 'Failed to activate employee');
+      }
+    }
   };
 
-  const handleAddEmployee = async (e) => {
-    e.preventDefault();
+  const confirmDeactivation = async () => {
+    if (!employeeToDeactivate) return;
 
-    const {
-      FullName,
-      username,
-      email,
-      password,
-      phone,
-      department,
-      dateHired,
-      role,
-      salary,
-      workingHour,
-      Shift,
-    } = addUser;
-
-    if (
-      !FullName ||
-      !username ||
-      !email ||
-      !department ||
-      !phone ||
-      !dateHired ||
-      !role ||
-      !salary ||
-      !workingHour ||
-      !Shift
-    ) {
-      alert("Please fill all the details");
-      return;
-    }
-
-    if (FullName.length < 5) {
-      alert("Name should be at least 5 characters");
-      return;
-    }
-
-    if (
-      !isEditMode &&
-      !password.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,20}$/)
-    ) {
-      alert("Password must have 8+ chars, Uppercase, Lowercase, Number");
-      return;
-    }
-
-    const response = await dispatch(addAdminAccount(addUser));
+    const response = await dispatch(
+      updateUserStatus({
+        userId: employeeToDeactivate._id,
+        status: 'Inactive',
+      })
+    );
 
     if (response?.payload?.success) {
-      alert("Employee added successfully!");
-      resetForm();
       dispatch(getAllUsers());
     } else {
-      alert(response?.payload?.message || "Failed to add employee");
+      alert(response?.payload?.message || 'Failed to deactivate employee');
     }
+
+    setIsDeactivateModalOpen(false);
+    setEmployeeToDeactivate(null);
   };
 
   const handleEdit = (employee) => {
-    setSelectedEmployee(employee);
-    setAddUser({
-      FullName: employee.FullName,
-      username: employee.username,
-      password: "",
-      email: employee.email,
-      phone: employee.phone,
-      department: employee.department,
-      dateHired: employee.dateHired?.split("T")[0] || "",
-      role: employee.role,
-      salary: employee.salary,
-      workingHour: employee.workingHour,
-      Shift: employee.Shift,
-    });
-    setIsEditMode(true);
-    setIsDialogOpen(true);
-    setShowMenu(null);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this employee?"))
-      return;
-
-    const response = await dispatch(deleteUser(id));
-
-    if (response?.payload?.success) {
-      alert("Employee deleted successfully!");
-      dispatch(getAllUsers());
-    } else {
-      alert(response?.payload?.message || "Failed to delete employee");
-    }
-    setShowMenu(null);
-  };
-
-  const handleQRCode = (employee) => {
-    if (employee?.qrCode) {
-      setQrCodeImage(employee.qrCode);
-      setQrModalOpen(true);
-    } else {
-      alert("QR Code not available for this user");
-    }
-    setShowMenu(null);
-  };
-
-  // Team Leader specific functions
-  const handleDeactivate = (employee) => {
-    // Implement deactivate functionality
-    alert(`Deactivating employee: ${employee.FullName}`);
-    setShowMenu(null);
+    console.log('Edit employee:', employee);
+    alert(`Edit functionality for ${employee.FullName} - To be implemented`);
   };
 
   const handleRestDay = (employee) => {
-    // Implement rest day functionality
-    alert(`Setting rest day for: ${employee.FullName}`);
-    setShowMenu(null);
+    setSelectedEmployee(employee);
+    setRestDayReason('');
+    setRestDayDate('');
+    setIsRestDayModalOpen(true);
   };
 
-  const resetForm = () => {
-    setAddUser({
-      FullName: "",
-      username: "",
-      password: "",
-      email: "",
-      phone: "",
-      department: "",
-      dateHired: "",
-      role: "",
-      salary: "",
-      workingHour: "",
-      Shift: "",
-    });
-    setIsEditMode(false);
-    setSelectedEmployee(null);
-    setIsDialogOpen(false);
-  };
-
-  const exportToCSV = () => {
-    if (!filteredEmployees.length) {
-      alert("No data to export");
+  const handleRestDaySubmit = async () => {
+    if (!restDayDate) {
+      alert('Please select a rest day date');
       return;
     }
 
-    const headers = [
-      "Name",
-      "Email",
-      "Phone",
-      "Department",
-      "Role",
-      "Shift",
-      "Salary",
-      "Status",
-    ];
-    const rows = filteredEmployees.map((emp) => [
-      emp.FullName,
-      emp.email,
-      emp.phone,
-      emp.department,
-      emp.role,
-      emp.Shift,
-      emp.salary,
-      emp.status,
-    ]);
+    // Yahan aap apna REST API call kar sakte ho
+    console.log({
+      employeeId: selectedEmployee._id,
+      employeeName: selectedEmployee.FullName,
+      reason: restDayReason,
+      date: restDayDate,
+    });
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `employees_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    alert(`Rest day scheduled for ${selectedEmployee.FullName} on ${restDayDate}`);
+    
+    setIsRestDayModalOpen(false);
+    setSelectedEmployee(null);
+    setRestDayReason('');
+    setRestDayDate('');
   };
 
-
-
-  const rolePermissions = {
-    "Super-Admin": ["Team-Leader", "Admin", "User", "Checker"],
-    Admin: ["Team-Leader", "User", "Checker"],
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   };
-  const allowedRoles = rolePermissions[role] || [];
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Header */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-WHITE flex items-center gap-2">
-              Employee Directory
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Manage your team members and their information
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={exportToCSV}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-lg"
-            >
-              <Download size={18} />
-              Export CSV
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen ">
+    
+      <div className="flex">
 
-        {/* Search and Filters */}
-        <div className="flex gap-4 flex-wrap">
 
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search by name or username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 "
-            />
-          </div>
-     
-        </div>
-      </div>
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          <div className="max-w-full mx-auto">
+            {/* Header Section */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Employee Directory</h2>
+              <p className="text-slate-400">Manage and monitor your team members</p>
+            </div>
 
-      {/* Employee Table */}
-      <div className=" rounded-xl border border-slate-800 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-900/50 text-white">
-              <tr>
-                <th className="px-6 py-4 text-left">Avatar</th>
-                <th className="px-6 py-4 text-left">Name</th>
-                <th className="px-6 py-4 text-left whitespace-nowrap">Working Hours</th>
-                <th className="px-6 py-4 text-left">Salary</th>
-                <th className="px-6 py-4 text-left">Department</th>
-                <th className="px-6 py-4 text-left">Role</th>
-                <th className="px-6 py-4 text-left">Shift</th>
-                {/* Status column added for Team Leader */}
-                {role === "Team-Leader" && (
-                  <th className="px-6 py-4 text-left">Status</th>
-                )}
-                <th className="px-6 py-4 text-left">Phone</th>
-                <th className="px-6 py-4 text-left">Email</th>
-                <th className="px-6 py-4 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {!users || users.length === 0 ? (
-                <tr>
-                  <td colSpan={role === "Team-Leader" ? "11" : "10"} className="text-center py-12 text-gray-500">
-                    <FileText
-                      size={48}
-                      className="mx-auto mb-3 text-gray-300"
-                    />
-                    <p className="text-lg">No employees found</p>
-                    <p className="text-sm">
-                      Add your first employee to get started
-                    </p>
-                  </td>
-                </tr>
-              ) : filteredEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan={role === "Team-Leader" ? "11" : "10"} className="text-center py-12 text-gray-500">
-                    <Search size={48} className="mx-auto mb-3 text-gray-300" />
-                    <p className="text-lg">No matching employees</p>
-                    <p className="text-sm">
-                      Try adjusting your search or filters
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                filteredEmployees.map((emp, index) => (
-                  <tr
-                    key={emp._id}
-                    className={`border-b border-slate-800 text-[14px] font-semibold hover:bg-[#3b83f610] transition-colors ${index % 2 === 0 ? "bg-[#3b83f60b]" : "bg-[#3b83f60b]"
+            {/* Search and Filter Section */}
+            <div className=" rounded-xl p-6 mb-6 ">
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search employees..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-slate-900/40 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {['All', 'Active', 'Inactive'].map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setActiveFilter(filter)}
+                      className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
+                        activeFilter === filter
+                          ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600'
                       }`}
-                  >
-                    <td className="px-6 py-4">
-                      <img
-                        src={emp.avatar?.url || "/default-avatar.png"}
-                        alt={emp.FullName}
-                        className="w-12 h-12 rounded-full border-2 border-[var(--box-border)] object-cover"
-                      />
-                    </td>
-                    <td className="px-6 py-4 font-medium text-white capitalize">
-                      {emp.FullName}
-                    </td>
-                    <td className="px-6 py-4 text-white whitespace-nowrap">
-                      {emp.workingHour || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 text-white font-semibold">
-                      {emp.salary || "N/A"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${emp.department === "CSR"
-                          ? "bg-blue-100 text-blue-700"
-                          : emp.department === "Deposit"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-orange-100 text-orange-700"
-                          }`}
-                      >
-                        {emp.department}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-full text-xs whitespace-nowrap font-semibold bg-purple-100 text-purple-700">
-                        {emp.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-white">
-                      {emp.Shift || "N/A"}
-                    </td>
-                    {/* Status field for Team Leader */}
-                    {role === "Team-Leader" && (
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${emp.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-green-100 text-green-700"
-                            }`}
-                        >
-                          {emp.status || "Active"}
-                        </span>
-                      </td>
-                    )}
-                    <td className="px-6 py-4 text-white">+91 {emp.phone}</td>
-                    <td className="px-6 py-4 text-white text-sm">
-                      {emp.email}
-                    </td>
-                    <td className="px-6 py-4 relative">
-                      <button
-                        onClick={() =>
-                          setShowMenu(showMenu === emp._id ? null : emp._id)
-                        }
-                        className="text-gray-500 hover:text-white p-2 rounded-lg "
-                      >
-                        <MoreVertical size={20} />
-                      </button>
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-                      {showMenu === emp._id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-[#3b83f60b] rounded-lg shadow-xl border border-gray-200 z-10">
-                          {/* For Team Leader - Show different menu */}
-                          {role === "Team-Leader" ? (
-                            <>
-                              <button
-                                onClick={() => handleEdit(emp)}
-                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                              >
-                                <Edit size={16} className="text-blue-500" />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleDeactivate(emp)}
-                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                              >
-                                <UserX size={16} className="text-orange-500" />
-                                <span>Deactivate</span>
-                              </button>
-                              <button
-                                onClick={() => handleRestDay(emp)}
-                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                              >
-                                <Calendar size={16} className="text-green-500" />
-                                <span>Rest Day</span>
-                              </button>
-                            </>
-                          ) : (
-                            /* For other roles - Show original menu */
-                            <>
-                              <button
-                                onClick={() => handleEdit(emp)}
-                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                              >
-                                <Edit size={16} className="text-blue-500" />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleQRCode(emp)}
-                                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left"
-                              >
-                                <QrCode size={16} className="text-green-500" />
-                                <span>QR Code</span>
-                              </button>
-                              {role !== "Team-Leader" && (
+            {/* Table Section */}
+            <div className="bg-slate-900/40 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Name</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Date Hired</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Salary</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Phone Number</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Email</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Status</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {!users || users.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="text-center py-12">
+                          <p className="text-lg text-slate-300">No employees found</p>
+                          <p className="text-sm text-slate-400">Add your first employee to get started</p>
+                        </td>
+                      </tr>
+                    ) : filteredEmployees.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="text-center py-12">
+                          <Search size={48} className="mx-auto mb-3 text-slate-500" />
+                          <p className="text-lg text-slate-300">No matching employees</p>
+                          <p className="text-sm text-slate-400">Try adjusting your search or filters</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredEmployees.map((employee) => (
+                        <tr key={employee._id} className="hover:bg-slate-700/30 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                                {employee.FullName?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                              <span className="text-slate-200 font-medium capitalize">{employee.FullName}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-slate-300">{formatDate(employee.dateHired)}</td>
+                          <td className="px-6 py-4 text-slate-300">
+                            {employee.salary ? (
+                              <span className="text-emerald-400 font-semibold">${employee.salary}</span>
+                            ) : (
+                              <span className="text-slate-500">N/A</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-slate-300">
+                            {employee.phone ? `+91 ${employee.phone}` : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 text-slate-300">
+                            {employee.email || <span className="text-slate-500">-</span>}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                              employee.status === 'active'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                employee.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
+                              }`}></span>
+                              {employee.status || 'active'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {employee.status === 'Active' ? (
                                 <button
-                                  onClick={() => handleDelete(emp._id)}
-                                  className="w-full flex items-center gap-2 px-4 py-3 hover:bg-[#3b83f610] text-left text-red-600"
+                                  onClick={() => handleStatusToggle(employee)}
+                                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 text-sm"
                                 >
-                                  <Trash size={16} />
-                                  <span>Delete</span>
+                                  Deactivate
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleStatusToggle(employee)}
+                                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40"
+                                >
+                                  <UserCheck className="w-4 h-4" />
                                 </button>
                               )}
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                              <button
+                                onClick={() => handleRestDay(employee)}
+                                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-medium transition-all border border-slate-600"
+                              >
+                                <Calendar className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEdit(employee)}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-all"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="px-6 py-4 border-t border-slate-700/50 flex items-center justify-between">
+                <p className="text-slate-400 text-sm">
+                  Showing <span className="text-slate-200 font-medium">{filteredEmployees.length}</span> of <span className="text-slate-200 font-medium">{users?.length || 0}</span> employees
+                </p>
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all border border-slate-600">
+                    Previous
+                  </button>
+                  <button className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium">
+                    1
+                  </button>
+                  <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all border border-slate-600">
+                    2
+                  </button>
+                  <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all border border-slate-600">
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Rest Day Modal */}
+      {isRestDayModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg shadow-2xl w-full max-w-md p-6 border border-slate-700">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">Employee Action</h2>
+              <button
+                onClick={() => setIsRestDayModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
 
+            <div className="mb-6">
+              <p className="text-slate-300">
+                <span className="font-bold text-white">{selectedEmployee?.FullName}</span>
+                <span className="text-slate-400"> - Schedule Rest Day</span>
+              </p>
+            </div>
 
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
+                Reason/Notes
+              </label>
+              <textarea
+                value={restDayReason}
+                onChange={(e) => setRestDayReason(e.target.value)}
+                placeholder="Enter reason for this action..."
+                rows={4}
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-slate-200 placeholder-slate-400"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
+                Rest Day Date
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={restDayDate}
+                  onChange={(e) => setRestDayDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-200"
+                />
+                <Calendar
+                  size={18}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setIsRestDayModalOpen(false)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-medium transition-colors border border-slate-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestDaySubmit}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Confirm Action
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivate Confirmation Modal */}
+      {isDeactivateModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg shadow-2xl w-full max-w-md p-6 border border-slate-700">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-white mb-4">This page says</h2>
+              <p className="text-slate-300 text-base">
+                Are you sure you want to deactivate <span className="font-semibold text-white">{employeeToDeactivate?.FullName}</span>?
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={confirmDeactivation}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+              >
+                OK
+              </button>
+              <button
+                onClick={() => {
+                  setIsDeactivateModalOpen(false);
+                  setEmployeeToDeactivate(null);
+                }}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded font-medium transition-colors border border-slate-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default EmployeeDirectory;

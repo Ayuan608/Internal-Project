@@ -45,7 +45,7 @@ function App() {
           <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="add" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
-          <Route path="report" element={<Report />} />
+          <Route path="report" element={<CheckReport />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="activityLogs" element={<ActivityLogs />} />
           <Route path="setting" element={<Setting />} />

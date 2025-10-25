@@ -285,7 +285,7 @@ function Admin() {
             <input
               type="text"
               placeholder="Filter by name/role/department..."
-              className="bg-[#f5f6fa13] text-white rounded-full pl-9 pr-3 py-3 w-full text-sm focus:outline-none placeholder:text-white"
+              className="bg-[#f5f6fa0c] text-white rounded-full pl-9 pr-3 py-3 w-full text-sm focus:outline-none placeholder:text-white"
             />
             <Search className="absolute left-3 top-3.5 w-4 h-4 text-white" />
           </div>
