@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import ExampleIosSwitch from "./ui/Switch";
-import { Calendar, Download, Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import AttendenceData from "../AdminDashboard/AttendenceData";
 import WeeklyAttendanceTrendChart from "../AdminDashboard/WeeklyAttendenceChart";
 import AttendanceChartMonth from "./ui/AttendanceChartMonth";

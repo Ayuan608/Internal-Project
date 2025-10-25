@@ -62,6 +62,11 @@ export const superAdminButtons = [
     label: "Overall Attendance",
     icon: Blend,
   },
+  {
+    to: "/dashboard/EmployeeOfTheMonthAdmin",
+    label: "Emp of Month",
+    icon: BanknoteArrowUp,
+  },
   { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
 ];
 export const AdminRoutes = [

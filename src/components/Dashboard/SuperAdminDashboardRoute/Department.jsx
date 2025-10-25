@@ -90,8 +90,8 @@ const Department = () => {
 
       {/* Dual Charts - Centered */}
       <div className="flex flex-col md:flex-row gap-6 mt-10 rounded-lg">
-        <div className="rounded-xl bg-[var(--box-color)] shadow-xl border border-gray-700 w-full">
-          <div className="w-80 mx-auto flex items-center justify-center">
+        <div className="rounded-xl shadow-xl border border-gray-700 w-full">
+          <div className="w-80 mx-auto flex items-center justify-center p-4">
             <Doughnut data={chartData} options={chartOptions} />
           </div>
           <div className="text-center mt-4 text-sm text-gray-400">

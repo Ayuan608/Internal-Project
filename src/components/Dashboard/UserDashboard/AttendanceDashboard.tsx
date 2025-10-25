@@ -1072,7 +1072,7 @@ export default function AttendanceDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.slice(0, 1).map((row: any) => {
+                    attendanceList.map((row: any) => {
                       const rowDate = new Date(row.date)
                         .toISOString()
                         .split("T")[0];
