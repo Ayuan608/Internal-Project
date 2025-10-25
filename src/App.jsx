@@ -26,8 +26,8 @@ import RestDay from './components/Dashboard/TeamLeaderDashboard/RestDay';
 import AttendanceRecords from "./components/Dashboard/TeamLeaderDashboard/AttendanceRecords";
 import Performance from "./components/Dashboard/TeamLeaderDashboard/Performance";
 import CheckReport from "./components/Dashboard/CheckerDashboard/CheckReport";
-import EmployeeSchedule from "./components/Dashboard/CheckerDashboard/Schedule";
 import Storage from "./components/Dashboard/SuperAdminDashboardRoute/Storage";
+import EmployeeOfTheMonthAdmin from "./components/Dashboard/SuperAdminDashboardRoute/ui/EmployeeOfTheMonth";
 
 function App() {
   return (
@@ -46,6 +46,7 @@ function App() {
           <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="add" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
+          <Route path="EmployeeOfTheMonthAdmin" element={<EmployeeOfTheMonthAdmin />} />
           <Route path="report" element={<CheckReport />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="activityLogs" element={<ActivityLogs />} />

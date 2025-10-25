@@ -149,9 +149,7 @@ const AttendanceRecords = () => {
                     </div>
                 </div>
             </div>
-            <div className='p-2'>
-                <AttendanceChartMonth />
-            </div>
+
         </>
     );
 };

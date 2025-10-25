@@ -525,7 +525,7 @@ function Admin() {
                     <option value="">Select Department</option>
                     <option value="CSR">CSR Department</option>
                     <option value="Deposit">Deposit Department</option>
-                    <option value="Withdraw">WithDraw Department</option>
+                    <option value="Withdraw">Withdraw Department</option>
                   </select>
                 </div>
               </div>

@@ -66,6 +66,11 @@ export const superAdminButtons = [
 
   { to: "/dashboard/login", label: "Login Credentials", icon: KeyRound },
   { to: "/dashboard/storage", label: "Storage", icon: DatabaseZap },
+  {
+    to: "/dashboard/EmployeeOfTheMonthAdmin",
+    label: "Emp of Month",
+    icon: BanknoteArrowUp,
+  },
   { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
 ];
 export const AdminRoutes = [

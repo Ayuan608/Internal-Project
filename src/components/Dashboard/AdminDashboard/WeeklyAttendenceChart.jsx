@@ -255,69 +255,8 @@ const WeeklyAttendanceTrendChart = () => {
         <Line data={currentData} options={options} />
       </div>
 
-      {/* Summary Stats */}
-      <div
-        style={{
-          marginTop: 20,
-          display: "flex",
-          gap: 20,
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#1a1a1a",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            borderLeft: "3px solid rgb(34, 197, 94)",
-          }}
-        >
-          <div style={{ color: "#888", fontSize: "12px", marginBottom: 4 }}>
-            Total Present
-          </div>
-          <div style={{ color: "rgb(34, 197, 94)", fontSize: "20px", fontWeight: "bold" }}>
-            {weeklyData[selectedWeek].datasets[0].data.reduce((a, b) => a + b, 0)}
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: "#1a1a1a",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            borderLeft: "3px solid rgb(234, 179, 8)",
-          }}
-        >
-          <div style={{ color: "#888", fontSize: "12px", marginBottom: 4 }}>
-            Total Absent
-          </div>
-          <div style={{ color: "rgb(234, 179, 8)", fontSize: "20px", fontWeight: "bold" }}>
-            {weeklyData[selectedWeek].datasets[1].data.reduce((a, b) => a + b, 0)}
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: "#1a1a1a",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            borderLeft: "3px solid rgb(59, 130, 246)",
-          }}
-        >
-          <div style={{ color: "#888", fontSize: "12px", marginBottom: 4 }}>
-            Attendance Rate
-          </div>
-          <div style={{ color: "rgb(59, 130, 246)", fontSize: "20px", fontWeight: "bold" }}>
-            {(
-              (weeklyData[selectedWeek].datasets[0].data.reduce((a, b) => a + b, 0) /
-                (weeklyData[selectedWeek].datasets[0].data.reduce((a, b) => a + b, 0) +
-                  weeklyData[selectedWeek].datasets[1].data.reduce((a, b) => a + b, 0))) *
-              100
-            ).toFixed(1)}
-            %
-          </div>
-        </div>
-      </div>
+ 
+    
     </div>
   );
 };
