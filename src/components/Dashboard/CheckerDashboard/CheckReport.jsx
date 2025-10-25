@@ -1,24 +1,13 @@
 import React, { useState } from 'react'
 import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle } from 'lucide-react'
 import { useSelector } from 'react-redux';
+import CustomDatePicker from '../../CommonButton/CustomCalendar';
 
 function CheckReport() {
     const [isReportModal, setIsReportModal] = useState(false);
     const { role } = useSelector((state) => state.auth)
     const [reports, setReports] = useState([
         {
-            id: 1,
-            sender: 'John Doe - Team Leader',
-            date: '10/24/2025',
-            purpose: 'Daily Performance Report',
-            details: `- Team Performance: 15/20 members met quota (75%)
-- Morning Shift: 87% quota achievement (+5% from last week)
-- Night Shift: 73% quota achievement (-3% from last week)
-- Notable Issues: 2 attendance violations recorded
-- Action Items: Follow-up meetings scheduled with underperforming members`,
-            timestamp: '10:30 AM',
-            status: 'Sent'
-        } ,{
             id: 1,
             sender: 'John Doe - Team Leader',
             date: '10/24/2025',
@@ -42,7 +31,19 @@ function CheckReport() {
 - Action Items: Follow-up meetings scheduled with underperforming members`,
             timestamp: '10:30 AM',
             status: 'Sent'
-        },{
+        }, {
+            id: 1,
+            sender: 'John Doe - Team Leader',
+            date: '10/24/2025',
+            purpose: 'Daily Performance Report',
+            details: `- Team Performance: 15/20 members met quota (75%)
+- Morning Shift: 87% quota achievement (+5% from last week)
+- Night Shift: 73% quota achievement (-3% from last week)
+- Notable Issues: 2 attendance violations recorded
+- Action Items: Follow-up meetings scheduled with underperforming members`,
+            timestamp: '10:30 AM',
+            status: 'Sent'
+        }, {
             id: 1,
             sender: 'John Doe - Team Leader',
             date: '10/24/2025',
@@ -111,7 +112,7 @@ function CheckReport() {
                         <FileText size={20} />
                         Add Report
                     </button>}
-
+                    <CustomDatePicker />
                 </div>
 
                 {/* Reports List */}

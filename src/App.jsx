@@ -14,7 +14,6 @@ import PerformanceDashboard from "./components/Dashboard/UserDashboard/Performan
 import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
 import NonQuota from "./components/Dashboard/SuperAdminDashboardRoute/NonQuota";
 import QuotaSetting from "./components/Dashboard/SuperAdminDashboardRoute/QuotaSetting";
-import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import OverallAttendance from "./components/Dashboard/SuperAdminDashboardRoute/OverallAttendance";
 import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/ActivityLogs";
 import Admin from "./components/Add Employee/Admin";
