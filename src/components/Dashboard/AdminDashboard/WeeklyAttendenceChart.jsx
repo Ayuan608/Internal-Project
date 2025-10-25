@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Chart as ChartJS,
   LineElement,
@@ -23,26 +23,113 @@ ChartJS.register(
 
 const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const data = {
-  labels,
-  datasets: [
-    {
-      label: "Present",
-      data: [145, 148, 140, 135, 150, 152, 155], // Example data for present attendance
-      borderColor: "rgb(34, 197, 94)", // Green color for Present
-      backgroundColor: "rgba(34, 197, 94, 0.2)",
-      tension: 0.4,
-      fill: true,
-    },
-    {
-      label: "Absent",
-      data: [18, 16, 18, 22, 12, 10, 8], // Example data for absent attendance
-      borderColor: "rgb(234, 179, 8)", // Yellow color for Absent
-      backgroundColor: "rgba(234, 179, 8, 0.2)",
-      tension: 0.4,
-      fill: true,
-    },
-  ],
+// Sample data for last 5 weeks
+const weeklyData = {
+  week1: {
+    range: "Oct 21 - Oct 27, 2024",
+    datasets: [
+      {
+        label: "Present",
+        data: [145, 148, 140, 135, 150, 152, 155],
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "Absent",
+        data: [18, 16, 18, 22, 12, 10, 8],
+        borderColor: "rgb(234, 179, 8)",
+        backgroundColor: "rgba(234, 179, 8, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  },
+  week2: {
+    range: "Oct 14 - Oct 20, 2024",
+    datasets: [
+      {
+        label: "Present",
+        data: [142, 145, 138, 140, 148, 150, 153],
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "Absent",
+        data: [20, 18, 20, 19, 15, 13, 10],
+        borderColor: "rgb(234, 179, 8)",
+        backgroundColor: "rgba(234, 179, 8, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  },
+  week3: {
+    range: "Oct 07 - Oct 13, 2024",
+    datasets: [
+      {
+        label: "Present",
+        data: [140, 143, 135, 138, 145, 148, 150],
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "Absent",
+        data: [22, 20, 23, 20, 18, 15, 13],
+        borderColor: "rgb(234, 179, 8)",
+        backgroundColor: "rgba(234, 179, 8, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  },
+  week4: {
+    range: "Sep 30 - Oct 06, 2024",
+    datasets: [
+      {
+        label: "Present",
+        data: [138, 140, 132, 135, 142, 145, 148],
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "Absent",
+        data: [24, 22, 25, 23, 20, 18, 15],
+        borderColor: "rgb(234, 179, 8)",
+        backgroundColor: "rgba(234, 179, 8, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  },
+  week5: {
+    range: "Sep 23 - Sep 29, 2024",
+    datasets: [
+      {
+        label: "Present",
+        data: [135, 138, 130, 132, 140, 142, 145],
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "Absent",
+        data: [26, 24, 27, 25, 22, 20, 18],
+        borderColor: "rgb(234, 179, 8)",
+        backgroundColor: "rgba(234, 179, 8, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  },
 };
 
 const options = {
@@ -51,7 +138,7 @@ const options = {
   scales: {
     y: {
       min: 0,
-      max: 180, // Adjust this to fit your data range
+      max: 180,
       ticks: {
         callback: (value) => `${value}`,
         color: "#fff",
@@ -89,6 +176,21 @@ const options = {
 };
 
 const WeeklyAttendanceTrendChart = () => {
+  const [selectedWeek, setSelectedWeek] = useState("week1");
+
+  const weeks = [
+    { value: "week1", label: "Current Week (Oct 21 - Oct 27)" },
+    { value: "week2", label: "Last Week (Oct 14 - Oct 20)" },
+    { value: "week3", label: "2 Weeks Ago (Oct 07 - Oct 13)" },
+    { value: "week4", label: "3 Weeks Ago (Sep 30 - Oct 06)" },
+    { value: "week5", label: "4 Weeks Ago (Sep 23 - Sep 29)" },
+  ];
+
+  const currentData = {
+    labels,
+    datasets: weeklyData[selectedWeek].datasets,
+  };
+
   return (
     <div
       style={{
@@ -98,11 +200,123 @@ const WeeklyAttendanceTrendChart = () => {
         width: "100%",
       }}
     >
-      <h3 style={{ color: "white", marginBottom: 10 }}>
-        Weekly Attendance Trend
-      </h3>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
+        <h3 style={{ color: "white", margin: 0 }}>
+          Weekly Attendance Trend
+        </h3>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <label style={{ color: "white", fontSize: "14px" }}>
+            Filter by Week:
+          </label>
+          <select
+            value={selectedWeek}
+            onChange={(e) => setSelectedWeek(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #333",
+              backgroundColor: "#1a1a1a",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "14px",
+              outline: "none",
+              minWidth: "240px",
+            }}
+          >
+            {weeks.map((week) => (
+              <option key={week.value} value={week.value}>
+                {week.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div
+        style={{
+          color: "#888",
+          fontSize: "13px",
+          marginBottom: 15,
+          fontStyle: "italic",
+        }}
+      >
+        Showing data for: {weeklyData[selectedWeek].range}
+      </div>
+
       <div style={{ height: "300px" }}>
-        <Line data={data} options={options} />
+        <Line data={currentData} options={options} />
+      </div>
+
+      {/* Summary Stats */}
+      <div
+        style={{
+          marginTop: 20,
+          display: "flex",
+          gap: 20,
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#1a1a1a",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            borderLeft: "3px solid rgb(34, 197, 94)",
+          }}
+        >
+          <div style={{ color: "#888", fontSize: "12px", marginBottom: 4 }}>
+            Total Present
+          </div>
+          <div style={{ color: "rgb(34, 197, 94)", fontSize: "20px", fontWeight: "bold" }}>
+            {weeklyData[selectedWeek].datasets[0].data.reduce((a, b) => a + b, 0)}
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "#1a1a1a",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            borderLeft: "3px solid rgb(234, 179, 8)",
+          }}
+        >
+          <div style={{ color: "#888", fontSize: "12px", marginBottom: 4 }}>
+            Total Absent
+          </div>
+          <div style={{ color: "rgb(234, 179, 8)", fontSize: "20px", fontWeight: "bold" }}>
+            {weeklyData[selectedWeek].datasets[1].data.reduce((a, b) => a + b, 0)}
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "#1a1a1a",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            borderLeft: "3px solid rgb(59, 130, 246)",
+          }}
+        >
+          <div style={{ color: "#888", fontSize: "12px", marginBottom: 4 }}>
+            Attendance Rate
+          </div>
+          <div style={{ color: "rgb(59, 130, 246)", fontSize: "20px", fontWeight: "bold" }}>
+            {(
+              (weeklyData[selectedWeek].datasets[0].data.reduce((a, b) => a + b, 0) /
+                (weeklyData[selectedWeek].datasets[0].data.reduce((a, b) => a + b, 0) +
+                  weeklyData[selectedWeek].datasets[1].data.reduce((a, b) => a + b, 0))) *
+              100
+            ).toFixed(1)}
+            %
+          </div>
+        </div>
       </div>
     </div>
   );

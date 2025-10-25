@@ -13,8 +13,6 @@ import {
   Play,
   Square,
   X,
-  FileText,
-  GitPullRequest,
   CalendarX,
 } from "lucide-react";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -85,6 +83,9 @@ export default function AttendanceDashboard() {
   const { attendanceList, isLoading } = useSelector(
     (state: any) => state.attendance
   );
+  
+
+  console.log(attendanceList,"dashboard")
 
   // Timer states
   const [activeTimer, setActiveTimer] = useState<{
@@ -1022,8 +1023,8 @@ export default function AttendanceDashboard() {
           </div>
 
           <div className="border border-[#2d3748] rounded-xl overflow-hidden shadow-2xl">
-            <div className="overflow-x-auto h-[550px]">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto h-full">
+              <table className="w-full text-sm whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-[#4a5568]">
                     <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">
@@ -1071,7 +1072,7 @@ export default function AttendanceDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.map((row) => {
+                    attendanceList.slice(0, 1).map((row: any) => {
                       const rowDate = new Date(row.date)
                         .toISOString()
                         .split("T")[0];
