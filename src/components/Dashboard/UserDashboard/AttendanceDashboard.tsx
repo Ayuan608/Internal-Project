@@ -12,6 +12,10 @@ import {
   Zap,
   Play,
   Square,
+  X,
+  FileText,
+  GitPullRequest,
+  CalendarX,
 } from "lucide-react";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButton from "@mui/material/IconButton";
@@ -21,7 +25,7 @@ import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
 
 const INITIAL_PAGE_SIZE = 10;
 
-const COLORS = ["#10b981", "#60a5fa", "#f59e0b"];
+const COLORS = ["#10b981", "#60a5fa", "#f59e0b", "#a855f7"];
 
 // Helper functions to manage break counts in localStorage
 const getStoredBreakCounts = () => {
@@ -30,24 +34,44 @@ const getStoredBreakCounts = () => {
   if (stored) {
     return JSON.parse(stored);
   }
-  return { smoke: 0, wc: 0, lastReset: today };
+  return { smoke: 0, wc: 0, lunch: 0, lastReset: today };
 };
 
-const setStoredBreakCounts = (counts: { smoke: number; wc: number; lastReset: string }) => {
+const setStoredBreakCounts = (counts: {
+  smoke: number;
+  wc: number;
+  lunch: number;
+  lastReset: string;
+}) => {
   const today = new Date().toDateString();
-  localStorage.setItem(`breakCounts_${today}`, JSON.stringify({ ...counts, lastReset: today }));
+  localStorage.setItem(
+    `breakCounts_${today}`,
+    JSON.stringify({ ...counts, lastReset: today })
+  );
 };
 
 // Helper to manage break history in localStorage
 const getStoredBreakHistory = () => {
-  const stored = localStorage.getItem('breakHistory');
+  const stored = localStorage.getItem("breakHistory");
   return stored ? JSON.parse(stored) : [];
 };
 
 const addToBreakHistory = (breakRecord: any) => {
   const history = getStoredBreakHistory();
   const updatedHistory = [breakRecord, ...history].slice(0, 50); // Keep last 50 records
-  localStorage.setItem('breakHistory', JSON.stringify(updatedHistory));
+  localStorage.setItem("breakHistory", JSON.stringify(updatedHistory));
+};
+
+// Helper to manage day off requests in localStorage
+const getStoredDayOffRequests = () => {
+  const stored = localStorage.getItem("dayOffRequests");
+  return stored ? JSON.parse(stored) : [];
+};
+
+const addDayOffRequest = (request: any) => {
+  const requests = getStoredDayOffRequests();
+  const updatedRequests = [request, ...requests];
+  localStorage.setItem("dayOffRequests", JSON.stringify(updatedRequests));
 };
 
 export default function AttendanceDashboard() {
@@ -64,7 +88,7 @@ export default function AttendanceDashboard() {
 
   // Timer states
   const [activeTimer, setActiveTimer] = useState<{
-    type: "smoke" | "wc";
+    type: "smoke" | "wc" | "lunch";
     startTime: Date;
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
@@ -73,17 +97,28 @@ export default function AttendanceDashboard() {
   const [breakCounts, setBreakCounts] = useState<{
     smoke: number;
     wc: number;
+    lunch: number;
     lastReset: string;
   }>(() => getStoredBreakCounts());
 
   // Break history state
-  const [breakHistory, setBreakHistory] = useState<any[]>(() => getStoredBreakHistory());
+  const [breakHistory, setBreakHistory] = useState<any[]>(() =>
+    getStoredBreakHistory()
+  );
+
+  // Day off request modal
+  const [showDayOffModal, setShowDayOffModal] = useState(false);
+  const [dayOffForm, setDayOffForm] = useState({
+    date: "",
+    reason: "",
+    attachmentType: "medical",
+  });
 
   // Check and reset break counts daily
   useEffect(() => {
     const today = new Date().toDateString();
     if (breakCounts.lastReset !== today) {
-      const resetCounts = { smoke: 0, wc: 0, lastReset: today };
+      const resetCounts = { smoke: 0, wc: 0, lunch: 0, lastReset: today };
       setBreakCounts(resetCounts);
       setStoredBreakCounts(resetCounts);
     }
@@ -112,10 +147,17 @@ export default function AttendanceDashboard() {
     return () => clearInterval(interval);
   }, [activeTimer]);
 
-  // Format time for display (mm:ss)
+  // Format time for display (mm:ss or hh:mm:ss)
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    }
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
@@ -155,7 +197,13 @@ export default function AttendanceDashboard() {
       return "Punched Out";
     }
     if (activeTimer) {
-      return `On ${activeTimer.type === "smoke" ? "Smoke Break" : "WC Break"}`;
+      return `On ${
+        activeTimer.type === "smoke"
+          ? "Smoke Break"
+          : activeTimer.type === "wc"
+          ? "WC Break"
+          : "Lunch Break"
+      }`;
     }
     if (hasPunchedInToday) {
       return "Currently Working";
@@ -164,7 +212,7 @@ export default function AttendanceDashboard() {
   }, [hasPunchedOutToday, activeTimer, hasPunchedInToday]);
 
   // Start break timer
-  const startBreak = (type: "smoke" | "wc") => {
+  const startBreak = (type: "smoke" | "wc" | "lunch") => {
     // Check if user has already punched out today
     if (hasPunchedOutToday) {
       alert(
@@ -173,14 +221,21 @@ export default function AttendanceDashboard() {
       return;
     }
 
-    // Check if already have 3 breaks today
+    // Check if user has punched in
+    if (!hasPunchedInToday) {
+      alert("Please punch in first before taking a break.");
+      return;
+    }
+
+    // Check limits based on break type
+    const limits = { smoke: 3, wc: 3, lunch: 1 };
     const todayBreaks = breakCounts[type];
 
-    if (todayBreaks >= 3) {
+    if (todayBreaks >= limits[type]) {
       alert(
         `Maximum ${
-          type === "smoke" ? "smoke" : "WC"
-        } breaks (3) reached for today! Please wait until tomorrow.`
+          type === "smoke" ? "smoke" : type === "wc" ? "WC" : "lunch"
+        } breaks (${limits[type]}) reached for today!`
       );
       return;
     }
@@ -189,14 +244,20 @@ export default function AttendanceDashboard() {
     if (activeTimer) {
       alert(
         `Please finish your ${
-          activeTimer.type === "smoke" ? "smoke" : "WC"
+          activeTimer.type === "smoke"
+            ? "smoke"
+            : activeTimer.type === "wc"
+            ? "WC"
+            : "lunch"
         } break first!`
       );
       return;
     }
 
+    // Set timer duration based on break type
+    const duration = type === "lunch" ? 3600 : 300; // 1 hour for lunch, 5 min for others
     setActiveTimer({ type, startTime: new Date() });
-    setTimeLeft(300); // 5 minutes
+    setTimeLeft(duration);
   };
 
   // End break timer
@@ -205,8 +266,10 @@ export default function AttendanceDashboard() {
 
     const breakType = activeTimer.type;
     const endTime = new Date();
-    const duration = Math.floor((endTime.getTime() - activeTimer.startTime.getTime()) / 1000);
-    
+    const duration = Math.floor(
+      (endTime.getTime() - activeTimer.startTime.getTime()) / 1000
+    );
+
     // Create break record
     const breakRecord = {
       id: Date.now().toString(),
@@ -214,7 +277,7 @@ export default function AttendanceDashboard() {
       startTime: activeTimer.startTime,
       endTime: endTime,
       duration: duration,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split("T")[0],
     };
 
     // Update break counts
@@ -233,66 +296,115 @@ export default function AttendanceDashboard() {
     console.log(`${breakType} break completed: ${duration} seconds`);
   };
 
-  // Calculate break time for display
-  const calculateBreakTime = (start: any, end: any) => {
-    if (!start || !end) {
-      // Check if we have break history for this date
-      const rowDate = new Date().toISOString().split('T')[0];
-      const todayBreaks = breakHistory.filter(breakRecord => 
-        breakRecord.date === rowDate && breakRecord.type === "smoke"
+  // Calculate break time from history
+  const calculateBreakTimeFromHistory = (
+    rowDate: string,
+    breakType: string
+  ) => {
+    const dateBreaks = breakHistory.filter(
+      (breakRecord) =>
+        breakRecord.date === rowDate && breakRecord.type === breakType
+    );
+
+    if (dateBreaks.length > 0) {
+      const totalSeconds = dateBreaks.reduce(
+        (total, record) => total + record.duration,
+        0
       );
-      
-      if (todayBreaks.length > 0) {
-        const totalSeconds = todayBreaks.reduce((total, record) => total + record.duration, 0);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        return `${minutes}m ${seconds}s`;
-      }
-      return "-";
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}m ${seconds}s`;
     }
-    
+    return "-";
+  };
+
+  // Calculate break time for display (Smoke)
+  const calculateBreakTime = (start: any, end: any, rowDate: string) => {
+    if (!start || !end) {
+      return calculateBreakTimeFromHistory(rowDate, "smoke");
+    }
+
     try {
       const startDate = new Date(start);
       const endDate = new Date(end);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "-";
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return calculateBreakTimeFromHistory(rowDate, "smoke");
+      }
       const diff = Math.floor(
         (endDate.getTime() - startDate.getTime()) / (1000 * 60)
       );
       return `${diff} min`;
     } catch {
-      return "-";
+      return calculateBreakTimeFromHistory(rowDate, "smoke");
     }
   };
 
   // Calculate WC break time for display
-  const calculateWcBreakTime = (start: any, end: any) => {
+  const calculateWcBreakTime = (start: any, end: any, rowDate: string) => {
     if (!start || !end) {
-      // Check if we have break history for this date
-      const rowDate = new Date().toISOString().split('T')[0];
-      const todayBreaks = breakHistory.filter(breakRecord => 
-        breakRecord.date === rowDate && breakRecord.type === "wc"
-      );
-      
-      if (todayBreaks.length > 0) {
-        const totalSeconds = todayBreaks.reduce((total, record) => total + record.duration, 0);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        return `${minutes}m ${seconds}s`;
-      }
-      return "-";
+      return calculateBreakTimeFromHistory(rowDate, "wc");
     }
-    
+
     try {
       const startDate = new Date(start);
       const endDate = new Date(end);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "-";
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return calculateBreakTimeFromHistory(rowDate, "wc");
+      }
       const diff = Math.floor(
         (endDate.getTime() - startDate.getTime()) / (1000 * 60)
       );
       return `${diff} min`;
     } catch {
-      return "-";
+      return calculateBreakTimeFromHistory(rowDate, "wc");
     }
+  };
+
+  // Calculate lunch break time for display
+  const calculateLunchBreakTime = (start: any, end: any, rowDate: string) => {
+    if (!start || !end) {
+      return calculateBreakTimeFromHistory(rowDate, "lunch");
+    }
+
+    try {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return calculateBreakTimeFromHistory(rowDate, "lunch");
+      }
+      const diff = Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
+      );
+      return `${diff} min`;
+    } catch {
+      return calculateBreakTimeFromHistory(rowDate, "lunch");
+    }
+  };
+
+  // Handle day off request submission
+  const handleDayOffSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!dayOffForm.date || !dayOffForm.reason) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    const request = {
+      id: Date.now().toString(),
+      date: dayOffForm.date,
+      reason: dayOffForm.reason,
+      attachmentType: dayOffForm.attachmentType,
+      requestedOn: new Date().toISOString(),
+      status: "pending",
+    };
+
+    addDayOffRequest(request);
+    alert("Day off request submitted successfully!");
+
+    // Reset form and close modal
+    setDayOffForm({ date: "", reason: "", attachmentType: "medical" });
+    setShowDayOffModal(false);
   };
 
   // Real-time statistics calculation
@@ -313,6 +425,7 @@ export default function AttendanceDashboard() {
         totalWorkTime: "0h 0m",
         totalWcBreak: `${breakCounts.wc * 5} min`,
         totalSmokeBreak: `${breakCounts.smoke * 5} min`,
+        totalLunchBreak: `${breakCounts.lunch * 60} min`,
         hasPendingPunchOut: false,
 
         // Additional Metrics
@@ -326,8 +439,9 @@ export default function AttendanceDashboard() {
     }
 
     let totalWorkMinutes = 0;
-    let totalWcMinutes = breakCounts.wc * 5; // Add current session breaks
-    let totalSmokeMinutes = breakCounts.smoke * 5; // Add current session breaks
+    let totalWcMinutes = breakCounts.wc * 5;
+    let totalSmokeMinutes = breakCounts.smoke * 5;
+    let totalLunchMinutes = breakCounts.lunch * 60;
     let pendingPunchOutToday = false;
     let daysWithWork = 0;
     let todayWorkMinutes = 0;
@@ -383,6 +497,17 @@ export default function AttendanceDashboard() {
         } catch {}
       }
 
+      if (row.lunchStart && row.lunchEnd) {
+        try {
+          const start = new Date(row.lunchStart);
+          const end = new Date(row.lunchEnd);
+          const diff = Math.floor(
+            (end.getTime() - start.getTime()) / (1000 * 60)
+          );
+          totalLunchMinutes += diff;
+        } catch {}
+      }
+
       // Pending punch out check
       if (!row.clockOut && rowDate === today) {
         pendingPunchOutToday = true;
@@ -402,13 +527,15 @@ export default function AttendanceDashboard() {
     });
 
     // Add current session breaks from localStorage history
-    const todayBreaks = breakHistory.filter(record => record.date === today);
-    todayBreaks.forEach(record => {
+    const todayBreaks = breakHistory.filter((record) => record.date === today);
+    todayBreaks.forEach((record) => {
       const minutes = Math.floor(record.duration / 60);
-      if (record.type === 'wc') {
+      if (record.type === "wc") {
         totalWcMinutes += minutes;
-      } else if (record.type === 'smoke') {
+      } else if (record.type === "smoke") {
         totalSmokeMinutes += minutes;
+      } else if (record.type === "lunch") {
+        totalLunchMinutes += minutes;
       }
     });
 
@@ -447,7 +574,8 @@ export default function AttendanceDashboard() {
     );
 
     // Efficiency calculation (work time vs total time)
-    const totalBreakMinutes = totalWcMinutes + totalSmokeMinutes;
+    const totalBreakMinutes =
+      totalWcMinutes + totalSmokeMinutes + totalLunchMinutes;
     const totalAvailableMinutes = totalWorkMinutes + totalBreakMinutes;
     const efficiency =
       totalAvailableMinutes > 0
@@ -479,6 +607,7 @@ export default function AttendanceDashboard() {
       { name: "Work", value: totalWorkMinutes },
       { name: "WC Break", value: totalWcMinutes },
       { name: "Smoke Break", value: totalSmokeMinutes },
+      { name: "Lunch Break", value: totalLunchMinutes },
     ].filter((item) => item.value > 0);
 
     return {
@@ -496,6 +625,7 @@ export default function AttendanceDashboard() {
       totalWorkTime: formatTime(totalWorkMinutes),
       totalWcBreak: `${totalWcMinutes} min`,
       totalSmokeBreak: `${totalSmokeMinutes} min`,
+      totalLunchBreak: `${totalLunchMinutes} min`,
       hasPendingPunchOut: pendingPunchOutToday,
 
       // Additional Metrics
@@ -606,18 +736,35 @@ export default function AttendanceDashboard() {
 
   // Check if break buttons should be disabled
   const isSmokeBreakDisabled =
-    activeTimer !== null || breakCounts.smoke >= 3 || hasPunchedOutToday;
+    activeTimer !== null ||
+    breakCounts.smoke >= 3 ||
+    hasPunchedOutToday ||
+    !hasPunchedInToday;
   const isWcBreakDisabled =
-    activeTimer !== null || breakCounts.wc >= 3 || hasPunchedOutToday;
+    activeTimer !== null ||
+    breakCounts.wc >= 3 ||
+    hasPunchedOutToday ||
+    !hasPunchedInToday;
+  const isLunchBreakDisabled =
+    activeTimer !== null ||
+    breakCounts.lunch >= 1 ||
+    hasPunchedOutToday ||
+    !hasPunchedInToday;
 
   return (
     <PageContainer
       title="Attendance Dashboard"
       actions={
         <div className="flex items-center gap-2">
+          <Tooltip title="Request Day Off">
+            <IconButton onClick={() => setShowDayOffModal(true)}>
+              <CalendarX className="text-white" />
+              <p className="text-white text-base ms-2">Request DayOff</p>
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Refresh Data">
             <IconButton onClick={handleRefresh} disabled={isLoading || !userId}>
-              <RefreshIcon />
+              <RefreshIcon className="text-white" />
             </IconButton>
           </Tooltip>
           <ButtonGroup />
@@ -681,7 +828,9 @@ export default function AttendanceDashboard() {
                     <span className="text-white font-semibold">
                       {activeTimer.type === "smoke"
                         ? "Smoke Break"
-                        : "WC Break"}{" "}
+                        : activeTimer.type === "wc"
+                        ? "WC Break"
+                        : "Lunch Break"}{" "}
                       Timer
                     </span>
                   </div>
@@ -698,13 +847,18 @@ export default function AttendanceDashboard() {
                 </div>
                 <div className="mt-2 text-sm text-gray-300">
                   Time remaining for your{" "}
-                  {activeTimer.type === "smoke" ? "smoke" : "WC"} break
+                  {activeTimer.type === "smoke"
+                    ? "smoke"
+                    : activeTimer.type === "wc"
+                    ? "WC"
+                    : "lunch"}{" "}
+                  break
                 </div>
               </div>
             )}
 
             {/* Break Controls */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sky-300 font-semibold">
@@ -724,13 +878,19 @@ export default function AttendanceDashboard() {
                   }`}
                 >
                   <Play size={16} />
-                  {hasPunchedOutToday
+                  {!hasPunchedInToday
+                    ? "Punch In First"
+                    : hasPunchedOutToday
                     ? "Punch Out Completed"
                     : breakCounts.smoke >= 3
                     ? "Daily Limit Reached"
                     : "Start Smoke Break"}
                 </button>
-                {hasPunchedOutToday ? (
+                {!hasPunchedInToday ? (
+                  <div className="mt-2 text-xs text-sky-300 text-center">
+                    Please punch in to start break
+                  </div>
+                ) : hasPunchedOutToday ? (
                   <div className="mt-2 text-xs text-sky-300 text-center">
                     Breaks disabled after punch out
                   </div>
@@ -758,13 +918,19 @@ export default function AttendanceDashboard() {
                   }`}
                 >
                   <Play size={16} />
-                  {hasPunchedOutToday
+                  {!hasPunchedInToday
+                    ? "Punch In First"
+                    : hasPunchedOutToday
                     ? "Punch Out Completed"
                     : breakCounts.wc >= 3
                     ? "Daily Limit Reached"
                     : "Start WC Break"}
                 </button>
-                {hasPunchedOutToday ? (
+                {!hasPunchedInToday ? (
+                  <div className="mt-2 text-xs text-blue-300 text-center">
+                    Please punch in to start break
+                  </div>
+                ) : hasPunchedOutToday ? (
                   <div className="mt-2 text-xs text-blue-300 text-center">
                     Breaks disabled after punch out
                   </div>
@@ -773,6 +939,52 @@ export default function AttendanceDashboard() {
                     Limit resets tomorrow
                   </div>
                 ) : null}
+              </div>
+
+              <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-purple-300 font-semibold">
+                    Lunch Break
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {breakCounts.lunch}/1 used today
+                  </span>
+                </div>
+                <button
+                  onClick={() => startBreak("lunch")}
+                  disabled={isLunchBreakDisabled}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
+                    isLunchBreakDisabled
+                      ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                      : "bg-[rgba(59,130,246,0.03)] border_gray text-white"
+                  }`}
+                >
+                  <Play size={16} />
+                  {!hasPunchedInToday
+                    ? "Punch In First"
+                    : hasPunchedOutToday
+                    ? "Punch Out Completed"
+                    : breakCounts.lunch >= 1
+                    ? "Daily Limit Reached"
+                    : "Start Lunch Break"}
+                </button>
+                {!hasPunchedInToday ? (
+                  <div className="mt-2 text-xs text-purple-300 text-center">
+                    Please punch in to start break
+                  </div>
+                ) : hasPunchedOutToday ? (
+                  <div className="mt-2 text-xs text-purple-300 text-center">
+                    Breaks disabled after punch out
+                  </div>
+                ) : breakCounts.lunch >= 1 ? (
+                  <div className="mt-2 text-xs text-purple-300 text-center">
+                    1 hour lunch break used
+                  </div>
+                ) : (
+                  <div className="mt-2 text-xs text-purple-300 text-center">
+                    1 hour break duration
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -829,6 +1041,9 @@ export default function AttendanceDashboard() {
                     <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">
                       Smoke Break
                     </th>
+                    <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">
+                      Lunch Break
+                    </th>
                     <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">
                       Working Hours
                     </th>
@@ -838,7 +1053,7 @@ export default function AttendanceDashboard() {
                   {isLoading ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-4 py-8 text-center text-gray-400"
                       >
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400 mx-auto"></div>
@@ -849,44 +1064,64 @@ export default function AttendanceDashboard() {
                     attendanceList.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-4 py-8 text-center text-gray-400"
                       >
                         No attendance data found
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.map((row) => (
-                      <tr
-                        key={row._id}
-                        className="border-b border-[#2d3748] hover:bg-[#3b82f6]/10 transition-colors duration-200"
-                      >
-                        <td className="px-4 py-3 text-[#e2e8f0] font-medium">
-                          {formatDate(row.date)}
-                        </td>
-                        <td className="px-4 py-3 text-[#e2e8f0]">
-                          {formatTimeDisplay(row.clockIn)}
-                        </td>
-                        <td className="px-4 py-3 text-[#e2e8f0]">
-                          {row.clockOut ? (
-                            formatTimeDisplay(row.clockOut)
-                          ) : (
-                            <span className="text-orange-400">
-                              Not punched out
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center text-[#60a5fa]">
-                          {calculateWcBreakTime(row.wcStart, row.wcEnd)}
-                        </td>
-                        <td className="px-4 py-3 text-center text-[#f59e0b]">
-                          {calculateBreakTime(row.smokeStart, row.smokeEnd)}
-                        </td>
-                        <td className="px-4 py-3 text-[#10b981] font-semibold">
-                          {row.workingHours || "0h 0m"}
-                        </td>
-                      </tr>
-                    ))
+                    attendanceList.map((row) => {
+                      const rowDate = new Date(row.date)
+                        .toISOString()
+                        .split("T")[0];
+                      return (
+                        <tr
+                          key={row._id}
+                          className="border-b border-[#2d3748] hover:bg-[#3b82f6]/10 transition-colors duration-200"
+                        >
+                          <td className="px-4 py-3 text-[#e2e8f0] font-medium">
+                            {formatDate(row.date)}
+                          </td>
+                          <td className="px-4 py-3 text-[#e2e8f0]">
+                            {formatTimeDisplay(row.clockIn)}
+                          </td>
+                          <td className="px-4 py-3 text-[#e2e8f0]">
+                            {row.clockOut ? (
+                              formatTimeDisplay(row.clockOut)
+                            ) : (
+                              <span className="text-orange-400">
+                                Not punched out
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center text-[#60a5fa]">
+                            {calculateWcBreakTime(
+                              row.wcStart,
+                              row.wcEnd,
+                              rowDate
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center text-[#f59e0b]">
+                            {calculateBreakTime(
+                              row.smokeStart,
+                              row.smokeEnd,
+                              rowDate
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center text-[#a855f7]">
+                            {calculateLunchBreakTime(
+                              row.lunchStart,
+                              row.lunchEnd,
+                              rowDate
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-[#10b981] font-semibold">
+                            {row.workingHours || "0h 0m"}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -932,39 +1167,46 @@ export default function AttendanceDashboard() {
             </div>
 
             {/* Break Counts */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-3 mb-6">
               <div className="text-center p-3 bg-gray-800/50 rounded-lg border border-gray-800/50">
-                <div className="text-2xl font-bold text-white-300">
+                <div className="text-xl font-bold text-white-300">
                   {breakCounts.smoke}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Smoke Breaks Today
-                </div>
-                {hasPunchedOutToday ? (
-                  <div className="text-xs text-sky-300 mt-1">
-                    Day Completed
-                  </div>
+                <div className="text-xs text-gray-400 mt-1">Smoke</div>
+                {!hasPunchedInToday ? (
+                  <div className="text-xs text-sky-300 mt-1">Not Started</div>
+                ) : hasPunchedOutToday ? (
+                  <div className="text-xs text-sky-300 mt-1">Day Done</div>
                 ) : breakCounts.smoke >= 3 ? (
-                  <div className="text-xs text-orange-300 mt-1">
-                    Limit Reached
-                  </div>
+                  <div className="text-xs text-orange-300 mt-1">Max Used</div>
                 ) : null}
               </div>
               <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <div className="text-2xl font-bold text-blue-300">
+                <div className="text-xl font-bold text-blue-300">
                   {breakCounts.wc}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  WC Breaks Today
-                </div>
-                {hasPunchedOutToday ? (
-                  <div className="text-xs text-blue-300 mt-1">
-                    Day Completed
-                  </div>
+                <div className="text-xs text-gray-400 mt-1">WC</div>
+                {!hasPunchedInToday ? (
+                  <div className="text-xs text-blue-300 mt-1">Not Started</div>
+                ) : hasPunchedOutToday ? (
+                  <div className="text-xs text-blue-300 mt-1">Day Done</div>
                 ) : breakCounts.wc >= 3 ? (
-                  <div className="text-xs text-blue-300 mt-1">
-                    Limit Reached
+                  <div className="text-xs text-blue-300 mt-1">Max Used</div>
+                ) : null}
+              </div>
+              <div className="text-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                <div className="text-xl font-bold text-purple-300">
+                  {breakCounts.lunch}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">Lunch</div>
+                {!hasPunchedInToday ? (
+                  <div className="text-xs text-purple-300 mt-1">
+                    Not Started
                   </div>
+                ) : hasPunchedOutToday ? (
+                  <div className="text-xs text-purple-300 mt-1">Day Done</div>
+                ) : breakCounts.lunch >= 1 ? (
+                  <div className="text-xs text-purple-300 mt-1">Used</div>
                 ) : null}
               </div>
             </div>
@@ -989,6 +1231,13 @@ export default function AttendanceDashboard() {
                 <span className="text-gray-300 font-medium">Smoke Breaks</span>
                 <span className="text-orange-400 font-bold">
                   {calculateStats.totalSmokeBreak}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                <span className="text-gray-300 font-medium">Lunch Breaks</span>
+                <span className="text-purple-400 font-bold">
+                  {calculateStats.totalLunchBreak}
                 </span>
               </div>
 
@@ -1065,6 +1314,93 @@ export default function AttendanceDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Day Off Request Modal */}
+      {showDayOffModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-md border border-[#4a5568] rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">Request Day Off</h3>
+              <button
+                onClick={() => setShowDayOffModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleDayOffSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Date <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={dayOffForm.date}
+                  onChange={(e) =>
+                    setDayOffForm({ ...dayOffForm, date: e.target.value })
+                  }
+                  className="w-full px-4 py-2  border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  required
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Reason <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={dayOffForm.reason}
+                  onChange={(e) =>
+                    setDayOffForm({ ...dayOffForm, reason: e.target.value })
+                  }
+                  className="w-full px-4 py-2  border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  rows={4}
+                  placeholder="Please provide a reason for your day off request..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Attachment Type
+                </label>
+                <select
+                  value={dayOffForm.attachmentType}
+                  onChange={(e) =>
+                    setDayOffForm({
+                      ...dayOffForm,
+                      attachmentType: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-none"
+                >
+                  <option value="medical">Medical Certificate</option>
+                  <option value="personal">Personal Leave</option>
+                  <option value="emergency">Emergency</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowDayOffModal(false)}
+                  className="flex-1 px-4 py-2 hover:bg-[rgba(59,130,246,0.03)] border_gray text-white rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg_primary text-white rounded-lg transition-colors"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 }

@@ -4,6 +4,7 @@ import { Calendar, Search, Download, ChevronLeft, ChevronRight } from 'lucide-re
 const EmployeeSchedule = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1)); // November 2025
 
   // Schedule data
   const scheduleData = [
@@ -31,9 +32,38 @@ const EmployeeSchedule = () => {
     return colors[shift] || 'bg-gray-200 text-gray-700';
   };
 
+  // Month navigation functions
+  const goToPreviousMonth = () => {
+    setCurrentDate(prevDate => {
+      const newDate = new Date(prevDate);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(prevDate => {
+      const newDate = new Date(prevDate);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+  // Format month and year for display
+  const formatMonthYear = (date) => {
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
+
+  // Get number of days in current month
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
   const filteredData = scheduleData
     .filter(emp => filterDepartment === 'all' || emp.team === filterDepartment)
     .filter(emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const daysInMonth = getDaysInMonth(currentDate);
 
   return (
     <div className="min-h-screen  p-6">
@@ -73,12 +103,12 @@ const EmployeeSchedule = () => {
               <option value="Withdrawal">Withdrawal</option>
             </select>
 
-            <button className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg shadow-green-500/30 hover:shadow-green-500/40 transition-all">
+            <button className="bg-[rgba(59,130,246,0.03)] border_gray text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
               <Download size={18} />
               Export Excel
             </button>
 
-            <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all">
+            <button className="bg-[rgba(59,130,246,0.03)] border_gray text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
               <Download size={18} />
               Export CSV
             </button>
@@ -90,13 +120,19 @@ const EmployeeSchedule = () => {
       <div className="bg-slate-900/40 border border-slate-800/40 rounded-2xl overflow-hidden shadow-xl">
         <div className="px-6 py-5 bg-slate-900/40 border-b border-slate-800/40 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button className="p-1 text-slate-400 hover:text-white transition-colors">
+            <button
+              onClick={goToPreviousMonth}
+              className="p-1 text-slate-400 hover:text-white transition-colors"
+            >
               <ChevronLeft size={24} />
             </button>
             <span className="text-lg font-semibold text-white">
-              November 2025
+              {formatMonthYear(currentDate)}
             </span>
-            <button className="p-1 text-slate-400 hover:text-white transition-colors">
+            <button
+              onClick={goToNextMonth}
+              className="p-1 text-slate-400 hover:text-white transition-colors"
+            >
               <ChevronRight size={24} />
             </button>
           </div>
@@ -125,7 +161,7 @@ const EmployeeSchedule = () => {
                 </th>
                 <th className="px-4 py-3.5 text-xs font-semibold text-slate-400 text-center tracking-wider uppercase">TEAM</th>
                 <th className="px-4 py-3.5 text-xs font-semibold text-slate-400 text-center tracking-wider uppercase">SCHEDULE</th>
-                {[...Array(30)].map((_, i) => (
+                {[...Array(daysInMonth)].map((_, i) => (
                   <th key={i} className="px-2 py-3.5 text-xs font-semibold text-slate-400 text-center min-w-10">
                     {i + 1}
                   </th>
@@ -156,7 +192,7 @@ const EmployeeSchedule = () => {
                   <td className="px-4 py-3.5 text-center text-sm text-slate-300 font-medium">
                     {employee.schedule}
                   </td>
-                  {employee.shifts.slice(0, 30).map((shift, i) => (
+                  {employee.shifts.slice(0, daysInMonth).map((shift, i) => (
                     <td key={i} className="px-2 py-2 text-center">
                       <div className={`w-8 h-8 rounded-md ${getShiftColor(shift)} flex items-center justify-center text-xs font-bold mx-auto cursor-pointer hover:scale-110 transition-transform`}>
                         {shift}

@@ -52,7 +52,7 @@ const ActivityLogs = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y w-full divide-slate-800">
                   {activities.map((activity, index) => (
                     <tr key={index} className=" transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-white">

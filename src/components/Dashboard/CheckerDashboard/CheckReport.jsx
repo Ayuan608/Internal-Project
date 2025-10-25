@@ -1,10 +1,48 @@
 import React, { useState } from 'react'
 import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle } from 'lucide-react'
+import { useSelector } from 'react-redux';
 
 function CheckReport() {
     const [isReportModal, setIsReportModal] = useState(false);
+    const { role } = useSelector((state) => state.auth)
     const [reports, setReports] = useState([
         {
+            id: 1,
+            sender: 'John Doe - Team Leader',
+            date: '10/24/2025',
+            purpose: 'Daily Performance Report',
+            details: `- Team Performance: 15/20 members met quota (75%)
+- Morning Shift: 87% quota achievement (+5% from last week)
+- Night Shift: 73% quota achievement (-3% from last week)
+- Notable Issues: 2 attendance violations recorded
+- Action Items: Follow-up meetings scheduled with underperforming members`,
+            timestamp: '10:30 AM',
+            status: 'Sent'
+        } ,{
+            id: 1,
+            sender: 'John Doe - Team Leader',
+            date: '10/24/2025',
+            purpose: 'Daily Performance Report',
+            details: `- Team Performance: 15/20 members met quota (75%)
+- Morning Shift: 87% quota achievement (+5% from last week)
+- Night Shift: 73% quota achievement (-3% from last week)
+- Notable Issues: 2 attendance violations recorded
+- Action Items: Follow-up meetings scheduled with underperforming members`,
+            timestamp: '10:30 AM',
+            status: 'Sent'
+        }, {
+            id: 1,
+            sender: 'John Doe - Team Leader',
+            date: '10/24/2025',
+            purpose: 'Daily Performance Report',
+            details: `- Team Performance: 15/20 members met quota (75%)
+- Morning Shift: 87% quota achievement (+5% from last week)
+- Night Shift: 73% quota achievement (-3% from last week)
+- Notable Issues: 2 attendance violations recorded
+- Action Items: Follow-up meetings scheduled with underperforming members`,
+            timestamp: '10:30 AM',
+            status: 'Sent'
+        },{
             id: 1,
             sender: 'John Doe - Team Leader',
             date: '10/24/2025',
@@ -66,17 +104,18 @@ function CheckReport() {
                         <h1 className="text-3xl font-bold text-white mb-2">Daily Reports</h1>
                         <p className="text-gray-400">Streamline your workflow by sending and tracking daily reports to ensure consistent team performance.</p>
                     </div>
-                    <button
+                    {role !== "Super-Admin" && <button
                         onClick={() => setIsReportModal(true)}
                         className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
                     >
                         <FileText size={20} />
                         Add Report
-                    </button>
+                    </button>}
+
                 </div>
 
                 {/* Reports List */}
-                <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
                     {reports.length === 0 ? (
                         <div className="bg-[rgba(59,131,246,0.06)] rounded-xl p-12 text-center border border-gray-700">
                             <FileText size={48} className="mx-auto mb-4 text-gray-500" />
@@ -84,7 +123,7 @@ function CheckReport() {
                         </div>
                     ) : (
                         reports.map((report) => (
-                            <div key={report.id} className="bg-[rgba(59,131,246,0.06)] rounded-xl p-6 border border-[var(--box-border)] transition-all duration-300">
+                            <div key={report.id} className="bg-[rgba(59,131,246,0.06)] rounded-xl p-4 border border-[var(--box-border)] transition-all duration-300 ">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-blue-600 rounded-full p-2">
@@ -116,7 +155,7 @@ function CheckReport() {
                                     </span>
                                 </div>
 
-                                <div className=" rounded-lg p-4 ">
+                                <div className=" rounded-lg px-1">
                                     <h4 className="text-sm font-semibold text-gray-400 mb-2">Report Details:</h4>
                                     <p className="text-gray-300 whitespace-pre-line">{report.details}</p>
                                 </div>
