@@ -15,6 +15,12 @@
   opacity: 0.8;
 }
 
+.border_gray:hover{
+  border-color: white;
+  transition: 400ms;
+  opacity: 0.6;
+}
+
 .bg_primary {
   background-color: var(--main-color);
 }

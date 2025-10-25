@@ -84,7 +84,7 @@ function CheckReport() {
                         </div>
                     ) : (
                         reports.map((report) => (
-                            <div key={report.id} className="bg-[rgba(59,131,246,0.06)] rounded-xl p-6 border border-[var(--box-border)] transition-all duration-300">
+                            <div key={report.id} className="bg-[rgba(59,131,246,0.06)] rounded-xl p-4 border border-[var(--box-border)] transition-all duration-300 w-1/3">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-blue-600 rounded-full p-2">
@@ -116,7 +116,7 @@ function CheckReport() {
                                     </span>
                                 </div>
 
-                                <div className=" rounded-lg p-4 ">
+                                <div className=" rounded-lg px-1">
                                     <h4 className="text-sm font-semibold text-gray-400 mb-2">Report Details:</h4>
                                     <p className="text-gray-300 whitespace-pre-line">{report.details}</p>
                                 </div>

@@ -78,7 +78,6 @@ function App() {
       <Route element={<RequireAuth allowedRoles={["Checker"]} />}>
         <Route path="/checker" element={<Layout />}>
           <Route index element={<CheckerDashboard />} />
-          <Route path="schedule" element={<EmployeeSchedule />} />
           <Route path="report" element={<CheckReport />} />
           <Route path="setting" element={<Setting />} />
         </Route>
