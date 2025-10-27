@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { getUserAttendance } from "../../redux/attendenceSlice";
 import axios from "axios";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 
 // Constants
 const INITIAL_PAGE_SIZE = 10;
@@ -11,18 +11,12 @@ const INITIAL_PAGE_SIZE = 10;
 const getStoredBreakCounts = () => {
   const today = new Date().toDateString();
   const stored = localStorage.getItem(`breakCounts_${today}`);
-  if (stored) {
-    return JSON.parse(stored);
-  }
-  return { smoke: 0, wc: 0, lunch: 0, lastReset: today };
+  return stored ? JSON.parse(stored) : { smoke: 0, wc: 0, lunch: 0, lastReset: today };
 };
 
 const setStoredBreakCounts = (counts) => {
   const today = new Date().toDateString();
-  localStorage.setItem(
-    `breakCounts_${today}`,
-    JSON.stringify({ ...counts, lastReset: today })
-  );
+  localStorage.setItem(`breakCounts_${today}`, JSON.stringify({ ...counts, lastReset: today }));
 };
 
 const getStoredBreakHistory = () => {
@@ -70,8 +64,11 @@ const fetchBreakRecords = async (userId, date) => {
 
 export const useAttendanceDashboard = () => {
   const dispatch = useDispatch();
-  const userId = useSelector((state) => state.auth.data?._id);
-  const { attendanceList, isLoading } = useSelector((state) => state.attendance);
+  const userId = useSelector((state) => state.auth.data?._id, (a, b) => a === b);
+  const { attendanceList, isLoading } = useSelector(
+    (state) => state.attendance,
+    (a, b) => a.attendanceList === b.attendanceList && a.isLoading === b.isLoading
+  );
 
   // States
   const [activeTimer, setActiveTimer] = useState(null);
@@ -86,7 +83,7 @@ export const useAttendanceDashboard = () => {
   });
   const [error, setError] = useState(null);
 
-  // Load break counts and history from backend
+  // Memoized loadBreakData to prevent unnecessary recreation
   const loadBreakData = useCallback(async () => {
     if (!userId) return;
     const today = new Date().toISOString().split("T")[0];
@@ -103,16 +100,35 @@ export const useAttendanceDashboard = () => {
         else if (record.type === "wc") counts.wc++;
         else if (record.type === "lunch") counts.lunch++;
       });
-      setBreakCounts(counts);
-      setStoredBreakCounts(counts);
-      setBreakHistory(breaks);
-      addToBreakHistory(
-        breaks[0] || { userId, type: "smoke", startTime: "", date: today }
-      );
+      setBreakCounts((prev) => {
+        if (
+          prev.smoke === counts.smoke &&
+          prev.wc === counts.wc &&
+          prev.lunch === counts.lunch &&
+          prev.lastReset === counts.lastReset
+        ) {
+          return prev; // Prevent unnecessary state update
+        }
+        setStoredBreakCounts(counts);
+        return counts;
+      });
+      setBreakHistory((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(breaks)) return prev; // Prevent unnecessary state update
+        return breaks;
+      });
+      addToBreakHistory(breaks[0] || { userId, type: "smoke", startTime: "", date: today });
     } catch (err) {
       console.error("Failed to load break data, using localStorage", err);
-      setBreakCounts(getStoredBreakCounts());
-      setBreakHistory(getStoredBreakHistory());
+      setBreakCounts((prev) => {
+        const stored = getStoredBreakCounts();
+        if (JSON.stringify(prev) === JSON.stringify(stored)) return prev;
+        return stored;
+      });
+      setBreakHistory((prev) => {
+        const stored = getStoredBreakHistory();
+        if (JSON.stringify(prev) === JSON.stringify(stored)) return prev;
+        return stored;
+      });
     }
   }, [userId]);
 
@@ -137,7 +153,6 @@ export const useAttendanceDashboard = () => {
       setError(null);
       if (!userId) return;
       try {
-        // Clear localStorage when loading data for a fresh state
         if (!attendanceList || attendanceList.length === 0) {
           clearBreakStorage();
           setBreakCounts({ smoke: 0, wc: 0, lunch: 0, lastReset: new Date().toDateString() });
@@ -156,7 +171,7 @@ export const useAttendanceDashboard = () => {
       }
     };
     loadData();
-  }, [dispatch, userId, loadBreakData, attendanceList]);
+  }, [dispatch, userId, loadBreakData]); // Removed attendanceList from dependencies
 
   // Timer countdown effect
   useEffect(() => {
@@ -175,22 +190,18 @@ export const useAttendanceDashboard = () => {
   }, [activeTimer]);
 
   // Format time for display
-  const formatTime = (seconds) => {
+  const formatTime = useCallback((seconds) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, "0")}:${secs
-        .toString()
-        .padStart(2, "0")}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+    return hours > 0
+      ? `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+      : `${mins}:${secs.toString().padStart(2, "0")}`;
+  }, []);
 
   // Check punch status
   const hasPunchedOutToday = useMemo(() => {
-    if (!Array.isArray(attendanceList) || attendanceList.length === 0)
-      return false;
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) return false;
     const today = new Date().toISOString().split("T")[0];
     const todayRecord = attendanceList.find((row) => {
       const rowDate = new Date(row.date).toISOString().split("T")[0];
@@ -200,8 +211,7 @@ export const useAttendanceDashboard = () => {
   }, [attendanceList]);
 
   const hasPunchedInToday = useMemo(() => {
-    if (!Array.isArray(attendanceList) || attendanceList.length === 0)
-      return false;
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) return false;
     const today = new Date().toISOString().split("T")[0];
     const todayRecord = attendanceList.find((row) => {
       const rowDate = new Date(row.date).toISOString().split("T")[0];
@@ -213,66 +223,64 @@ export const useAttendanceDashboard = () => {
   const currentStatus = useMemo(() => {
     if (hasPunchedOutToday) return "Punched Out";
     if (activeTimer)
-      return `On ${activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)
-        } Break`;
+      return `On ${activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)} Break`;
     if (hasPunchedInToday) return "Currently Working";
     return "Ready";
   }, [hasPunchedOutToday, activeTimer, hasPunchedInToday]);
 
   // Start break
-  const startBreak = async (type) => {
-    if (hasPunchedOutToday) {
-      toast.error(
-        "You have already punched out for today. Breaks are not allowed after punch out."
-      );
-      return;
-    }
-    if (!hasPunchedInToday) {
-      toast.error("Please punch in first before taking a break.");
-      return;
-    }
-    const limits = { smoke: 3, wc: 3, lunch: 1 };
-    if (breakCounts[type] >= limits[type]) {
-      alert(`Maximum ${type} breaks (${limits[type]}) reached for today!`);
-      return;
-    }
-    if (activeTimer) {
-      alert(`Please finish your ${activeTimer.type} break first!`);
-      return;
-    }
-    const duration = type === "lunch" ? 3600 : 300;
-    const newTimer = { type, startTime: new Date() };
-    setActiveTimer(newTimer);
-    setTimeLeft(duration);
+  const startBreak = useCallback(
+    async (type) => {
+      if (hasPunchedOutToday) {
+        toast.error("You have already punched out for today. Breaks are not allowed after punch out.");
+        return;
+      }
+      if (!hasPunchedInToday) {
+        toast.error("Please punch in first before taking a break.");
+        return;
+      }
+      const limits = { smoke: 3, wc: 3, lunch: 1 };
+      if (breakCounts[type] >= limits[type]) {
+        toast.error(`Maximum ${type} breaks (${limits[type]}) reached for today!`);
+        return;
+      }
+      if (activeTimer) {
+        toast.error(`Please finish your ${activeTimer.type} break first!`);
+        return;
+      }
+      const duration = type === "lunch" ? 3600 : 300;
+      const newTimer = { type, startTime: new Date() };
+      setActiveTimer(newTimer);
+      setTimeLeft(duration);
 
-    const today = new Date().toISOString().split("T")[0];
-    const breakRecord = {
-      userId: userId,
-      type,
-      startTime: newTimer.startTime.toISOString(),
-      date: today,
-    };
+      const today = new Date().toISOString().split("T")[0];
+      const breakRecord = {
+        userId,
+        type,
+        startTime: newTimer.startTime.toISOString(),
+        date: today,
+      };
 
-    try {
-      await saveBreakRecord(breakRecord);
-    } catch (err) {
-      console.error("Failed to save break start:", err);
-      addToBreakHistory({ ...breakRecord, id: Date.now().toString() });
-      setBreakHistory(getStoredBreakHistory());
-    }
-  };
+      try {
+        await saveBreakRecord(breakRecord);
+      } catch (err) {
+        console.error("Failed to save break start:", err);
+        addToBreakHistory({ ...breakRecord, id: Date.now().toString() });
+        setBreakHistory(getStoredBreakHistory());
+      }
+    },
+    [hasPunchedOutToday, hasPunchedInToday, breakCounts, activeTimer, userId]
+  );
 
   // End break
-  const endBreak = async () => {
+  const endBreak = useCallback(async () => {
     if (!activeTimer) return;
     const breakType = activeTimer.type;
     const endTime = new Date();
-    const duration = Math.floor(
-      (endTime.getTime() - activeTimer.startTime.getTime()) / 1000
-    );
+    const duration = Math.floor((endTime.getTime() - activeTimer.startTime.getTime()) / 1000);
 
     const breakRecord = {
-      userId: userId,
+      userId,
       type: breakType,
       startTime: activeTimer.startTime.toISOString(),
       endTime: endTime.toISOString(),
@@ -281,10 +289,7 @@ export const useAttendanceDashboard = () => {
     };
 
     setBreakCounts((prev) => {
-      const newCounts = {
-        ...prev,
-        [breakType]: prev[breakType] + 1,
-      };
+      const newCounts = { ...prev, [breakType]: prev[breakType] + 1 };
       setStoredBreakCounts(newCounts);
       return newCounts;
     });
@@ -301,82 +306,80 @@ export const useAttendanceDashboard = () => {
 
     setActiveTimer(null);
     setTimeLeft(300);
-  };
+  }, [activeTimer, userId]);
 
   // Calculate break time from history
-  const calculateBreakTimeFromHistory = (rowDate, breakType) => {
-    const dateBreaks = breakHistory.filter(
-      (record) => record.date === rowDate && record.type === breakType
-    );
+  const calculateBreakTimeFromHistory = useCallback((rowDate, breakType) => {
+    const dateBreaks = breakHistory.filter((record) => record.date === rowDate && record.type === breakType);
     if (dateBreaks.length > 0) {
-      const totalSeconds = dateBreaks.reduce(
-        (total, record) => total + (record.duration || 0),
-        0
-      );
+      const totalSeconds = dateBreaks.reduce((total, record) => total + (record.duration || 0), 0);
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return `${minutes}m ${seconds}s`;
     }
     return "-";
-  };
+  }, [breakHistory]);
 
   // Break time calculations
-  const calculateBreakTime = (start, end, rowDate) => {
-    if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "smoke");
-    try {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+  const calculateBreakTime = useCallback(
+    (start, end, rowDate) => {
+      if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "smoke");
+      try {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return calculateBreakTimeFromHistory(rowDate, "smoke");
+        }
+        const diff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+        return `${diff} min`;
+      } catch {
         return calculateBreakTimeFromHistory(rowDate, "smoke");
       }
-      const diff = Math.floor(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
-      );
-      return `${diff} min`;
-    } catch {
-      return calculateBreakTimeFromHistory(rowDate, "smoke");
-    }
-  };
+    },
+    [calculateBreakTimeFromHistory]
+  );
 
-  const calculateWcBreakTime = (start, end, rowDate) => {
-    if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "wc");
-    try {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+  const calculateWcBreakTime = useCallback(
+    (start, end, rowDate) => {
+      if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "wc");
+      try {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return calculateBreakTimeFromHistory(rowDate, "wc");
+        }
+        const diff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+        return `${diff} min`;
+      } catch {
         return calculateBreakTimeFromHistory(rowDate, "wc");
       }
-      const diff = Math.floor(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
-      );
-      return `${diff} min`;
-    } catch {
-      return calculateBreakTimeFromHistory(rowDate, "wc");
-    }
-  };
+    },
+    [calculateBreakTimeFromHistory]
+  );
 
-  const calculateLunchBreakTime = (start, end, rowDate) => {
-    if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "lunch");
-    try {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+  const calculateLunchBreakTime = useCallback(
+    (start, end, rowDate) => {
+      if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "lunch");
+      try {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return calculateBreakTimeFromHistory(rowDate, "lunch");
+        }
+        const diff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+        return `${diff} min`;
+      } catch {
         return calculateBreakTimeFromHistory(rowDate, "lunch");
       }
-      const diff = Math.floor(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60)
-      );
-      return `${diff} min`;
-    } catch {
-      return calculateBreakTimeFromHistory(rowDate, "lunch");
-    }
-  };
+    },
+    [calculateBreakTimeFromHistory]
+  );
 
   // Handle day off request
-  const handleDayOffSubmit = (e) => {
+  const handleDayOffSubmit = useCallback((e) => {
     e.preventDefault();
     if (!dayOffForm.date || !dayOffForm.reason) {
-      alert("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
     const request = {
@@ -391,15 +394,13 @@ export const useAttendanceDashboard = () => {
       "dayOffRequests",
       JSON.stringify([
         request,
-        ...(localStorage.getItem("dayOffRequests")
-          ? JSON.parse(localStorage.getItem("dayOffRequests"))
-          : []),
+        ...(localStorage.getItem("dayOffRequests") ? JSON.parse(localStorage.getItem("dayOffRequests")) : []),
       ])
     );
-    alert("Day off request submitted successfully!");
+    toast.success("Day off request submitted successfully!");
     setDayOffForm({ date: "", reason: "", attachmentType: "medical" });
     setShowDayOffModal(false);
-  };
+  }, [dayOffForm]);
 
   // Real-time statistics
   const stats = useMemo(() => {
@@ -450,9 +451,7 @@ export const useAttendanceDashboard = () => {
       if (row.smokeStart && row.smokeEnd) {
         try {
           const diff = Math.floor(
-            (new Date(row.smokeEnd).getTime() -
-              new Date(row.smokeStart).getTime()) /
-            (1000 * 60)
+            (new Date(row.smokeEnd).getTime() - new Date(row.smokeStart).getTime()) / (1000 * 60)
           );
           totalSmokeMinutes += diff;
         } catch { }
@@ -460,8 +459,7 @@ export const useAttendanceDashboard = () => {
       if (row.wcStart && row.wcEnd) {
         try {
           const diff = Math.floor(
-            (new Date(row.wcEnd).getTime() - new Date(row.wcStart).getTime()) /
-            (1000 * 60)
+            (new Date(row.wcEnd).getTime() - new Date(row.wcStart).getTime()) / (1000 * 60)
           );
           totalWcMinutes += diff;
         } catch { }
@@ -469,19 +467,14 @@ export const useAttendanceDashboard = () => {
       if (row.breakStart && row.breakEnd) {
         try {
           const diff = Math.floor(
-            (new Date(row.breakEnd).getTime() -
-              new Date(row.breakStart).getTime()) /
-            (1000 * 60)
+            (new Date(row.breakEnd).getTime() - new Date(row.breakStart).getTime()) / (1000 * 60)
           );
           totalLunchMinutes += diff;
         } catch { }
       }
 
       if (!row.clockOut && rowDate === today) pendingPunchOutToday = true;
-      if (
-        row.clockIn &&
-        (!lastPunchInTime || new Date(row.clockIn) > lastPunchInTime)
-      ) {
+      if (row.clockIn && (!lastPunchInTime || new Date(row.clockIn) > lastPunchInTime)) {
         lastPunchInTime = new Date(row.clockIn);
       }
       last7Days.add(rowDate);
@@ -516,35 +509,24 @@ export const useAttendanceDashboard = () => {
       return `${hours}h`;
     };
 
-    const avgDailyMinutes =
-      daysWithWork > 0 ? totalWorkMinutes / daysWithWork : 0;
+    const avgDailyMinutes = daysWithWork > 0 ? totalWorkMinutes / daysWithWork : 0;
     const standardHoursPerDay = 8 * 60;
-    const overtimeMinutes = Math.max(
-      0,
-      totalWorkMinutes - daysWithWork * standardHoursPerDay
-    );
-    const totalBreakMinutes =
-      totalWcMinutes + totalSmokeMinutes + totalLunchMinutes;
+    const overtimeMinutes = Math.max(0, totalWorkMinutes - daysWithWork * standardHoursPerDay);
+    const totalBreakMinutes = totalWcMinutes + totalSmokeMinutes + totalLunchMinutes;
     const totalAvailableMinutes = totalWorkMinutes + totalBreakMinutes;
     const efficiency =
-      totalAvailableMinutes > 0
-        ? Math.round((totalWorkMinutes / totalAvailableMinutes) * 100)
-        : 0;
+      totalAvailableMinutes > 0 ? Math.round((totalWorkMinutes / totalAvailableMinutes) * 100) : 0;
 
-    let todayStatus = "No work today";
-    if (todayWorkMinutes > 0) {
-      if (pendingPunchOutToday) todayStatus = "Working...";
-      else if (todayWorkMinutes >= standardHoursPerDay)
-        todayStatus = "Completed";
-      else todayStatus = "Partial";
-    }
+    const todayStatus = todayWorkMinutes > 0
+      ? pendingPunchOutToday
+        ? "Working..."
+        : todayWorkMinutes >= standardHoursPerDay
+          ? "Completed"
+          : "Partial"
+      : "No work today";
 
     const lastPunchInFormatted = lastPunchInTime
-      ? new Date(lastPunchInTime).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
+      ? new Date(lastPunchInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
       : "No data";
 
     const pieData = [
@@ -573,17 +555,15 @@ export const useAttendanceDashboard = () => {
     };
   }, [attendanceList, breakHistory]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     clearBreakStorage();
     setBreakCounts({ smoke: 0, wc: 0, lunch: 0, lastReset: new Date().toDateString() });
     setBreakHistory([]);
     loadBreakData();
-    dispatch(
-      getUserAttendance({ userId, page: 1, limit: INITIAL_PAGE_SIZE })
-    );
-  };
+    dispatch(getUserAttendance({ userId, page: 1, limit: INITIAL_PAGE_SIZE }));
+  }, [dispatch, userId, loadBreakData]);
 
-  const formatDate = (dateStr) => {
+  const formatDate = useCallback((dateStr) => {
     if (!dateStr) return "-";
     try {
       const date = new Date(dateStr);
@@ -595,28 +575,41 @@ export const useAttendanceDashboard = () => {
     } catch {
       return "-";
     }
-  };
+  }, []);
 
-  const formatTimeDisplay = (timeStr) => {
+  const formatTimeDisplay = useCallback((timeStr) => {
     if (!timeStr) return "-";
     try {
       const date = new Date(timeStr);
       if (isNaN(date.getTime())) return "-";
-      return date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
+      return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
     } catch {
       return "-";
     }
-  };
+  }, []);
 
-  const isSmokeBreakDisabled = activeTimer !== null || breakCounts.smoke >= 3 || !hasPunchedInToday;
-  const isWcBreakDisabled = activeTimer !== null || breakCounts.wc >= 3 || !hasPunchedInToday;
-  const isLunchBreakDisabled = activeTimer !== null || breakCounts.lunch >= 1 || !hasPunchedInToday;
+  const isSmokeBreakDisabled = useMemo(
+    () => activeTimer !== null || breakCounts.smoke >= 3 || !hasPunchedInToday,
+    [activeTimer, breakCounts.smoke, hasPunchedInToday]
+  );
+  const isWcBreakDisabled = useMemo(
+    () => activeTimer !== null || breakCounts.wc >= 3 || !hasPunchedInToday,
+    [activeTimer, breakCounts.wc, hasPunchedInToday]
+  );
+  const isLunchBreakDisabled = useMemo(
+    () => activeTimer !== null || breakCounts.lunch >= 1 || !hasPunchedInToday,
+    [activeTimer, breakCounts.lunch, hasPunchedInToday]
+  );
 
-
+  // Debugging logs
+  useEffect(() => {
+    console.log("Attendance List:", attendanceList);
+    console.log("Has Punched In Today:", hasPunchedInToday);
+    console.log("Has Punched Out Today:", hasPunchedOutToday);
+    console.log("Current Status:", currentStatus);
+    console.log("Break Counts:", breakCounts);
+    console.log("Break History:", breakHistory);
+  }, [attendanceList, hasPunchedInToday, hasPunchedOutToday, currentStatus, breakCounts, breakHistory]);
 
   return {
     userId,
@@ -634,7 +627,7 @@ export const useAttendanceDashboard = () => {
     isSmokeBreakDisabled,
     isWcBreakDisabled,
     isLunchBreakDisabled,
-    hasPunchedInToday, // Added to return object
+    hasPunchedInToday,
     handleRefresh,
     startBreak,
     endBreak,
