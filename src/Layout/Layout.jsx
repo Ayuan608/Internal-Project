@@ -25,6 +25,8 @@ const Layout = () => {
         setToggle(!toggle);
     };
 
+
+
     const handleBindGoogleClick = () => {
         if (userData?.qrCode) {
             setBindModalOpen(true);
@@ -80,7 +82,7 @@ const Layout = () => {
                 >
                     {/* Header */}
                     <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-black">
-                        {role !== "Admin" && role !== "Super-Admin" && (
+                        {role == "Admin" && role == "Super-Admin" && (
                             <h1 className="text-sm font-semibold text-white">
                                 CRM Dashboard - Contacts & Customer Management
                             </h1>

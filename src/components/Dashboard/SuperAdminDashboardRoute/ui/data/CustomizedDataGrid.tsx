@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -10,76 +11,59 @@ import {
 } from "chart.js";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
 import { CheckCircle, Clock, FileText, Users } from "lucide-react";
+import { getDashboardStats } from "../../../../../redux/QuotaSlice";
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const CustomizedDataGrid: React.FC = () => {
-  const [dashboardData, setDashboardData] = useState({
-    totalCases: 1247,
-    activeAgents: 142,
-    avgResponseTime: 3.2,
-    successRate: 94.5,
-    csrQuota: { met: 78, nonMet: 22 },
-    depositQuota: { met: 85, nonMet: 15 },
-    withdrawalQuota: { met: 72, nonMet: 28 },
+  const dispatch = useDispatch<any>();
+  const { dashboardStats,quotaData, loading } = useSelector((state: any) => state.quota);
+
+  console.log(dashboardStats, "realtime stats");
+
+  // Local state for display (with default values)
+  const [displayData, setDisplayData] = useState({
+    totalCases: 0,
+    activeAgents: 0,
+    avgResponseTime: 3.2, 
+    successRate: 0,
+    csrQuota: { met: 0, nonMet: 100 },
+    depositQuota: { met: 0, nonMet: 100 },
+    withdrawalQuota: { met: 0, nonMet: 100 },
   });
 
-  // Simulate live data updates
+  // Fetch data on mount and set up polling
   useEffect(() => {
+    // Initial fetch
+    dispatch(getDashboardStats());
+    dispatch(getDashboardStats());
+
+    // Poll every 5 seconds for real-time updates
     const interval = setInterval(() => {
-      setDashboardData((prev) => ({
-        totalCases: prev.totalCases + Math.floor(Math.random() * 10) - 3,
-        activeAgents: prev.activeAgents + Math.floor(Math.random() * 3) - 1,
-        avgResponseTime: Math.max(
-          1.5,
-          Math.min(5, prev.avgResponseTime + (Math.random() - 0.5) * 0.2)
-        ),
-        successRate: Math.max(
-          85,
-          Math.min(99, prev.successRate + (Math.random() - 0.5) * 0.5)
-        ),
-        csrQuota: {
-          met: Math.max(
-            70,
-            Math.min(95, prev.csrQuota.met + Math.floor(Math.random() * 3) - 1)
-          ),
-          nonMet:
-            100 -
-            Math.max(
-              70,
-              Math.min(95, prev.csrQuota.met + Math.floor(Math.random() * 3) - 1)
-            ),
-        },
-        depositQuota: {
-          met: Math.max(
-            75,
-            Math.min(98, prev.depositQuota.met + Math.floor(Math.random() * 3) - 1)
-          ),
-          nonMet:
-            100 -
-            Math.max(
-              75,
-              Math.min(98, prev.depositQuota.met + Math.floor(Math.random() * 3) - 1)
-            ),
-        },
-        withdrawalQuota: {
-          met: Math.max(
-            65,
-            Math.min(90, prev.withdrawalQuota.met + Math.floor(Math.random() * 3) - 1)
-          ),
-          nonMet:
-            100 -
-            Math.max(
-              65,
-              Math.min(90, prev.withdrawalQuota.met + Math.floor(Math.random() * 3) - 1)
-            ),
-        },
-      }));
-    }, 3000);
+      dispatch(getDashboardStats());
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [dispatch]);
+
+  // Update display data when dashboardStats changes
+  useEffect(() => {
+    if (dashboardStats) {
+      setDisplayData({
+        totalCases: dashboardStats.totalCases || 0,
+        activeAgents: dashboardStats.activeAgents || 0,
+        avgResponseTime: dashboardStats.avgResponseTime || 3.2,
+        successRate: dashboardStats.successRate || 0,
+        csrQuota: dashboardStats.csrQuota || { met: 0, nonMet: 100 },
+        depositQuota: dashboardStats.depositQuota || { met: 0, nonMet: 100 },
+        withdrawalQuota: dashboardStats.withdrawalQuota || {
+          met: 0,
+          nonMet: 100,
+        },
+      });
+    }
+  }, [dashboardStats]);
 
   // Chart options
   const chartOptions = {
@@ -107,7 +91,6 @@ const CustomizedDataGrid: React.FC = () => {
     id: "centerText",
     beforeDraw: (chart) => {
       const { width, height, ctx } = chart;
-      const meta = chart.getDatasetMeta(0);
       const value = chart.data.datasets[0].data[0] as number;
 
       ctx.save();
@@ -147,6 +130,15 @@ const CustomizedDataGrid: React.FC = () => {
   return (
     <div className="text-white mt-6">
       <div className="px-2">
+        {/* Loading Indicator */}
+        {loading && (
+          <div className="mb-4 text-center">
+            <span className="text-blue-400 text-sm animate-pulse">
+              🔄 Updating data...
+            </span>
+          </div>
+        )}
+
         {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Cases */}
@@ -158,7 +150,7 @@ const CustomizedDataGrid: React.FC = () => {
               </span>
             </div>
             <div className="text-3xl font-bold text-white">
-              {dashboardData.totalCases.toLocaleString()}
+              {displayData.totalCases.toLocaleString()}
               <div className="text-gray-400 text-sm font-medium pt-2">
                 TOTAL CASES TODAY
               </div>
@@ -174,7 +166,7 @@ const CustomizedDataGrid: React.FC = () => {
               </span>
             </div>
             <div className="text-3xl font-bold text-sky-400">
-              {dashboardData.activeAgents}
+              {displayData.activeAgents}
             </div>
             <div className="text-gray-400 text-sm font-medium pt-1">
               ACTIVE AGENTS
@@ -190,7 +182,7 @@ const CustomizedDataGrid: React.FC = () => {
               </span>
             </div>
             <div className="text-3xl font-bold text-yellow-400">
-              {dashboardData.avgResponseTime.toFixed(1)}m
+              {displayData.avgResponseTime.toFixed(1)}m
             </div>
             <div className="text-gray-400 text-sm font-medium pt-1">
               AVG RESPONSE TIME
@@ -206,7 +198,7 @@ const CustomizedDataGrid: React.FC = () => {
               </span>
             </div>
             <div className="text-3xl font-bold text-green-400">
-              {dashboardData.successRate.toFixed(1)}%
+              {displayData.successRate.toFixed(1)}%
             </div>
             <div className="text-gray-400 text-sm font-medium pt-1">
               SUCCESS RATE
@@ -221,8 +213,8 @@ const CustomizedDataGrid: React.FC = () => {
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
-                  dashboardData.csrQuota.met,
-                  dashboardData.csrQuota.nonMet,
+                  displayData.csrQuota.met,
+                  displayData.csrQuota.nonMet,
                   "#3b82f6"
                 )}
                 options={{
@@ -239,8 +231,8 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {dashboardData.csrQuota.met}% Met •{" "}
-              {dashboardData.csrQuota.nonMet}% Not Met
+              {displayData.csrQuota.met}% Met • {displayData.csrQuota.nonMet}%
+              Not Met
             </div>
           </div>
 
@@ -249,8 +241,8 @@ const CustomizedDataGrid: React.FC = () => {
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
-                  dashboardData.depositQuota.met,
-                  dashboardData.depositQuota.nonMet,
+                  displayData.depositQuota.met,
+                  displayData.depositQuota.nonMet,
                   "#22c55e"
                 )}
                 options={{
@@ -267,8 +259,8 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {dashboardData.depositQuota.met}% Met •{" "}
-              {dashboardData.depositQuota.nonMet}% Not Met
+              {displayData.depositQuota.met}% Met •{" "}
+              {displayData.depositQuota.nonMet}% Not Met
             </div>
           </div>
 
@@ -277,8 +269,8 @@ const CustomizedDataGrid: React.FC = () => {
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
-                  dashboardData.withdrawalQuota.met,
-                  dashboardData.withdrawalQuota.nonMet,
+                  displayData.withdrawalQuota.met,
+                  displayData.withdrawalQuota.nonMet,
                   "#8b5cf6"
                 )}
                 options={{
@@ -294,10 +286,10 @@ const CustomizedDataGrid: React.FC = () => {
                 plugins={[centerTextPlugin]}
               />
             </div>
-              <div className="text-center mt-4 text-sm text-gray-400">
-                {dashboardData.withdrawalQuota.met}% Met •{" "}
-                {dashboardData.withdrawalQuota.nonMet}% Not Met
-              </div>
+            <div className="text-center mt-4 text-sm text-gray-400">
+              {displayData.withdrawalQuota.met}% Met •{" "}
+              {displayData.withdrawalQuota.nonMet}% Not Met
+            </div>
           </div>
 
           <WeeklyPerformanceChart />

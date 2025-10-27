@@ -85,7 +85,7 @@ const notificationSlice = createSlice({
           state.unreadCount += 1;
         }
         state.connectionType = "socket";
-        console.log("🔔 New notification added:", action.payload.title);
+
       }
     },
 
@@ -100,7 +100,7 @@ const notificationSlice = createSlice({
         state.notifications.unshift(...newNotifications);
         state.unreadCount += newNotifications.filter((n) => !n.isRead).length;
         state.connectionType = "socket";
-        console.log("📦 Bulk notifications added:", newNotifications.length);
+
       }
     },
 
@@ -112,7 +112,7 @@ const notificationSlice = createSlice({
       if (notification && !notification.isRead) {
         notification.isRead = true;
         state.unreadCount = Math.max(0, state.unreadCount - 1);
-        console.log("✅ Notification marked as read locally:", action.payload);
+
       }
     },
 
@@ -121,19 +121,19 @@ const notificationSlice = createSlice({
       state.notifications = [];
       state.unreadCount = 0;
       state.lastFetched = null;
-      console.log("🗑️ All notifications cleared");
+
     },
 
     // Recalculate unread count
     recalculateUnreadCount: (state) => {
       state.unreadCount = state.notifications.filter((n) => !n.isRead).length;
-      console.log("🔢 Unread count recalculated:", state.unreadCount);
+
     },
 
     // Set connection type
     setConnectionType: (state, action) => {
       state.connectionType = action.payload;
-      console.log("🔌 Connection type set to:", action.payload);
+
     },
 
     // Set last fetched timestamp
@@ -161,10 +161,6 @@ const notificationSlice = createSlice({
         state.connectionType = "api";
         state.lastFetched = new Date().toISOString();
 
-        console.log("✅ All notifications loaded successfully!");
-        console.log("📊 Total notifications:", notifications.length);
-        console.log("📊 Unread count:", state.unreadCount);
-        console.log("📋 Sample notification:", notifications[0]);
       })
       .addCase(getAllNotifications.rejected, (state, action) => {
         state.loading = false;

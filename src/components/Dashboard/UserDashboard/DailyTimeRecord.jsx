@@ -19,7 +19,7 @@ function DailyTimeRecord() {
     (state) => state.attendance
   );
 
-  console.log(pagination)
+  console.log(attendanceList)
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -207,7 +207,7 @@ function DailyTimeRecord() {
             </div>
           </div>
 
-          <SuperAdminData />
+          <SuperAdminData view={view} setView={setView} />
 
           {/* DTR Table */}
           <div className="bg-[#10101b94] border border-gray-500 rounded-lg shadow text-white">

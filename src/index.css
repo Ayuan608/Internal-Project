@@ -8,14 +8,12 @@
   --body-color: #e0e0e0;
   --box-color: #232b3e62;
   --box-border: #9e9fa74d;
-  --button-color: #3B82F6;
+  --button-color: #3b82f6;
 }
 
 .border_gray {
   border: 1px solid var(--box-border);
 }
-
-
 
 .bg_primary {
   background-color: var(--main-color);
@@ -58,9 +56,13 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-columnHeader,
+.css-jx4txk-MuiDataGrid-root
+  .MuiDataGrid-row--borderBottom
+  .MuiDataGrid-columnHeader,
 .css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-filler,
-.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-scrollbarFiller {
+.css-jx4txk-MuiDataGrid-root
+  .MuiDataGrid-row--borderBottom
+  .MuiDataGrid-scrollbarFiller {
   border-bottom: 1px solid var(--DataGrid-rowBorderColor);
   background: #2e3037 !important;
   color: white !important;
@@ -217,7 +219,9 @@ button {
   background-color: black !important;
 }
 
-.css-jx4txk-MuiDataGrid-root .MuiDataGrid-row--borderBottom .MuiDataGrid-columnHeader {
+.css-jx4txk-MuiDataGrid-root
+  .MuiDataGrid-row--borderBottom
+  .MuiDataGrid-columnHeader {
   background-color: black !important;
 }
 
@@ -227,4 +231,9 @@ button {
 
 .css-jx4txk-MuiDataGrid-root .MuiDataGrid-row:hover {
   background-color: transparent !important;
+}
+
+.css-1toxriw-MuiList-root-MuiMenu-list {
+  background-color: black !important;
+  color: white !important;
 }
