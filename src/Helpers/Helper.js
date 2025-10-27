@@ -90,6 +90,7 @@ export const AdminRoutes = [
     icon: CalendarCheck2,
   },
   { to: "/admin/login", label: "Login Credentails", icon: KeyRound },
+  { to: "/admin/report", label: "Report", icon: Proportions },
   {
     to: "/admin/shift-management",
     label: "Shift Management",
@@ -113,6 +114,7 @@ export const TeamButtons = [
     icon: CalendarCheck2,
   },
   { to: "/team/Performance", label: "Team Performance", icon: KeyRound },
+  { to: "/team/report", label: "Report", icon: Proportions },
   {
     to: "/team/shift-management",
     label: "Shift Management",

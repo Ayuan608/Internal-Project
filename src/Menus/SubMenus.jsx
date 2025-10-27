@@ -9,6 +9,7 @@ import {
   Megaphone,
   ChartColumnIncreasing,
   FileText,
+  Proportions,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import UserMenu from "./User";
@@ -76,6 +77,14 @@ const Menus = ({ toggle, onTitleChange }) => {
           to: "/user/announcement",
           label: "Announcement",
           icon: <Megaphone />,
+        },
+      ]
+      : []), ...(role === "User"
+      ? [
+        {
+          to: "/user/report",
+          label: "Report",
+          icon: <Proportions />,
         },
       ]
       : []),
