@@ -315,7 +315,7 @@ export const TeamStats = [
 export const LeaderStats = [
   {
     title: "This Week",
-    value: "+12% ↑",
+    value: "+12%",
     trend: "up",
     data: [
       200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,
@@ -324,7 +324,7 @@ export const LeaderStats = [
   },
   {
     title: "This Month",
-    value: "+8.5% ↑",
+    value: "+8.5%",
     trend: "up",
     data: [
       200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,
@@ -333,7 +333,7 @@ export const LeaderStats = [
   },
   {
     title: "Efficiency",
-    value: "-2.3% ↓",
+    value: "-2.3%",
     trend: "down",
     data: [
       1640, 1250, 970, 1130, 1050, 900, 720, 1080, 900, 450, 920, 820, 840, 600,
@@ -343,7 +343,7 @@ export const LeaderStats = [
   },
   {
     title: "CSAT Score",
-    value: "+5.2% ↑",
+    value: "+5.2%",
     trend: "up",
     data: [
       200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340,

@@ -460,7 +460,7 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.map((row) => {
+                    attendanceList.slice(0,1).map((row) => {
                       const rowDate = new Date(row.date)
                         .toISOString()
                         .split("T")[0];
@@ -719,23 +719,9 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Attachment Type
                 </label>
-                <select
-                  value={dayOffForm.attachmentType}
-                  onChange={(e) =>
-                    setDayOffForm({
-                      ...dayOffForm,
-                      attachmentType: e.target.value as
-                        | "medical"
-                        | "personal"
-                        | "emergency",
-                    })
-                  }
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-none"
-                >
-                  <option value="medical">Medical Certificate</option>
-                  <option value="personal">Personal Leave</option>
-                  <option value="emergency">Emergency</option>
-                </select>
+                  <div className="w-full px-4 py-2 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                    Casual Leave
+                  </div>
               </div>
               <div className="flex gap-3 mt-6">
                 <button
