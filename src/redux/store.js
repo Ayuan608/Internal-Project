@@ -5,6 +5,7 @@ import notificationSliceReducer from './NotificationSlice'
 import statSliceReducer from './statSlice'
 import quotaSliceReducer from './QuotaSlice'
 import reportSliceReducer from './reportSlice'
+import fileSliceReducer from './FileUploadSlice'
 const store = configureStore({
     reducer: {
         auth: authSliceReducer,
@@ -12,7 +13,8 @@ const store = configureStore({
         notifications: notificationSliceReducer,
         quota: quotaSliceReducer,
         report: reportSliceReducer,
-        stat: statSliceReducer
+        stat: statSliceReducer,
+        file: fileSliceReducer
     },
     devtools: true
 })

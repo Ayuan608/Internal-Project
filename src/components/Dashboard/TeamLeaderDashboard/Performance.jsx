@@ -1,9 +1,36 @@
-
-
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TrendingUp, TrendingDown, MessageCircle, Target } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { uploadFile } from '../../../redux/FileUploadSlice';
 
 const Performance = () => {
+    const dispatch = useDispatch();
+    const fileInputref = useRef(null)
+    const { data: file } = useSelector((state) => state.file)
+    useEffect(() => {
+        uploadFile()
+    }, [dispatch])
+    // const handleFileSelect = async (event) => {
+    //     const file = event.target.files[0]
+    //     if (!file) return;
+    //     const allowedTypes = [
+    //         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    //         'application/vnd.ms-excel'
+    //     ];
+
+    //     if (!allowedTypes.includes(file.type)) {
+    //         alert('Please select a valid Excel file (.xlsx or .xls)');
+    //         return;
+    //     }
+    //     try {
+    //         const reader=new FileReader();
+    //         reader.onload=async(e)={
+             
+    //         }
+    //     } catch (error) {
+            
+    //     }
+    // }
     const performanceData = [
         {
             name: 'Sarah Johnson',
@@ -66,177 +93,188 @@ const Performance = () => {
     };
 
     return (
-        <div className="w-full bg-[rgba(59,130,246,0.03)] rounded-xl border_gray shadow-xl overflow-hidden m-2">
-            {/* Table Header */}
-            <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-b border-gray-700">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-white">Performance Metrics</h2>
-                    <div className="text-sm text-gray-400">
-                        Real-time Performance Data
+        <div className='p-2 '>
+            <div className="flex justify-end items-center gap-3">
+                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200">
+                    Import File
+                </button>
+                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200">
+                    Export File
+                </button>
+            </div>
+            <div className="w-full bg-[rgba(59,130,246,0.03)] rounded-xl border_gray shadow-xl overflow-hidden m-2">
+                {/* Table Header */}
+
+                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-b border-gray-700">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-semibold text-white">Performance Metrics</h2>
+                        <div className="text-sm text-gray-400">
+                            Real-time Performance Data
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Table Container */}
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    {/* Table Head */}
-                    <thead className="bg-[rgba(59,130,246,0.03)] border-b border-gray-700">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Member
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Date
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Completed Convo
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Total Effective
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Total Message
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Missed Chats
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Ave. Online Time
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                1st Response
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Positive rates
-                            </th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Negatives
-                            </th>
-                        </tr>
-                    </thead>
+                {/* Table Container */}
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        {/* Table Head */}
+                        <thead className="bg-[rgba(59,130,246,0.03)] border-b border-gray-700">
+                            <tr>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Member
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Date
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Completed Convo
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Total Effective
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Total Message
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Missed Chats
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Ave. Online Time
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    1st Response
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Positive rates
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Negatives
+                                </th>
+                            </tr>
+                        </thead>
 
-                    {/* Table Body */}
-                    <tbody className="bg-[rgba(59,130,246,0.03)]">
-                        {performanceData.map((employee, index) => (
-                            <tr
-                                key={index}
-                                className="border_gray"
-                            >
-                                {/* Name */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                                            {employee.name.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                        <div className="ml-4">
-                                            <div className="text-sm font-medium text-white">
-                                                {employee.name}
+                        {/* Table Body */}
+                        <tbody className="bg-[rgba(59,130,246,0.03)]">
+                            {performanceData.map((employee, index) => (
+                                <tr
+                                    key={index}
+                                    className="border_gray"
+                                >
+                                    {/* Name */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                                {employee.name.split(' ').map(n => n[0]).join('')}
+                                            </div>
+                                            <div className="ml-4">
+                                                <div className="text-sm font-medium text-white">
+                                                    {employee.name}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
+                                    </td>
 
-                                {/* Shift */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className={`text-sm font-medium px-3 py-1 rounded-full ${employee.shift === 'Morning'
-                                        ? 'bg-blue-900/30 text-blue-300 border border-blue-700'
-                                        : 'bg-purple-900/30 text-purple-300 border border-purple-700'
-                                        }`}>
-                                        {employee.shift}
-                                    </div>
-                                </td>
-
-                                {/* Completed */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`text-lg font-bold ${getQuotaStatus(employee.completed, employee.quota)}`}>
-                                            {employee.completed}
+                                    {/* Shift */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className={`text-sm font-medium px-3 py-1 rounded-full ${employee.shift === 'Morning'
+                                            ? 'bg-blue-900/30 text-blue-300 border border-blue-700'
+                                            : 'bg-purple-900/30 text-purple-300 border border-purple-700'
+                                            }`}>
+                                            {employee.shift}
                                         </div>
-                                        {employee.completed >= employee.quota ? (
-                                            <TrendingUp className="w-4 h-4 text-green-400" />
-                                        ) : (
-                                            <TrendingDown className="w-4 h-4 text-red-400" />
-                                        )}
-                                    </div>
-                                </td>
+                                    </td>
 
-                                {/* Messages */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <MessageCircle className="w-4 h-4 text-blue-400" />
-                                        <div className="text-sm font-semibold text-white">
-                                            {employee.messages}
+                                    {/* Completed */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`text-lg font-bold ${getQuotaStatus(employee.completed, employee.quota)}`}>
+                                                {employee.completed}
+                                            </div>
+                                            {employee.completed >= employee.quota ? (
+                                                <TrendingUp className="w-4 h-4 text-green-400" />
+                                            ) : (
+                                                <TrendingDown className="w-4 h-4 text-red-400" />
+                                            )}
                                         </div>
-                                    </div>
-                                </td>
+                                    </td>
 
-                                {/* FRT (First Response Time) */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className={`text-sm font-bold ${getFrtColor(employee.frt)}`}>
-                                        {employee.frt}
-                                    </div>
-                                    <div className="text-xs text-gray-400">seconds</div>
-                                </td>
-
-                                {/* Positive Percentage */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`text-lg font-bold ${getPositivePercentageColor(employee.positivePercentage)}`}>
-                                            {employee.positivePercentage}%
+                                    {/* Messages */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <MessageCircle className="w-4 h-4 text-blue-400" />
+                                            <div className="text-sm font-semibold text-white">
+                                                {employee.messages}
+                                            </div>
                                         </div>
-                                        <div className="w-16 bg-gray-700 rounded-full h-2">
-                                            <div
-                                                className={`h-2 rounded-full ${employee.positivePercentage >= 90 ? 'bg-green-500' :
-                                                    employee.positivePercentage >= 85 ? 'bg-yellow-500' : 'bg-red-500'
-                                                    }`}
-                                                style={{ width: `${employee.positivePercentage}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </td>
+                                    </td>
 
-                                {/* Mistakes */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className={`text-lg font-bold ${getMistakesColor(employee.mistakes)}`}>
-                                        {employee.mistakes}
-                                    </div>
-                                </td>
-
-                                {/* Quota */}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <Target className="w-4 h-4 text-purple-400" />
-                                        <div className="text-sm font-semibold text-white">
-                                            {employee.quota}
+                                    {/* FRT (First Response Time) */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className={`text-sm font-bold ${getFrtColor(employee.frt)}`}>
+                                            {employee.frt}
                                         </div>
-                                        <div className="text-xs text-gray-400">
-                                            ({Math.round((employee.completed / employee.quota) * 100)}%)
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                        <div className="text-xs text-gray-400">seconds</div>
+                                    </td>
 
-            {/* Table Footer */}
-            <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700">
-                <div className="flex justify-between items-center text-sm text-gray-400">
-                    <div>Showing {performanceData.length} employees</div>
-                    <div className="flex gap-4">
-                        <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                            <span>Good</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                            <span>Average</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                            <span>Needs Improvement</span>
+                                    {/* Positive Percentage */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`text-lg font-bold ${getPositivePercentageColor(employee.positivePercentage)}`}>
+                                                {employee.positivePercentage}%
+                                            </div>
+                                            <div className="w-16 bg-gray-700 rounded-full h-2">
+                                                <div
+                                                    className={`h-2 rounded-full ${employee.positivePercentage >= 90 ? 'bg-green-500' :
+                                                        employee.positivePercentage >= 85 ? 'bg-yellow-500' : 'bg-red-500'
+                                                        }`}
+                                                    style={{ width: `${employee.positivePercentage}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {/* Mistakes */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className={`text-lg font-bold ${getMistakesColor(employee.mistakes)}`}>
+                                            {employee.mistakes}
+                                        </div>
+                                    </td>
+
+                                    {/* Quota */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <Target className="w-4 h-4 text-purple-400" />
+                                            <div className="text-sm font-semibold text-white">
+                                                {employee.quota}
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                                ({Math.round((employee.completed / employee.quota) * 100)}%)
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Table Footer */}
+                <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700">
+                    <div className="flex justify-between items-center text-sm text-gray-400">
+                        <div>Showing {performanceData.length} employees</div>
+                        <div className="flex gap-4">
+                            <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                <span>Good</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                <span>Average</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                                <span>Needs Improvement</span>
+                            </div>
                         </div>
                     </div>
                 </div>
