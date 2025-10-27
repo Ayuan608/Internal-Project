@@ -36,7 +36,7 @@ const TeamQuotaTable = () => {
         },
       ]);
       setLoading(false);
-    }, 1500);
+    }, 100000);
   }, []);
 
   return (
