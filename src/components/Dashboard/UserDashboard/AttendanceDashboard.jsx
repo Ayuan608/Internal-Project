@@ -447,6 +447,7 @@ const AttendanceDashboardUI = ({
                 <div className="text-xl font-bold text-blue-300">
                   {breakCounts.wc}
                 </div>
+                {/*  */}
                 <div className="text-xs text-gray-400 mt-1">WC</div>
               </div>
               <div className="text-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
