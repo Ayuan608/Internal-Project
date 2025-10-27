@@ -83,9 +83,10 @@ export default function AttendanceDashboard() {
   const { attendanceList, isLoading } = useSelector(
     (state: any) => state.attendance
   );
-  
+
 
   console.log(attendanceList,"dashboard")
+  
 
   // Timer states
   const [activeTimer, setActiveTimer] = useState<{
@@ -1072,7 +1073,7 @@ export default function AttendanceDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.map((row: any) => {
+                    attendanceList.slice(0,1).map((row: any) => {
                       const rowDate = new Date(row.date)
                         .toISOString()
                         .split("T")[0];

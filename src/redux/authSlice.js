@@ -123,7 +123,7 @@ export const logout = createAsyncThunk("auth/logout", async () => {
 export const deleteUser = createAsyncThunk("user/deleteUser", async (userId, { rejectWithValue }) => {
   try {
     const response = await axiosInstance.delete(`/user/delete/${userId}`);
-    return response.data; 
+    return response.data;
   } catch (error) {
     return rejectWithValue(error.response.data.message || "Failed to delete user");
   }
@@ -252,6 +252,23 @@ export const resetPassword = createAsyncThunk("/user/reset", async (data) => {
   }
 });
 
+export const updateUserRole = createAsyncThunk(
+  'user/updateRole',
+  async ({ id, role }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put(`/user/${id}/role`, { role });
+
+      toast.success(response.data.message || "Role updated successfully!");
+
+      return response.data;
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to update user role!"
+      );
+      return rejectWithValue(error?.response?.data || "Failed to update role");
+    }
+  }
+);
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -327,7 +344,10 @@ const authSlice = createSlice({
         state.data = action?.payload?.user;
         state.role = action?.payload?.user?.role;
       })
-
+      .addCase(updateUserRole.fulfilled,(state,action)=>{
+        state.status='succeeded',
+        state.auth=action.payload;
+      })
       .addCase(getAllUsers.fulfilled, (state, action) => {
         state.loading = false;
         state.users = action.payload;

@@ -4,13 +4,14 @@ import attendenceSliceReducer from './attendenceSlice'
 import notificationSliceReducer from './NotificationSlice'
 import statSliceReducer from './statSlice'
 import quotaSliceReducer from './QuotaSlice'
-
+import reportSliceReducer from './reportSlice'
 const store = configureStore({
     reducer: {
         auth: authSliceReducer,
         attendance: attendenceSliceReducer,
         notifications: notificationSliceReducer,
         quota: quotaSliceReducer,
+        report: reportSliceReducer,
         stat: statSliceReducer
     },
     devtools: true

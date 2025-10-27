@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Lock, Search, Edit2, Trash2, Eye, EyeOff, User } from 'lucide-react';
 import { deleteUser, getAllUsers } from '../../../redux/authSlice';
@@ -10,13 +10,12 @@ function LoginCredentials() {
     const { users } = useSelector((state) => state?.auth);
     const [searchTerm, setSearchTerm] = useState('');
     const [showPassword, setShowPassword] = useState({});
-    const [selectedUser, setSelectedUser] = useState(null); // 👈 For individual QR modal
+    const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
         dispatch(getAllUsers());
     }, [dispatch]);
 
-    // Filter users based on search
     const filteredUsers = users?.filter(user =>
         user?.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user?.username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -43,7 +42,7 @@ function LoginCredentials() {
     };
 
     return (
-        <div className="min-h-screen p-4 md:p-8">
+        <div className="min-h-screen  p-4">
             <div className="rounded-2xl shadow-xl p-2 md:p-6 mb-6">
                 <div className="flex justify-end">
                     <div className="relative w-full md:w-80">
@@ -59,7 +58,6 @@ function LoginCredentials() {
                 </div>
             </div>
 
-            {/* Credentials Table */}
             <div className="bg-[#3b83f60b] rounded-2xl shadow-2xl overflow-hidden">
                 <div className="p-4 md:p-6 flex items-center justify-between border-b border-white/10">
                     <h2 className="text-xl font-bold text-white">Employee Credentials</h2>
@@ -69,7 +67,6 @@ function LoginCredentials() {
                     </div>
                 </div>
 
-                {/* Desktop View */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                         <thead>
@@ -100,7 +97,6 @@ function LoginCredentials() {
                                         </div>
                                     </td>
 
-                                    {/* ✅ Each user has own QR Modal */}
                                     <td className="p-4">
                                         <div
                                             onClick={() => setSelectedUser(user)}
@@ -140,7 +136,6 @@ function LoginCredentials() {
                 )}
             </div>
 
-            {/* ✅ Single QR Modal (per user) */}
             <AnimatePresence>
                 {selectedUser && (
                     <motion.div
