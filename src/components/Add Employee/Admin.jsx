@@ -7,12 +7,14 @@ import {
   QrCode,
   Edit,
   Trash,
+  Shield,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addAdminAccount,
   deleteUser,
   getAllUsers,
+  updateUserRole,
 } from "../../redux/authSlice";
 import toast from "react-hot-toast";
 import { DataGrid } from "@mui/x-data-grid";
@@ -32,6 +34,8 @@ function Admin() {
   const [qrCodeImage, setQrCodeImage] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const open = Boolean(anchorEl);
+  const [roleModal, setRoleModal] = useState(false);
+  const [newRole, setNewRole] = useState("");
 
   const [addUser, setAddUser] = useState({
     FullName: "",
@@ -51,7 +55,7 @@ function Admin() {
   );
   const rolePermissions = {
     "Super-Admin": ["Team-Leader", "Admin", "User", "Checker"],
-    Admin: ["Team-Leader", "User", "Checker"],
+    "Admin": ["Team-Leader", "User", "Checker"],
   };
   const allowedRoles = rolePermissions[role] || [];
 
@@ -80,6 +84,11 @@ function Admin() {
   const handleMenuOpen = (event, row) => {
     setAnchorEl(event.currentTarget);
     setSelectedRow(row);
+  };
+  const handleRoleChange = () => {
+    setRoleModal(true);
+    setNewRole(selectedRow?.role); // show current role
+    handleMenuClose();
   };
 
   const handleMenuClose = () => {
@@ -218,7 +227,11 @@ function Admin() {
       },
     },
     { field: "department", headerName: "Department", flex: 1 },
-    { field: "role", headerName: "Role", flex: 1 },
+    {
+      field: 'role',
+      headerName: 'Role',
+      width: 150,
+    },
     {
       field: "Shift",
       headerName: "Shift",
@@ -233,11 +246,10 @@ function Admin() {
       flex: 1,
       renderCell: (params) => (
         <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            params.row.status === "active"
-              ? "bg-green-500/20 text-green-400"
-              : "bg-red-500/20 text-red-400"
-          }`}
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${params.row.status === "active"
+            ? "bg-green-500/20 text-green-400"
+            : "bg-red-500/20 text-red-400"
+            }`}
         >
           {params.row.status}
         </span>
@@ -343,12 +355,19 @@ function Admin() {
           </ListItemIcon>
           <ListItemText primary="Edit User" />
         </MenuItem>
+        <MenuItem onClick={handleRoleChange}>
+          <ListItemIcon>
+            <Shield size={16} className="text-white" />
+          </ListItemIcon>
+          <ListItemText primary="Change-Role" />
+        </MenuItem>
+
         {role !== "Team-Leader" && (
           <MenuItem onClick={() => handleDelete(selectedRow?._id)}>
             <ListItemIcon>
               <Trash size={16} className="text-white" />
             </ListItemIcon>
-            <ListItemText primary="Delete" />
+            <ListItemText primary="Delete-User" />
           </MenuItem>
         )}
       </Menu>
@@ -631,6 +650,50 @@ function Admin() {
           </div>
         </div>
       )}
+      {roleModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2e303759] rounded-xl shadow-2xl w-full max-w-md border border-[#9E9FA74D] p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Change Role — {selectedRow?.FullName}
+            </h2>
+
+            <select
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value)}
+              className="w-full bg-[#2e303759] border border-gray-600 rounded-lg px-4 py-3 text-white mb-6"
+            >
+              {allowedRoles.map((roleOption) => (
+                <option key={roleOption} value={roleOption} className="text-black">
+                  {roleOption}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setRoleModal(false)}
+                className="px-6 py-2 bg-gray-600 rounded-lg hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  await dispatch(
+                    updateUserRole({ id: selectedRow?._id, role: newRole })
+                  );
+                  dispatch(getAllUsers());
+                  setRoleModal(false);
+                }}
+                className="px-6 py-2 bg-blue-700 rounded-lg hover:bg-blue-600"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

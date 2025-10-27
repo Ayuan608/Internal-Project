@@ -29,9 +29,12 @@ import {
   OctagonAlert,
   Proportions,
   Settings,
+  Shield,
+  SquareChartGantt,
   User2,
   UserCheck,
   Users,
+  WifiPen,
   XCircle,
 } from "lucide-react";
 import ReportIcon from "./Icons";
@@ -71,7 +74,10 @@ export const superAdminButtons = [
     label: "Emp of Month",
     icon: BanknoteArrowUp,
   },
+
   { to: "/dashboard/activityLogs", label: "Activity Logs", icon: Antenna },
+  { to: "/dashboard/ip-address", label: "IP-Whitelist", icon: Shield },
+
 ];
 export const AdminRoutes = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -85,6 +91,12 @@ export const AdminRoutes = [
     icon: CalendarCheck2,
   },
   { to: "/admin/login", label: "Login Credentails", icon: KeyRound },
+  {
+    to: "/admin/shift-management",
+    label: "Shift Management",
+    icon: SquareChartGantt,
+  },
+  { to: "/admin/ip-address", label: "IP-Whitelist", icon: Shield  },
 ];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
@@ -102,6 +114,11 @@ export const TeamButtons = [
     icon: CalendarCheck2,
   },
   { to: "/team/Performance", label: "Team Performance", icon: KeyRound },
+  {
+    to: "/team/shift-management",
+    label: "Shift Management",
+    icon: SquareChartGantt,
+  },
 ];
 
 export const userData = {

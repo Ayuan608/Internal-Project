@@ -27,6 +27,9 @@ import Performance from "./components/Dashboard/TeamLeaderDashboard/Performance"
 import CheckReport from "./components/Dashboard/CheckerDashboard/CheckReport";
 import Storage from "./components/Dashboard/SuperAdminDashboardRoute/Storage";
 import EmployeeOfTheMonthAdmin from "./components/Dashboard/SuperAdminDashboardRoute/ui/EmployeeOfTheMonth";
+import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
+import ShiftManagement from "./components/Dashboard/AdminDashboard/shift-management";
+import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-whiteList";
 
 function App() {
   return (
@@ -46,12 +49,13 @@ function App() {
           <Route path="add" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="EmployeeOfTheMonthAdmin" element={<EmployeeOfTheMonthAdmin />} />
-          <Route path="report" element={<CheckReport />} />
+          <Route path="report" element={<Report />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="activityLogs" element={<ActivityLogs />} />
           <Route path="setting" element={<Setting />} />
           <Route path="login" element={<LoginCredentials />} />
           <Route path="storage" element={<Storage />} />
+          <Route path="ip-address" element={<IPWhitelistDashboard/>}/>
         </Route>
       </Route>
       {/* ADMIN ROUTES */}
@@ -64,7 +68,9 @@ function App() {
           <Route path="directory" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
+          <Route path="shift-management" element={<ShiftManagement />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
+            <Route path="ip-address" element={<IPWhitelistDashboard/>}/>
         </Route>
       </Route>
       {/* USER ROUTES */}
@@ -95,6 +101,7 @@ function App() {
           <Route path="attendancerecords" element={<AttendanceRecords />} />
           <Route path="Performance" element={<Performance />} />
           <Route path="setting" element={<Setting />} />
+           <Route path="shift-management" element={<ShiftManagement />} />
         </Route>
       </Route>
       {/* 404 and Denied */}
