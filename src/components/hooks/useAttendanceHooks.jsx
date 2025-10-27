@@ -2,136 +2,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { getUserAttendance } from "../../redux/attendenceSlice";
 import axios from "axios";
+import { toast } from 'react-hot-toast';
 
 // Constants
 const INITIAL_PAGE_SIZE = 10;
 
-// Interfaces
-interface BreakCounts {
-  smoke: number;
-  wc: number;
-  lunch: number;
-  lastReset: string;
-}
-
-interface BreakRecord {
-  id?: string;
-  userId: string;
-  type: "smoke" | "wc" | "lunch";
-  startTime: string;
-  endTime?: string;
-  duration?: number;
-  date: string;
-}
-
-interface DayOffForm {
-  date: string;
-  reason: string;
-  attachmentType: "medical" | "personal" | "emergency";
-}
-
-interface AttendanceRecord {
-  _id: string;
-  date: string;
-  clockIn?: string;
-  clockOut?: string;
-  workingHours?: string;
-  smokeStart?: string;
-  smokeEnd?: string;
-  wcStart?: string;
-  wcEnd?: string;
-  breakStart?: string;
-  breakEnd?: string;
-}
-
-interface Stats {
-  todayWorkedHours: string;
-  todayStatus: string;
-  daysWorked: number;
-  totalHoursWorked: string;
-  avgDailyHours: string;
-  overtimeHours: string;
-  totalWorkTime: string;
-  totalWcBreak: string;
-  totalSmokeBreak: string;
-  totalLunchBreak: string;
-  hasPendingPunchOut: boolean;
-  currentStreak: number;
-  lastPunchIn: string;
-  efficiency: string;
-  pieData: Array<{ name: string; value: number }>;
-}
-
-interface RootState {
-  auth: {
-    data?: {
-      _id: string;
-    };
-  };
-  attendance: {
-    attendanceList: AttendanceRecord[];
-    isLoading: boolean;
-  };
-}
-
-interface Timer {
-  type: "smoke" | "wc" | "lunch";
-  startTime: Date;
-}
-
-interface AttendanceDashboardHook {
-  userId: string | undefined;
-  attendanceList: AttendanceRecord[];
-  isLoading: boolean;
-  activeTimer: Timer | null;
-  timeLeft: number;
-  breakCounts: BreakCounts;
-  breakHistory: BreakRecord[];
-  showDayOffModal: boolean;
-  dayOffForm: DayOffForm;
-  error: string | null;
-  currentStatus: string;
-  stats: Stats;
-  isSmokeBreakDisabled: boolean;
-  isWcBreakDisabled: boolean;
-  isLunchBreakDisabled: boolean;
-  handleRefresh: () => void;
-  startBreak: (type: "smoke" | "wc" | "lunch") => Promise<void>;
-  endBreak: () => Promise<void>;
-  setShowDayOffModal: (show: boolean) => void;
-  setDayOffForm: (form: DayOffForm) => void;
-  handleDayOffSubmit: (e: React.FormEvent) => void;
-  formatTime: (seconds: number) => string;
-  formatDate: (dateStr: string | undefined) => string;
-  formatTimeDisplay: (timeStr: string | undefined) => string;
-  calculateBreakTime: (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ) => string;
-  calculateWcBreakTime: (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ) => string;
-  calculateLunchBreakTime: (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ) => string;
-}
-
 // Helper functions for localStorage
-const getStoredBreakCounts = (): BreakCounts => {
+const getStoredBreakCounts = () => {
   const today = new Date().toDateString();
   const stored = localStorage.getItem(`breakCounts_${today}`);
   if (stored) {
-    return JSON.parse(stored) as BreakCounts;
+    return JSON.parse(stored);
   }
   return { smoke: 0, wc: 0, lunch: 0, lastReset: today };
 };
 
-const setStoredBreakCounts = (counts: BreakCounts): void => {
+const setStoredBreakCounts = (counts) => {
   const today = new Date().toDateString();
   localStorage.setItem(
     `breakCounts_${today}`,
@@ -139,15 +25,22 @@ const setStoredBreakCounts = (counts: BreakCounts): void => {
   );
 };
 
-const getStoredBreakHistory = (): BreakRecord[] => {
+const getStoredBreakHistory = () => {
   const stored = localStorage.getItem("breakHistory");
-  return stored ? (JSON.parse(stored) as BreakRecord[]) : [];
+  return stored ? JSON.parse(stored) : [];
 };
 
-const addToBreakHistory = (breakRecord: BreakRecord): void => {
+const addToBreakHistory = (breakRecord) => {
   const history = getStoredBreakHistory();
   const updatedHistory = [breakRecord, ...history].slice(0, 50);
   localStorage.setItem("breakHistory", JSON.stringify(updatedHistory));
+};
+
+// Clear localStorage for breaks when database is reset
+const clearBreakStorage = () => {
+  const today = new Date().toDateString();
+  localStorage.removeItem(`breakCounts_${today}`);
+  localStorage.removeItem("breakHistory");
 };
 
 // API calls for breaks
@@ -155,7 +48,7 @@ const api = axios.create({
   baseURL: "/api",
 });
 
-const saveBreakRecord = async (breakRecord: BreakRecord): Promise<unknown> => {
+const saveBreakRecord = async (breakRecord) => {
   try {
     const response = await api.post("/attendance/break", breakRecord);
     return response.data;
@@ -165,42 +58,33 @@ const saveBreakRecord = async (breakRecord: BreakRecord): Promise<unknown> => {
   }
 };
 
-const fetchBreakRecords = async (
-  userId: string,
-  date: string
-): Promise<BreakRecord[]> => {
+const fetchBreakRecords = async (userId, date) => {
   try {
     const response = await api.get(`/attendance/breaks/${userId}?date=${date}`);
-    return response.data as BreakRecord[];
+    return response.data;
   } catch (error) {
     console.error("Error fetching break records:", error);
     return [];
   }
 };
 
-export const useAttendanceDashboard = (): AttendanceDashboardHook => {
+export const useAttendanceDashboard = () => {
   const dispatch = useDispatch();
-  const userId = useSelector((state: RootState) => state.auth.data?._id);
-  const { attendanceList, isLoading } = useSelector(
-    (state: RootState) => state.attendance
-  );
+  const userId = useSelector((state) => state.auth.data?._id);
+  const { attendanceList, isLoading } = useSelector((state) => state.attendance);
 
   // States
-  const [activeTimer, setActiveTimer] = useState<Timer | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(300);
-  const [breakCounts, setBreakCounts] = useState<BreakCounts>(() =>
-    getStoredBreakCounts()
-  );
-  const [breakHistory, setBreakHistory] = useState<BreakRecord[]>(() =>
-    getStoredBreakHistory()
-  );
-  const [showDayOffModal, setShowDayOffModal] = useState<boolean>(false);
-  const [dayOffForm, setDayOffForm] = useState<DayOffForm>({
+  const [activeTimer, setActiveTimer] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(300);
+  const [breakCounts, setBreakCounts] = useState(() => getStoredBreakCounts());
+  const [breakHistory, setBreakHistory] = useState(() => getStoredBreakHistory());
+  const [showDayOffModal, setShowDayOffModal] = useState(false);
+  const [dayOffForm, setDayOffForm] = useState({
     date: "",
     reason: "",
     attachmentType: "medical",
   });
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
 
   // Load break counts and history from backend
   const loadBreakData = useCallback(async () => {
@@ -208,13 +92,13 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     const today = new Date().toISOString().split("T")[0];
     try {
       const breaks = await fetchBreakRecords(userId, today);
-      const counts: BreakCounts = {
+      const counts = {
         smoke: 0,
         wc: 0,
         lunch: 0,
         lastReset: today,
       };
-      breaks.forEach((record: BreakRecord) => {
+      breaks.forEach((record) => {
         if (record.type === "smoke") counts.smoke++;
         else if (record.type === "wc") counts.wc++;
         else if (record.type === "lunch") counts.lunch++;
@@ -236,7 +120,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   useEffect(() => {
     const today = new Date().toDateString();
     if (breakCounts.lastReset !== today) {
-      const resetCounts: BreakCounts = {
+      const resetCounts = {
         smoke: 0,
         wc: 0,
         lunch: 0,
@@ -253,20 +137,26 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       setError(null);
       if (!userId) return;
       try {
+        // Clear localStorage when loading data for a fresh state
+        if (!attendanceList || attendanceList.length === 0) {
+          clearBreakStorage();
+          setBreakCounts({ smoke: 0, wc: 0, lunch: 0, lastReset: new Date().toDateString() });
+          setBreakHistory([]);
+        }
         await dispatch(
-          (getUserAttendance as any)({
+          getUserAttendance({
             userId,
             page: 1,
             limit: INITIAL_PAGE_SIZE,
           })
         ).unwrap();
         await loadBreakData();
-      } catch (err: unknown) {
+      } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load data");
       }
     };
     loadData();
-  }, [dispatch, userId, loadBreakData]);
+  }, [dispatch, userId, loadBreakData, attendanceList]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -285,7 +175,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   }, [activeTimer]);
 
   // Format time for display
-  const formatTime = (seconds: number): string => {
+  const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -306,7 +196,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       const rowDate = new Date(row.date).toISOString().split("T")[0];
       return rowDate === today;
     });
-    return todayRecord?.clockOut !== undefined;
+    return todayRecord?.clockOut && todayRecord.clockOut !== "";
   }, [attendanceList]);
 
   const hasPunchedInToday = useMemo(() => {
@@ -317,32 +207,31 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       const rowDate = new Date(row.date).toISOString().split("T")[0];
       return rowDate === today;
     });
-    return todayRecord?.clockIn !== undefined;
+    return todayRecord?.clockIn && todayRecord.clockIn !== "";
   }, [attendanceList]);
 
   const currentStatus = useMemo(() => {
     if (hasPunchedOutToday) return "Punched Out";
     if (activeTimer)
-      return `On ${
-        activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)
-      } Break`;
+      return `On ${activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)
+        } Break`;
     if (hasPunchedInToday) return "Currently Working";
     return "Ready";
   }, [hasPunchedOutToday, activeTimer, hasPunchedInToday]);
 
   // Start break
-  const startBreak = async (type: "smoke" | "wc" | "lunch"): Promise<void> => {
+  const startBreak = async (type) => {
     if (hasPunchedOutToday) {
-      alert(
+      toast.error(
         "You have already punched out for today. Breaks are not allowed after punch out."
       );
       return;
     }
     if (!hasPunchedInToday) {
-      alert("Please punch in first before taking a break.");
+      toast.error("Please punch in first before taking a break.");
       return;
     }
-    const limits: { [key: string]: number } = { smoke: 3, wc: 3, lunch: 1 };
+    const limits = { smoke: 3, wc: 3, lunch: 1 };
     if (breakCounts[type] >= limits[type]) {
       alert(`Maximum ${type} breaks (${limits[type]}) reached for today!`);
       return;
@@ -352,13 +241,13 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       return;
     }
     const duration = type === "lunch" ? 3600 : 300;
-    const newTimer: Timer = { type, startTime: new Date() };
+    const newTimer = { type, startTime: new Date() };
     setActiveTimer(newTimer);
     setTimeLeft(duration);
 
     const today = new Date().toISOString().split("T")[0];
-    const breakRecord: BreakRecord = {
-      userId: userId!,
+    const breakRecord = {
+      userId: userId,
       type,
       startTime: newTimer.startTime.toISOString(),
       date: today,
@@ -374,7 +263,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   };
 
   // End break
-  const endBreak = async (): Promise<void> => {
+  const endBreak = async () => {
     if (!activeTimer) return;
     const breakType = activeTimer.type;
     const endTime = new Date();
@@ -382,8 +271,8 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       (endTime.getTime() - activeTimer.startTime.getTime()) / 1000
     );
 
-    const breakRecord: BreakRecord = {
-      userId: userId!,
+    const breakRecord = {
+      userId: userId,
       type: breakType,
       startTime: activeTimer.startTime.toISOString(),
       endTime: endTime.toISOString(),
@@ -392,7 +281,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     };
 
     setBreakCounts((prev) => {
-      const newCounts: BreakCounts = {
+      const newCounts = {
         ...prev,
         [breakType]: prev[breakType] + 1,
       };
@@ -402,7 +291,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
 
     try {
       await saveBreakRecord(breakRecord);
-      const updatedBreaks = await fetchBreakRecords(userId!, breakRecord.date);
+      const updatedBreaks = await fetchBreakRecords(userId, breakRecord.date);
       setBreakHistory(updatedBreaks);
     } catch (err) {
       console.error("Failed to save break end:", err);
@@ -415,10 +304,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   };
 
   // Calculate break time from history
-  const calculateBreakTimeFromHistory = (
-    rowDate: string,
-    breakType: "smoke" | "wc" | "lunch"
-  ): string => {
+  const calculateBreakTimeFromHistory = (rowDate, breakType) => {
     const dateBreaks = breakHistory.filter(
       (record) => record.date === rowDate && record.type === breakType
     );
@@ -435,11 +321,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   };
 
   // Break time calculations
-  const calculateBreakTime = (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ): string => {
+  const calculateBreakTime = (start, end, rowDate) => {
     if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "smoke");
     try {
       const startDate = new Date(start);
@@ -456,11 +338,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     }
   };
 
-  const calculateWcBreakTime = (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ): string => {
+  const calculateWcBreakTime = (start, end, rowDate) => {
     if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "wc");
     try {
       const startDate = new Date(start);
@@ -477,11 +355,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     }
   };
 
-  const calculateLunchBreakTime = (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ): string => {
+  const calculateLunchBreakTime = (start, end, rowDate) => {
     if (!start || !end) return calculateBreakTimeFromHistory(rowDate, "lunch");
     try {
       const startDate = new Date(start);
@@ -499,7 +373,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   };
 
   // Handle day off request
-  const handleDayOffSubmit = (e: React.FormEvent): void => {
+  const handleDayOffSubmit = (e) => {
     e.preventDefault();
     if (!dayOffForm.date || !dayOffForm.reason) {
       alert("Please fill in all required fields");
@@ -518,7 +392,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       JSON.stringify([
         request,
         ...(localStorage.getItem("dayOffRequests")
-          ? JSON.parse(localStorage.getItem("dayOffRequests")!)
+          ? JSON.parse(localStorage.getItem("dayOffRequests"))
           : []),
       ])
     );
@@ -528,7 +402,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
   };
 
   // Real-time statistics
-  const stats = useMemo<Stats>(() => {
+  const stats = useMemo(() => {
     if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
       return {
         todayWorkedHours: "0h 0m",
@@ -557,11 +431,11 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     let daysWithWork = 0;
     let todayWorkMinutes = 0;
     const today = new Date().toISOString().split("T")[0];
-    let lastPunchInTime: Date | null = null;
+    let lastPunchInTime = null;
     let consecutiveDays = 0;
-    const last7Days = new Set<string>();
+    const last7Days = new Set();
 
-    attendanceList.forEach((row: AttendanceRecord) => {
+    attendanceList.forEach((row) => {
       const rowDate = new Date(row.date).toISOString().split("T")[0];
       if (row.workingHours) {
         const match = row.workingHours.match(/(\d+)h (\d+)m/);
@@ -578,29 +452,29 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
           const diff = Math.floor(
             (new Date(row.smokeEnd).getTime() -
               new Date(row.smokeStart).getTime()) /
-              (1000 * 60)
+            (1000 * 60)
           );
           totalSmokeMinutes += diff;
-        } catch {}
+        } catch { }
       }
       if (row.wcStart && row.wcEnd) {
         try {
           const diff = Math.floor(
             (new Date(row.wcEnd).getTime() - new Date(row.wcStart).getTime()) /
-              (1000 * 60)
+            (1000 * 60)
           );
           totalWcMinutes += diff;
-        } catch {}
+        } catch { }
       }
       if (row.breakStart && row.breakEnd) {
         try {
           const diff = Math.floor(
             (new Date(row.breakEnd).getTime() -
               new Date(row.breakStart).getTime()) /
-              (1000 * 60)
+            (1000 * 60)
           );
           totalLunchMinutes += diff;
-        } catch {}
+        } catch { }
       }
 
       if (!row.clockOut && rowDate === today) pendingPunchOutToday = true;
@@ -613,7 +487,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       last7Days.add(rowDate);
     });
 
-    breakHistory.forEach((record: BreakRecord) => {
+    breakHistory.forEach((record) => {
       if (record.date === today) {
         const minutes = Math.floor((record.duration || 0) / 60);
         if (record.type === "wc") totalWcMinutes += minutes;
@@ -631,13 +505,13 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
       else break;
     }
 
-    const formatTime = (minutes: number): string => {
+    const formatTime = (minutes) => {
       const hours = Math.floor(minutes / 60);
       const mins = minutes % 60;
       return `${hours}h ${mins.toString().padStart(2, "0")}m`;
     };
 
-    const formatShortTime = (minutes: number): string => {
+    const formatShortTime = (minutes) => {
       const hours = (minutes / 60).toFixed(1);
       return `${hours}h`;
     };
@@ -667,10 +541,10 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
 
     const lastPunchInFormatted = lastPunchInTime
       ? new Date(lastPunchInTime).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
       : "No data";
 
     const pieData = [
@@ -699,12 +573,17 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     };
   }, [attendanceList, breakHistory]);
 
-  const handleRefresh = (): void => {
+  const handleRefresh = () => {
+    clearBreakStorage();
+    setBreakCounts({ smoke: 0, wc: 0, lunch: 0, lastReset: new Date().toDateString() });
+    setBreakHistory([]);
     loadBreakData();
-    dispatch((getUserAttendance as any)({ userId, page: 1, limit: INITIAL_PAGE_SIZE }));
+    dispatch(
+      getUserAttendance({ userId, page: 1, limit: INITIAL_PAGE_SIZE })
+    );
   };
 
-  const formatDate = (dateStr: string | undefined): string => {
+  const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     try {
       const date = new Date(dateStr);
@@ -718,7 +597,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     }
   };
 
-  const formatTimeDisplay = (timeStr: string | undefined): string => {
+  const formatTimeDisplay = (timeStr) => {
     if (!timeStr) return "-";
     try {
       const date = new Date(timeStr);
@@ -733,21 +612,11 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     }
   };
 
-  const isSmokeBreakDisabled =
-    activeTimer !== null ||
-    breakCounts.smoke >= 3 ||
-    hasPunchedOutToday ||
-    !hasPunchedInToday;
-  const isWcBreakDisabled =
-    activeTimer !== null ||
-    breakCounts.wc >= 3 ||
-    hasPunchedOutToday ||
-    !hasPunchedInToday;
-  const isLunchBreakDisabled =
-    activeTimer !== null ||
-    breakCounts.lunch >= 1 ||
-    hasPunchedOutToday ||
-    !hasPunchedInToday;
+  const isSmokeBreakDisabled = activeTimer !== null || breakCounts.smoke >= 3 || !hasPunchedInToday;
+  const isWcBreakDisabled = activeTimer !== null || breakCounts.wc >= 3 || !hasPunchedInToday;
+  const isLunchBreakDisabled = activeTimer !== null || breakCounts.lunch >= 1 || !hasPunchedInToday;
+
+
 
   return {
     userId,
@@ -765,6 +634,7 @@ export const useAttendanceDashboard = (): AttendanceDashboardHook => {
     isSmokeBreakDisabled,
     isWcBreakDisabled,
     isLunchBreakDisabled,
+    hasPunchedInToday, // Added to return object
     handleRefresh,
     startBreak,
     endBreak,
