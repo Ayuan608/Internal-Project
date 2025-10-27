@@ -460,7 +460,7 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.map((row) => {
+                    attendanceList.slice(0,1).map((row) => {
                       const rowDate = new Date(row.date)
                         .toISOString()
                         .split("T")[0];
