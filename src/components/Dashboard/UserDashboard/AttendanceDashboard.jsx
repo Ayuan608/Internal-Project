@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import PageContainer from "./PageContainer";
 import { ButtonGroup } from "../../CommonButton/Button";
 import {
@@ -16,130 +16,13 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
-import { useAttendanceDashboard } from "../../hooks/useAttendanceHooks";
+import { useAttendanceDashboard } from "./../../hooks/useAttendanceHooks";
 
 // Constants
 const COLORS = ["#10b981", "#60a5fa", "#f59e0b", "#a855f7"];
 
-// Interfaces
-interface StatCardProps {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  title: string;
-  value: string;
-  subtitle?: string;
-  color?: "blue" | "green" | "orange" | "purple";
-}
-
-interface BreakCounts {
-  smoke: number;
-  wc: number;
-  lunch: number;
-  lastReset: string;
-}
-
-interface BreakRecord {
-  id?: string;
-  userId: string;
-  type: "smoke" | "wc" | "lunch";
-  startTime: string;
-  endTime?: string;
-  duration?: number;
-  date: string;
-}
-
-interface DayOffForm {
-  date: string;
-  reason: string;
-  attachmentType: "medical" | "personal" | "emergency";
-}
-
-interface AttendanceRecord {
-  _id: string;
-  date: string;
-  clockIn?: string;
-  clockOut?: string;
-  workingHours?: string;
-  smokeStart?: string;
-  smokeEnd?: string;
-  wcStart?: string;
-  wcEnd?: string;
-  breakStart?: string;
-  breakEnd?: string;
-}
-
-interface Stats {
-  todayWorkedHours: string;
-  todayStatus: string;
-  daysWorked: number;
-  totalHoursWorked: string;
-  avgDailyHours: string;
-  overtimeHours: string;
-  totalWorkTime: string;
-  totalWcBreak: string;
-  totalSmokeBreak: string;
-  totalLunchBreak: string;
-  hasPendingPunchOut: boolean;
-  currentStreak: number;
-  lastPunchIn: string;
-  efficiency: string;
-  pieData: Array<{ name: string; value: number }>;
-}
-
-interface Timer {
-  type: "smoke" | "wc" | "lunch";
-  startTime: Date;
-}
-
-interface AttendanceDashboardUIProps {
-  userId: string | undefined;
-  attendanceList: AttendanceRecord[];
-  isLoading: boolean;
-  activeTimer: Timer | null;
-  timeLeft: number;
-  breakCounts: BreakCounts;
-  breakHistory: BreakRecord[];
-  showDayOffModal: boolean;
-  dayOffForm: DayOffForm;
-  error: string | null;
-  currentStatus: string;
-  stats: Stats;
-  isSmokeBreakDisabled: boolean;
-  isWcBreakDisabled: boolean;
-  isLunchBreakDisabled: boolean;
-  handleRefresh: () => void;
-  startBreak: (type: "smoke" | "wc" | "lunch") => Promise<void>;
-  endBreak: () => Promise<void>;
-  setShowDayOffModal: (show: boolean) => void;
-  setDayOffForm: (form: DayOffForm) => void;
-  handleDayOffSubmit: (e: React.FormEvent) => void;
-  formatTime: (seconds: number) => string;
-  formatDate: (dateStr: string | undefined) => string;
-  formatTimeDisplay: (timeStr: string | undefined) => string;
-  calculateBreakTime: (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ) => string;
-  calculateWcBreakTime: (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ) => string;
-  calculateLunchBreakTime: (
-    start: string | undefined,
-    end: string | undefined,
-    rowDate: string
-  ) => string;
-}
-
 // Stats card component
-const StatCard: React.FC<StatCardProps> = ({
-  icon: Icon,
-  title,
-  value,
-  subtitle,
-  color = "blue",
-}) => {
+const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => {
   const colorClasses = {
     blue: "bg-[rgba(59,130,246,0.03)] border-l-2",
     green: "bg-[rgba(16,185,129,0.03)] border-l-2",
@@ -160,7 +43,7 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
-const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
+const AttendanceDashboardUI = ({
   userId,
   attendanceList,
   isLoading,
@@ -176,6 +59,7 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
   isSmokeBreakDisabled,
   isWcBreakDisabled,
   isLunchBreakDisabled,
+  hasPunchedInToday, // Added prop
   handleRefresh,
   startBreak,
   endBreak,
@@ -221,20 +105,21 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-3 h-3 rounded-full animate-pulse ${
-                    currentStatus === "Ready"
+                  className={`w-3 h-3 rounded-full animate-pulse ${currentStatus === "Ready"
                       ? "bg-gray-500"
                       : currentStatus === "Currently Working"
-                      ? "bg-green-500"
-                      : currentStatus.includes("Break")
-                      ? "bg-orange-500"
-                      : "bg-red-500"
-                  }`}
+                        ? "bg-green-500"
+                        : currentStatus.includes("Break")
+                          ? "bg-orange-500"
+                          : currentStatus === "Punched Out"
+                            ? "bg-red-500"
+                            : "bg-gray-500"
+                    }`}
                 ></div>
                 <span className="text-white font-semibold">Current Status</span>
               </div>
               <div className="text-2xl font-bold text-white">
-                {currentStatus}
+                {currentStatus || "Unknown"}
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-300">
@@ -244,6 +129,9 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
               {currentStatus.includes("Break") && "You are on a break"}
               {currentStatus === "Punched Out" &&
                 "You have completed your work for today"}
+              {!["Ready", "Currently Working", "Punched Out"].includes(currentStatus) &&
+                !currentStatus.includes("Break") &&
+                "Status unknown"}
             </div>
           </div>
 
@@ -288,11 +176,10 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
               <button
                 onClick={() => startBreak("smoke")}
                 disabled={isSmokeBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
-                  isSmokeBreakDisabled
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isSmokeBreakDisabled
                     ? "bg-gray-600 cursor-not-allowed text-gray-400"
                     : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white"
-                }`}
+                  }`}
               >
                 <Play size={16} />
                 {isSmokeBreakDisabled
@@ -304,9 +191,9 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                   {isSmokeBreakDisabled
                     ? breakCounts.smoke >= 3
                       ? "Limit reached"
-                      : !userId
-                      ? "Punch in first"
-                      : "Breaks disabled after punch out"
+                      : !hasPunchedInToday
+                        ? "Punch in first"
+                        : "Another break in progress"
                     : ""}
                 </div>
               )}
@@ -321,11 +208,10 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
               <button
                 onClick={() => startBreak("wc")}
                 disabled={isWcBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
-                  isWcBreakDisabled
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isWcBreakDisabled
                     ? "bg-gray-600 cursor-not-allowed text-gray-400"
                     : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white"
-                }`}
+                  }`}
               >
                 <Play size={16} />
                 {isWcBreakDisabled ? "Cannot Start Break" : "Start WC Break"}
@@ -335,9 +221,9 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                   {isWcBreakDisabled
                     ? breakCounts.wc >= 3
                       ? "Limit reached"
-                      : !userId
-                      ? "Punch in first"
-                      : "Breaks disabled after punch out"
+                      : !hasPunchedInToday
+                        ? "Punch in first"
+                        : "Another break in progress"
                     : ""}
                 </div>
               )}
@@ -352,11 +238,10 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
               <button
                 onClick={() => startBreak("lunch")}
                 disabled={isLunchBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${
-                  isLunchBreakDisabled
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isLunchBreakDisabled
                     ? "bg-gray-600 cursor-not-allowed text-gray-400"
                     : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white"
-                }`}
+                  }`}
               >
                 <Play size={16} />
                 {isLunchBreakDisabled
@@ -368,9 +253,9 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                   {isLunchBreakDisabled
                     ? breakCounts.lunch >= 1
                       ? "Limit reached"
-                      : !userId
-                      ? "Punch in first"
-                      : "Breaks disabled after punch out"
+                      : !hasPunchedInToday
+                        ? "Punch in first"
+                        : "Another break in progress"
                     : ""}
                 </div>
               )}
@@ -449,8 +334,8 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                         Loading...
                       </td>
                     </tr>
-                  ) : !Array.isArray(attendanceList) ||
-                    attendanceList.length === 0 ? (
+                  ) : (!Array.isArray(attendanceList) ||
+                    attendanceList.length === 0) ? (
                     <tr>
                       <td
                         colSpan={7}
@@ -460,7 +345,7 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.slice(0,1).map((row) => {
+                    attendanceList.slice(0, 1).map((row) => {
                       const rowDate = new Date(row.date)
                         .toISOString()
                         .split("T")[0];
@@ -619,17 +504,12 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                       outerRadius={80}
                       label
                     >
-                      {stats.pieData.map(
-                        (
-                          entry: { name: string; value: number },
-                          index: number
-                        ) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        )
-                      )}
+                      {stats.pieData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
                     </Pie>
                     <Legend />
                   </PieChart>
@@ -641,11 +521,10 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
               </div>
             )}
             <div
-              className={`p-3 rounded-lg flex items-center gap-3 ${
-                stats.hasPendingPunchOut
+              className={`p-3 rounded-lg flex items-center gap-3 ${stats.hasPendingPunchOut
                   ? "bg-yellow-500/20 border border-yellow-500/50"
                   : "bg-green-500/20 border border-green-500/20"
-              }`}
+                }`}
             >
               <TriangleAlert
                 size={20}
@@ -724,10 +603,7 @@ const AttendanceDashboardUI: React.FC<AttendanceDashboardUIProps> = ({
                   onChange={(e) =>
                     setDayOffForm({
                       ...dayOffForm,
-                      attachmentType: e.target.value as
-                        | "medical"
-                        | "personal"
-                        | "emergency",
+                      attachmentType: e.target.value,
                     })
                   }
                   className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-none"
