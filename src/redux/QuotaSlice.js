@@ -1,3 +1,4 @@
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
 import axiosInstance from "../Helpers/axiosInstance";
@@ -8,6 +9,9 @@ const initialState = {
     userQuotas: [],
     nonQuotaUsers: [],
     quotaStats: null,
+    dashboardStats: null, // NEW
+    loading: false,
+    error: null,
 };
 
 // ========== DEPARTMENT QUOTA THUNKS ==========
@@ -106,6 +110,15 @@ export const getUserQuotaHistory = createAsyncThunk(
     }
 );
 
+// ========== NEW: DASHBOARD STATS THUNK ==========
+export const getDashboardStats = createAsyncThunk(
+    "quota/dashboardStats",
+    async () => {
+        const response = await axiosInstance.get("/quota/dashboard/stats");
+        return response.data;
+    }
+);
+
 const quotaSlice = createSlice({
     name: "quota",
     initialState,
@@ -115,6 +128,9 @@ const quotaSlice = createSlice({
         },
         clearQuotaStats: (state) => {
             state.quotaStats = null;
+        },
+        clearDashboardStats: (state) => {
+            state.dashboardStats = null;
         },
     },
     extraReducers: (builder) => {
@@ -147,9 +163,22 @@ const quotaSlice = createSlice({
             // Get user quota history
             .addCase(getUserQuotaHistory.fulfilled, (state, action) => {
                 state.userQuotas = action.payload.history;
+            })
+
+            // ========== NEW: Dashboard stats ==========
+            .addCase(getDashboardStats.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(getDashboardStats.fulfilled, (state, action) => {
+                state.loading = false;
+                state.dashboardStats = action.payload.data;
+            })
+            .addCase(getDashboardStats.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message;
             });
     },
 });
 
-export const { clearDepartmentQuota, clearQuotaStats } = quotaSlice.actions;
+export const { clearDepartmentQuota, clearQuotaStats, clearDashboardStats } = quotaSlice.actions;
 export default quotaSlice.reducer;

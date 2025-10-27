@@ -26,13 +26,11 @@ import {
   KeyRound,
   LayoutDashboard,
   Megaphone,
-  OctagonAlert,
   Proportions,
   Settings,
   User2,
   UserCheck,
   Users,
-  XCircle,
 } from "lucide-react";
 import ReportIcon from "./Icons";
 
@@ -722,4 +720,73 @@ export const days = [
   { day: "MON", date: "NOV 28", key: "nov28" },
   { day: "TUE", date: "NOV 29", key: "nov29" },
   { day: "WED", date: "NOV 30", key: "nov30" },
+];
+
+
+export const announcements = [
+  {
+    id: 1,
+    date: "October 15, 2025",
+    title: "Q4 Performance Review",
+    creator: "Super Admin",
+    details: `Dear Team Members,
+
+We will be conducting Q4 performance reviews next week. Please ensure all your task completions are updated in the system. Team Leaders will schedule individual meetings with each team member.
+
+Thank you for your continued dedication.`,
+  },
+  {
+    id: 2,
+    date: "October 12, 2025",
+    title: "New Quota Guidelines",
+    creator: "David Chen (Team Leader)",
+    details: `Hello Team,
+
+Effective immediately, the daily quota for CSR department has been updated to 50 tasks for morning shift and 45 tasks for night shift. Please adjust your workflow accordingly.
+
+Let's maintain our excellent performance!`,
+  },
+  {
+    id: 3,
+    date: "September 22, 2025",
+    title: "Christmas Raffle Draw",
+    creator: "Super Admin",
+    details: `Celebrate the holiday season with excitement!
+
+Join our IS Department Christmas Raffle Draw and get a chance to win amazing prizes!
+
+PRIZES:
+1 Winner – Motorcycle
+2 Winners – Gaming Laptop
+10 Winners – ₱1,000 Cash
+20 Winners – ₱500 Cash
+
+All IS members are automatically eligible to participate.
+
+Winners will be drawn and announced on December 24, 2025.
+
+Good luck, and happy holidays!`,
+  },
+  {
+    id: 4,
+    date: "September 19, 2025",
+    title: "System Maintenance Notice",
+    creator: "IT Admin",
+    details: `The system will be under maintenance on September 20, 2025, from 1:00 AM to 3:00 AM.
+
+During this time, all services will be temporarily unavailable. Please plan your work accordingly.
+
+We apologize for any inconvenience this may cause.`,
+  },
+  {
+    id: 5,
+    date: "September 19, 2025",
+    title: "Christmas Raffle Draw",
+    creator: "Super Admin",
+    details: `Hello Team,
+
+Effective immediately, the daily quota for CSR department has been updated to 50 tasks for morning shift and 45 tasks for night shift. Please adjust your workflow accordingly.
+
+Let's maintain our excellent performance!`,
+  },
 ];

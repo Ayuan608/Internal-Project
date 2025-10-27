@@ -4,7 +4,6 @@ import axiosInstance from "../Helpers/axiosInstance";
 
 const initialState = {
   allUsersCount: 0,
-  subscribedUsersCount: 0,
 };
 
 // function to get the stats data from backend
@@ -33,7 +32,6 @@ const statSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(getStatsData.fulfilled, (state, action) => {
       state.allUsersCount = action?.payload?.allUsersCount;
-      state.subscribedUsersCount = action?.payload?.subscribedUsersCount;
     });
   },
 });
