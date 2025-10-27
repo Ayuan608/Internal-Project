@@ -12,7 +12,7 @@ const initialState = {
 export const getReports = createAsyncThunk("report/get", async () => {
     try {
         const res = await axiosInstance.get("/report/get");
-        console.log('report form redux',res.data.reports)
+        console.log('report form redux', res.data.reports)
         return res.data.reports;
     } catch (error) {
         toast.error(error?.response?.data?.message || "Failed to fetch reports");
@@ -85,6 +85,28 @@ export const deleteReport = createAsyncThunk("report/delete", async (id) => {
         throw error;
     }
 });
+// Mark report as seen
+export const markReportAsSeen = createAsyncThunk(
+    "report/markAsSeen",
+    async (id, { rejectWithValue }) => {
+        try {
+            const resPromise = axiosInstance.patch(`/report/status-seen/${id}`);
+
+            toast.promise(resPromise, {
+                loading: "Marking as seen...",
+                success: "Report marked as seen",
+                error: "Failed to update report status",
+            });
+
+            const res = await resPromise;
+            return res.data.report; // The updated report object from backend
+        } catch (error) {
+            const message = error?.response?.data?.message || "Error marking as seen";
+            toast.error(message);
+            return rejectWithValue(message);
+        }
+    }
+);
 
 const reportSlice = createSlice({
     name: "report",
@@ -117,7 +139,19 @@ const reportSlice = createSlice({
                 const reportId = action.payload;
                 state.reportsData = state.reportsData.filter(r => r._id !== reportId);
                 state.allReports = state.allReports.filter(r => r._id !== reportId);
+            })
+            .addCase(markReportAsSeen.fulfilled, (state, action) => {
+                const updatedReport = action.payload;
+
+                state.reportsData = state.reportsData.map(report =>
+                    report._id === updatedReport._id ? updatedReport : report
+                );
+
+                state.allReports = state.allReports.map(report =>
+                    report._id === updatedReport._id ? updatedReport : report
+                );
             });
+
     },
 });
 
