@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Plus,
   Search,
@@ -8,6 +8,10 @@ import {
   Edit,
   Trash,
   Shield,
+  Users,
+  Clock,
+  Calendar,
+  TrendingUp,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -22,7 +26,6 @@ import { DataGrid } from "@mui/x-data-grid";
 import MetaData from "../../more/MetaData";
 import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import countries from "../../Helpers/countriles";
-import SuperAdminData from "./../Dashboard/SuperAdminDashboardRoute/ui/SuperAdminData";
 
 function Admin() {
   const dispatch = useDispatch();
@@ -36,6 +39,9 @@ function Admin() {
   const open = Boolean(anchorEl);
   const [roleModal, setRoleModal] = useState(false);
   const [newRole, setNewRole] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
 
   const [addUser, setAddUser] = useState({
     FullName: "",
@@ -76,6 +82,70 @@ function Admin() {
     dispatch(getAllUsers());
   }, [dispatch]);
 
+  // Filter users based on search and filters
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+
+    return users.filter(user => {
+      const matchesSearch = searchTerm === "" ||
+        user.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesRole = roleFilter === "" || user.role === roleFilter;
+      const matchesDepartment = departmentFilter === "" || user.department === departmentFilter;
+
+      return matchesSearch && matchesRole && matchesDepartment;
+    });
+  }, [users, searchTerm, roleFilter, departmentFilter]);
+
+  // Calculate statistics
+  const statistics = useMemo(() => {
+    const totalUsers = filteredUsers.length;
+    const activeUsers = filteredUsers.filter(user => user.status === "active").length;
+
+    // Role distribution
+    const roleCount = filteredUsers.reduce((acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Department distribution
+    const departmentCount = filteredUsers.reduce((acc, user) => {
+      acc[user.department] = (acc[user.department] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Recent hires (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentHires = filteredUsers.filter(user => {
+      if (!user.dateHired) return false;
+      const hiredDate = new Date(user.dateHired);
+      return hiredDate >= thirtyDaysAgo;
+    }).length;
+
+    return {
+      totalUsers,
+      activeUsers,
+      inactiveUsers: totalUsers - activeUsers,
+      roleCount,
+      departmentCount,
+      recentHires,
+      activePercentage: totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0
+    };
+  }, [filteredUsers]);
+
+  // Get unique values for filters
+  const filterOptions = useMemo(() => {
+    if (!users) return { roles: [], departments: [] };
+
+    const roles = [...new Set(users.map(user => user.role).filter(Boolean))];
+    const departments = [...new Set(users.map(user => user.department).filter(Boolean))];
+
+    return { roles, departments };
+  }, [users]);
+
   const handleUserInput = (e) => {
     const { name, value } = e.target;
     setAddUser({ ...addUser, [name]: value });
@@ -87,7 +157,7 @@ function Admin() {
   };
   const handleRoleChange = () => {
     setRoleModal(true);
-    setNewRole(selectedRow?.role); // show current role
+    setNewRole(selectedRow?.role);
     handleMenuClose();
   };
 
@@ -188,6 +258,12 @@ function Admin() {
     }
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setRoleFilter("");
+    setDepartmentFilter("");
+  };
+
   const columns = [
     {
       field: "avatar",
@@ -272,7 +348,7 @@ function Admin() {
     },
   ];
 
-  const rows = (users || []).map((user, index) => ({
+  const rows = (filteredUsers || []).map((user, index) => ({
     id: user?._id ?? index,
     ...user,
   }));
@@ -280,6 +356,8 @@ function Admin() {
   return (
     <div className="min-h-[92.7vh] flex flex-col gap-6 text-white bg-gradient-to-br p-2">
       <MetaData title="Admin Dashboard - User Management" />
+
+
 
       {/* Header and Filters */}
       <div className="overflow-x-auto rounded-xl shadow-2xl py-4 flex justify-between items-center flex-wrap gap-4">
@@ -297,6 +375,8 @@ function Admin() {
             <input
               type="text"
               placeholder="Filter by name/role/department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-[#f5f6fa0c] text-white rounded-full pl-9 pr-3 py-3 w-full text-sm focus:outline-none placeholder:text-white"
             />
             <Search className="absolute left-3 top-3.5 w-4 h-4 text-white" />
@@ -311,6 +391,55 @@ function Admin() {
         </div>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-[rgba(59,130,246,0.03)] border-l-2 rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-100 mb-1">TOTAL USERS</p>
+              <p className="text-3xl font-bold text-white">{statistics.totalUsers}</p>
+              <p className="text-xs text-blue-200 mt-2">All registered users</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-200" />
+          </div>
+        </div>
+
+        <div className="bg-[rgba(59,130,246,0.03)] border-l-2 rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-green-100 mb-1">ACTIVE USERS</p>
+              <p className="text-3xl font-bold text-white">{statistics.activeUsers}</p>
+              <p className="text-xs text-green-200 mt-2">{statistics.activePercentage}% active rate</p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-green-200" />
+          </div>
+        </div>
+
+        <div className="bg-[rgba(59,130,246,0.03)] border-l-2 rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-purple-100 mb-1">RECENT HIRES</p>
+              <p className="text-3xl font-bold text-white">{statistics.recentHires}</p>
+              <p className="text-xs text-purple-200 mt-2">Last 30 days</p>
+            </div>
+            <Calendar className="w-8 h-8 text-purple-200" />
+          </div>
+        </div>
+
+        <div className="bg-[rgba(59,130,246,0.03)] border-l-2 rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-orange-100 mb-1">INACTIVE USERS</p>
+              <p className="text-3xl font-bold text-white">{statistics.inactiveUsers}</p>
+              <p className="text-xs text-orange-200 mt-2">Need attention</p>
+            </div>
+            <Clock className="w-8 h-8 text-orange-200" />
+          </div>
+        </div>
+      </div>
+
+     
+
       {/* DataGrid Table */}
       <div className="h-full w-full rounded-sm overflow-hidden shadow-xl">
         <DataGrid
@@ -323,7 +452,7 @@ function Admin() {
       </div>
 
       {/* Action Menu */}
-      <Menu 
+      <Menu
         anchorEl={anchorEl}
         open={open}
         onClose={handleMenuClose}
@@ -399,7 +528,7 @@ function Admin() {
         </div>
       )}
 
-      {/* Add User Dialog */}
+      {/* Add User Dialog - Same as before */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#2e303759] backdrop-blur-3xl rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] border border-[#9E9FA74D] overflow-y-auto">

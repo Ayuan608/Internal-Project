@@ -237,3 +237,15 @@ button {
   background-color: black !important;
   color: white !important;
 }
+
+.MuiDataGrid-row {
+  max-height: 70px !important;
+  min-height: 70px !important;
+  --height: 70px !important;
+}
+
+.MuiDataGrid-cell {
+  display: flex !important;
+  justify-content: start !important;
+  align-items: center !important;
+}
