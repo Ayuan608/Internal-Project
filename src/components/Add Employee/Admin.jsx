@@ -311,8 +311,6 @@ function Admin() {
         </div>
       </div>
 
-      <SuperAdminData />
-
       {/* DataGrid Table */}
       <div className="h-full w-full rounded-sm overflow-hidden shadow-xl">
         <DataGrid
