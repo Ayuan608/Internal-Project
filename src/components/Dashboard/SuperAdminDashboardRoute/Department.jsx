@@ -84,10 +84,7 @@ const Department = () => {
         <ExampleIosSwitch />
       </div>
 
-      <div className="pt-8">
-        <SuperAdminData />
-      </div>
-
+      
       {/* Dual Charts - Centered */}
       <div className="flex flex-col md:flex-row gap-6 mt-10 rounded-lg">
         <div className="rounded-xl shadow-xl border border-gray-700 w-full">

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const SuperAdminData = ({ view, setView }) => {
-
   const dispatch = useDispatch();
   const { attendanceList } = useSelector((state) => state.attendance);
   const [currentData, setCurrentData] = useState({
@@ -52,22 +51,57 @@ const SuperAdminData = ({ view, setView }) => {
     return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
   };
 
-  const calculateBreakTime = (attendance) => {
-    let totalBreakMinutes = 0;
-    const addBreakMinutes = (start, end) => {
-      if (start && end) {
+  // Function to calculate break duration in minutes - MOVED HERE
+  const calculateBreakDuration = (start, end) => {
+    if (start && end) {
+      try {
         const startTime = new Date(start);
         const endTime = new Date(end);
-        if (!isNaN(startTime) && !isNaN(endTime) && endTime > startTime) {
-          return (endTime - startTime) / (1000 * 60);
+        if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && endTime > startTime) {
+          const durationMs = endTime.getTime() - startTime.getTime();
+          return Math.round(durationMs / (1000 * 60)); // Convert to minutes
         }
+      } catch (error) {
+        console.error("Error calculating break duration:", error);
       }
-      return 0;
-    };
-    totalBreakMinutes += addBreakMinutes(attendance.smokeStart, attendance.smokeEnd);
-    totalBreakMinutes += addBreakMinutes(attendance.wcStart, attendance.wcEnd);
-    totalBreakMinutes += addBreakMinutes(attendance.breakStart, attendance.breakEnd);
-    return Math.round(totalBreakMinutes);
+    }
+    return 0;
+  };
+
+  // IMPROVED: Calculate total break time from all break types
+  const calculateTotalBreakTime = (attendance) => {
+    let totalBreakMinutes = 0;
+
+    // Calculate all break types
+    totalBreakMinutes += calculateBreakDuration(attendance.smokeStart, attendance.smokeEnd);
+    totalBreakMinutes += calculateBreakDuration(attendance.wcStart, attendance.wcEnd);
+    totalBreakMinutes += calculateBreakDuration(attendance.breakStart, attendance.breakEnd);
+    totalBreakMinutes += calculateBreakDuration(attendance.lunchStart, attendance.lunchEnd);
+
+    // Also check for break history data if available
+    if (attendance.breakHistory && Array.isArray(attendance.breakHistory)) {
+      attendance.breakHistory.forEach(breakRecord => {
+        if (breakRecord.startTime && breakRecord.endTime) {
+          totalBreakMinutes += calculateBreakDuration(breakRecord.startTime, breakRecord.endTime);
+        } else if (breakRecord.duration) {
+          // If duration is already calculated in seconds
+          totalBreakMinutes += Math.floor(breakRecord.duration / 60);
+        }
+      });
+    }
+
+    return totalBreakMinutes;
+  };
+
+  // NEW: Calculate break time from individual break records
+  const calculateBreakTimeFromRecords = (records) => {
+    let totalBreakMinutes = 0;
+
+    records.forEach(record => {
+      totalBreakMinutes += calculateTotalBreakTime(record);
+    });
+
+    return totalBreakMinutes;
   };
 
   const calculateSummary = (filteredData) => {
@@ -79,23 +113,44 @@ const SuperAdminData = ({ view, setView }) => {
         attendance: "0%",
       };
     }
+
     const uniqueDays = new Set(
       filteredData
-        .filter((item) => item.clockIn !== null)
+        .filter((item) => item.clockIn !== null && item.clockIn !== "")
         .map((item) => new Date(item.date).toISOString().split('T')[0])
     );
+
     const daysPresent = uniqueDays.size;
+
+    // Calculate total worked minutes
     const totalWorkedMinutes = filteredData.reduce(
-      (total, item) => total + parseHoursToMinutes(item.workingHours),
+      (total, item) => total + parseHoursToMinutes(item.workingHours || "0h 0m"),
       0
     );
-    const totalBreakMinutes = filteredData.reduce(
-      (total, item) => total + calculateBreakTime(item),
-      0
-    );
-    const totalDaysInPeriod =
-      view === "weekly" ? 7 : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const attendanceRate = totalDaysInPeriod > 0 ? `${Math.round((daysPresent / totalDaysInPeriod) * 100)}%` : "0%";
+
+    // Calculate total break minutes using the improved function
+    const totalBreakMinutes = calculateBreakTimeFromRecords(filteredData);
+
+    // Calculate attendance rate
+    const totalDaysInPeriod = view === "weekly"
+      ? 7
+      : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+
+    const attendanceRate = totalDaysInPeriod > 0
+      ? `${Math.round((daysPresent / totalDaysInPeriod) * 100)}%`
+      : "0%";
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("Summary Calculation:", {
+        totalRecords: filteredData.length,
+        daysPresent,
+        totalWorkedMinutes,
+        totalBreakMinutes,
+        attendanceRate,
+        sampleBreakCalculation: filteredData.length > 0 ? calculateTotalBreakTime(filteredData[0]) : 0
+      });
+    }
+
     return {
       daysPresent,
       hoursWorked: formatMinutesToHours(totalWorkedMinutes),
@@ -104,23 +159,61 @@ const SuperAdminData = ({ view, setView }) => {
     };
   };
 
+  // NEW: Debug function to show break details
+  const debugBreakCalculation = (record) => {
+    if (!record) return {};
+
+    const breaks = {
+      smoke: calculateBreakDuration(record.smokeStart, record.smokeEnd),
+      wc: calculateBreakDuration(record.wcStart, record.wcEnd),
+      lunch: calculateBreakDuration(record.breakStart, record.breakEnd) || calculateBreakDuration(record.lunchStart, record.lunchEnd),
+      total: calculateTotalBreakTime(record)
+    };
+
+    return breaks;
+  };
+
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {
       console.log("Raw attendanceList:", attendanceList);
       console.log("Number of records in attendanceList:", attendanceList?.length || 0);
-      console.log("Sample record:", attendanceList?.[0]);
+
+      if (attendanceList && attendanceList.length > 0) {
+        console.log("Sample record break analysis:", debugBreakCalculation(attendanceList[0]));
+        console.log("Sample record:", {
+          date: attendanceList[0].date,
+          smokeStart: attendanceList[0].smokeStart,
+          smokeEnd: attendanceList[0].smokeEnd,
+          wcStart: attendanceList[0].wcStart,
+          wcEnd: attendanceList[0].wcEnd,
+          breakStart: attendanceList[0].breakStart,
+          breakEnd: attendanceList[0].breakEnd,
+          lunchStart: attendanceList[0].lunchStart,
+          lunchEnd: attendanceList[0].lunchEnd,
+          workingHours: attendanceList[0].workingHours
+        });
+      }
     }
+
     if (attendanceList && attendanceList.length > 0) {
       const filteredRecords = filterDataByView(attendanceList, view);
+
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`Filtered ${view} records:`, filteredRecords);
-        console.log(`Number of filtered ${view} records:`, filteredRecords.length);
+        console.log(`Filtered ${view} records:`, filteredRecords.length);
         console.log("Filtered record dates:", filteredRecords.map(item => item.date));
+
+        // Debug break calculation for first few records
+        filteredRecords.slice(0, 3).forEach((record, index) => {
+          console.log(`Record ${index} break details:`, debugBreakCalculation(record));
+        });
       }
+
       const summary = calculateSummary(filteredRecords);
+
       if (process.env.NODE_ENV !== 'production') {
-        console.log("Calculated summary:", summary);
+        console.log("Final Summary:", summary);
       }
+
       setCurrentData({ summary, records: filteredRecords });
     } else {
       console.log("No attendance data available");
@@ -135,12 +228,19 @@ const SuperAdminData = ({ view, setView }) => {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-white text-xl font-bold">Attendance Summary</h2>
-
       </div>
 
       {process.env.NODE_ENV !== 'production' && (
         <div className="text-xs text-gray-400 mb-2">
           Total Records: {attendanceList?.length || 0} | Filtered: {currentData?.records?.length || 0} | View: {view}
+          {currentData.records.length > 0 && (
+            <div className="mt-1">
+              Break Details: Smoke({debugBreakCalculation(currentData.records[0]).smoke}m) +
+              WC({debugBreakCalculation(currentData.records[0]).wc}m) +
+              Lunch({debugBreakCalculation(currentData.records[0]).lunch}m) =
+              Total({debugBreakCalculation(currentData.records[0]).total}m)
+            </div>
+          )}
         </div>
       )}
 

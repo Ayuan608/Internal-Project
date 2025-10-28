@@ -2,27 +2,45 @@ import { FolderUp, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import SuperAdminData from "../SuperAdminDashboardRoute/ui/SuperAdminData";
-import { monthlyData, weeklyData } from "../../../Helpers/Helper";
 import { getUserAttendance } from "../../../redux/attendenceSlice";
+import { useAttendanceDashboard } from "../../hooks/useAttendanceHooks"
 
 function DailyTimeRecord() {
   const dispatch = useDispatch();
   const [view, setView] = useState("weekly");
+
+  // ADD MISSING STATE
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Use the attendance dashboard hook
+  const {
+    attendanceList,
+    pagination,
+    formatBreaksDisplay, // Use the formatted breaks display from hook
+    formatDate,
+    formatTimeDisplay,
+    stats, // Get stats from hook
+    breakCounts, // Get break counts from hook
+  } = useAttendanceDashboard();
+
+  const [error, setError] = useState(null);
 
   // Get userId from auth state
   const userId = useSelector(
     (state) => state?.auth?.data?._id
   );
 
-  // Get attendance data from redux store
-  const { attendanceList, pagination } = useSelector(
-    (state) => state.attendance
-  );
-
-  console.log(attendanceList)
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // Clear local storage breaks when user is deleted/not found
+  useEffect(() => {
+    if (!userId) {
+      // Clear break-related local storage when no user is found
+      const today = new Date().toDateString();
+      localStorage.removeItem(`breakCounts_${today}`);
+      localStorage.removeItem("breakHistory");
+      localStorage.removeItem("dayOffRequests");
+      console.log("Local storage cleared - no user found");
+    }
+  }, [userId]);
 
   // Calculate date ranges for weekly/monthly view
   const getDateRange = () => {
@@ -46,6 +64,35 @@ function DailyTimeRecord() {
       startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0]
     };
+  };
+
+  // Calculate total breaks from break counts and stats
+  const calculateTotalBreaks = () => {
+    if (!stats || !breakCounts) return "0m";
+
+    // Calculate total break count
+    const totalBreakCount = breakCounts.smoke + breakCounts.wc + breakCounts.lunch;
+
+    // Get total break time from stats if available
+    if (stats.totalAllBreaks && stats.totalAllBreaks !== "0m") {
+      return `${stats.totalAllBreaks} (${totalBreakCount} breaks)`;
+    }
+
+    // Fallback calculation
+    const smokeMinutes = parseInt(stats.totalSmokeBreak) || 0;
+    const wcMinutes = parseInt(stats.totalWcBreak) || 0;
+    const lunchMinutes = parseInt(stats.totalLunchBreak) || 0;
+    const totalMinutes = smokeMinutes + wcMinutes + lunchMinutes;
+
+    if (totalMinutes >= 60) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return minutes > 0
+        ? `${hours}h ${minutes}m (${totalBreakCount} breaks)`
+        : `${hours}h (${totalBreakCount} breaks)`;
+    }
+
+    return `${totalMinutes}m (${totalBreakCount} breaks)`;
   };
 
   // Fetch attendance data
@@ -84,29 +131,12 @@ function DailyTimeRecord() {
       "Missed Punch In": "bg-red-100 text-red-800",
       "Missed Punch Out": "bg-red-100 text-red-800",
       Absent: "bg-gray-200 text-gray-800",
-      Partial: "bg-blue-100 text-blue-800",
+      Active: "bg-blue-100 text-blue-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  // Format date
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    try {
-      const date = new Date(dateStr);
-      const options = {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      };
-      return date.toLocaleDateString('en-US', options);
-    } catch {
-      return "-";
-    }
-  };
-
-  // Format time
+  // Format time (fallback if hook doesn't provide it)
   const formatTime = (timeStr) => {
     if (!timeStr) return "-";
     try {
@@ -121,19 +151,40 @@ function DailyTimeRecord() {
     }
   };
 
-  // Calculate breaks display
-  const formatBreaks = (row) => {
-    const breaks = [];
-    if (row.wcStart && row.wcEnd) breaks.push("WC");
-    if (row.smokeStart && row.smokeEnd) breaks.push("Smoke");
-    if (row.lunchStart && row.lunchEnd) breaks.push("Lunch");
-    return breaks.length > 0 ? breaks.join(", ") : "-";
-  };
-
-  // Determine status
+  // UPDATED: Simple status logic - Only show absent after 6:20 PM if no punch in
   const getStatus = (row) => {
-    if (!row.clockIn) return "Absent";
-    if (!row.clockOut) return "Missed Punch Out";
+    const today = new Date();
+    const recordDate = new Date(row.date);
+    const isToday = recordDate.toDateString() === today.toDateString();
+
+    // If no punch in
+    if (!row.clockIn) {
+      if (isToday) {
+        const currentTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes
+        const sixTwentyPM = 18 * 60 + 20; // 6:20 PM in minutes
+
+        // Only show absent if it's past 6:20 PM and no punch in
+        if (currentTime >= sixTwentyPM) {
+          return "Absent";
+        }
+      }
+      // For past dates with no punch in, show absent
+      return "Absent";
+    }
+
+    // If punched in but no punch out
+    if (!row.clockOut) {
+      if (isToday) {
+        const currentTime = today.getHours() * 60 + today.getMinutes();
+        const sixTwentyPM = 18 * 60 + 20;
+
+        // If it's past 6:20 PM and no punch out, show absent
+        if (currentTime >= sixTwentyPM) {
+          return "Absent";
+        }
+      }
+      return "Active"; // Show active if punched in but not out (before 6:20 PM)
+    }
 
     // Parse working hours
     const workingHours = row.workingHours || "0h 0m";
@@ -141,14 +192,69 @@ function DailyTimeRecord() {
     const hours = match ? parseInt(match[1]) : 0;
 
     if (hours >= 8) return "Normal";
-    if (hours >= 4) return "Partial";
-    return "Partial";
+    return "Active";
+  };
+
+  // UPDATED: Function to format punch in display
+  const formatPunchIn = (record) => {
+    if (!record.clockIn) {
+      const today = new Date();
+      const recordDate = new Date(record.date);
+      const isToday = recordDate.toDateString() === today.toDateString();
+
+      if (isToday) {
+        const currentTime = today.getHours() * 60 + today.getMinutes();
+        const sixTwentyPM = 18 * 60 + 20;
+
+        // Only show absent after 6:20 PM
+        if (currentTime >= sixTwentyPM) {
+          return <span className="text-red-400">Absent</span>;
+        }
+      }
+      // For past dates, show absent
+      return <span className="text-red-400">Absent</span>;
+    }
+
+    return formatTimeDisplay ? formatTimeDisplay(record.clockIn) : formatTime(record.clockIn);
+  };
+
+  // UPDATED: Function to format punch out display
+  const formatPunchOut = (record) => {
+    if (!record.clockOut) {
+      const today = new Date();
+      const recordDate = new Date(record.date);
+      const isToday = recordDate.toDateString() === today.toDateString();
+
+      if (isToday) {
+        const currentTime = today.getHours() * 60 + today.getMinutes();
+        const sixTwentyPM = 18 * 60 + 20;
+
+        // If it's past 6:20 PM and no punch out, show absent
+        if (currentTime >= sixTwentyPM) {
+          return <span className="text-red-400">Absent</span>;
+        }
+      }
+      return <span className="text-orange-400">Not punched out</span>;
+    }
+
+    return formatTimeDisplay ? formatTimeDisplay(record.clockOut) : formatTime(record.clockOut);
   };
 
   // Export function (placeholder)
   const handleExport = () => {
     alert("Export functionality will be implemented with backend API");
   };
+
+  // Debug log to check data
+  useEffect(() => {
+    console.log("DailyTimeRecord Data:", {
+      stats,
+      breakCounts,
+      totalBreaks: calculateTotalBreaks(),
+      attendanceListCount: attendanceList?.length,
+      userId
+    });
+  }, [stats, breakCounts, attendanceList, userId]);
 
   return (
     <>
@@ -200,7 +306,12 @@ function DailyTimeRecord() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2 text-white/80">
+            {/* Total Breaks Display */}
+            <div className="flex items-center gap-4 text-white/80">
+              <div className="bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
+                <span className="text-sm font-medium">Total Breaks Today: </span>
+                <span className="text-blue-300 font-bold">{calculateTotalBreaks()}</span>
+              </div>
               <span className="text-sm font-medium">
                 Read Only - Cannot be edited
               </span>
@@ -218,12 +329,24 @@ function DailyTimeRecord() {
                   : "Monthly DTR - Current Month"}
               </h2>
 
-              <button
-                onClick={handleExport}
-                className="bg-[#10101bd6] hover:bg-[#10101b] cursor-pointer text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 border"
-              >
-                <FolderUp /> Export File
-              </button>
+              <div className="flex items-center gap-4">
+                {/* Break Summary */}
+                <div className="bg-purple-500/20 px-4 py-2 rounded-lg border border-purple-500/30">
+                  <div className="text-sm text-purple-300">
+                    <span className="font-medium">Break Summary: </span>
+                    <span>Smoke: {breakCounts?.smoke || 0}/3 </span>
+                    <span>WC: {breakCounts?.wc || 0}/3 </span>
+                    <span>Lunch: {breakCounts?.lunch || 0}/1</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleExport}
+                  className="bg-[#10101bd6] hover:bg-[#10101b] cursor-pointer text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 border"
+                >
+                  <FolderUp /> Export File
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -272,17 +395,13 @@ function DailyTimeRecord() {
                           {formatDate(record.date)}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          {formatTime(record.clockIn)}
+                          {formatPunchIn(record)}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          {formatBreaks(record)}
+                          {stats.totalAllBreaks || "0m"}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          {record.clockOut ? (
-                            formatTime(record.clockOut)
-                          ) : (
-                            <span className="text-orange-400">Not punched out</span>
-                          )}
+                          {formatPunchOut(record)}
                         </td>
                         <td className="px-6 py-4 text-sm">
                           {record.workingHours || "0h 0m"}
@@ -315,6 +434,93 @@ function DailyTimeRecord() {
               </div>
             )}
           </div>
+
+          {/* Additional Break Statistics */}
+          {stats && (
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
+                <h3 className="text-blue-300 font-semibold mb-2">Break Statistics</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Total Break Time:</span>
+                    <span className="text-white font-bold">{stats.totalAllBreaks || "0m"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Smoke Breaks:</span>
+                    <span className="text-orange-300">{stats.totalSmokeBreak || "0m"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">WC Breaks:</span>
+                    <span className="text-blue-300">{stats.totalWcBreak || "0m"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Lunch Breaks:</span>
+                    <span className="text-purple-300">{stats.totalLunchBreak || "0m"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
+                <h3 className="text-green-300 font-semibold mb-2">Work Statistics</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Total Hours:</span>
+                    <span className="text-white font-bold">{stats.totalHoursWorked || "0h 00m"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Today's Hours:</span>
+                    <span className="text-green-300">{stats.todayWorkedHours || "0h 00m"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Days Worked:</span>
+                    <span className="text-white">{stats.daysWorked || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
+                <h3 className="text-purple-300 font-semibold mb-2">Break Counts</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Smoke Breaks:</span>
+                    <span className="text-orange-300">{breakCounts?.smoke || 0}/3</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">WC Breaks:</span>
+                    <span className="text-blue-300">{breakCounts?.wc || 0}/3</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Lunch Breaks:</span>
+                    <span className="text-purple-300">{breakCounts?.lunch || 0}/1</span>
+                  </div>
+                  <div className="flex justify-between border-t border-gray-600 pt-2">
+                    <span className="text-gray-300 font-semibold">Total:</span>
+                    <span className="text-white font-bold">
+                      {(breakCounts?.smoke || 0) + (breakCounts?.wc || 0) + (breakCounts?.lunch || 0)} breaks
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-500/10 p-4 rounded-lg border border-yellow-500/20">
+                <h3 className="text-yellow-300 font-semibold mb-2">Performance</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Efficiency:</span>
+                    <span className="text-yellow-300">{stats.efficiency || "0%"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Current Streak:</span>
+                    <span className="text-white">{stats.currentStreak || 0} days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Overtime:</span>
+                    <span className="text-green-300">{stats.overtimeHours || "0h 00m"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
