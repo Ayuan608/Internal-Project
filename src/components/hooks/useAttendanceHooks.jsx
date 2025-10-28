@@ -216,7 +216,7 @@ export const useAttendanceDashboard = () => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeTimer, endBreak]); // Added endBreak to dependencies
+  }, [activeTimer, endBreak]);
 
   // Check and reset break counts daily
   useEffect(() => {
@@ -377,6 +377,105 @@ export const useAttendanceDashboard = () => {
     [calculateBreakTimeFromHistory]
   );
 
+  // NEW: Calculate total break time for a record
+  const calculateTotalBreakTime = useCallback((row) => {
+    let totalBreakMinutes = 0;
+
+    // Calculate WC break time
+    if (row.wcStart && row.wcEnd) {
+      try {
+        const start = new Date(row.wcStart);
+        const end = new Date(row.wcEnd);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          totalBreakMinutes += Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+        }
+      } catch (error) {
+        console.error("Error calculating WC break time:", error);
+      }
+    }
+
+    // Calculate Smoke break time
+    if (row.smokeStart && row.smokeEnd) {
+      try {
+        const start = new Date(row.smokeStart);
+        const end = new Date(row.smokeEnd);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          totalBreakMinutes += Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+        }
+      } catch (error) {
+        console.error("Error calculating Smoke break time:", error);
+      }
+    }
+
+    // Calculate Lunch break time
+    if (row.lunchStart && row.lunchEnd) {
+      try {
+        const start = new Date(row.lunchStart);
+        const end = new Date(row.lunchEnd);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          totalBreakMinutes += Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+        }
+      } catch (error) {
+        console.error("Error calculating Lunch break time:", error);
+      }
+    }
+
+    // Also check break history for additional breaks
+    if (row.date) {
+      const dateBreaks = breakHistory.filter(record => record.date === row.date);
+      dateBreaks.forEach(record => {
+        if (record.duration) {
+          totalBreakMinutes += Math.floor(record.duration / 60);
+        }
+      });
+    }
+
+    return totalBreakMinutes;
+  }, [breakHistory]);
+
+  // NEW: Format breaks display with types and total time
+  const formatBreaksDisplay = useCallback((row) => {
+    const breaks = [];
+    let totalBreakMinutes = calculateTotalBreakTime(row);
+
+    // Check which breaks were taken
+    if (row.wcStart && row.wcEnd) breaks.push("WC");
+    if (row.smokeStart && row.smokeEnd) breaks.push("Smoke");
+    if (row.lunchStart && row.lunchEnd) breaks.push("Lunch");
+
+    // Also check break history
+    if (row.date) {
+      const dateBreaks = breakHistory.filter(record => record.date === row.date);
+      dateBreaks.forEach(record => {
+        if (!breaks.includes(record.type.charAt(0).toUpperCase() + record.type.slice(1))) {
+          breaks.push(record.type.charAt(0).toUpperCase() + record.type.slice(1));
+        }
+      });
+    }
+
+    if (breaks.length === 0) {
+      return "-";
+    }
+
+    const breakTypes = breaks.join(", ");
+
+    // Format total time
+    let totalTimeDisplay = "";
+    if (totalBreakMinutes > 0) {
+      if (totalBreakMinutes >= 60) {
+        const hours = Math.floor(totalBreakMinutes / 60);
+        const minutes = totalBreakMinutes % 60;
+        totalTimeDisplay = minutes > 0
+          ? ` (${hours}h ${minutes}m)`
+          : ` (${hours}h)`;
+      } else {
+        totalTimeDisplay = ` (${totalBreakMinutes}m)`;
+      }
+    }
+
+    return `${breakTypes}${totalTimeDisplay}`;
+  }, [calculateTotalBreakTime, breakHistory]);
+
   // Handle day off request
   const handleDayOffSubmit = useCallback((e) => {
     e.preventDefault();
@@ -417,6 +516,7 @@ export const useAttendanceDashboard = () => {
       totalWcBreak: "0 min",
       totalSmokeBreak: "0 min",
       totalLunchBreak: "0 min",
+      totalAllBreaks: "0 min", // NEW: Total of all breaks
       hasPendingPunchOut: false,
       currentStreak: 0,
       lastPunchIn: "No data",
@@ -452,6 +552,7 @@ export const useAttendanceDashboard = () => {
         }
       }
 
+      // Calculate break times from attendance records
       if (row.smokeStart && row.smokeEnd) {
         try {
           const diff = Math.floor(
@@ -484,8 +585,9 @@ export const useAttendanceDashboard = () => {
       last7Days.add(rowDate);
     });
 
+    // Add break times from break history
     breakHistory.forEach((record) => {
-      if (record.date === today && record.endTime) {
+      if (record.endTime) {
         const minutes = Math.floor((record.duration || 0) / 60);
         if (record.type === "wc") totalWcMinutes += minutes;
         else if (record.type === "smoke") totalSmokeMinutes += minutes;
@@ -511,6 +613,15 @@ export const useAttendanceDashboard = () => {
     const formatShortTime = (minutes) => {
       const hours = (minutes / 60).toFixed(1);
       return `${hours}h`;
+    };
+
+    const formatBreakTime = (minutes) => {
+      if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+      }
+      return `${minutes}m`;
     };
 
     const avgDailyMinutes = daysWithWork > 0 ? totalWorkMinutes / daysWithWork : 0;
@@ -548,9 +659,10 @@ export const useAttendanceDashboard = () => {
       avgDailyHours: formatShortTime(avgDailyMinutes),
       overtimeHours: formatTime(overtimeMinutes),
       totalWorkTime: formatTime(totalWorkMinutes),
-      totalWcBreak: `${totalWcMinutes} min`,
-      totalSmokeBreak: `${totalSmokeMinutes} min`,
-      totalLunchBreak: `${totalLunchMinutes} min`,
+      totalWcBreak: formatBreakTime(totalWcMinutes),
+      totalSmokeBreak: formatBreakTime(totalSmokeMinutes),
+      totalLunchBreak: formatBreakTime(totalLunchMinutes),
+      totalAllBreaks: formatBreakTime(totalBreakMinutes), // NEW: Total of all breaks
       hasPendingPunchOut: pendingPunchOutToday,
       currentStreak: consecutiveDays,
       lastPunchIn: lastPunchInFormatted,
@@ -605,23 +717,6 @@ export const useAttendanceDashboard = () => {
     [activeTimer, breakCounts.lunch, hasPunchedInToday]
   );
 
-  // Enhanced debugging logs
-  useEffect(() => {
-    console.log("AttendanceDashboard Hook State:", {
-      userId,
-      attendanceList,
-      breakCounts,
-      breakHistory,
-      currentStatus,
-      stats,
-      isSmokeBreakDisabled,
-      isWcBreakDisabled,
-      isLunchBreakDisabled,
-      hasPunchedInToday,
-      hasPunchedOutToday,
-    });
-  }, [userId, attendanceList, breakCounts, breakHistory, currentStatus, stats, isSmokeBreakDisabled, isWcBreakDisabled, isLunchBreakDisabled, hasPunchedInToday, hasPunchedOutToday]);
-
   return {
     userId,
     attendanceList,
@@ -639,6 +734,7 @@ export const useAttendanceDashboard = () => {
     isWcBreakDisabled,
     isLunchBreakDisabled,
     hasPunchedInToday,
+    hasPunchedOutToday,
     handleRefresh,
     startBreak,
     endBreak,
@@ -651,5 +747,7 @@ export const useAttendanceDashboard = () => {
     calculateBreakTime,
     calculateWcBreakTime,
     calculateLunchBreakTime,
+    calculateTotalBreakTime, // NEW: Export the total break time calculator
+    formatBreaksDisplay,     // NEW: Export the formatted breaks display
   };
 };
