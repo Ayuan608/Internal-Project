@@ -18,47 +18,29 @@ export const createAnnouncement = createAsyncThunk(
     'announcements/create',
     async (announcementData, { rejectWithValue }) => {
         try {
-            console.log('Sending announcement data:', announcementData); // Debug log
+            console.log('Sending announcement data:', announcementData);
 
             const formData = new FormData();
 
-            // Append text fields - try different field name combinations
+            // ✅ Append text fields ONCE
             formData.append('title', announcementData.title);
             formData.append('details', announcementData.details);
 
-            // Try different field names for content
-            formData.append('content', announcementData.details);
-            formData.append('description', announcementData.details);
-
-            // Handle recipients - try different formats
+            // ✅ Handle recipients as JSON string
             if (announcementData.recipients && announcementData.recipients.length > 0) {
-                // Try stringified array
                 formData.append('recipients', JSON.stringify(announcementData.recipients));
-                // Try as simple string
-                formData.append('recipients', announcementData.recipients[0]);
-                // Try as comma separated
-                formData.append('recipients', announcementData.recipients.join(','));
             }
 
-            // Append createdBy - try different field names
+            // ✅ Append createdBy if exists
             if (announcementData.createdBy) {
                 formData.append('createdBy', announcementData.createdBy);
-                formData.append('author', announcementData.createdBy);
-                formData.append('creator', announcementData.createdBy);
-                formData.append('postedBy', announcementData.createdBy);
             }
 
-            // Append files if any - try different field names
+            // ✅ Append files with field name "images" (matches backend)
             if (announcementData.files && announcementData.files.length > 0) {
                 announcementData.files.forEach(file => {
-                    formData.append('files', file);
-                    formData.append('attachments', file);
-                    formData.append('images', file);
-                    formData.append('documents', file);
+                    formData.append('images', file); // ONLY this line!
                 });
-            } else {
-                // Append empty file field if no files
-                formData.append('files', '');
             }
 
             // Log FormData contents for debugging
@@ -71,7 +53,7 @@ export const createAnnouncement = createAsyncThunk(
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
-                timeout: 30000, // Increase timeout
+                timeout: 30000,
             });
 
             console.log('Response received:', response.data);
@@ -82,7 +64,6 @@ export const createAnnouncement = createAsyncThunk(
                 message: error.message,
                 response: error.response?.data,
                 status: error.response?.status,
-                config: error.config
             });
 
             return rejectWithValue(

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Download, Filter, X, Mail, Plus } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const NonQuotaMembersTable = () => {
+  const { role } = useSelector((state) => state.auth)
   const [filteredData, setFilteredData] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -206,7 +208,9 @@ const NonQuotaMembersTable = () => {
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">OUTPUT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">TARGET</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">VARIANCE</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">ACTION</th>
+              {
+                role === "Team-Leader" && <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">ACTION</th>
+              }
             </tr>
           </thead>
 
@@ -247,15 +251,18 @@ const NonQuotaMembersTable = () => {
                   >
                     {member.variance > 0 ? `+${member.variance}` : member.variance}
                   </td>
-                  <td className="px-4 py-2 border-b border-[#9e9fa74d]/40">
-                    <button
-                      onClick={() => handleCreateCase(member)}
-                      className="bg-[var(--button-color)] hover:bg-[var(--hover-color)] text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center gap-1"
-                    >
-                      <Plus size={12} />
-                      Create Case
-                    </button>
-                  </td>
+                  {
+                    role === "Team-Leader" && <td className="px-4 py-2 border-b border-[#9e9fa74d]/40">
+                      <button
+                        onClick={() => handleCreateCase(member)}
+                        className="bg-[var(--button-color)] hover:bg-[var(--hover-color)] text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                      >
+                        <Plus size={12} />
+                        Create Case
+                      </button>
+                    </td>
+                  }
+
                 </tr>
               ))
             )}

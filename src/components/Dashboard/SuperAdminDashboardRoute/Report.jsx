@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { Calendar, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff } from 'lucide-react'
+import React, { useEffect } from 'react';
+import { Calendar, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteReport, getAllReports } from '../../../redux/reportSlice';
+import { deleteReport, getAllReports, markReportAsSeen } from '../../../redux/reportSlice';
 import toast from 'react-hot-toast';
 
 function Report() {
     const dispatch = useDispatch();
     const { allReports } = useSelector((state) => state.report);
-    const [seenReports, setSeenReports] = useState(new Set());
 
     useEffect(() => {
         dispatch(getAllReports());
@@ -25,16 +24,18 @@ function Report() {
         }
     };
 
-    const toggleSeen = (reportId) => {
-        setSeenReports(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(reportId)) {
-                newSet.delete(reportId);
-            } else {
-                newSet.add(reportId);
+    const handleMarkAsSeen = async (reportId, currentStatus) => {
+        try {
+            if (currentStatus === "seen") {
+                toast("Already marked as seen");
+                return;
             }
-            return newSet;
-        });
+
+            await dispatch(markReportAsSeen(reportId)).unwrap();
+            dispatch(getAllReports());
+        } catch (error) {
+            console.error("Failed to mark as seen:", error);
+        }
     };
 
     const formatDate = (dateString) => {
@@ -63,7 +64,6 @@ function Report() {
                 </div>
             </div>
 
-            {/* Reports List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {!allReports || allReports.length === 0 ? (
                     <div className="col-span-full bg-[rgba(59,131,246,0.06)] rounded-xl p-12 text-center border border-gray-700">
@@ -72,11 +72,11 @@ function Report() {
                     </div>
                 ) : (
                     allReports.map((report) => {
-                        const isSeen = seenReports.has(report._id);
+                        const isSeen = report.status === "seen";
                         return (
                             <div 
                                 key={report._id} 
-                                className={`bg-[rgba(59,131,246,0.06)] rounded-xl p-4 border transition-all duration-300 hover:border-blue-500 ${
+                                className={`bg-[rgba(59,131,246,0.06)] rounded-xl p-4 border transition-all duration-300 ${
                                     isSeen ? 'border-green-600/50' : 'border-[var(--box-border)]'
                                 }`}
                             >
@@ -86,11 +86,11 @@ function Report() {
                                             <User size={20} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-base truncate">
-                                                {report.senderId?.[0]?.name || "Unknown User"}
+                                            <h3 className="font-semibold text-base capitalize truncate">
+                                                {report.createdBy?.FullName || "Unknown User"}
                                             </h3>
                                             <p className="text-xs text-gray-400 truncate">
-                                                {report.senderId?.[0]?.email || "User"} • {report.recipients?.[0]?.email || "N/A"}
+                                                {report.createdBy?.department || ""} • {report.createdBy?.role || "N/A"}
                                             </p>
                                             <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
                                                 <span className="flex items-center gap-1">
@@ -129,23 +129,22 @@ function Report() {
                                     </p>
                                 </div>
 
-                                {/* Action Buttons */}
                                 <div className="flex gap-2 pt-3 border-t border-gray-700">
                                     <button
-                                        onClick={() => toggleSeen(report._id)}
+                                        onClick={() => handleMarkAsSeen(report._id, report.status)}
                                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                                             isSeen
                                                 ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                                                 : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'
                                         }`}
+                                        disabled={isSeen}
                                     >
                                         {isSeen ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        {isSeen ? 'Mark Unseen' : 'Mark as Seen'}
+                                        {isSeen ? 'Seen' : 'Mark as Seen'}
                                     </button>
                                     <button
                                         onClick={() => handleDelete(report._id)}
                                         className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-600/20 hover:bg-red-600/30 text-red-400 transition-all"
-                                        title="Delete Report"
                                     >
                                         <Trash2 size={16} />
                                         Delete
@@ -157,7 +156,7 @@ function Report() {
                 )}
             </div>
         </div>
-    )
+    );
 }
 
-export default Report
+export default Report;

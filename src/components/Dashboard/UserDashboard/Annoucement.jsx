@@ -24,7 +24,7 @@ export default function Announcement() {
     createLoading = false
   } = announcementsState || {};
 
-  console.log(announcements,"hello")
+  console.log(announcements, "hello")
 
 
 
