@@ -666,12 +666,13 @@ function Admin() {
                     name="department"
                     value={addUser.department}
                     onChange={handleUserInput}
-                    className="w-full bg-[#2e303759] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full bg-[#2e303729] border border-gray-600 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   >
-                    <option value="">Select Department</option>
-                    <option value="CSR">CSR Department</option>
-                    <option value="Deposit">Deposit Department</option>
-                    <option value="Withdraw">Withdraw Department</option>
+                    <option className="bg-slate-900" value="">Select Department</option>
+                    <option className="bg-slate-900" value="CSR">CSR Department</option>
+                    <option className="bg-slate-900" value="Deposit">Deposit Department</option>
+                    <option className="bg-slate-900" value="Withdraw">Withdraw Department</option>
+                    <option className="bg-slate-900" value="Marketing">Marketing Department</option>
                   </select>
                 </div>
               </div>

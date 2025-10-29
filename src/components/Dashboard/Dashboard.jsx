@@ -1,4 +1,3 @@
-import { Search } from "lucide-react";
 import Charts from "./Chart";
 import TeamLeaderStats from "./SuperAdminDashboardRoute/ui/TeamLeaderStats";
 import { TeamStats } from "../../Helpers/Helper";
@@ -13,17 +12,8 @@ export default function Dashboard() {
           className=" top-0 rounded-lg p-2 z-auto backdrop-blur-3xl "
           style={{ zIndex: 9 }}
         >
-          <div className="flex justify-between ">
-            <div className="flex justify-start w-[30%] items-start mb-4">
-              <div className="relative w-full ">
-                <input
-                  type="text"
-                  placeholder="search, contacts, deals, campaigns..."
-                  className="bg-[#f5f6fa09] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
-                />
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />
-              </div>
-            </div>
+          <div className="flex justify-end p-2 ">
+          
             <ExampleIosSwitch />
           </div>
 
