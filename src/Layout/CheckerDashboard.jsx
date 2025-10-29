@@ -170,7 +170,7 @@ const OverallAttendance = () => {
         <ExampleIosSwitch />
       </div>
 
-      <div className="min-h-screen p-5 font-sans text-white">
+      <div className=" p-5 font-sans text-white">
         <div className="max-w-[1400px] mx-auto">
           {/* Header */}
           <div className="mb-6">
