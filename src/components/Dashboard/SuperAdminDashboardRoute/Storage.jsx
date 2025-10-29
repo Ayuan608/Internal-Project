@@ -1,9 +1,10 @@
-import React from 'react'
+import StoragePage from "./ui/StorageUi"
+
 
 function Storage() {
   return (
-    <div>Storage</div>
+    <StoragePage />
   )
 }
 
-export default Storage
+export default Storage  
