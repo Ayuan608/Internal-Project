@@ -11,15 +11,10 @@ import {
 import {
   Antenna,
   BanknoteArrowUp,
-  BarChart3,
   Blend,
   Building2,
-  Calendar,
   CalendarCheck2,
-  CheckCircle,
   ClipboardPlus,
-  Clock,
-  Coffee,
   Columns3Cog,
   DatabaseZap,
   FileText,
@@ -33,8 +28,6 @@ import {
   User2,
   UserCheck,
   Users,
-  WifiPen,
-  XCircle,
 } from "lucide-react";
 import ReportIcon from "./Icons";
 
@@ -96,7 +89,7 @@ export const AdminRoutes = [
     label: "Shift Management",
     icon: SquareChartGantt,
   },
-  { to: "/admin/ip-address", label: "IP-Whitelist", icon: Shield  },
+  { to: "/admin/ip-address", label: "IP-Whitelist", icon: Shield },
 ];
 export const CheckerButtons = [
   { to: "/checker", label: "Attendence", icon: UserCheck },
@@ -809,4 +802,81 @@ Effective immediately, the daily quota for CSR department has been updated to 50
 
 Let's maintain our excellent performance!`,
   },
+];
+
+
+export const data = [
+  {
+    date: "2025-10-17",
+    name: "John Smith",
+    role: "Agent",
+    department: "CSR",
+    output: 45,
+    target: 50,
+    variance: -5,
+    email: "john.smith@mytechliance.com"
+  },
+  {
+    date: "2025-10-17",
+    name: "Sarah Johnson",
+    role: "Agent",
+    department: "Withdrawal",
+    output: 28,
+    target: 35,
+    variance: -7,
+    email: "sarah.johnson@mytechliance.com"
+  },
+  {
+    date: "2025-10-16",
+    name: "Mike Davis",
+    role: "Agent",
+    department: "Deposit",
+    output: 38,
+    target: 45,
+    variance: -7,
+    email: "mike.davis@mytechliance.com"
+  },
+  {
+    date: "2025-10-16",
+    name: "Emily Wilson",
+    role: "Agent",
+    department: "CSR",
+    output: 42,
+    target: 50,
+    variance: -8,
+    email: "emily.wilson@mytechliance.com"
+  },
+  {
+    date: "2025-10-15",
+    name: "David Brown",
+    role: "Agent",
+    department: "Withdrawal",
+    output: 32,
+    target: 35,
+    variance: -3,
+    email: "david.brown@mytechliance.com"
+  },
+  {
+    date: "2025-10-15",
+    name: "Lisa Taylor",
+    role: "Agent",
+    department: "Deposit",
+    output: 44,
+    target: 45,
+    variance: -1,
+    email: "lisa.taylor@mytechliance.com"
+  },
+];
+
+
+export const headers = [
+  "User ID",
+  "NAME",
+  "DATE",
+  "DEPARTMENT",
+  "PUNCH IN",
+  "Shift",
+  "PUNCH OUT",
+  "Total Working Hours",
+  "STATUS",
 ];

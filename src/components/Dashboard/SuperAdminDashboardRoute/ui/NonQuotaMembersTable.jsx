@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Download, Filter, X, Mail, Plus } from "lucide-react";
 import { useSelector } from "react-redux";
+import { data } from "../../../../Helpers/Helper";
 
-const NonQuotaMembersTable = () => {
+const NonQuotaMembersTable = ({ department = "CSR" }) => {
   const { role } = useSelector((state) => state.auth)
   const [filteredData, setFilteredData] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [formData, setFormData] = useState({
@@ -15,79 +15,15 @@ const NonQuotaMembersTable = () => {
     priority: "Medium"
   });
 
-  const data = [
-    {
-      date: "2025-10-17",
-      name: "John Smith",
-      role: "Agent",
-      department: "CSR",
-      output: 45,
-      target: 50,
-      variance: -5,
-      email: "john.smith@mytechliance.com"
-    },
-    {
-      date: "2025-10-17",
-      name: "Sarah Johnson",
-      role: "Agent",
-      department: "Withdrawal",
-      output: 28,
-      target: 35,
-      variance: -7,
-      email: "sarah.johnson@mytechliance.com"
-    },
-    {
-      date: "2025-10-16",
-      name: "Mike Davis",
-      role: "Agent",
-      department: "Deposit",
-      output: 38,
-      target: 45,
-      variance: -7,
-      email: "mike.davis@mytechliance.com"
-    },
-    {
-      date: "2025-10-16",
-      name: "Emily Wilson",
-      role: "Agent",
-      department: "CSR",
-      output: 42,
-      target: 50,
-      variance: -8,
-      email: "emily.wilson@mytechliance.com"
-    },
-    {
-      date: "2025-10-15",
-      name: "David Brown",
-      role: "Agent",
-      department: "Withdrawal",
-      output: 32,
-      target: 35,
-      variance: -3,
-      email: "david.brown@mytechliance.com"
-    },
-    {
-      date: "2025-10-15",
-      name: "Lisa Taylor",
-      role: "Agent",
-      department: "Deposit",
-      output: 44,
-      target: 45,
-      variance: -1,
-      email: "lisa.taylor@mytechliance.com"
-    },
-  ];
-
-  const departments = ["All", ...new Set(data.map(item => item.department))];
-
+  // Remove the local department state and use the prop instead
   useEffect(() => {
-    if (selectedDepartment === "All") {
+    if (department === "All") {
       setFilteredData(data);
     } else {
-      const filtered = data.filter(item => item.department === selectedDepartment);
+      const filtered = data.filter(item => item.department === department);
       setFilteredData(filtered);
     }
-  }, [selectedDepartment]);
+  }, [department]);
 
   const handleCreateCase = (employee) => {
     setSelectedEmployee(employee);
@@ -129,37 +65,9 @@ const NonQuotaMembersTable = () => {
 
   return (
     <div className="shadow-md rounded-lg px-3 w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center lg:flex-row  lg:items-center gap-4 mb-4 mt-4">
-        <div className="flex flex-wrap gap-2">
-          <span className="text-sm text-white mr-2">Quick filter:</span>
-          {departments.filter(dept => dept !== "All").map((dept) => (
-            <button
-              key={dept}
-              onClick={() => setSelectedDepartment(dept)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedDepartment === dept
-                ? dept === "CSR"
-                  ? "bg-blue-500 text-white"
-                  : dept === "Deposit"
-                    ? "bg-green-500 text-white"
-                    : "bg-orange-500 text-white"
-                : "bg-gray-700 text-white-300 hover:bg-gray-600"
-                }`}
-            >
-              {dept}
-            </button>
-          ))}
-          <button
-            onClick={() => setSelectedDepartment("All")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedDepartment === "All"
-              ? "bg-purple-500 text-white"
-              : "bg-gray-700 text-white-300 hover:bg-gray-600"
-              }`}
-          >
-            All Departments
-          </button>
-        </div>
-        <div className="flex sm:flex-row gap-3 w-full lg:w-auto">
+      {/* Header - Remove the department filter from here since it's coming from parent */}
+      <div className="flex items-center lg:flex-row lg:items-center gap-4 mb-4 mt-4 justify-end">
+        <div className="flex sm:flex-row gap-3 w-full lg:w-auto ">
           <div className="flex gap-2">
             <button
               onClick={exportToExcel}
@@ -189,16 +97,14 @@ const NonQuotaMembersTable = () => {
       {/* Results Count */}
       <div className="mb-4 text-sm text-white">
         Showing {filteredData.length} of {data.length} records
-        {selectedDepartment !== "All" && (
-          <span className="ml-2 px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs">
-            Department: {selectedDepartment}
-          </span>
-        )}
+        <span className="ml-2 px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs">
+          Department: {department}
+        </span>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left border border-slate-900 rounded-lg whitespace-nowrap">
+        <table className="min-w-full text-sm text-left  rounded-lg whitespace-nowrap">
           <thead className="text-white font-semibold">
             <tr>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DATE</th>
@@ -218,12 +124,12 @@ const NonQuotaMembersTable = () => {
             {filteredData.length === 0 ? (
               <tr>
                 <td colSpan="8" className="px-4 py-4 text-center text-white border-b border-[#9e9fa74d]/40">
-                  No records found for the selected department
+                  No records found for {department} department
                 </td>
               </tr>
             ) : (
               filteredData.map((member, index) => (
-                <tr key={index} className="hover:bg-[#1a1f3664]  transition-colors">
+                <tr key={index} className="hover:bg-[#1a1f3664] transition-colors">
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 text-white-300">{member.date}</td>
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 font-medium text-white">
                     {member.name}
@@ -262,7 +168,6 @@ const NonQuotaMembersTable = () => {
                       </button>
                     </td>
                   }
-
                 </tr>
               ))
             )}
@@ -270,13 +175,10 @@ const NonQuotaMembersTable = () => {
         </table>
       </div>
 
-      {/* Quick Filter */}
-
-
-      {/* Modal */}
+      {/* Modal - Remains exactly the same */}
       {isModalOpen && selectedEmployee && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-xl  border border-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-xl border border-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-800">
               <h3 className="text-lg font-semibold text-white">

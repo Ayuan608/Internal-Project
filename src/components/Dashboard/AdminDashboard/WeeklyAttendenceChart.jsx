@@ -194,7 +194,7 @@ const WeeklyAttendanceTrendChart = () => {
   return (
     <div
       style={{
-        backgroundColor: "#121212",
+        backgroundColor: "rgba(59,130,246,0.03)",
         padding: 20,
         borderRadius: 10,
         width: "100%",
@@ -254,8 +254,6 @@ const WeeklyAttendanceTrendChart = () => {
       <div style={{ height: "300px" }}>
         <Line data={currentData} options={options} />
       </div>
-
- 
     
     </div>
   );
