@@ -45,7 +45,7 @@ const Performance = () => {
             const formattedData = dataRows.map((row, index) => {
                 const memberName = row[0] || 'Unknown';
                 const role = memberName.toLowerCase().includes('csr') ? 'CSR' :
-                             memberName.toLowerCase().includes('trainee') ? 'Trainee' : 'Staff';
+                    memberName.toLowerCase().includes('trainee') ? 'Trainee' : 'Staff';
 
                 return {
                     id: `${sheetDepartment}-${index}`,
