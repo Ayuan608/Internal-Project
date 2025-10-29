@@ -1,102 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import ExampleIosSwitch from "./ui/Switch";
 import { Download, Search } from "lucide-react";
 import AttendenceData from "../AdminDashboard/AttendenceData";
 import WeeklyAttendanceTrendChart from "../AdminDashboard/WeeklyAttendenceChart";
 import AttendanceChartMonth from "./ui/AttendanceChartMonth";
-
-const attendanceData = [
-  {
-    id: 1,
-    name: "Daryl Carboado",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "08:00 AM",
-    breaks: "1h 15m",
-    punchOut: "05:00 PM",
-    status: "Overbreak",
-  },
-  {
-    id: 2,
-    name: "Ayun Daef",
-    date: "2025-10-17",
-    department: "Deposit",
-    punchIn: "06:05 AM",
-    breaks: "1h 00m",
-    punchOut: "05:02 PM",
-    status: "Normal",
-  },
-  {
-    id: 3,
-    name: "Ashish Prabhakar",
-    date: "2025-10-17",
-    department: "Withdrawal",
-    punchIn: "08:00 AM",
-    breaks: "1h 00m",
-    punchOut: "--",
-    status: "Missed Punch Out",
-  },
-  {
-    id: 4,
-    name: "David Kumar",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "--",
-    breaks: "--",
-    punchOut: "--",
-    status: "Absent",
-  },
-  {
-    id: 5,
-    name: "David Chein",
-    date: "2025-10-17",
-    department: "Deposit",
-    punchIn: "07:58 AM",
-    breaks: "1h 00m",
-    punchOut: "05:00 PM",
-    status: "Normal",
-  },
-  {
-    id: 6,
-    name: "Madhu Kumari",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "--",
-    breaks: "1h 00m",
-    punchOut: "05:03 PM",
-    status: "Missed Punch In",
-  },
-  {
-    id: 7,
-    name: "Khushi Kumari",
-    date: "2025-10-17",
-    department: "Withdrawal",
-    punchIn: "08:15 AM",
-    breaks: "1h 30m",
-    punchOut: "05:15 PM",
-    status: "Overbreak",
-  },
-  {
-    id: 8,
-    name: "Lekh Raj ",
-    date: "2025-10-17",
-    department: "CSR",
-    punchIn: "08:00 AM",
-    breaks: "1h 00m",
-    punchOut: "05:00 PM",
-    status: "Normal",
-  },
-  {
-    id: 9,
-    name: "Chandan Aheer",
-    date: "2025-10-17",
-    department: "Deposit",
-    punchIn: "08:02 AM",
-    breaks: "55m",
-    punchOut: "05:00 PM",
-    status: "Normal",
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
+import { getAllAttendance } from "../../../redux/attendenceSlice";
+import { headers } from "../../../Helpers/Helper";
 
 const OverallAttendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,47 +15,84 @@ const OverallAttendance = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
 
-  // Filter data based on all criteria
-  const filteredData = useMemo(() => {
-    return attendanceData.filter((item) => {
-      // Search filter
-      const matchesSearch =
-        searchTerm === "" ||
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.department.toLowerCase().includes(searchTerm.toLowerCase());
+  const dispatch = useDispatch();
 
-      // Department filter
-      const matchesDepartment =
-        selectedDepartment === "All" || item.department === selectedDepartment;
+  const { allAttendance, isLoading, pagination } = useSelector(
+    (state) => state.attendance
+  );
 
-      // Status filter
-      const matchesStatus =
-        selectedStatus === "All" || item.status === selectedStatus;
+  console.log(allAttendance, "Real attendance data from Redux");
 
-      // Date range filter
-      let matchesDate = true;
-      if (startDate && endDate) {
-        const itemDate = new Date(item.date);
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        matchesDate = itemDate >= start && itemDate <= end;
-      } else if (startDate) {
-        const itemDate = new Date(item.date);
-        const start = new Date(startDate);
-        matchesDate = itemDate >= start;
-      } else if (endDate) {
-        const itemDate = new Date(item.date);
-        const end = new Date(endDate);
-        matchesDate = itemDate <= end;
+  // Fetch attendance data on component mount and when filters change
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      try {
+        await dispatch(getAllAttendance({
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          department: selectedDepartment !== "All" ? selectedDepartment : undefined,
+          page: 1,
+          limit: 100 // Adjust as needed
+        })).unwrap();
+      } catch (error) {
+        console.error("Failed to fetch attendance data:", error);
       }
+    };
 
-      return matchesSearch && matchesDepartment && matchesStatus && matchesDate;
-    });
-  }, [searchTerm, selectedDepartment, selectedStatus, startDate, endDate]);
+    fetchAttendanceData();
+  }, [dispatch, startDate, endDate, selectedDepartment]);
+
+
+
+  // Helper function to determine attendance status
+  const getAttendanceStatus = (record) => {
+    if (!record.punchIn && !record.punchOut) return "Absent";
+    if (!record.punchIn) return "Missed Punch In";
+    if (!record.punchOut) return "Missed Punch Out";
+    if (record.status) return record.status;
+
+    // Calculate status based on breaks
+    if (record.breaks) {
+      const breakTime = parseBreakTime(record.breaks);
+      if (breakTime > 60) return "Overbreak"; // More than 60 minutes break
+    }
+
+    return "Normal";
+  };
+
+  // Transform Redux data to match your expected format
+  const transformedAttendanceData = useMemo(() => {
+    if (!allAttendance || !Array.isArray(allAttendance)) return [];
+
+    return allAttendance.map((record, index) => ({
+      id: record._id || record.id || index,
+      name: record.userId?.name || record.employeeName || "Unknown Employee",
+      date: record.date || new Date().toISOString().split('T')[0],
+      department: record.userId?.department || record.department || "Unknown Department",
+      punchIn: record.punchIn || "N/A",
+      breaks: record.breaks || record.breakDuration || "0h",
+      punchOut: record.punchOut || "N/A",
+      status: getAttendanceStatus(record),
+      overtime: record.overtime || "0h"
+    }));
+  }, [allAttendance]);
+
+  // Helper function to parse break time
+  const parseBreakTime = (breakString) => {
+    if (!breakString) return 0;
+    const match = breakString.match(/(\d+)h\s*(\d+)m/);
+    if (match) {
+      const hours = parseInt(match[1]) || 0;
+      const minutes = parseInt(match[2]) || 0;
+      return hours * 60 + minutes;
+    }
+    return 0;
+  };
+
 
   // Get unique departments and statuses for filter options
-  const departments = ["All", ...new Set(attendanceData.map(item => item.department))];
-  const statuses = ["All", ...new Set(attendanceData.map(item => item.status))];
+  const departments = ["All", ...new Set(transformedAttendanceData.map(item => item.department))];
+  const statuses = ["All", ...new Set(transformedAttendanceData.map(item => item.status))];
 
   // Get status badge color
   const getStatusColor = (status) => {
@@ -159,6 +106,10 @@ const OverallAttendance = () => {
       case "Missed Punch In":
       case "Missed Punch Out":
         return "bg-red-100 text-red-800 border border-red-200";
+      case "Present":
+        return "bg-blue-100 text-blue-800 border border-blue-200";
+      case "Late":
+        return "bg-yellow-100 text-yellow-800 border border-yellow-200";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-200";
     }
@@ -178,12 +129,13 @@ const OverallAttendance = () => {
       "Breaks",
       "Punch Out",
       "Status",
+      "Overtime"
     ];
     const csvContent = [
       headers.join(","),
       ...filteredData.map(
         (row) =>
-          `${row.name},${row.date},${row.department},${row.punchIn},${row.breaks},${row.punchOut},${row.status}`
+          `"${row.name}","${row.date}","${row.department}","${row.punchIn}","${row.breaks}","${row.punchOut}","${row.status}","${row.overtime}"`
       ),
     ].join("\n");
 
@@ -202,6 +154,17 @@ const OverallAttendance = () => {
     setSelectedStatus("All");
     setStartDate("");
     setEndDate("");
+  };
+
+  // Refresh data
+  const refreshData = () => {
+    dispatch(getAllAttendance({
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      department: selectedDepartment !== "All" ? selectedDepartment : undefined,
+      page: 1,
+      limit: 100
+    }));
   };
 
   // Custom scrollbar CSS
@@ -232,24 +195,44 @@ const OverallAttendance = () => {
       <div className="flex justify-end items-start">
         <ExampleIosSwitch />
       </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-white">Loading attendance data...</span>
+        </div>
+      )}
+
       <div className="pt-8">
-        <AttendenceData />
+        <AttendenceData data={allAttendance} />
       </div>
+
       <div>
-        <WeeklyAttendanceTrendChart />
+        <WeeklyAttendanceTrendChart attendanceData={transformedAttendanceData} />
       </div>
+
       <div className="max-w-full pt-8 mx-auto">
         {/* Main Card */}
-        <div className="bg-[#121212] rounded-lg shadow-lg p-6">
+        <div className="bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg p-6">
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
             {/* Title */}
-            <h1 className="text-2xl font-semibold text-white">
-              Daily Time Record (DTR)
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-semibold text-white">
+                Daily Time Record (DTR)
+              </h1>
+              <button
+                onClick={refreshData}
+                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                disabled={isLoading}
+              >
+                {isLoading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
 
             {/* Right side - Search, Date and Export */}
-            <div className="flex  gap-4 w-full lg:w-auto">
+            <div className="flex gap-4 w-full lg:w-auto">
               {/* Search Bar */}
               <div className="relative w-full lg:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -259,6 +242,7 @@ const OverallAttendance = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-[var(--box-border)] text-white rounded-md text-sm"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -267,14 +251,16 @@ const OverallAttendance = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={exportToExcel}
-                    className="px-4 py-2 bg-[rgba(59,130,246,0.03)] border_gray text-white rounded-md hover:bg-green-600 transition-colors text-sm font-medium flex items-center gap-2"
+                    disabled={isLoading || allAttendance.length === 0}
+                    className="px-4 py-2 bg-[rgba(59,130,246,0.03)] border_gray text-white rounded-md hover:bg-green-600 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download size={16} />
                     Excel
                   </button>
                   <button
                     onClick={exportToCSV}
-                    className="px-4 py-2 bg-[rgba(59,130,246,0.03)] border_gray text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium flex items-center gap-2"
+                    disabled={isLoading || allAttendance.length === 0}
+                    className="px-4 py-2 bg-[rgba(59,130,246,0.03)] border_gray text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download size={16} />
                     CSV
@@ -295,10 +281,11 @@ const OverallAttendance = () => {
                 <select
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="border text-white border-gray-600 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="border text-white border-gray-600 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-[#10131f]"
+                  disabled={isLoading}
                 >
                   {departments.map((dept) => (
-                    <option key={dept} value={dept} className="bg-[#10131f]">
+                    <option key={dept} value={dept}>
                       {dept}
                     </option>
                   ))}
@@ -313,10 +300,11 @@ const OverallAttendance = () => {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="border text-white border-gray-600 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="border text-white border-gray-600 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-[#10131f]"
+                  disabled={isLoading}
                 >
                   {statuses.map((status) => (
-                    <option key={status} value={status} className="bg-[#10131f]">
+                    <option key={status} value={status}>
                       {status}
                     </option>
                   ))}
@@ -330,28 +318,32 @@ const OverallAttendance = () => {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="border border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="border border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-[#10131f]"
+                  disabled={isLoading}
                 />
                 <span className="text-white">to</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="border border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="border border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-[#10131f]"
+                  disabled={isLoading}
                 />
               </div>
 
               {/* Clear Filters Button */}
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 bg-[rgba(59,130,246,0.03)] border_gray text-white rounded transition-colors text-sm font-medium"
+                disabled={isLoading}
+                className="px-4 py-2 bg-[rgba(59,130,246,0.03)] border_gray text-white rounded transition-colors text-sm font-medium disabled:opacity-50"
               >
                 Clear Filters
               </button>
 
               {/* Results Count */}
               <div className="ml-auto text-sm text-gray-400">
-                Showing {filteredData.length} of {attendanceData.length} records
+                {isLoading ? "Loading..." : `Showing ${allAttendance.length} records`}
+                {pagination && ` (Total: ${pagination.total})`}
               </div>
             </div>
           </div>
@@ -361,31 +353,27 @@ const OverallAttendance = () => {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-[rgba(59,131,246,0.06)]">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    NAME
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    DATE
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    DEPARTMENT
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    PUNCH IN
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    BREAKS
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    PUNCH OUT
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide">
-                    STATUS
-                  </th>
+                  {headers.map((header) => (
+                    <th
+                      key={header}
+                      className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wide whitespace-nowrap"
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="bg-[rgba(59,130,246,0.03)] divide-y divide-[#9E9FA74D]">
-                {filteredData.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-8 text-center text-gray-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mb-2"></div>
+                        <div className="text-sm">Loading attendance data...</div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : allAttendance.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-8 text-center text-gray-400">
                       <div className="flex flex-col items-center justify-center">
@@ -395,36 +383,42 @@ const OverallAttendance = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((row) => (
+                  allAttendance.map((row) => (
                     <tr
                       key={row.id}
-                      className="hover:bg-[#3b83f610] transition-colors"
+                      className="hover:bg-[#3b83f610] transition-colors whitespace-nowrap"
                     >
                       <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
-                        {row.name}
+                        {row._id ? row._id.slice(0, 8) : "--"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
+                        {row.user?.FullName}
                       </td>
                       <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                        {row.date}
+                        {new Date(row.date).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                        {row.department}
+                        {row.user?.department}
                       </td>
                       <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                        {row.punchIn}
+                        {row.clockIn ? new Date(row.clockIn).toLocaleTimeString() : "--"}
                       </td>
                       <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                        {row.breaks}
+                        {row.shift}
                       </td>
                       <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                        {row.punchOut}
+                        {row.clockOut ? new Date(row.clockOut).toLocaleTimeString() : "Not Punched Out"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
+                        {row.workingHours}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-block px-4 py-1.5 rounded-md text-xs font-semibold ${getStatusColor(
-                            row.status
+                            row.alert
                           )}`}
                         >
-                          {row.status}
+                          {row.alert}
                         </span>
                       </td>
                     </tr>
@@ -437,7 +431,7 @@ const OverallAttendance = () => {
       </div>
 
       <style>{scrollbarStyles}</style>
-      <AttendanceChartMonth />
+      <AttendanceChartMonth attendanceData={transformedAttendanceData} />
     </div>
   );
 };

@@ -67,12 +67,11 @@ const Layout = () => {
     return (
         <>
             <div className="relative w-screen h-screen overflow-hidden text-white bg-black">
-                {/* Sidebar */}
                 <div
                     className="fixed top-0 left-0 h-full transition-all duration-300 z-10 flex flex-col bg-[#00010B]"
                     style={{ width: `${sidebarWidth}px` }}
                 >
-                    <div className="absolute top-2 right-2 cursor-pointer text-gray-300 hover:text-white transition z-20">
+                    <div className="absolute top-2 right-2 cursor-pointer text-[#1C2B49] transition z-20">
                         {toggle ? (
                             <ChevronsLeft size={22} onClick={handleToggle} />
                         ) : (
@@ -84,7 +83,6 @@ const Layout = () => {
                     </div>
                 </div>
 
-                {/* Main Content */}
                 <div
                     className="flex flex-col h-full transition-all duration-300"
                     style={{
@@ -92,7 +90,6 @@ const Layout = () => {
                         width: `calc(100% - ${sidebarWidth}px)`,
                     }}
                 >
-                    {/* Header */}
                     <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-black">
 
 
@@ -143,13 +140,11 @@ const Layout = () => {
                         </div>
                     </div>
 
-                    {/* Page Content */}
                     <div className="flex-1 overflow-auto px-1 min-h-0">
                         <Outlet />
                     </div>
                 </div>
 
-                {/* Light Effects in one wrapper */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                     <div className="absolute top-2/3 left-[40%] w-[600px] h-[600px] rounded-full bg-[#3B82F6] opacity-20 blur-[200px] transform -translate-x-1/2 -translate-y-1/2"></div>
                     <div className="absolute -top-[10%] -right-[5%] w-96 h-96 rounded-full bg-[#3B82F6] opacity-20 blur-[110px]"></div>

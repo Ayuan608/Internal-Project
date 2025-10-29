@@ -1,6 +1,6 @@
 import NonQuotaMembersTable from "./ui/NonQuotaMembersTable";
 
-const NonQuota = () => {
+const NonQuota = ({ department = "CSR" }) => {
   return (
     <div className="h-full  rounded-2xl p-4  border border-gray-700">
       <div className="flex justify-between items-start">
@@ -10,9 +10,9 @@ const NonQuota = () => {
             Track members who haven't met their quota targets
           </div>
         </div>
-        
+
       </div>
-      <NonQuotaMembersTable />
+      <NonQuotaMembersTable department={department} />
     </div>
   );
 };

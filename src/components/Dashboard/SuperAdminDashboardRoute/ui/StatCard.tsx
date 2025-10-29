@@ -73,7 +73,7 @@ export default function StatCard({
         </Typography>
         <Stack
           direction="column"
-          sx={{ justifyContent: "space-between", flexGrow: "1", gap: 1 }}
+          sx={{ justifyContent: "space-between", gap: 1 }}
         >
           <Stack sx={{ justifyContent: "space-between" }}>
             <Stack
@@ -100,6 +100,14 @@ export default function StatCard({
                 data: daysInWeek,
               }}
               sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                  lg: "repeat(4, 1fr)",
+                },
+                width: "300px",
                 "& path": {
                   fill: "none",
                 },
