@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { TrendingUp, TrendingDown, MessageCircle, Target, Upload, Download } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { MessageCircle, Upload, Download } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadFile, getFiles } from '../../../redux/FileUploadSlice';
 import * as XLSX from 'xlsx';
@@ -45,11 +45,11 @@ const Performance = () => {
                 // Map Excel data to required format
                 const formattedData = jsonData.map(row => {
                     const memberName = row['Member'] || row['Name'] || 'Unknown';
-                    
+
                     // Extract role - check if CSR or Trainee
-                    const role = memberName.toLowerCase().includes('csr') ? 'CSR' : 
-                                 memberName.toLowerCase().includes('trainee') ? 'Trainee' : 'Staff';
-                    
+                    const role = memberName.toLowerCase().includes('csr') ? 'CSR' :
+                        memberName.toLowerCase().includes('trainee') ? 'Trainee' : 'Staff';
+
                     return {
                         name: memberName,
                         role: role,
@@ -66,7 +66,7 @@ const Performance = () => {
                 });
 
                 setPerformanceData(formattedData);
-                
+
                 // Upload to backend
                 await dispatch(uploadFile(file)).unwrap();
             };
