@@ -243,7 +243,7 @@ function CheckReport() {
                                     {selectedReport.status === 'seen' ? (
                                         <>
                                             <Eye size={16} />
-                                            Seen by Admin
+                                            Seen by Super-Admin
                                         </>
                                     ) : (
                                         <>

@@ -179,7 +179,7 @@ const Department = () => {
         <div className="bg-[rgba(59,130,246,0.03)]  rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-2">Total Transactions</p>
+              <p className="text-gray-400 text-sm font-medium mb-2">Total Met %</p>
               <p className="text-white text-2xl font-bold">{currentData.transactions.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">

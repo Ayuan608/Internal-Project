@@ -41,7 +41,7 @@ const AttendanceRecords = () => {
         <>
             <div className="w-[calc(100vw - 240px)] bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg border_gray overflow-hidden m-2">
                 {/* Table Header */}
-                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-b border-gray-200">
+                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 ">
                     <h2 className="text-xl font-semibold text-white">Attendance Records</h2>
                 </div>
 
@@ -138,7 +138,7 @@ const AttendanceRecords = () => {
                 </div>
 
                 {/* Table Footer */}
-                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-3 border-t border-gray-200">
+                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-3    ">
                     <div className="flex justify-between items-center">
                         <div className="text-sm text-white">
                             Showing {attendanceData.length} records

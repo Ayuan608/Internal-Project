@@ -29,7 +29,7 @@ const QuotaManagement = () => {
             <span className="text-sm text-gray-500">Auto</span>
           </div>
           <div className="text-lg font-bold text-[#3B82F6]">
-            45 conversations
+            1000 conversations
           </div>
         </div>
 
@@ -40,7 +40,7 @@ const QuotaManagement = () => {
             <span className="text-sm text-gray-500">Auto</span>
           </div>
           <div className="text-lg font-bold text-[#3B82F6]">
-            60 conversations
+            1500 conversations
           </div>
         </div>
       </div>

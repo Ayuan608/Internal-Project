@@ -1,155 +1,263 @@
-import React from "react";
+import { Calendar, Users, UserCheck, UserX, Search } from "lucide-react";
+import React, { useState, useMemo } from "react";
 
+export default function AttendanceDashboard() {
+  const [searchName, setSearchName] = useState("");
 
+  // Dummy data for testing
+  const userDepartment = "Deposit";
 
-export default function RestDay() {
-  const kpis = {
-    rules_per_day: 324,
-    sla_hit_pct: 97.6,
-    rule_failures: 2,
-    avg_action_latency_ms: 420,
+  const departmentAttendance = [
+    {
+      id: 1,
+      name: "Ashish Prabhakar",
+      dateHired: "14-Feb-25",
+      department: "Deposit",
+      position: "Staff",
+      schedule: "16:00 - 04:00",
+      status: "Present",
+      pattern: [0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0],
+    },
+    {
+      id: 2,
+      name: "Lekn Raj",
+      dateHired: "7-Mar-25",
+      department: "Deposit",
+      position: "Staff",
+      schedule: "16:00 - 04:00",
+      status: "Present",
+      pattern: [1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1],
+    },
+    {
+      id: 6,
+      name: "Priya Sharma",
+      dateHired: "05-Jan-25",
+      department: "Deposit",
+      position: "Agent",
+      schedule: "16:00 - 04:00",
+      status: "Absent",
+      pattern: [0, 1, 0, 1, 3, 1, 0, 1, 3, 1, 0, 1, 0, 1, 3, 1, 0, 1, 0, 1, 3, 1, 0, 1, 0, 1, 3, 1, 0, 1, 0],
+    },
+    {
+      id: 9,
+      name: "Vikram Patel",
+      dateHired: "15-Dec-24",
+      department: "Deposit",
+      position: "Senior",
+      schedule: "16:00 - 04:00",
+      status: "Leave",
+      pattern: [0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2],
+    },
+    {
+      id: 10,
+      name: "Divya Singh",
+      dateHired: "22-Jan-25",
+      department: "Deposit",
+      position: "Agent",
+      schedule: "16:00 - 04:00",
+      status: "Present",
+      pattern: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+    },
+  ];
+
+  // Search filter
+  const filteredData = useMemo(() => {
+    return departmentAttendance.filter((emp) =>
+      emp.name.toLowerCase().includes(searchName.toLowerCase())
+    );
+  }, [searchName]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const present = filteredData.filter((e) => e.status === "Present").length;
+    const absent = filteredData.filter((e) => e.status === "Absent").length;
+    const leave = filteredData.filter((e) => e.status === "Leave").length;
+    return { present, absent, leave, total: filteredData.length };
+  }, [filteredData]);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Present":
+        return "bg-emerald-500/20 border-emerald-500 text-emerald-300";
+      case "Absent":
+        return "bg-red-500/20 border-red-500 text-red-300";
+      case "Leave":
+        return "bg-amber-500/20 border-amber-500 text-amber-300";
+      default:
+        return "bg-slate-500/20 border-slate-500 text-slate-300";
+    }
   };
 
-  const attendance = Array.from({ length: 5 }).map((_, i) => ({
-    id: i + 1,
-    headCount: i + 1,
-    dateHired: ["14-Feb-25", "7-Mar-25", "16-Nov-24", "12-Jan-25", "20-Aug-24"][i],
-    team: ["Deposit", "Deposit", "CSR", "CSR", "Withdrawal"][i],
-    position: ["Staff", "Staff", "Agent", "Senior", "Staff"][i],
-    name: ["Ashish Prabhakar", "Lekn Raj", "Chandan Aheer", "Harish Kumar", "Sukhminder Singh"][i],
-    schedule: "16:00 - 04:00",
-    remark: "12 hrs",
-    pattern: new Array(31).fill(0).map((__, idx) => {
-      const v = (i + idx) % 4; // 0=Day,1=Night,2=Rest,3=Holiday
-      return v;
-    }),
-  }));
-
-  const nonQuota = [
-    { date: "2025-10-17", name: "John Smith", role: "Agent", dept: "CSR", output: 45, target: 50 },
-    { date: "2025-10-17", name: "Sarah Johnson", role: "Agent", dept: "Withdrawal", output: 28, target: 35 },
-    { date: "2025-10-16", name: "Mike Davis", role: "Agent", dept: "Deposit", output: 38, target: 45 },
-    { date: "2025-10-16", name: "Emily Wilson", role: "Agent", dept: "CSR", output: 42, target: 50 },
-  ];
+  const getPatternColor = (p) => {
+    const colors = {
+      0: "bg-yellow-400 text-black",
+      1: "bg-green-400 text-black",
+      2: "bg-blue-400 text-white",
+      3: "bg-red-500 text-white",
+    };
+    return colors[p] || "bg-slate-400";
+  };
 
   return (
     <div className="min-h-screen  text-slate-100">
-      {/* subtle radial glow to mimic screenshot */}
+      {/* Subtle background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="w-2/3 h-2/3 mx-auto rounded-full opacity-10 blur-3xl bg-teal-500/30 mt-8" />
+        <div className="w-2/3 h-2/3 mx-auto rounded-full opacity-10 blur-3xl bg-blue-500/40 mt-12" />
       </div>
 
-      <div className="relative z-10 flex">
-
-
-        {/* Main content */}
-        <main className="flex-1 p-6 lg:pl-8">
-
-
-          {/* KPI strip */}
-          <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <MetricCard label="Rules / day" value={kpis.rules_per_day} delta="+12%" />
-            <MetricCard label="SLA Hit" value={`${kpis.sla_hit_pct}%`} delta="-0.4%" />
-            <MetricCard label="Rule Failures" value={kpis.rule_failures} delta="0" />
-            <MetricCard label="Avg Action Latency" value={`${kpis.avg_action_latency_ms} ms`} delta="-5%" />
-          </section>
-
-          {/* Attendance grid card */}
-          <section className="mb-6">
-            <div className="bg-slate-900/40 rounded-2xl p-4 backdrop-blur-sm border border-slate-800">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-md font-semibold">Schedule & Attendance</h2>
-                <div className="flex items-center gap-2">
-
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="text-xs text-slate-400">
-                      <th className="px-3 py-2 text-left">#</th>
-                      <th className="px-3 py-2 text-left">Date Hired</th>
-
-                      <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-left">Schedule</th>
-                      <th className="px-3 py-2 text-left">Remarks</th>
-                      <th className="px-3 py-2 text-left">Pattern (31 days)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendance.map((r) => (
-                      <tr key={r.id} className="odd:bg-slate-900/20">
-                        <td className="px-3 py-2 text-sm">{r.headCount}</td>
-                        <td className="px-3 py-2 text-sm">{r.dateHired}</td>
-
-                        <td className="px-3 py-2 text-sm">{r.name}</td>
-                        <td className="px-3 py-2 text-sm">{r.schedule}</td>
-                        <td className="px-3 py-2 text-sm">{r.remark}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex gap-1  w-full flex-wrap justify-between ">
-                            {r.pattern.map((p, i) => (
-                              <div
-                                key={i}
-                                className={`w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-semibold ${p === 0 ? "bg-yellow-300 text-black" : p === 1 ? "bg-green-300 text-black" : p === 2 ? "bg-sky-400 text-white" : "bg-red-600 text-white"
-                                  }`}
-                                title={`Day ${i + 1}`}>
-                                {p === 0 ? "D" : p === 1 ? "N" : p === 2 ? "RD" : "A"}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-3 text-xs text-slate-400">Legend: <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-black">D - Day</span> <span className="ml-2 px-2 py-1 rounded bg-green-300 text-black">N - Night</span> <span className="ml-2 px-2 py-1 rounded bg-sky-400 text-white">RD - Rest Day</span> <span className="ml-2 px-2 py-1 rounded bg-red-600 text-white">A - Absent</span></div>
+      <div className="relative z-10 p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">Attendance Dashboard</h1>
+              <p className="text-blue-300">Department: <span className="font-semibold text-blue-100">{userDepartment}</span></p>
             </div>
-          </section>
+            <div className="text-right text-slate-400">
+              <p className="text-sm">{new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+            </div>
+          </div>
 
-          {/* Non-Quota Dashboard */}
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-emerald-900/30 to-emerald-900/10 border border-emerald-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-emerald-500/60 transition">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-emerald-300 mb-1">Today's Present</p>
+                  <p className="text-3xl font-bold text-emerald-100">{stats.present}</p>
+                  <p className="text-xs text-emerald-400 mt-2">Out of {stats.total}</p>
+                </div>
+                <UserCheck className="w-10 h-10 text-emerald-500/60" />
+              </div>
+            </div>
 
-        </main>
-      </div>
+            <div className="bg-gradient-to-br from-red-900/30 to-red-900/10 border border-red-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-red-500/60 transition">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-300 mb-1">Today's Absent</p>
+                  <p className="text-3xl font-bold text-red-100">{stats.absent}</p>
+                  <p className="text-xs text-red-400 mt-2">Needs follow-up</p>
+                </div>
+                <UserX className="w-10 h-10 text-red-500/60" />
+              </div>
+            </div>
 
-      {/* Footer spacing */}
-      <div className="h-12" />
-    </div>
-  );
-}
+            <div className="bg-gradient-to-br from-amber-900/30 to-amber-900/10 border border-amber-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-amber-500/60 transition">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-amber-300 mb-1">Today's Leave</p>
+                  <p className="text-3xl font-bold text-amber-100">{stats.leave}</p>
+                  <p className="text-xs text-amber-400 mt-2">Approved</p>
+                </div>
+                <Calendar className="w-10 h-10 text-amber-500/60" />
+              </div>
+            </div>
 
-
-/* ---------- Small sub-components ---------- */
-function MetricCard({ label, value, delta }) {
-  return (
-    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs text-slate-400">{label}</div>
-          <div className="text-xl font-semibold mt-1">{value}</div>
+            <div className="bg-gradient-to-br from-blue-900/30 to-blue-900/10 border border-blue-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-blue-500/60 transition">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-300 mb-1">Total Staff</p>
+                  <p className="text-3xl font-bold text-blue-100">{stats.total}</p>
+                  <p className="text-xs text-blue-400 mt-2">Registered</p>
+                </div>
+                <Users className="w-10 h-10 text-blue-500/60" />
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="text-sm text-slate-300 flex items-center gap-1">
-          <svg width="48" height="28" viewBox="0 0 48 28" fill="none" aria-hidden>
-            <path d="M2 20c6-8 20-8 30 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-          </svg>
-          <div className="text-xs text-slate-400">{delta}</div>
+
+        <div className="flex justify-end mb-3">
+          <div className="flex items-center bg-slate-900/50 border border-slate-700 rounded-lg pl-4 pr-4 py-2 text-slate-100 placeholder-slate-500  focus-within:bg-slate-900/70 transition">
+            <Search className="w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search employee name..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="bg-transparent w-full rounded-lg pl-2 pr-4 py-1 text-slate-100 placeholder-slate-500 focus:outline-none transition"
+            />
+          </div>
+        </div>
+
+
+        {/* Attendance Table */}
+        <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl overflow-hidden backdrop-blur-sm">
+          <div className="p-4 border-b border-slate-700/50">
+            <h2 className="text-lg font-semibold text-white">Schedule & Attendance</h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-900/60 border-b border-slate-700/50 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left">#</th>
+                  <th className="px-4 py-3 text-left">Employee</th>
+                  <th className="px-4 py-3 text-left">Position</th>
+                  <th className="px-4 py-3 text-left">Schedule</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Pattern (31 Days)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/30">
+                {filteredData.length > 0 ? (
+                  filteredData.map((emp, idx) => (
+                    <tr key={emp.id} className="hover:bg-slate-800/40 transition">
+                      <td className="px-4 py-3 text-sm text-slate-300">{idx + 1}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="font-medium text-white">{emp.name}</div>
+                        <div className="text-xs text-slate-400">Hired: {emp.dateHired}</div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-300">{emp.position}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300">{emp.schedule}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(emp.status)}`}>
+                          {emp.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 flex-wrap max-w-full">
+                          {emp.pattern?.map((p, i) => (
+                            <div
+                              key={i}
+                              className={`w-6 h-6 rounded text-[10px] font-semibold flex items-center justify-center cursor-pointer hover:opacity-80 transition ${getPatternColor(p)}`}
+                              title={`Day ${i + 1}`}
+                            >
+                              {p === 0 ? "D" : p === 1 ? "N" : p === 2 ? "RD" : "A"}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-slate-400">
+                      No employees found matching your search
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Legend */}
+          <div className="p-4 bg-slate-900/30 border-t border-slate-700/50 flex items-center gap-4 text-xs">
+            <span className="text-slate-400">Legend:</span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-yellow-500/20 border border-yellow-500/30 text-yellow-300">
+              <span className="w-3 h-3 rounded bg-yellow-400"></span> Day
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-green-500/20 border border-green-500/30 text-green-300">
+              <span className="w-3 h-3 rounded bg-green-400"></span> Night
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-blue-500/20 border border-blue-500/30 text-blue-300">
+              <span className="w-3 h-3 rounded bg-blue-400"></span> Rest Day
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-500/20 border border-red-500/30 text-red-300">
+              <span className="w-3 h-3 rounded bg-red-500"></span> Absent
+            </span>
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function ExportButton({ format }) {
-  return (
-    <button className="px-3 py-2 rounded-md bg-slate-800/60 hover:bg-slate-800 text-sm border border-slate-700 flex items-center gap-2">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M12 3v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M21 21H3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      {format}
-    </button>
   );
 }
