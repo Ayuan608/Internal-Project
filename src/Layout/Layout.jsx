@@ -71,7 +71,7 @@ const Layout = () => {
                     className="fixed top-0 left-0 h-full transition-all duration-300 z-10 flex flex-col bg-[#00010B]"
                     style={{ width: `${sidebarWidth}px` }}
                 >
-                    <div className="absolute top-2 right-2 cursor-pointer text-[#1C2B49] transition z-20">
+                    <div className="absolute top-2 right-2 cursor-pointer text-white transition z-20">
                         {toggle ? (
                             <ChevronsLeft size={22} onClick={handleToggle} />
                         ) : (
