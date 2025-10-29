@@ -1,27 +1,40 @@
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import AttendanceChartMonth from '../SuperAdminDashboardRoute/ui/AttendanceChartMonth';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAllAttendance } from './../../../redux/attendenceSlice';
+import { useEffect, useState } from 'react';
 
 const AttendanceRecords = () => {
-    const attendanceData = [
-        {
-            date: '2025-10-18',
-            name: 'Sarah Johnson',
-            punchIn: '08:00 AM',
-            breaks: '65 min',
-            punchOut: '05:00 PM',
-            totalHours: '8.0 hrs',
-            status: 'VIOLATION'
-        },
-        {
-            date: '2025-10-18',
-            name: 'Mike Chen',
-            punchIn: '08:05 AM',
-            breaks: '45 min',
-            punchOut: '05:10 PM',
-            totalHours: '8.3 hrs',
-            status: 'NORMAL'
-        }
-    ];
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [selectedDepartment, setSelectedDepartment] = useState("All");
+    const dispatch = useDispatch();
+
+    const { allAttendance } = useSelector(
+        (state) => state.attendance
+    );
+
+    const attendanceData = allAttendance
+
+    console.log(attendanceData)
+
+    useEffect(() => {
+        const fetchAttendanceData = async () => {
+            try {
+                await dispatch(getAllAttendance({
+                    startDate: startDate || undefined,
+                    endDate: endDate || undefined,
+                    department: selectedDepartment !== "All" ? selectedDepartment : undefined,
+                    page: 1,
+                    limit: 100 // Adjust as needed
+                })).unwrap();
+            } catch (error) {
+                console.error("Failed to fetch attendance data:", error);
+            }
+        };
+
+        fetchAttendanceData();
+    }, [dispatch, startDate, endDate, selectedDepartment]);
 
     const getStatusIcon = (status) => {
         if (status === 'VIOLATION') {
@@ -61,7 +74,10 @@ const AttendanceRecords = () => {
                                     PUNCH IN
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                    BREAKS
+                                    SHIFT
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Department
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                                     PUNCH OUT
@@ -85,50 +101,56 @@ const AttendanceRecords = () => {
                                     {/* Date */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-white">
-                                            {record.date}
+                                            {new Date(record.date).toLocaleDateString()}
                                         </div>
                                     </td>
 
                                     {/* Name */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-white">
-                                            {record.name}
+                                            {record.user?.FullName}
                                         </div>
                                     </td>
 
                                     {/* Punch In */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-white font-semibold">
-                                            {record.punchIn}
+                                            {record.clockIn ? new Date(record.clockIn).toLocaleTimeString() : "Not Punched In"}
                                         </div>
                                     </td>
 
                                     {/* Breaks */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-white">
-                                            {record.breaks}
+                                            {record.shift}
+                                        </div>
+                                    </td>
+                                    {/* DEPARTMENT */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-white">
+                                            {record.user?.department}
                                         </div>
                                     </td>
 
                                     {/* Punch Out */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-white font-semibold">
-                                            {record.punchOut}
+                                            {record.clockOut ? new Date(record.clockOut).toLocaleTimeString() : "Not Punched Out"}
                                         </div>
                                     </td>
 
                                     {/* Total Hours */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-white font-semibold">
-                                            {record.totalHours}
+                                            {record.workingHours}
                                         </div>
                                     </td>
 
                                     {/* Status */}
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(record.status)}`}>
-                                            {getStatusIcon(record.status)}
-                                            {record.status}
+                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(record.alert)}`}>
+                                            {getStatusIcon(record.alert)}
+                                            {record.alert}
                                         </div>
                                     </td>
                                 </tr>

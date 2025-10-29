@@ -8,12 +8,12 @@ const Performance = () => {
     const dispatch = useDispatch();
 
     // ✅ Use departmentSheet slice instead of sheet
-    const { 
-        data: sheetData, 
-        loading: sheetLoading, 
+    const {
+        data: sheetData,
+        loading: sheetLoading,
         error: sheetError,
         department: sheetDepartment,
-        count: totalCount 
+        count: totalCount
     } = useSelector((state) => state.sheet);
 
     const { data: userData } = useSelector((state) => state.auth);
@@ -44,7 +44,7 @@ const Performance = () => {
 
             const formattedData = dataRows.map((row, index) => {
                 const memberName = row[0] || 'Unknown';
-                const role = memberName.toLowerCase().includes('csr') ? 'CSR' : 
+                const role = memberName.toLowerCase().includes('csr') ? 'CSR' :
                              memberName.toLowerCase().includes('trainee') ? 'Trainee' : 'Staff';
 
                 return {
@@ -151,6 +151,7 @@ const Performance = () => {
 
     return (
         <div className='p-4'>
+       
             {/* Filters and Actions */}
             <div className="flex justify-between items-center gap-3 mb-4">
                 <div className="flex items-center gap-3 flex-1">
@@ -275,8 +276,8 @@ const Performance = () => {
                                 <tr>
                                     <td colSpan="10" className="px-6 py-8 text-center text-gray-400">
                                         <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                        {searchTerm || startDate || endDate 
-                                            ? '🔍 No records found matching your filters.' 
+                                        {searchTerm || startDate || endDate
+                                            ? '🔍 No records found matching your filters.'
                                             : `📭 No data available for ${sheetDepartment || 'your'} department.`}
                                         {!searchTerm && !startDate && !endDate && (
                                             <p className="text-xs mt-2">Click the Refresh button to load data from Google Sheets.</p>

@@ -18,7 +18,9 @@ ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const CustomizedDataGrid: React.FC = () => {
   const dispatch = useDispatch<any>();
-  const { dashboardStats,quotaData, loading } = useSelector((state: any) => state.quota);
+  const { dashboardStats, quotaData, loading } = useSelector(
+    (state: any) => state.quota
+  );
 
   console.log(dashboardStats, "realtime stats");
 
@@ -26,7 +28,7 @@ const CustomizedDataGrid: React.FC = () => {
   const [displayData, setDisplayData] = useState({
     totalCases: 0,
     activeAgents: 0,
-    avgResponseTime: 3.2, 
+    avgResponseTime: 3.2,
     successRate: 0,
     csrQuota: { met: 0, nonMet: 100 },
     depositQuota: { met: 0, nonMet: 100 },
@@ -130,15 +132,6 @@ const CustomizedDataGrid: React.FC = () => {
   return (
     <div className="text-white mt-6">
       <div className="px-2">
-        {/* Loading Indicator */}
-        {loading && (
-          <div className="mb-4 text-center">
-            <span className="text-blue-400 text-sm animate-pulse">
-              🔄 Updating data...
-            </span>
-          </div>
-        )}
-
         {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Cases */}

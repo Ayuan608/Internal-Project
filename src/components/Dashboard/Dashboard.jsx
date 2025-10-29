@@ -17,7 +17,7 @@ export default function Dashboard() {
             <ExampleIosSwitch />
           </div>
 
-          <div className="p-2 bg-[#282e3c38] rounded-xl mb-4">
+          <div className="p-2 bg-[#282e3c38] rounded-xl mb-4 w-full">
             <TeamLeaderStats
               title="Dashboard Overview"
               SecondaryTitle="Monitor real-time metrics and performance across all departments"
