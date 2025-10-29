@@ -171,7 +171,7 @@ const OverallAttendance = () => {
       </div>
 
       <div className=" p-5 font-sans text-white">
-        <div className="max-w-[1400px] mx-auto">
+        <div className="max-w-full mx-auto">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-1">Daily Time Record (DTR)</h1>
