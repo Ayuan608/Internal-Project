@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const BASE_URL = 'http://localhost:5000/api/v1';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true, 
+  withCredentials: true,
   headers: {
-    "Content-Type": "application/json", 
+    "Content-Type": "application/json",
   },
 });
 
@@ -14,13 +14,13 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const tempToken = localStorage.getItem('tempAuthToken');
     const authToken = localStorage.getItem('token');
-    
+
     const token = tempToken || authToken;
-    
+
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {
@@ -35,9 +35,9 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       console.log("Authentication error detected");
-      
+
       const isVerifying2FA = error.config.url.includes('verify-2fa');
-      
+
       if (!isVerifying2FA) {
         localStorage.removeItem('token');
         localStorage.removeItem('data');
@@ -45,7 +45,7 @@ axiosInstance.interceptors.response.use(
         localStorage.removeItem('role');
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
