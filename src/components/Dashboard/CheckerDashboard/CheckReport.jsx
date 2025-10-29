@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle } from 'lucide-react'
+import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle, Eye } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { createReport, getReports } from '../../../redux/reportSlice';
 
 function CheckReport() {
     const dispatch = useDispatch();
     const { reportsData } = useSelector((state) => state.report);
-    console.log("report data", reportsData)
 
     const [isReportModal, setIsReportModal] = useState(false);
+    const [selectedReport, setSelectedReport] = useState(null);
+    const [timeFilter, setTimeFilter] = useState('6'); 
 
     useEffect(() => {
         dispatch(getReports());
@@ -36,7 +37,6 @@ function CheckReport() {
         const result = await dispatch(createReport(reportData));
 
         if (result.type === 'report/create/fulfilled') {
-            // Re-fetch reports so UI shows the new one immediately
             await dispatch(getReports());
 
             setFormData({
@@ -47,11 +47,9 @@ function CheckReport() {
             });
             setIsReportModal(false);
         } else {
-            // optional: show error
             alert('Failed to send report. Try again.');
         }
     };
-
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -61,52 +59,97 @@ function CheckReport() {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US');
+        return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
     };
 
     const formatTime = (dateString) => {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     };
 
+    const formatFullDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    // Filter based on selected time period
+    const getFilteredDate = () => {
+        const today = new Date();
+        const filterDate = new Date();
+        filterDate.setMonth(filterDate.getMonth() - parseInt(timeFilter));
+        return filterDate;
+    };
+
+    const filteredReports = reportsData?.filter(report => {
+        const reportDate = new Date(report.date || report.createdAt);
+        return reportDate >= getFilteredDate();
+    }) || [];
+
     return (
         <>
             <div className='min-h-[92.7vh] pt-5 flex flex-col gap-6 text-white px-4'>
+                {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-2">Daily Reports</h1>
                         <p className="text-gray-400">Streamline your workflow by sending and tracking daily reports to ensure consistent team performance.</p>
                     </div>
-                    <button
-                        onClick={() => setIsReportModal(true)}
-                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
-                    >
-                        <FileText size={20} />
-                        Add Report
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <select
+                                value={timeFilter}
+                                onChange={(e) => setTimeFilter(e.target.value)}
+                                className="bg-emerald-600/15 border border-emerald-500/30 rounded-lg pl-4 pr-10 py-3.5 text-emerald-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none"
+                            >
+                                <option value="1" className="bg-gray-800 text-white">Last Month Data</option>
+                                <option value="2" className="bg-gray-800 text-white">Last 2 Months Data</option>
+                                <option value="6" className="bg-gray-800 text-white">Last 6 Months Data</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsReportModal(true)}
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
+                        >
+                            <FileText size={20} />
+                            Add Report
+                        </button>
+                    </div>
                 </div>
 
                 {/* Reports List */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {reportsData.length === 0 ? (
+                    {filteredReports.length === 0 ? (
                         <div className="col-span-3 bg-gray-900/50 rounded-xl p-12 text-center border border-gray-800">
                             <FileText size={48} className="mx-auto mb-4 text-gray-600" />
-                            <p className="text-gray-400 text-lg">No reports sent yet</p>
+                            <p className="text-gray-400 text-lg">No reports found for the selected time period</p>
                         </div>
                     ) : (
-                        reportsData.map((report) => (
-                            <div
-                                key={report._id}
-                                className="bg-gray-900/60 backdrop-blur-md border border-gray-800
-                 hover:shadow-xl 
-                rounded-xl p-6 transition-all duration-300"
-                            >
-
-                                {/* Header */}
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex  justify-between gap-3">
-                                        <div>
+                        filteredReports.map((report) => {
+                            const isSeen = report.status === "seen";
+                            return (
+                                <div
+                                    key={report._id}
+                                    onClick={() => setSelectedReport(report)}
+                                    className="bg-gray-900/60 backdrop-blur-md border border-gray-800 hover:shadow-xl rounded-xl p-6 transition-all duration-300 cursor-pointer"
+                                >
+                                    {/* Header */}
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex-1">
                                             <h3 className="font-semibold text-white text-base">
                                                 {report.createdBy?.FullName || ""}
                                             </h3>
@@ -125,46 +168,146 @@ function CheckReport() {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="mt-4 flex justify-end">
-                                            <span className="text-xs flex items-center gap-1 bg-green-500/10 
-                                 border border-green-500/20 text-green-400 px-3 py-1.5 rounded-full">
+                                        <div>
+                                            <span className={`text-xs flex items-center gap-1 px-3 py-1.5 rounded-full ${
+                                                isSeen
+                                                    ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                                    : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
+                                            }`}>
                                                 <CheckCircle size={12} />
-                                                Sent
+                                                {isSeen ? 'Seen' : 'Sent'}
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* Purpose Tag */}
+                                    <span className="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1 rounded-full inline-block mb-3">
+                                        {report.purpose}
+                                    </span>
+
+                                    {/* Details */}
+                                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-6 whitespace-pre-line">
+                                        {report.details}
+                                    </p>
+
+                                    {/* File */}
+                                    {report.file && (
+                                        <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50 mt-4">
+                                            <Paperclip size={14} />
+                                            <span>Attachment: {report.file}</span>
+                                        </div>
+                                    )}
                                 </div>
-
-                                {/* Purpose Tag */}
-                                <span className="text-xs bg-blue-500/10 border border-blue-500/20 
-                text-blue-400 px-3 py-1 rounded-full inline-block mb-3">
-                                    {report.purpose}
-                                </span>
-
-                                {/* Details */}
-                                <p className="text-gray-300 text-sm leading-relaxed line-clamp-6 whitespace-pre-line">
-                                    {report.details}
-                                </p>
-
-                                {/* File */}
-                                {report.file && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-800/40 
-                        px-3 py-2 rounded-lg border border-gray-700/50 mt-4">
-                                        <Paperclip size={14} />
-                                        <span>Attachment: {report.file}</span>
-                                    </div>
-                                )}
-
-                                {/* Status */}
-
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
-
             </div>
 
-            {/* Modal */}
+            {/* Detail Popup Modal */}
+            {selectedReport && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-900/50 backdrop-blur-lg rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-800">
+                        {/* Modal Header */}
+                        <div className="sticky top-0 bg-slate-900/50 border-b border-gray-800 p-6 flex justify-between items-start">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-blue-600 rounded-full p-3">
+                                    <User size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white capitalize">
+                                        {selectedReport.createdBy?.FullName || "Unknown User"}
+                                    </h2>
+                                    <p className="text-gray-400">
+                                        {selectedReport.createdBy?.role || "Team Member"}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedReport(null)}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-6">
+                            {/* Status and Purpose */}
+                            <div className="flex gap-3 flex-wrap">
+                                <span className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+                                    selectedReport.status === 'seen'
+                                        ? 'bg-green-600/20 text-green-400'
+                                        : 'bg-yellow-600/20 text-yellow-400'
+                                }`}>
+                                    {selectedReport.status === 'seen' ? (
+                                        <>
+                                            <Eye size={16} />
+                                            Seen by Admin
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle size={16} />
+                                            Sent
+                                        </>
+                                    )}
+                                </span>
+                                <span className="bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg text-sm font-medium">
+                                    {selectedReport.purpose || 'General Report'}
+                                </span>
+                            </div>
+
+                            {/* Date and Time */}
+                            <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
+                                <h3 className="text-sm font-semibold text-gray-400 mb-3">Date & Time Information</h3>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-white">
+                                        <Calendar size={18} className="text-blue-400" />
+                                        <span className="text-sm">Report Date: {formatDate(selectedReport.date || selectedReport.createdAt)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-white">
+                                        <Clock size={18} className="text-blue-400" />
+                                        <span className="text-sm">Created: {formatFullDateTime(selectedReport.createdAt)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Report Details */}
+                            <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
+                                <h3 className="text-sm font-semibold text-gray-400 mb-3">Report Details</h3>
+                                <div className="max-h-96 overflow-y-auto">
+                                    <p className="text-white whitespace-pre-line leading-relaxed">
+                                        {selectedReport.details}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* File Attachment */}
+                            {selectedReport.file && (
+                                <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
+                                    <h3 className="text-sm font-semibold text-gray-400 mb-3">Attachment</h3>
+                                    <div className="flex items-center gap-2 text-white">
+                                        <Paperclip size={18} className="text-blue-400" />
+                                        <span className="text-sm">{selectedReport.file}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Close Button */}
+                            <div className="flex justify-end pt-4 border-t border-gray-700">
+                                <button
+                                    onClick={() => setSelectedReport(null)}
+                                    className="px-6 py-3 rounded-lg font-medium bg-gray-700 hover:bg-gray-600 text-white transition-all"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Report Modal */}
             {isReportModal && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4'>
                     <div className='bg-gray-900 text-white rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-800 max-h-[90vh] overflow-y-auto'>

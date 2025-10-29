@@ -85,21 +85,18 @@ function UserMenu({ openUser, userData }) {
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Department -</span>
-          <span className="font-medium">CSR</span>
+          <span className="font-medium">{userData?.department}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Shift -</span>
-          <span className="font-medium">Morning</span>
+          <span className="font-medium">{userData?.Shift}</span>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-gray-400">Status -</span>
-          <select className="bg-[#2a2b31] text-white rounded-md px-2 py-1 text-sm">
-            <option>Active</option>
-            <option>Away</option>
-            <option>Busy</option>
-          </select>
+          <span className="font-medium capitalize">{userData?.status}</span>
         </div>
+
       </div>
 
       <div className="border-t border-[#2e2f35] my-3"></div>

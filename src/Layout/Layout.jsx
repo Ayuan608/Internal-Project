@@ -14,9 +14,8 @@ const Layout = () => {
     const navigate = useNavigate()
     const menuRef = useRef(null);
     const [toggle, setToggle] = useState(true);
-    const [activeTab, setActiveTab] = useState("CSR");
     const [isOpen, setIsOpen] = useState(false);
-    const { role } = useSelector((state) => state.auth);
+    const [dateTime, setDateTime] = useState("");
     const userData = useSelector((state) => state?.auth?.data);
     const [isBindModalOpen, setBindModalOpen] = useState(false);
     const [open, setOpen] = useState(false);
@@ -24,6 +23,19 @@ const Layout = () => {
     const handleToggle = () => {
         setToggle(!toggle);
     };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+
+            const date = now.toLocaleDateString("en-GB");
+            const time = now.toLocaleTimeString();
+
+            setDateTime(`${date} - ${time}`);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
 
 
 
@@ -82,13 +94,11 @@ const Layout = () => {
                 >
                     {/* Header */}
                     <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-black">
-                        {role == "Admin" && role == "Super-Admin" && (
-                            <h1 className="text-sm font-semibold text-white">
-                                CRM Dashboard - Contacts & Customer Management
-                            </h1>
-                        )}
+
+
 
                         <div className="flex items-center gap-4 absolute right-0">
+                            <span className="whitespace-nowrap">{dateTime}</span>
                             <NotificationPopup />
                             <RecentAnnoucement />
                             <div className="flex items-center gap-3" ref={menuRef}>

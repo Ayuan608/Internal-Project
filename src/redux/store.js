@@ -5,6 +5,8 @@ import notificationSliceReducer from './NotificationSlice'
 import statSliceReducer from './statSlice'
 import quotaSliceReducer from './QuotaSlice'
 import reportSliceReducer from './reportSlice'
+import fileSliceReducer from './FileUploadSlice'
+import sheetSliceReducer  from './sheetSlice'
 import announcementSliceReducer from './announcementSlice'
 const store = configureStore({
     reducer: {
@@ -14,6 +16,8 @@ const store = configureStore({
         quota: quotaSliceReducer,
         report: reportSliceReducer,
         stat: statSliceReducer,
+        file: fileSliceReducer,
+        sheet:sheetSliceReducer,
         announcements: announcementSliceReducer
     },
     devtools: true
