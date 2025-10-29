@@ -500,17 +500,7 @@ export const overallAttendance = {
 };
 
 
-export const attendanceData = [
-  { id: 1, name: 'Daryl Carbonado', date: '2025-10-17', department: 'CSR', punchIn: '08:00 AM', breaks: '1h 15m', punchOut: '05:00 PM', overtime: '0h', status: 'Overbreak' },
-  { id: 2, name: 'Ayun Daef', date: '2025-10-17', department: 'Deposit', punchIn: '06:05 AM', breaks: '1h 00m', punchOut: '05:02 PM', overtime: '2h 57m', status: 'Normal' },
-  { id: 3, name: 'Ashish Prabhakar', date: '2025-10-17', department: 'Withdrawal', punchIn: '08:00 AM', breaks: '1h 00m', punchOut: '--', overtime: '0h', status: 'Missed Punch Out' },
-  { id: 4, name: 'David Kumar', date: '2025-10-17', department: 'CSR', punchIn: '--', breaks: '--', punchOut: '--', overtime: '0h', status: 'Absent' },
-  { id: 5, name: 'David Chen', date: '2025-10-17', department: 'Deposit', punchIn: '07:58 AM', breaks: '1h 00m', punchOut: '05:00 PM', overtime: '1h 02m', status: 'Normal' },
-  { id: 6, name: 'Madhu Kumari', date: '2025-10-17', department: 'CSR', punchIn: '--', breaks: '1h 00m', punchOut: '05:03 PM', overtime: '0h', status: 'Missed Punch In' },
-  { id: 7, name: 'Khushi Kumari', date: '2025-10-17', department: 'Withdrawal', punchIn: '08:15 AM', breaks: '1h 30m', punchOut: '05:15 PM', overtime: '15m', status: 'Overbreak' },
-  { id: 8, name: 'Lekh Raj', date: '2025-10-17', department: 'CSR', punchIn: '08:00 AM', breaks: '1h 00m', punchOut: '05:00 PM', overtime: '0h', status: 'Normal' },
-  { id: 9, name: 'Chandan Aheer', date: '2025-10-17', department: 'Deposit', punchIn: '08:02 AM', breaks: '55m', punchOut: '05:00 PM', overtime: '0h', status: 'Normal' },
-];
+
 // Schedule data for the bottom table
 export const scheduleData = [
   {
