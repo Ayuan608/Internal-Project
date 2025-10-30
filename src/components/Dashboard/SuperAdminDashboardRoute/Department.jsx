@@ -255,8 +255,8 @@ const Department = () => {
       </div >
 
       {/* Dual Charts - Centered */}
-      <div div className="flex flex-col md:flex-row gap-6 mt-6 rounded-lg" >
-        <div className="rounded-xl shadow-xl border border-gray-700 w-full bg-black">
+      <div div className="flex  gap-6 mt-6 rounded-lg" >
+        <div className="rounded-xl shadow-xl bg-slate-900/40 border-slate-800 border w-1/3">
           <div className="relative w-80 h-80 mx-auto flex items-center justify-center p-4">
             {/* Donut Chart */}
             <Doughnut data={currentData.chartData} options={chartOptions} />
@@ -271,7 +271,7 @@ const Department = () => {
           </div>
         </div>
 
-        <div>
+        <div className="bg-slate-900/40 border-slate-800 border rounded-xl w-2/3">
           <NonQuota department={activeTab} />
         </div>
       </div >

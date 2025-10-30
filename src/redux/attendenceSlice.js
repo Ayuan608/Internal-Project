@@ -8,6 +8,9 @@ const initialState = {
   todayAttendance: null,
   stats: null,
   pagination: null,
+  departmentAttendance: [],
+  pagination: null,
+  departmentPagination: null,
 };
 
 // Punch In
@@ -120,6 +123,44 @@ export const getAttendanceStats = createAsyncThunk(
   }
 );
 
+// Get Attendance by Department
+export const getAttendanceByDepartment = createAsyncThunk(
+  "attendance/getAttendanceByDepartment",
+  async (
+    { department, startDate, endDate, page, limit },
+    { rejectWithValue }
+  ) => {
+    try {
+      const params = new URLSearchParams();
+      if (department) params.append("department", department);
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      if (page) params.append("page", page);
+      if (limit) params.append("limit", limit);
+
+      const response = await axiosInstance.get(
+        `/attendance/department?${params.toString()}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Get Department Wise Users (for department head/manager)
+export const getDepartmentWiseUsers = createAsyncThunk(
+  "attendance/getDepartmentWiseUsers",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/attendance/get-department-wise");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const attendanceSlice = createSlice({
   name: "attendance",
   initialState,
@@ -133,9 +174,15 @@ const attendanceSlice = createSlice({
     clearStats: (state) => {
       state.stats = null;
     },
+    clearDepartmentAttendance: (state) => {
+      state.departmentAttendance = [];
+      state.departmentPagination = null;
+    },
   },
   extraReducers: (builder) => {
     builder
+      // ... your existing cases (punchIn, punchOut, getUserAttendance, etc.)
+
       // Punch In
       .addCase(punchIn.fulfilled, (state, action) => {
         state.attendance = action.payload.attendance;
@@ -163,11 +210,26 @@ const attendanceSlice = createSlice({
       // Get Attendance Stats
       .addCase(getAttendanceStats.fulfilled, (state, action) => {
         state.stats = action.payload.stats;
-      });
+      })
+      // Get Attendance by Department
+      .addCase(getAttendanceByDepartment.fulfilled, (state, action) => {
+        state.departmentAttendance = action.payload.attendance;
+        state.departmentPagination = action.payload.pagination;
+      })
+      // In your attendanceSlice.js, update the extraReducers for getDepartmentWiseUsers
+      .addCase(getDepartmentWiseUsers.fulfilled, (state, action) => {
+        state.departmentAttendance = action.payload.users;
+        state.department = action.payload.department;
+        state.departmentCount = action.payload.count;
+      })
   },
 });
 
-export const { clearAttendance, clearTodayAttendance, clearStats } =
-  attendanceSlice.actions;
+export const {
+  clearAttendance,
+  clearTodayAttendance,
+  clearStats,
+  clearDepartmentAttendance
+} = attendanceSlice.actions;
 
 export default attendanceSlice.reducer;
