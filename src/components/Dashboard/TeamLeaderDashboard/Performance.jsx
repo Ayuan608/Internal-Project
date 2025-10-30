@@ -56,6 +56,78 @@ const Performance = () => {
         setEndDate('');
     };
 
+    // Function to get cell color based on column header and value
+    const getCellColor = (header, value) => {
+        const headerLower = header.toLowerCase();
+
+        console.log(headerLower)
+
+
+        // For "Completed" column - check if >= 530
+        if (headerLower === 'completed convo') {
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                return numValue >= 530 ? 'text-green-400' : 'text-orange-400';
+            }
+        }
+
+        if (headerLower === 'online time') {
+            // Handle both "10:15", "09:45", etc.
+            if (typeof value === 'string' && value.includes(':')) {
+                const [hoursStr, minutesStr] = value.split(':');
+                const hours = parseInt(hoursStr, 10);
+                const minutes = parseInt(minutesStr, 10);
+
+                // Convert time into minutes from midnight for easy comparison
+                const totalMinutes = hours * 60 + minutes;
+
+                // 10:30 AM = 630 minutes after midnight
+                const cutoff = 10 * 60 + 30;
+
+                return totalMinutes >= cutoff ? 'text-green-400' : 'text-red-400';
+            }
+        }
+
+
+        // For "Online Time" column - match with legend colors
+        if (headerLower === 'online time' || headerLower.includes('online')) {
+            const timeStr = String(value).toLowerCase();
+
+            // Detect color keywords in the value
+            if (timeStr.includes('green') || timeStr.includes('reached')) {
+                return 'text-green-400';
+            }
+            if (timeStr.includes('red') || timeStr.includes('failed')) {
+                return 'text-red-400';
+            }
+            if (timeStr.includes('yellow') || timeStr.includes('half')) {
+                return 'text-yellow-400';
+            }
+            if (timeStr.includes('cyan') || timeStr.includes('zoho')) {
+                return 'text-cyan-400';
+            }
+        }
+
+        // For "FRT" column
+        if (headerLower === 'frt') {
+            return 'text-green-400';
+        }
+
+        // For "Positive %" column
+        if (headerLower.includes('positive')) {
+            return 'text-green-400';
+        }
+
+        // For "Negatives" column
+        if (headerLower.includes('negative')) {
+            return 'text-red-400';
+        }
+
+
+
+        return 'text-white';
+    };
+
     return (
         <div className="p-4">
             {/* Filters & Actions */}
@@ -105,7 +177,7 @@ const Performance = () => {
                     <button
                         onClick={handleExport}
                         disabled={filteredRows.length === 0}
-                        className="bg-green-500 hover:bg-green-600 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
+                        className="bg-emerald-600/15 border border-emerald-500/30 rounded-lg pl-4 pr-10 py-3.5 text-emerald-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none flex gap-1 items-center"
                     >
                         <Download className="w-4 h-4" />
                         Export
@@ -113,7 +185,7 @@ const Performance = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={loading}
-                        className="bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
+                        className="bg-purple-600/15 border border-purple-500/30 rounded-lg pl-4 pr-10 py-3.5 text-purple-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none flex gap-1 items-center"
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
@@ -146,11 +218,11 @@ const Performance = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-white">
+                    <table className="w-full text-sm">
                         <thead className="bg-[rgba(59,130,246,0.05)] whitespace-nowrap border-b border-gray-700">
                             <tr>
                                 {headers.map((header, index) => (
-                                    <th key={index} className="px-6 py-4 text-left font-semibold uppercase">
+                                    <th key={index} className="px-6 py-4 text-left font-semibold uppercase text-white">
                                         {header}
                                     </th>
                                 ))}
@@ -178,7 +250,10 @@ const Performance = () => {
                                         className="border-b border-gray-800 hover:bg-[rgba(59,130,246,0.05)] transition-colors"
                                     >
                                         {row.map((cell, j) => (
-                                            <td key={j} className="px-6 py-4 whitespace-nowrap text-center">
+                                            <td
+                                                key={j}
+                                                className={`px-6 py-4 whitespace-nowrap text-center ${getCellColor(headers[j], cell)}`}
+                                            >
                                                 {cell || '-'}
                                             </td>
                                         ))}
@@ -189,31 +264,34 @@ const Performance = () => {
                     </table>
                 </div>
 
-                <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700 text-sm text-gray-400 flex justify-between">
-                    <span>
+                <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
+                    <span className="text-gray-400">
                         Showing {filteredRows.length} of {data.length} records
                     </span>
-                    <div className="mb-4 flex flex-wrap gap-3 items-center text-sm">
-                        <span className="text-gray-400 font-semibold">Color Legend:</span>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-green-500 rounded"></div>
-                            <span className="text-white">Reached Quota</span>
+                    {   department === "CSR"&& (
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <span className="text-gray-400 font-semibold">Color Legend:</span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-green-500 rounded"></div>
+                                <span className="text-green-400">Reached Quota</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-red-500 rounded"></div>
+                                <span className="text-red-400">Failed to Reach Quota</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                                <span className="text-yellow-400">Half Data / No Data</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-cyan-400 rounded"></div>
+                                <span className="text-cyan-400">Assigned in Zoho</span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-red-500 rounded"></div>
-                            <span className="text-white">Failed to Reach Quota</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                            <span className="text-white">Half Data / No Data</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-cyan-400 rounded"></div>
-                            <span className="text-white">Assigned in Zoho</span>
-                        </div>
-                    </div>
-                    {department && <span className="text-blue-400">{department} Department</span>}
+                    )}
 
+
+                    {department && <span className="text-blue-400">{department} Department</span>}
                 </div>
             </div>
         </div>
