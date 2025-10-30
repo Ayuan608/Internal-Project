@@ -12,17 +12,26 @@ import {
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
 import { CheckCircle, Clock, FileText, Users } from "lucide-react";
 import { getDashboardStats } from "../../../../../redux/QuotaSlice";
+import { fetchCombinedDepartmentsData } from "../../../../../redux/combinedQuotaSlice";
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const CustomizedDataGrid: React.FC = () => {
   const dispatch = useDispatch<any>();
-  const { dashboardStats, quotaData, loading } = useSelector(
+  const { dashboardStats, lastUpdated } = useSelector(
     (state: any) => state.quota
   );
 
-  console.log(dashboardStats, "realtime stats");
+  const { data, error, count } = useSelector(
+    (state: any) => state.combinedQuota
+  );
+
+  console.log(data, "helo");
+
+  useEffect(() => {
+    dispatch(fetchCombinedDepartmentsData());
+  }, [dispatch]);
 
   // Local state for display (with default values)
   const [displayData, setDisplayData] = useState({
@@ -37,16 +46,7 @@ const CustomizedDataGrid: React.FC = () => {
 
   // Fetch data on mount and set up polling
   useEffect(() => {
-    // Initial fetch
     dispatch(getDashboardStats());
-    dispatch(getDashboardStats());
-
-    // Poll every 5 seconds for real-time updates
-    const interval = setInterval(() => {
-      dispatch(getDashboardStats());
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, [dispatch]);
 
   // Update display data when dashboardStats changes
@@ -290,7 +290,10 @@ const CustomizedDataGrid: React.FC = () => {
 
         {/* Last Updated */}
         <div className="text-center mt-8 text-gray-500 text-sm">
-          Last updated: {new Date().toLocaleTimeString()}
+          Last updated:{" "}
+          {lastUpdated
+            ? new Date(lastUpdated).toLocaleTimeString()
+            : new Date().toLocaleTimeString()}
         </div>
       </div>
     </div>
