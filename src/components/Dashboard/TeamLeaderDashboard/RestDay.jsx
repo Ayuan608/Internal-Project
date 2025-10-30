@@ -1,74 +1,48 @@
 import { Calendar, Users, UserCheck, UserX, Search } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getDepartmentWiseUsers } from './../../../redux/attendenceSlice';
 
 export default function AttendanceDashboard() {
   const [searchName, setSearchName] = useState("");
 
-  // Dummy data for testing
-  const userDepartment = "Deposit";
+  const dispatch = useDispatch();
 
-  const departmentAttendance = [
-    {
-      id: 1,
-      name: "Ashish Prabhakar",
-      dateHired: "14-Feb-25",
-      department: "Deposit",
-      position: "Staff",
-      schedule: "16:00 - 04:00",
-      status: "Present",
-      pattern: [0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 0, 1, 0],
-    },
-    {
-      id: 2,
-      name: "Lekn Raj",
-      dateHired: "7-Mar-25",
-      department: "Deposit",
-      position: "Staff",
-      schedule: "16:00 - 04:00",
-      status: "Present",
-      pattern: [1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1],
-    },
-    {
-      id: 6,
-      name: "Priya Sharma",
-      dateHired: "05-Jan-25",
-      department: "Deposit",
-      position: "Agent",
-      schedule: "16:00 - 04:00",
-      status: "Absent",
-      pattern: [0, 1, 0, 1, 3, 1, 0, 1, 3, 1, 0, 1, 0, 1, 3, 1, 0, 1, 0, 1, 3, 1, 0, 1, 0, 1, 3, 1, 0, 1, 0],
-    },
-    {
-      id: 9,
-      name: "Vikram Patel",
-      dateHired: "15-Dec-24",
-      department: "Deposit",
-      position: "Senior",
-      schedule: "16:00 - 04:00",
-      status: "Leave",
-      pattern: [0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2],
-    },
-    {
-      id: 10,
-      name: "Divya Singh",
-      dateHired: "22-Jan-25",
-      department: "Deposit",
-      position: "Agent",
-      schedule: "16:00 - 04:00",
-      status: "Present",
-      pattern: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    },
-  ];
+  const { departmentAttendance, department } = useSelector(
+    (state) => state.attendance
+  );
+
+  // Fetch department data on component mount
+  useEffect(() => {
+    const fetchDepartmentData = async () => {
+      try {
+        await dispatch(getDepartmentWiseUsers()).unwrap();
+      } catch (error) {
+        console.error("Failed to fetch department data:", error);
+      }
+    };
+
+    fetchDepartmentData();
+  }, [dispatch]);
 
   // Search filter
   const filteredData = useMemo(() => {
+    if (!departmentAttendance || !Array.isArray(departmentAttendance)) {
+      return [];
+    }
+
     return departmentAttendance.filter((emp) =>
-      emp.name.toLowerCase().includes(searchName.toLowerCase())
+      emp.FullName?.toLowerCase().includes(searchName.toLowerCase()) ||
+      emp.username?.toLowerCase().includes(searchName.toLowerCase())
     );
-  }, [searchName]);
+  }, [departmentAttendance, searchName]);
+
 
   // Calculate stats
   const stats = useMemo(() => {
+    if (!filteredData || !Array.isArray(filteredData)) {
+      return { present: 0, absent: 0, leave: 0, total: 0 };
+    }
     const present = filteredData.filter((e) => e.status === "Present").length;
     const absent = filteredData.filter((e) => e.status === "Absent").length;
     const leave = filteredData.filter((e) => e.status === "Leave").length;
@@ -97,6 +71,10 @@ export default function AttendanceDashboard() {
     };
     return colors[p] || "bg-slate-400";
   };
+
+
+
+  const userDepartment = department || "Your Department";
 
   return (
     <div className="min-h-screen  text-slate-100">
@@ -166,6 +144,7 @@ export default function AttendanceDashboard() {
           </div>
         </div>
 
+        {/* Search Bar */}
         <div className="flex justify-end mb-3">
           <div className="flex items-center bg-slate-900/50 border border-slate-700 rounded-lg pl-4 pr-4 py-2 text-slate-100 placeholder-slate-500  focus-within:bg-slate-900/70 transition">
             <Search className="w-5 h-5 text-slate-400" />
@@ -179,7 +158,6 @@ export default function AttendanceDashboard() {
           </div>
         </div>
 
-
         {/* Attendance Table */}
         <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl overflow-hidden backdrop-blur-sm">
           <div className="p-4 border-b border-slate-700/50">
@@ -190,10 +168,10 @@ export default function AttendanceDashboard() {
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-900/60 border-b border-slate-700/50 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="px-4 py-3 text-left">#</th>
+                  <th className="px-4 py-3 text-left">User Id</th>
                   <th className="px-4 py-3 text-left">Employee</th>
-                  <th className="px-4 py-3 text-left">Position</th>
                   <th className="px-4 py-3 text-left">Schedule</th>
+                  <th className="px-4 py-3 text-left">Shift</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-left">Pattern (31 Days)</th>
                 </tr>
@@ -201,22 +179,21 @@ export default function AttendanceDashboard() {
               <tbody className="divide-y divide-slate-700/30">
                 {filteredData.length > 0 ? (
                   filteredData.map((emp, idx) => (
-                    <tr key={emp.id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-4 py-3 text-sm text-slate-300">{idx + 1}</td>
+                    <tr key={emp.id} className="hover:bg-slate-800/40 transition whitespace-nowrap">
+                      <td className="px-4 py-3 text-sm text-slate-300">  {emp._id ? emp._id.slice(0, 8) : 'N/A'}</td>
                       <td className="px-4 py-3 text-sm">
-                        <div className="font-medium text-white">{emp.name}</div>
-                        <div className="text-xs text-slate-400">Hired: {emp.dateHired}</div>
+                        <div className="font-medium text-white">{emp.FullName}</div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{emp.position}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{emp.schedule}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300">{emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString() : 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300">{emp.Shift}</td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(emp.status)}`}>
                           {emp.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1 flex-wrap max-w-full">
-                          {emp.pattern?.map((p, i) => (
+                        <div className="flex gap-1 max-w-full">
+                          {(emp.pattern || []).map((p, i) => (
                             <div
                               key={i}
                               className={`w-6 h-6 rounded text-[10px] font-semibold flex items-center justify-center cursor-pointer hover:opacity-80 transition ${getPatternColor(p)}`}
@@ -227,12 +204,15 @@ export default function AttendanceDashboard() {
                           ))}
                         </div>
                       </td>
+
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td colSpan="6" className="px-4 py-8 text-center text-slate-400">
-                      No employees found matching your search
+                      {departmentAttendance && departmentAttendance.length === 0
+                        ? "No employees found in your department"
+                        : "No employees found matching your search"}
                     </td>
                   </tr>
                 )}
@@ -240,7 +220,6 @@ export default function AttendanceDashboard() {
             </table>
           </div>
 
-          {/* Legend */}
           <div className="p-4 bg-slate-900/30 border-t border-slate-700/50 flex items-center gap-4 text-xs">
             <span className="text-slate-400">Legend:</span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-yellow-500/20 border border-yellow-500/30 text-yellow-300">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 const QuotaManagement = () => {
-  const [currentValue, setCurrentValue] = useState(45);
+  const [currentValue, setCurrentValue] = useState(1000);
   const minValue = 1000;
   const maxValue = 2000;
 
