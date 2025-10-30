@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle, Eye } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
-import { createReport, getAllReports } from '../../../redux/reportSlice';
+import { createReport, getReports } from '../../../redux/reportSlice';
 
-function CheckReport() {
+function UserReport() {
     const dispatch = useDispatch();
-    const { allReports } = useSelector((state) => state.report);
-    console.log("report data user", allReports)
+    const { reportsData } = useSelector((state) => state.report);
+    console.log("report data user", reportsData)
     const [isReportModal, setIsReportModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [timeFilter, setTimeFilter] = useState('6');
 
     useEffect(() => {
-        dispatch(getAllReports());
+        dispatch(getReports());
     }, [dispatch]);
 
     const [formData, setFormData] = useState({
@@ -90,7 +90,7 @@ function CheckReport() {
         return filterDate;
     };
 
-    const filteredReports = allReports?.filter(report => {
+    const filteredReports = reportsData?.filter(report => {
         const reportDate = new Date(report.date || report.createdAt);
         return reportDate >= getFilteredDate();
     }) || [];
@@ -443,4 +443,4 @@ Example:
     )
 }
 
-export default CheckReport
+export default UserReport

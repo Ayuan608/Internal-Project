@@ -151,6 +151,20 @@ export const getAllUsers = createAsyncThunk(
     }
   }
 );
+export const getDepartmentUsers = createAsyncThunk(
+  "/user/getDepartmentUsers",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/user/departmentwise");
+      return response.data.users;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch department users"
+      );
+    }
+  }
+);
+
 // function to change user password
 export const changePassword = createAsyncThunk(
   "/auth/changePassword",
@@ -346,10 +360,15 @@ const authSlice = createSlice({
         state.data = action?.payload?.user;
         state.role = action?.payload?.user?.role;
       })
-      .addCase(updateUserRole.fulfilled,(state,action)=>{
-        state.status='succeeded',
-        state.auth=action.payload;
+      .addCase(updateUserRole.fulfilled, (state, action) => {
+        state.status = 'succeeded',
+          state.auth = action.payload;
       })
+      .addCase(getDepartmentUsers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.users = action.payload;
+      })
+
       .addCase(getAllUsers.fulfilled, (state, action) => {
         state.loading = false;
         state.users = action.payload;

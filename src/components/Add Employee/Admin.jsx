@@ -102,7 +102,7 @@ function Admin() {
   // Calculate statistics
   const statistics = useMemo(() => {
     const totalUsers = filteredUsers.length;
-    const activeUsers = filteredUsers.filter(user => user.status === "active").length;
+    const activeUsers = filteredUsers.filter(user => user?.status === "active").length;
 
     // Role distribution
     const roleCount = filteredUsers.reduce((acc, user) => {

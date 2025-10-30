@@ -27,7 +27,8 @@ const CustomizedDataGrid: React.FC = () => {
     (state: any) => state.combinedQuota
   );
 
-  console.log(data, "helo");
+
+  console.log(data,"helo")
 
   useEffect(() => {
     dispatch(fetchCombinedDepartmentsData());
