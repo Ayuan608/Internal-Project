@@ -76,27 +76,9 @@ const StoragePage = () => {
                 icon: <InsertDriveFile />,
                 growth: '+12%'
             },
-            {
-                name: 'Images',
-                used: 187,
-                color: colors.images,
-                icon: <Image />,
-                growth: '+8%'
-            },
-            {
-                name: 'Videos',
-                used: 142,
-                color: colors.videos,
-                icon: <VideoLibrary />,
-                growth: '+25%'
-            },
-            {
-                name: 'Audio',
-                used: 63,
-                color: colors.audio,
-                icon: <Audiotrack />,
-                growth: '+5%'
-            },
+            
+         
+        
             {
                 name: 'Archives',
                 used: 50,
@@ -186,26 +168,7 @@ const StoragePage = () => {
                         Manage your files with style and efficiency
                     </Typography>
                 </Box>
-                <Button
-                    variant="contained"
-                    startIcon={<CloudUpload />}
-                    onClick={() => setUploadDialogOpen(true)}
-                    sx={{
-                        background: `linear-gradient(45deg, ${colors.primary}, ${colors.info})`,
-                        borderRadius: 3,
-                        px: 4,
-                        py: 1.5,
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                        '&:hover': {
-                            background: `linear-gradient(45deg, ${colors.info}, ${colors.primary})`,
-                            transform: 'translateY(-2px)',
-                            boxShadow: `0 10px 25px ${colors.primary}40`
-                        }
-                    }}
-                >
-                    Upload File
-                </Button>
+            
             </Box>
 
             {/* Storage Overview Cards */}
@@ -338,40 +301,6 @@ const StoragePage = () => {
                 </Grid>
             </Grid>
 
-            {/* Quick Stats Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                {[
-                    { icon: <Speed />, label: 'Upload Speed', value: '125 Mbps', color: colors.success },
-                    { icon: <Security />, label: 'Security Level', value: 'Enterprise', color: colors.info },
-                    { icon: <FolderOpen />, label: 'Total Files', value: '1,247', color: colors.warning },
-                ].map((stat, index) => (
-                    <Grid item xs={12} md={4} key={index}>
-                        <Card sx={{
-                            background: 'rgba(59,130,246,0.03)',
-                            backdropFilter: 'blur(20px)',
-                            border: `1px solid ${stat.color}30`,
-                            borderRadius: 3,
-                            textAlign: 'center',
-                            p: 3,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                transform: 'translateY(-5px)',
-                                border: `1px solid ${stat.color}60`
-                            }
-                        }}>
-                            <Box sx={{ color: stat.color, mb: 2, fontSize: 40 }}>
-                                {stat.icon}
-                            </Box>
-                            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
-                                {stat.value}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-                                {stat.label}
-                            </Typography>
-                        </Card>
-                    </Grid>
-                ))}
-            </Grid>
 
             {/* Files Table Section */}
             <Card sx={{

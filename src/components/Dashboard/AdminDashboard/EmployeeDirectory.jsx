@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Edit2, Calendar, UserCheck, Users, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllUsers } from '../../../redux/authSlice';
+import { getAllUsers, getDepartmentUsers } from '../../../redux/authSlice';
 
 const EmployeeDirectory = () => {
   const dispatch = useDispatch();
@@ -22,7 +22,7 @@ const EmployeeDirectory = () => {
 
   // Fetch all users on component mount
   useEffect(() => {
-    dispatch(getAllUsers());
+    dispatch(getDepartmentUsers());
   }, [dispatch]);
 
   // Filter logic
@@ -64,7 +64,7 @@ const EmployeeDirectory = () => {
       );
 
       if (response?.payload?.success) {
-        dispatch(getAllUsers());
+        dispatch(getDepartmentUsers());
       } else {
         alert(response?.payload?.message || 'Failed to activate employee');
       }
@@ -82,7 +82,7 @@ const EmployeeDirectory = () => {
     );
 
     if (response?.payload?.success) {
-      dispatch(getAllUsers());
+      dispatch(getDepartmentUsers());
     } else {
       alert(response?.payload?.message || 'Failed to deactivate employee');
     }

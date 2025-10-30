@@ -30,6 +30,7 @@ import EmployeeOfTheMonthAdmin from "./components/Dashboard/SuperAdminDashboardR
 import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import ShiftManagement from "./components/Dashboard/AdminDashboard/shift-management";
 import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-whiteList";
+import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 
 function App() {
   return (
@@ -82,7 +83,7 @@ function App() {
           <Route path="performance" element={<PerformanceDashboard />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
-          <Route path="report" element={<CheckReport />} />
+          <Route path="report" element={<UserReport />} />
         </Route>
       </Route>
       {/* CHECKER ROUTES */}
