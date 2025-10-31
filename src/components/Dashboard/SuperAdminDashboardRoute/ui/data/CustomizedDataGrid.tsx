@@ -21,6 +21,15 @@ const CustomizedDataGrid: React.FC = () => {
   const { lastUpdated } = useSelector((state: any) => state.quota);
   const { data } = useSelector((state: any) => state.combinedQuota);
 
+  // ✅ FIXED: Function to properly convert comma separated numbers
+  const parseNumber = (value: any): number => {
+    if (typeof value === "string") {
+      // Remove commas and convert to number
+      return Number(value.replace(/,/g, ""));
+    }
+    return Number(value) || 0;
+  };
+
   // ✅ IMPROVED: Separate calculation function for each department
   const calculateDepartmentStatus = (
     departmentData: any[],
@@ -31,21 +40,27 @@ const CustomizedDataGrid: React.FC = () => {
       return { abovePercent: 0, belowPercent: 100, total: 0, values: [] };
     }
 
+    // ✅ FIXED: Use parseNumber to handle comma separated values
     const values = departmentData
       ?.map((row: any) => {
-        const value = Number(row[quotaIndex]);
-        return isNaN(value) ? 0 : value;
+        const rawValue = row[quotaIndex];
+        const value = parseNumber(rawValue);
+        return value;
       })
       .filter((num: number) => num !== 0);
+
+    console.log(`Department values after parsing:`, values);
 
     let belowTarget = 0;
     let aboveTarget = 0;
 
     values.forEach((num) => {
-      if (num >= targetQuota) { 
+      if (num >= targetQuota) {
         aboveTarget++;
+        console.log(`✓ Agent met quota: ${num} >= ${targetQuota}`);
       } else {
         belowTarget++;
+        console.log(`✗ Agent not met: ${num} < ${targetQuota}`);
       }
     });
 
@@ -56,28 +71,45 @@ const CustomizedDataGrid: React.FC = () => {
     return { abovePercent, belowPercent, total, values };
   };
 
-  // ✅ FIXED: Calculate separately for each department with proper indices
+  // ✅ FIXED: Calculate separately for each department with DIFFERENT TARGET QUOTAS
   const filteredCSR = data?.filter((row: any) =>
     row[0]?.toLowerCase().includes("csr")
   );
-  const csrResult = calculateDepartmentStatus(filteredCSR, 2, 530);
+  const csrResult = calculateDepartmentStatus(filteredCSR, 2, 530); // CSR target: 530
 
   const filteredDeposit = data?.filter((row: any) =>
     row[0]?.toLowerCase().includes("deposit")
   );
-  const depositResult = calculateDepartmentStatus(filteredDeposit, 9, 530);
+  const depositResult = calculateDepartmentStatus(filteredDeposit, 9, 530); // Deposit target: 530
 
   const filteredWithdraw = data?.filter((row: any) =>
     row[0]?.toLowerCase().includes("withdraw")
   );
 
-  const withdrawResultIndex7 = calculateDepartmentStatus(
-    filteredWithdraw,
-    7,
-    530
+  // ✅ DEBUG: Check raw values and parsed values
+  console.log("=== WITHDRAWAL DATA ANALYSIS ===");
+  console.log(
+    "Raw withdrawal values:",
+    filteredWithdraw?.map((row: any) => row[7])
+  );
+  console.log(
+    "Parsed withdrawal values:",
+    filteredWithdraw?.map((row: any) => parseNumber(row[7]))
   );
 
-  const withdrawResult = withdrawResultIndex7;
+  // ✅ Check each agent's quota status
+  filteredWithdraw?.forEach((row: any, index: number) => {
+    const rawValue = row[7];
+    const parsedValue = parseNumber(rawValue);
+    const status = parsedValue >= 1500 ? "MET ✅" : "NOT MET ❌";
+    console.log(
+      `Agent ${index + 1}: Raw="${rawValue}", Parsed=${parsedValue} - ${status}`
+    );
+  });
+
+  const withdrawResult = calculateDepartmentStatus(filteredWithdraw, 7, 1500);
+
+  console.log("Withdrawal Final Result (Target 1500):", withdrawResult);
 
   // ---------------- Hooks ----------------
   useEffect(() => {
@@ -146,7 +178,7 @@ const CustomizedDataGrid: React.FC = () => {
       <div className="px-2">
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-full">
-          {/* CSR Department */}
+          {/* CSR Department - Target: 530 */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
@@ -173,7 +205,7 @@ const CustomizedDataGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* Deposit Department */}
+          {/* Deposit Department - Target: 530 */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
@@ -201,7 +233,7 @@ const CustomizedDataGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* Withdrawal Department */}
+          {/* Withdrawal Department - Target: 1500 */}
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
