@@ -49,18 +49,14 @@ const CustomizedDataGrid: React.FC = () => {
       })
       .filter((num: number) => num !== 0);
 
-    console.log(`Department values after parsing:`, values);
-
     let belowTarget = 0;
     let aboveTarget = 0;
 
     values.forEach((num) => {
       if (num >= targetQuota) {
         aboveTarget++;
-        console.log(`✓ Agent met quota: ${num} >= ${targetQuota}`);
       } else {
         belowTarget++;
-        console.log(`✗ Agent not met: ${num} < ${targetQuota}`);
       }
     });
 
@@ -71,30 +67,18 @@ const CustomizedDataGrid: React.FC = () => {
     return { abovePercent, belowPercent, total, values };
   };
 
-  // ✅ FIXED: Calculate separately for each department with DIFFERENT TARGET QUOTAS
   const filteredCSR = data?.filter((row: any) =>
     row[0]?.toLowerCase().includes("csr")
   );
-  const csrResult = calculateDepartmentStatus(filteredCSR, 2, 530); // CSR target: 530
+  const csrResult = calculateDepartmentStatus(filteredCSR, 2, 530);
 
   const filteredDeposit = data?.filter((row: any) =>
     row[0]?.toLowerCase().includes("deposit")
   );
-  const depositResult = calculateDepartmentStatus(filteredDeposit, 9, 530); // Deposit target: 530
+  const depositResult = calculateDepartmentStatus(filteredDeposit, 9, 530);
 
   const filteredWithdraw = data?.filter((row: any) =>
     row[0]?.toLowerCase().includes("withdraw")
-  );
-
-  // ✅ DEBUG: Check raw values and parsed values
-  console.log("=== WITHDRAWAL DATA ANALYSIS ===");
-  console.log(
-    "Raw withdrawal values:",
-    filteredWithdraw?.map((row: any) => row[7])
-  );
-  console.log(
-    "Parsed withdrawal values:",
-    filteredWithdraw?.map((row: any) => parseNumber(row[7]))
   );
 
   // ✅ Check each agent's quota status
@@ -127,7 +111,7 @@ const CustomizedDataGrid: React.FC = () => {
         display: true,
         color: "#f8fafc",
         font: { size: 16, weight: "bold" as const },
-        padding: { bottom: 10 },
+        padding: { bottom: 5 },
       },
     },
     cutout: "70%",
@@ -153,7 +137,7 @@ const CustomizedDataGrid: React.FC = () => {
 
       ctx.font = `${(Number(fontSize) * 0.4).toFixed(2)}em sans-serif`;
       ctx.fillStyle = "#9ca3af";
-      const subText = "Met";
+      const subText = "Quota Met";
       const subX = Math.round((width - ctx.measureText(subText).width) / 2);
       ctx.fillText(subText, subX, textY + 18);
       ctx.restore();
@@ -201,7 +185,8 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {csrResult.abovePercent}% Met • {csrResult.belowPercent}% Not Met
+              {csrResult.abovePercent}% Quota Met • {csrResult.belowPercent}%
+              Not Met
             </div>
           </div>
 
@@ -228,8 +213,8 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {depositResult.abovePercent}% Met • {depositResult.belowPercent}%
-              Not Met
+              {depositResult.abovePercent}% Quota Met •{" "}
+              {depositResult.belowPercent}% Not Met
             </div>
           </div>
 
@@ -256,12 +241,16 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {withdrawResult.abovePercent}% Met • {withdrawResult.belowPercent}
-              % Not Met
+              {withdrawResult.abovePercent}% Quota Met •{" "}
+              {withdrawResult.belowPercent}% Not Met
             </div>
           </div>
 
-          <WeeklyPerformanceChart />
+          <WeeklyPerformanceChart
+            csrData={csrResult}
+            depositData={depositResult}
+            withdrawData={withdrawResult}
+          />
         </div>
 
         {/* Last Updated */}
