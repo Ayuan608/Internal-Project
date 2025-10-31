@@ -243,8 +243,8 @@ export default function Announcement() {
             <button
               onClick={() => setDateFilter('all')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${dateFilter === 'all'
-                  ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
+                ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
+                : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
                 }`}
             >
               All Time
@@ -252,8 +252,8 @@ export default function Announcement() {
             <button
               onClick={() => setDateFilter('today')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${dateFilter === 'today'
-                  ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
+                ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
+                : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
                 }`}
             >
               Today
@@ -261,8 +261,8 @@ export default function Announcement() {
             <button
               onClick={() => setDateFilter('week')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${dateFilter === 'week'
-                  ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
+                ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
+                : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
                 }`}
             >
               Last 7 Days
@@ -270,8 +270,8 @@ export default function Announcement() {
             <button
               onClick={() => setDateFilter('month')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${dateFilter === 'month'
-                  ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
+                ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
+                : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
                 }`}
             >
               Last 30 Days
@@ -279,8 +279,8 @@ export default function Announcement() {
             <button
               onClick={() => setDateFilter('custom')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${dateFilter === 'custom'
-                  ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
+                ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
+                : 'bg-[rgba(59,130,246,0.03)] border border-slate-800 text-gray-300 hover:bg-gray-800/40'
                 }`}
             >
               Custom Range
@@ -497,8 +497,8 @@ export default function Announcement() {
                   <div
                     key={index}
                     className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${index === imageModal.currentIndex
-                        ? 'border-blue-500 shadow-lg shadow-blue-500/50 scale-105'
-                        : 'border-gray-600 hover:border-blue-400'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/50 scale-105'
+                      : 'border-gray-600 hover:border-blue-400'
                       }`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -520,14 +520,14 @@ export default function Announcement() {
         {/* Create Announcement Modal */}
         {createAnnouncementModal && (
           <div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-md"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-md"
             onClick={() => setCreateAnnouncementModal(false)}
           >
             <div
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl w-full max-w-2xl border-2 border-blue-500/30 shadow-2xl overflow-hidden transform transition-all max-h-[90vh] flex flex-col"
+              className="bg-slate-900/50 backdrop-blur-md rounded-2xl w-full max-w-2xl border-2 border-gray-800/30 shadow-2xl overflow-hidden transform transition-all max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-8 py-6 border-b-2 border-gray-700 flex justify-between items-center bg-gray-800/50 flex-shrink-0">
+              <div className="px-6 py-4  flex justify-between items-center bg-slate-900/50flex-shrink-0">
                 <h2 className="text-2xl font-bold text-white">
                   Create Announcement
                 </h2>
@@ -548,7 +548,7 @@ export default function Announcement() {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/30 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
                       placeholder="Enter announcement title"
                       required
                     />
@@ -561,7 +561,7 @@ export default function Announcement() {
                       value={formData.details}
                       onChange={handleInputChange}
                       rows="6"
-                      className="w-full px-4 py-2.5 bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-all resize-none"
+                      className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/30 rounded-lg focus:outline-none focus:border-blue-500 transition-all resize-none"
                       placeholder="Enter announcement details"
                       required
                     />
@@ -573,12 +573,14 @@ export default function Announcement() {
                       name="recipients"
                       value={formData.recipients}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/50 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
                     >
-                      <option value="ALL">All Members</option>
-                      <option value="Team Leader">Team Leaders</option>
-                      <option value="CSR">CSR Department</option>
-                      <option value="IT">IT Department</option>
+                      <option className='bg-slate-900 ' value="ALL">All Members</option>
+                      <option className='bg-slate-900 ' value="Team Leader">All Team Leader</option>
+                      <option className='bg-slate-900 ' value="CSR">CSR Department</option>
+                      <option className='bg-slate-900 ' value="Deposit">Deposit Department</option>
+                      <option className='bg-slate-900 ' value="Withdrawal">Withdrawal Department</option>
+                      <option className='bg-slate-900 ' value="Marketing">Marketing Department</option>
                     </select>
                   </div>
 
@@ -604,8 +606,8 @@ export default function Announcement() {
 
                     <div
                       className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${dragOver
-                          ? 'border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/30'
-                          : 'border-gray-600 hover:border-blue-400 hover:bg-gray-700/30'
+                        ? 'border-blue-500 bg-[rgba(59,130,246,0.03)] shadow-lg shadow-blue-500/30'
+                        : 'border-gray-600 hover:border-blue-400 hover:bg-gray-700/30'
                         }`}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
@@ -626,11 +628,11 @@ export default function Announcement() {
                   </div>
                 </div>
 
-                <div className="px-8 py-4 flex justify-end gap-3 border-t-2 border-gray-700 bg-gray-800/50 flex-shrink-0">
+                <div className="px-8 py-3 flex justify-end gap-3  bg-gray-900/50 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => setCreateAnnouncementModal(false)}
-                    className="px-6 py-2.5 border-2 border-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
+                    className="px-6 py-2.5 border-2 border-gray-600 text-white rounded-lg hover:bg-gray-800/30 transition-all duration-200 font-medium"
                   >
                     Cancel
                   </button>

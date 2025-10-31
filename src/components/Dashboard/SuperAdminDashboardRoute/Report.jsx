@@ -234,10 +234,6 @@ function Report() {
                     </div>
                 </div>
             </div>
-
-
-
-
             <div className="flex gap-2  border-b border-gray-700">
                 <button
                     onClick={() => {

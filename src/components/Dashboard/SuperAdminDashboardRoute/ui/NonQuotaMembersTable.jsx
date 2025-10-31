@@ -97,9 +97,9 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
       {/* Results Count */}
       <div className="mb-4 text-sm text-white">
         Showing {filteredData.length} of {data.length} records
-        <span className="ml-2 px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs">
-          Department: {department}
-        </span>
+        {/* <span className="ml-2 px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs">
+          Department: 
+        </span> */}
       </div>
 
       {/* Table */}

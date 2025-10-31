@@ -485,7 +485,6 @@ const StoragePage = () => {
                     background: `linear-gradient(90deg, ${colors.primary}, ${colors.info})`,
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
-                    color: 'transparent'
                 }}>
                     Upload New File
                 </DialogTitle>
