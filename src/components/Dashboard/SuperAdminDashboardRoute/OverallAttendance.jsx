@@ -21,8 +21,6 @@ const OverallAttendance = () => {
     (state) => state.attendance
   );
 
-  console.log(allAttendance, "Real attendance data from Redux");
-
   // Fetch attendance data on component mount and when filters change
   useEffect(() => {
     const fetchAttendanceData = async () => {
@@ -285,6 +283,7 @@ const OverallAttendance = () => {
                   disabled={isLoading}
                 >
                   {departments.map((dept) => (
+                    console.log(dept),
                     <option key={dept} value={dept}>
                       {dept}
                     </option>
