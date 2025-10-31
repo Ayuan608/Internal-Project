@@ -11,7 +11,7 @@ function Report() {
     const [selectedReport, setSelectedReport] = useState(null);
     const [searchEmployee, setSearchEmployee] = useState('');
     const [departmentFilter, setDepartmentFilter] = useState('All Departments');
-    const [activeTab, setActiveTab] = useState('active'); 
+    const [activeTab, setActiveTab] = useState('active');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
@@ -272,7 +272,7 @@ function Report() {
                 </button>
             </div>
 
-        
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredReports.length === 0 ? (
                     <div className="col-span-full bg-[rgba(59,131,246,0.06)] rounded-xl p-12 text-center border border-gray-700">
@@ -305,87 +305,91 @@ function Report() {
                                         : 'border-gray-700'
                                     }`}
                             >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3 flex-1">
-                                        <div className={`rounded-full p-2 flex-shrink-0 ${isArchived ? 'bg-red-600' : 'bg-blue-600'}`}>
-                                            {isArchived ? <Archive size={20} /> : <User size={20} />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-base capitalize truncate">
-                                                {report.createdBy?.FullName || "Unknown User"}
-                                            </h3>
-                                            <p className="text-xs text-gray-400 truncate">
-                                                {report.createdBy?.department || ""} • {report.createdBy?.role || "N/A"}
-                                            </p>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar size={12} />
-                                                    {formatDate(report.date || report.createdAt)}
+                                <div className='flex flex-col justify-between h-full'>
+                                    <div>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex items-center gap-3 flex-1">
+                                                <div className={`rounded-full p-2 flex-shrink-0 ${isArchived ? 'bg-red-600' : 'bg-blue-600'}`}>
+                                                    {isArchived ? <Archive size={20} /> : <User size={20} />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-base capitalize truncate">
+                                                        {report.createdBy?.FullName || "Unknown User"}
+                                                    </h3>
+                                                    <p className="text-xs text-gray-400 truncate">
+                                                        {report.createdBy?.department || ""} • {report.createdBy?.role || "N/A"}
+                                                    </p>
+                                                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar size={12} />
+                                                            {formatDate(report.date || report.createdAt)}
+                                                        </span>
+                                                        <span className="flex items-center gap-1">
+                                                            <Clock size={12} />
+                                                            {formatTime(report.createdAt)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                                <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${isSeen
+                                                    ? 'bg-green-600/20 text-green-400'
+                                                    : 'bg-yellow-600/20 text-yellow-400'
+                                                    }`}>
+                                                    <CheckCircle size={12} />
+                                                    {isSeen ? 'Seen' : 'Unseen'}
                                                 </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Clock size={12} />
-                                                    {formatTime(report.createdAt)}
-                                                </span>
+                                                {isArchived && report.deletedAt && (
+                                                    <span className="text-xs text-red-400">
+                                                        Deleted: {formatDate(report.deletedAt)}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                        <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${isSeen
-                                            ? 'bg-green-600/20 text-green-400'
-                                            : 'bg-yellow-600/20 text-yellow-400'
-                                            }`}>
-                                            <CheckCircle size={12} />
-                                            {isSeen ? 'Seen' : 'Unseen'}
-                                        </span>
-                                        {isArchived && report.deletedAt && (
-                                            <span className="text-xs text-red-400">
-                                                Deleted: {formatDate(report.deletedAt)}
+
+                                        <div className="mb-3">
+                                            <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-xs font-medium">
+                                                {report.purpose || 'General Report'}
                                             </span>
-                                        )}
+                                        </div>
+
+                                        <div className="rounded-lg mb-3">
+                                            <h4 className="text-xs font-semibold text-gray-400 mb-2">Report Details:</h4>
+                                            <p className="text-sm text-gray-300 whitespace-pre-line line-clamp-4">
+                                                {report.details}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="mb-3">
-                                    <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-xs font-medium">
-                                        {report.purpose || 'General Report'}
-                                    </span>
-                                </div>
-
-                                <div className="rounded-lg mb-3">
-                                    <h4 className="text-xs font-semibold text-gray-400 mb-2">Report Details:</h4>
-                                    <p className="text-sm text-gray-300 whitespace-pre-line line-clamp-4">
-                                        {report.details}
-                                    </p>
-                                </div>
-
-                                <div className="flex gap-2 pt-3 border-t border-gray-700">
-                                    {!isArchived && (
+                                    <div className="flex gap-2 pt-3 border-t border-gray-700">
+                                        {!isArchived && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleMarkAsSeen(report._id, report.status);
+                                                }}
+                                                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isSeen
+                                                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                                    : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'
+                                                    }`}
+                                                disabled={isSeen}
+                                            >
+                                                {isSeen ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                {isSeen ? 'Seen' : 'Mark as Seen'}
+                                            </button>
+                                        )}
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleMarkAsSeen(report._id, report.status);
+                                                handleDelete(report._id);
                                             }}
-                                            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isSeen
-                                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                                                : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'
+                                            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-600/20 hover:bg-red-600/30 text-red-400 transition-all ${!isArchived ? '' : 'flex-1'
                                                 }`}
-                                            disabled={isSeen}
                                         >
-                                            {isSeen ? <EyeOff size={16} /> : <Eye size={16} />}
-                                            {isSeen ? 'Seen' : 'Mark as Seen'}
+                                            <Trash2 size={16} />
+                                            {isArchived ? 'Permanently Delete' : 'Delete'}
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(report._id);
-                                        }}
-                                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-600/20 hover:bg-red-600/30 text-red-400 transition-all ${!isArchived ? '' : 'flex-1'
-                                            }`}
-                                    >
-                                        <Trash2 size={16} />
-                                        {isArchived ? 'Permanently Delete' : 'Delete'}
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
                         );
