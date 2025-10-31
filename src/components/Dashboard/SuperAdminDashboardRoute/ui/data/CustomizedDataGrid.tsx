@@ -10,7 +10,6 @@ import {
   Plugin,
 } from "chart.js";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
-import { CheckCircle, Clock, FileText, Users } from "lucide-react";
 import { getDashboardStats } from "../../../../../redux/QuotaSlice";
 import { fetchCombinedDepartmentsData } from "../../../../../redux/combinedQuotaSlice";
 
@@ -19,77 +18,90 @@ ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const CustomizedDataGrid: React.FC = () => {
   const dispatch = useDispatch<any>();
-  const { dashboardStats, lastUpdated } = useSelector(
-    (state: any) => state.quota
+  const { lastUpdated } = useSelector((state: any) => state.quota);
+  const { data } = useSelector((state: any) => state.combinedQuota);
+
+  // ✅ IMPROVED: Separate calculation function for each department
+  const calculateDepartmentStatus = (
+    departmentData: any[],
+    quotaIndex: number,
+    targetQuota: number
+  ) => {
+    if (!departmentData?.length) {
+      return { abovePercent: 0, belowPercent: 100, total: 0, values: [] };
+    }
+
+    const values = departmentData
+      ?.map((row: any) => {
+        const value = Number(row[quotaIndex]);
+        return isNaN(value) ? 0 : value;
+      })
+      .filter((num: number) => num !== 0);
+
+    let belowTarget = 0;
+    let aboveTarget = 0;
+
+    values.forEach((num) => {
+      if (num >= targetQuota) { 
+        aboveTarget++;
+      } else {
+        belowTarget++;
+      }
+    });
+
+    const total = values.length || 1;
+    const abovePercent = Number(((aboveTarget / total) * 100).toFixed(2));
+    const belowPercent = Number(((belowTarget / total) * 100).toFixed(2));
+
+    return { abovePercent, belowPercent, total, values };
+  };
+
+  // ✅ FIXED: Calculate separately for each department with proper indices
+  const filteredCSR = data?.filter((row: any) =>
+    row[0]?.toLowerCase().includes("csr")
+  );
+  const csrResult = calculateDepartmentStatus(filteredCSR, 2, 530);
+
+  const filteredDeposit = data?.filter((row: any) =>
+    row[0]?.toLowerCase().includes("deposit")
+  );
+  const depositResult = calculateDepartmentStatus(filteredDeposit, 9, 530);
+
+  const filteredWithdraw = data?.filter((row: any) =>
+    row[0]?.toLowerCase().includes("withdraw")
   );
 
-  const { data, error, count } = useSelector(
-    (state: any) => state.combinedQuota
+  const withdrawResultIndex7 = calculateDepartmentStatus(
+    filteredWithdraw,
+    7,
+    530
   );
 
+  const withdrawResult = withdrawResultIndex7;
 
-  console.log(data,"helo")
-
+  // ---------------- Hooks ----------------
   useEffect(() => {
     dispatch(fetchCombinedDepartmentsData());
-  }, [dispatch]);
-
-  // Local state for display (with default values)
-  const [displayData, setDisplayData] = useState({
-    totalCases: 0,
-    activeAgents: 0,
-    avgResponseTime: 3.2,
-    successRate: 0,
-    csrQuota: { met: 0, nonMet: 100 },
-    depositQuota: { met: 0, nonMet: 100 },
-    withdrawalQuota: { met: 0, nonMet: 100 },
-  });
-
-  // Fetch data on mount and set up polling
-  useEffect(() => {
     dispatch(getDashboardStats());
   }, [dispatch]);
 
-  // Update display data when dashboardStats changes
-  useEffect(() => {
-    if (dashboardStats) {
-      setDisplayData({
-        totalCases: dashboardStats.totalCases || 0,
-        activeAgents: dashboardStats.activeAgents || 0,
-        avgResponseTime: dashboardStats.avgResponseTime || 3.2,
-        successRate: dashboardStats.successRate || 0,
-        csrQuota: dashboardStats.csrQuota || { met: 0, nonMet: 100 },
-        depositQuota: dashboardStats.depositQuota || { met: 0, nonMet: 100 },
-        withdrawalQuota: dashboardStats.withdrawalQuota || {
-          met: 0,
-          nonMet: 100,
-        },
-      });
-    }
-  }, [dashboardStats]);
-
-  // Chart options
+  // ---------------- Chart Config ----------------
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       title: {
         display: true,
         color: "#f8fafc",
-        font: {
-          size: 16,
-          weight: "bold" as const,
-        },
+        font: { size: 16, weight: "bold" as const },
         padding: { bottom: 10 },
       },
     },
     cutout: "70%",
   };
 
-  // Custom plugin for center text
+  // Center text plugin
   const centerTextPlugin: Plugin<"doughnut"> = {
     id: "centerText",
     beforeDraw: (chart) => {
@@ -107,7 +119,6 @@ const CustomizedDataGrid: React.FC = () => {
       const textY = height / 2 - 5;
       ctx.fillText(text, textX, textY);
 
-      // small "Met" text
       ctx.font = `${(Number(fontSize) * 0.4).toFixed(2)}em sans-serif`;
       ctx.fillStyle = "#9ca3af";
       const subText = "Met";
@@ -117,7 +128,7 @@ const CustomizedDataGrid: React.FC = () => {
     },
   };
 
-  // Chart data function
+  // Chart data builder
   const createChartData = (met: number, nonMet: number, color: string) => ({
     labels: ["Quota Met", "Not Met"],
     datasets: [
@@ -133,73 +144,6 @@ const CustomizedDataGrid: React.FC = () => {
   return (
     <div className="text-white mt-6">
       <div className="px-2">
-        {/* Top Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Cases */}
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700/40 bg-gradient-to-br from-[#0b0f19] to-[#101828]">
-            <div className="flex items-center justify-between mb-2">
-              <FileText className="text-blue-400 w-5 h-5" />
-              <span className="text-blue-400 bg-blue-400/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
-                LIVE
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-white">
-              {displayData.totalCases.toLocaleString()}
-              <div className="text-gray-400 text-sm font-medium pt-2">
-                TOTAL CASES TODAY
-              </div>
-            </div>
-          </div>
-
-          {/* Active Agents */}
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700/40 bg-gradient-to-br from-[#0b0f19] to-[#101828]">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="text-sky-400 w-5 h-5" />
-              <span className="text-sky-400 bg-sky-400/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
-                LIVE
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-sky-400">
-              {displayData.activeAgents}
-            </div>
-            <div className="text-gray-400 text-sm font-medium pt-1">
-              ACTIVE AGENTS
-            </div>
-          </div>
-
-          {/* Avg Response Time */}
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700/40 bg-gradient-to-br from-[#0b0f19] to-[#101828]">
-            <div className="flex items-center justify-between mb-2">
-              <Clock className="text-yellow-400 w-5 h-5" />
-              <span className="text-yellow-400 bg-yellow-400/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
-                LIVE
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-yellow-400">
-              {displayData.avgResponseTime.toFixed(1)}m
-            </div>
-            <div className="text-gray-400 text-sm font-medium pt-1">
-              AVG RESPONSE TIME
-            </div>
-          </div>
-
-          {/* Success Rate */}
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700/40 bg-gradient-to-br from-[#0b0f19] to-[#101828]">
-            <div className="flex items-center justify-between mb-2">
-              <CheckCircle className="text-green-400 w-5 h-5" />
-              <span className="text-green-400 bg-green-400/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
-                LIVE
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-green-400">
-              {displayData.successRate.toFixed(1)}%
-            </div>
-            <div className="text-gray-400 text-sm font-medium pt-1">
-              SUCCESS RATE
-            </div>
-          </div>
-        </div>
-
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-full">
           {/* CSR Department */}
@@ -207,8 +151,8 @@ const CustomizedDataGrid: React.FC = () => {
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
-                  displayData.csrQuota.met,
-                  displayData.csrQuota.nonMet,
+                  csrResult.abovePercent,
+                  csrResult.belowPercent,
                   "#3b82f6"
                 )}
                 options={{
@@ -225,8 +169,7 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {displayData.csrQuota.met}% Met • {displayData.csrQuota.nonMet}%
-              Not Met
+              {csrResult.abovePercent}% Met • {csrResult.belowPercent}% Not Met
             </div>
           </div>
 
@@ -235,8 +178,8 @@ const CustomizedDataGrid: React.FC = () => {
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
-                  displayData.depositQuota.met,
-                  displayData.depositQuota.nonMet,
+                  depositResult.abovePercent,
+                  depositResult.belowPercent,
                   "#22c55e"
                 )}
                 options={{
@@ -253,8 +196,8 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {displayData.depositQuota.met}% Met •{" "}
-              {displayData.depositQuota.nonMet}% Not Met
+              {depositResult.abovePercent}% Met • {depositResult.belowPercent}%
+              Not Met
             </div>
           </div>
 
@@ -263,8 +206,8 @@ const CustomizedDataGrid: React.FC = () => {
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
-                  displayData.withdrawalQuota.met,
-                  displayData.withdrawalQuota.nonMet,
+                  withdrawResult.abovePercent,
+                  withdrawResult.belowPercent,
                   "#8b5cf6"
                 )}
                 options={{
@@ -281,8 +224,8 @@ const CustomizedDataGrid: React.FC = () => {
               />
             </div>
             <div className="text-center mt-4 text-sm text-gray-400">
-              {displayData.withdrawalQuota.met}% Met •{" "}
-              {displayData.withdrawalQuota.nonMet}% Not Met
+              {withdrawResult.abovePercent}% Met • {withdrawResult.belowPercent}
+              % Not Met
             </div>
           </div>
 
