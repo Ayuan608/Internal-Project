@@ -13,6 +13,7 @@ export type StatCardProps = {
   interval: string;
   trend: "up" | "down" | "neutral";
   data: number[];
+  difference: any;
 };
 
 function getDaysInMonth(month: number, year: number) {
@@ -36,6 +37,7 @@ export default function StatCard({
   interval,
   trend,
   data,
+  difference,
 }: StatCardProps) {
   const theme = useTheme();
   const daysInWeek = getDaysInMonth(4, 2024);
@@ -81,7 +83,7 @@ export default function StatCard({
               sx={{ justifyContent: "space-between", alignItems: "center" }}
             >
               <Typography variant="h4" component="p">
-                {value}
+                {difference}
               </Typography>
               <Chip size="small" color={color} label={trendValues[trend]} />
             </Stack>

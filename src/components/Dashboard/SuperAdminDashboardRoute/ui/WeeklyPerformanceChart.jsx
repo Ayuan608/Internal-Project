@@ -20,11 +20,12 @@ ChartJS.register(
   Legend
 );
 
-const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData }) => {
+const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMonth }) => {
   const [weeklyData, setWeeklyData] = useState({
     csr: [0, 0, 0, 0],
     deposit: [0, 0, 0, 0],
     withdraw: [0, 0, 0, 0]
+
   });
 
   // Generate realistic weekly data based on current performance
