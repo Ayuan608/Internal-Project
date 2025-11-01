@@ -63,7 +63,7 @@ function AppComponent() {
         <App.Route path="/user" element={<App.Layout />}>
           <App.Route index element={<App.UserDashboard />} />
           <App.Route path="daily-time-record" element={<App.DailyTimeRecord />} />
-          <App.Route path="performance" element={<App.PerformanceDashboard />} />
+          {/* <App.Route path="performance" element={<App.PerformanceDashboard />} /> */}
           <App.Route path="announcement" element={<App.Announcement />} />
           <App.Route path="setting" element={<App.Setting />} />
           <App.Route path="report" element={<App.UserReport />} />

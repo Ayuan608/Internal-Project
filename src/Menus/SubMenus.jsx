@@ -61,15 +61,7 @@ const Menus = ({ toggle, onTitleChange }) => {
         },
       ]
       : []),
-    ...(role === "User"
-      ? [
-        {
-          to: "/user/performance",
-          label: "Performance Borard",
-          icon: <ChartLine />,
-        },
-      ]
-      : []),
+ 
 
     ...(role === "User"
       ? [

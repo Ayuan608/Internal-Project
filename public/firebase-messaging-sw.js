@@ -7,7 +7,7 @@ firebase.initializeApp({
   apiKey: "AIzaSyBMShj8yFE4oN3gK7YStm2Lhgihn5EqWN4",
   authDomain: "internal-project-be8eb.firebaseapp.com",
   projectId: "internal-project-be8eb",
-  storageBucket: "internal-project-be8eb.firebasestorage.app",
+  storageBucket: "internal-project-be8eb.appspot.com",
   messagingSenderId: "945192117731",
   appId: "1:945192117731:web:b9c9718d5c38b3c31f6cd6",
   measurementId: "G-8J0Z9M8MEG"
