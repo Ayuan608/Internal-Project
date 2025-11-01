@@ -21,6 +21,8 @@ const OverallAttendance = () => {
     (state) => state.attendance
   );
 
+  console.log(allAttendance, 'lele')
+
   // Fetch attendance data on component mount and when filters change
   useEffect(() => {
     const fetchAttendanceData = async () => {
@@ -282,12 +284,12 @@ const OverallAttendance = () => {
                   className="border text-white border-gray-600 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-[#10131f]"
                   disabled={isLoading}
                 >
-                  {departments.map((dept) => (
-                    console.log(dept),
-                    <option key={dept} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
+                  {/* Manual Departments */}
+                  <option value="All">All Departments</option>
+                  <option value="CSR">CSR</option>
+                  <option value="Deposit">Deposit</option>
+                  <option value="Withdraw">Withdraw</option>
+
                 </select>
               </div>
 
