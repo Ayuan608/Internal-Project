@@ -58,7 +58,7 @@ const Performance = () => {
 
     // Function to get cell color based on column header and value
     const getCellColor = (header, value) => {
-        const headerLower = header.toLowerCase();
+        const headerLower = header?.toLowerCase();
 
         console.log(headerLower)
 
@@ -90,7 +90,7 @@ const Performance = () => {
 
 
         // For "Online Time" column - match with legend colors
-        if (headerLower === 'online time' || headerLower.includes('online')) {
+        if (headerLower === 'online time' || headerLower?.includes('online')) {
             const timeStr = String(value).toLowerCase();
 
             // Detect color keywords in the value
@@ -114,12 +114,12 @@ const Performance = () => {
         }
 
         // For "Positive %" column
-        if (headerLower.includes('positive')) {
+        if (headerLower?.includes('positive')) {
             return 'text-green-400';
         }
 
         // For "Negatives" column
-        if (headerLower.includes('negative')) {
+        if (headerLower?.includes('negative')) {
             return 'text-red-400';
         }
 
