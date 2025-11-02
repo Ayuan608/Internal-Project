@@ -1,8 +1,6 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 
-// 🔥 Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBMShj8yFE4oN3gK7YStm2Lhgihn5EqWN4",
   authDomain: "internal-project-be8eb.firebaseapp.com",
@@ -15,11 +13,28 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
 
 export const requestForToken = async () => {
   try {
+    // Initialize messaging if not already done
+    if (!messaging) {
+      messaging = await initializeMessaging();
+    }
+
+    if (!messaging) {
+      console.warn("Messaging not available");
+      return null;
+    }
+
+    // Check if we're in a browser environment
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      console.warn("Notifications not supported in this environment");
+      return null;
+    }
+
+    // Request notification permission
     const permission = await Notification.requestPermission();
+
     if (permission === "granted") {
       // 👇 register the service worker manually
       const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
@@ -52,9 +67,33 @@ export const requestForToken = async () => {
 
 // 👇 Listen for messages while the app is in the foreground
 export const onMessageListener = () =>
-  new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      console.log("📩 Foreground notification:", payload);
-      resolve(payload);
-    });
+  new Promise((resolve, reject) => {
+    if (!messaging) {
+      initializeMessaging().then(messagingInstance => {
+        if (messagingInstance) {
+          onMessage(messagingInstance, (payload) => {
+            console.log("Received foreground message:", payload);
+            resolve(payload);
+          });
+        } else {
+          reject(new Error("Messaging not available"));
+        }
+      });
+    } else {
+      onMessage(messaging, (payload) => {
+        console.log("Received foreground message:", payload);
+        resolve(payload);
+      });
+    }
   });
+
+// Get messaging instance (for use in other parts of your app)
+export const getMessagingInstance = async () => {
+  if (!messaging) {
+    messaging = await initializeMessaging();
+  }
+  return messaging;
+};
+
+// Export the app instance as well
+export { app };

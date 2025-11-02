@@ -20,6 +20,16 @@ interface CustomizedDataGridProps {
   onStatsUpdate?: (data: any[]) => void;
 }
 
+const formatNumber = (number: number): string => {
+  if (isNaN(number)) return "0";
+  if (Math.abs(number) >= 1_000_000) {
+    return `${(number / 1_000_000).toFixed(1)}m`;
+  } else if (Math.abs(number) >= 1_000) {
+    return `${(number / 1_000).toFixed(1)}k`;
+  }
+  return number.toString();
+};
+
 const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   onStatsUpdate,
 }) => {
@@ -190,7 +200,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     1500
   );
 
-  // Calculate department-wise completed conversations
   const csrCurrentMonth = csrResult.values.reduce(
     (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
     0
@@ -224,7 +233,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const withdrawDifference = withdrawCurrentMonth - withdrawPreviousMonth;
   const isWithdrawPositive = withdrawDifference >= 0;
 
-  // Calculate totals
   const currentMonthTotalCompleted =
     csrCurrentMonth + depositCurrentMonth + withdrawCurrentMonth;
   const previousMonthTotalCompleted =
@@ -233,7 +241,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     currentMonthTotalCompleted - previousMonthTotalCompleted;
   const isTotalPositive = totalDifference >= 0;
 
-  // Calculate overall performance metrics
   const totalAgents =
     filteredCSR.length + filteredDeposit.length + filteredWithdraw.length || 1;
   const avgConversationsPerAgent = Math.round(
@@ -246,19 +253,16 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       totalAgents) *
     100;
 
-  // Generate realistic trading-style sparkline data
   const generateSparklineData = (
     current: number,
     previous: number,
     trend: string
   ) => {
     const dataPoints = [];
-    const steps = 7; // More points for smoother curve
+    const steps = 7;
 
-    // Start from previous month
     dataPoints.push(previous);
 
-    // Generate realistic fluctuations like trading data
     for (let i = 1; i < steps - 1; i++) {
       const progress = i / (steps - 1);
       let baseValue;
@@ -269,9 +273,8 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         baseValue = previous - (previous - current) * progress;
       }
 
-      // Add realistic fluctuations (more volatility in the middle)
-      const volatility = 0.15; // 15% volatility
-      const midPointFactor = Math.sin(Math.PI * progress) * 0.5 + 0.5; // More fluctuation in middle
+      const volatility = 0.15;
+      const midPointFactor = Math.sin(Math.PI * progress) * 0.5 + 0.5;
       const fluctuation =
         (Math.random() - 0.5) * baseValue * volatility * midPointFactor;
 
@@ -279,7 +282,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       dataPoints.push(Math.round(fluctuatedValue));
     }
 
-    // End with current month
     dataPoints.push(current);
     return dataPoints;
   };
@@ -338,7 +340,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     ],
   });
 
-  // Trading-style Sparkline Component (exactly like the image)
   const TradingSparkline = ({
     data,
     isPositive,
@@ -354,7 +355,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     const width = 120;
     const height = 40;
 
-    // Calculate points for smooth curve
     const points = data
       .map((value, index) => {
         const x = (index / (data.length - 1)) * width;
@@ -363,7 +363,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       })
       .join(" ");
 
-    // Get first and last values
     const firstValue = data[0];
     const lastValue = data[data.length - 1];
     const startX = 2;
@@ -376,7 +375,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     return (
       <div className="mt-3">
         <svg width={width} height={height} className="mx-auto">
-          {/* Main line with smooth curve */}
           <polyline
             fill="none"
             stroke={isPositive ? "#00ff00" : "#ff4444"}
@@ -385,8 +383,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             strokeLinejoin="round"
             points={points}
           />
-
-          {/* Start circle indicator */}
           <circle
             cx={startX}
             cy={startY}
@@ -394,8 +390,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             fill={isPositive ? "#00ff00" : "#ff4444"}
             opacity="0.8"
           />
-
-          {/* End circle indicator - larger and more prominent */}
           <circle
             cx={endX}
             cy={endY}
@@ -406,8 +400,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             strokeWidth="1.5"
           />
         </svg>
-
-        {/* Percentage indicator below sparkline */}
         <div className="flex justify-center items-center mt-1">
           <div
             className={`text-xs font-semibold ${
@@ -454,21 +446,20 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
                 : "bg-red-500/20 text-red-300 border border-red-500/30"
             }`}
           >
-            {isPositive ? "↑" : "↓"} {Math.abs(difference).toLocaleString()}
+            {isPositive ? "↑" : "↓"} {formatNumber(Math.abs(difference))}
           </div>
         </div>
-
         <div className="grid grid-cols-2 gap-2 text-sm mt-3">
           <div>
             <div className="text-gray-400 text-xs">Current</div>
             <div className="text-white font-bold text-lg">
-              {current.toLocaleString()}
+              {formatNumber(current)}
             </div>
           </div>
           <div>
             <div className="text-gray-400 text-xs">Previous</div>
             <div className="text-gray-300 text-lg">
-              {previous.toLocaleString()}
+              {formatNumber(previous)}
             </div>
           </div>
         </div>
@@ -488,14 +479,20 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     value: string;
     subtitle: string;
     color?: string;
-  }) => (
-    <div className="text-center p-4 bg-gray-800/30 rounded-lg">
-      <Icon className={`w-8 h-8 mx-auto mb-2 ${color}`} />
-      <div className="text-2xl font-bold text-white">{value}</div>
-      <div className="text-sm text-gray-300 font-medium">{title}</div>
-      <div className="text-xs text-gray-400 mt-1">{subtitle}</div>
-    </div>
-  );
+  }) => {
+    const formattedValue = value.includes("%")
+      ? value
+      : formatNumber(Number(value));
+
+    return (
+      <div className="text-center p-4 bg-gray-800/30 rounded-lg">
+        <Icon className={`w-8 h-8 mx-auto mb-2 ${color}`} />
+        <div className="text-2xl font-bold text-white">{formattedValue}</div>
+        <div className="text-sm text-gray-300 font-medium">{title}</div>
+        <div className="text-xs text-gray-400 mt-1">{subtitle}</div>
+      </div>
+    );
+  };
 
   const teamLeaderData = [
     {
@@ -540,7 +537,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   return (
     <div className="text-white mt-6">
       <div className="px-2">
-        {/* Department-wise Progress Cards */}
         <div className="mb-6">
           <h3 className="text-xl font-bold text-white mb-4">
             Department Progress - Month Comparison
@@ -573,13 +569,11 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           </div>
         </div>
 
-        {/* Overall Performance Section */}
         <div className="mb-6 bg-gradient-to-br from-gray-900/50 to-gray-800/50 border border-gray-700 rounded-xl p-6">
           <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-green-400" />
             Overall Performance Summary
           </h3>
-
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <PerformanceMetric
               icon={Users}
@@ -591,10 +585,10 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             <PerformanceMetric
               icon={MessageCircle}
               title="Total Conversations"
-              value={currentMonthTotalCompleted.toLocaleString()}
-              subtitle={`${
-                isTotalPositive ? "+" : ""
-              }${totalDifference.toLocaleString()} from last month`}
+              value={currentMonthTotalCompleted.toString()}
+              subtitle={`${isTotalPositive ? "+" : ""}${formatNumber(
+                totalDifference
+              )} from last month`}
               color="text-green-400"
             />
             <PerformanceMetric
@@ -607,7 +601,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             <PerformanceMetric
               icon={TrendingUp}
               title="Avg per Agent"
-              value={avgConversationsPerAgent.toLocaleString()}
+              value={avgConversationsPerAgent.toString()}
               subtitle="Conversations per agent"
               color="text-yellow-400"
             />
@@ -661,7 +655,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
                 Met
               </div>
               <div className="text-center mt-2 text-xs text-blue-300">
-                Completed: {csrCurrentMonth.toLocaleString()}
+                Completed: {formatNumber(csrCurrentMonth)}
               </div>
             </div>
           </div>
@@ -691,7 +685,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
                 % Not Met
               </div>
               <div className="text-center mt-2 text-xs text-green-300">
-                Completed: {depositCurrentMonth.toLocaleString()}
+                Completed: {formatNumber(depositCurrentMonth)}
               </div>
             </div>
           </div>
@@ -721,7 +715,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
                 {withdrawResult.belowPercent}% Not Met
               </div>
               <div className="text-center mt-2 text-xs text-purple-300">
-                Completed: {withdrawCurrentMonth.toLocaleString()}
+                Completed: {formatNumber(withdrawCurrentMonth)}
               </div>
             </div>
           </div>
