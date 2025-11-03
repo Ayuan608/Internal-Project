@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Edit2, Calendar, UserCheck, Users, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllUsers, getDepartmentUsers } from '../../../redux/authSlice';
+import SuspensionForm from '../TeamLeaderDashboard/SuspensionForm';
 
 const EmployeeDirectory = () => {
   const dispatch = useDispatch();
@@ -10,12 +11,12 @@ const EmployeeDirectory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  
+  const [suspensionForm, setSuspensionForm] = useState(false)
   const [isRestDayModalOpen, setIsRestDayModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [restDayReason, setRestDayReason] = useState('');
   const [restDayDate, setRestDayDate] = useState('');
-  
+
   // Deactivate Confirmation Modal State
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [employeeToDeactivate, setEmployeeToDeactivate] = useState(null);
@@ -118,7 +119,7 @@ const EmployeeDirectory = () => {
     });
 
     alert(`Rest day scheduled for ${selectedEmployee.FullName} on ${restDayDate}`);
-    
+
     setIsRestDayModalOpen(false);
     setSelectedEmployee(null);
     setRestDayReason('');
@@ -133,7 +134,7 @@ const EmployeeDirectory = () => {
 
   return (
     <div className="min-h-screen ">
-    
+
       <div className="flex">
 
 
@@ -141,10 +142,17 @@ const EmployeeDirectory = () => {
         <div className="flex-1 p-8">
           <div className="max-w-full mx-auto">
             {/* Header Section */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Employee Directory</h2>
-              <p className="text-slate-400">Manage and monitor your team members</p>
+            <div className="mb-8 flex justify-between items-center">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">Employee Directory</h2>
+                <p className="text-slate-400">Manage and monitor your team members</p>
+              </div>
+              <button onClick={() => setSuspensionForm(true)} className="bg-blue-600/90 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                Add Suspension Form
+              </button>
             </div>
+              <SuspensionForm suspensionForm={suspensionForm} setSuspensionForm={setSuspensionForm} />
+
 
             {/* Search and Filter Section */}
             <div className=" rounded-xl p-6 mb-6 ">
@@ -165,11 +173,10 @@ const EmployeeDirectory = () => {
                     <button
                       key={filter}
                       onClick={() => setActiveFilter(filter)}
-                      className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
-                        activeFilter === filter
-                          ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600'
-                      }`}
+                      className={`px-5 py-2.5 rounded-lg font-medium transition-all ${activeFilter === filter
+                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600'
+                        }`}
                     >
                       {filter}
                     </button>
@@ -235,14 +242,12 @@ const EmployeeDirectory = () => {
                             {employee.email || <span className="text-slate-500">-</span>}
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                              employee.status === 'active'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                employee.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
-                              }`}></span>
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${employee.status === 'active'
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${employee.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
+                                }`}></span>
                               {employee.status || 'active'}
                             </span>
                           </td>
