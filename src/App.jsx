@@ -8,7 +8,6 @@ import Setting from "./pages/Setting";
 import UserDashboard from "./Layout/UserDashboard";
 import Denied from "./pages/404/Denied";
 import CheckerDashboard from "./Layout/CheckerDashboard";
-import SendNotificationForm from "./components/popup/SendNotificationForm";
 import DailyTimeRecord from "./components/Dashboard/UserDashboard/DailyTimeRecord";
 import PerformanceDashboard from "./components/Dashboard/UserDashboard/PerformanceDashboard";
 import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
@@ -48,7 +47,6 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="notification" element={<SendNotificationForm />} />
       <Route element={<NotRequireAuth />}>
         <Route path="/login" element={<Login />} />
       </Route>

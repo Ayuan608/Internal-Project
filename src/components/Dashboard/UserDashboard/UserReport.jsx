@@ -43,7 +43,6 @@ function UserReport() {
         const result = await dispatch(createReport(reportData));
 
         if (result.type === 'report/create/fulfilled') {
-            await dispatch(getAllReports());
 
             setFormData({
                 date: new Date().toLocaleDateString('en-US'),
