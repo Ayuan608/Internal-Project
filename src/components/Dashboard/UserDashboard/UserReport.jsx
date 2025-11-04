@@ -19,7 +19,8 @@ function UserReport() {
         date: new Date().toLocaleDateString('en-US'),
         purpose: 'Daily Performance Report',
         details: '',
-        file: null
+        image: null, // Single image
+        imagePreview: null, // For preview
     });
 
     const handleSubmit = async () => {
@@ -32,7 +33,12 @@ function UserReport() {
             date: formData.date,
             purpose: formData.purpose,
             details: formData.details,
+            image: formData.image,
         };
+        console.log('📤 Submitting report:', {
+            ...reportData,
+            image: reportData.image ? reportData.image.name : null
+        });
 
         const result = await dispatch(createReport(reportData));
 
@@ -43,7 +49,8 @@ function UserReport() {
                 date: new Date().toLocaleDateString('en-US'),
                 purpose: 'Daily Performance Report',
                 details: '',
-                file: null
+                image: null,
+                imagePreview: null,
             });
             setIsReportModal(false);
         } else {
@@ -51,6 +58,42 @@ function UserReport() {
         }
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData({
+                    ...formData,
+                    image: file,
+                    imagePreview: reader.result
+                });
+            };
+            reader.readAsDataURL(file);
+
+            console.log('🖼️ Image selected:', file.name);
+        }
+    };
+
+    const removeImage = () => {
+        setFormData({
+            ...formData,
+            image: null,
+            imagePreview: null
+        });
+    };
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -190,10 +233,10 @@ function UserReport() {
                                     </p>
 
                                     {/* File */}
-                                    {report.file && (
+                                    {report.imageUrl && (
                                         <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50 mt-4">
                                             <Paperclip size={14} />
-                                            <span>Attachment: {report.file}</span>
+                                            <span>Attachment: {report.imageUrl}</span>
                                         </div>
                                     )}
                                 </div>
@@ -395,24 +438,41 @@ Example:
                                 />
                             </div>
 
-                            {/* File Upload */}
                             <div>
                                 <label className='block text-sm font-semibold mb-2.5 text-gray-200'>
-                                    Attach Performance Data <span className="text-gray-500">(Optional)</span>
+                                    Attach Image <span className="text-gray-500">(Optional - Max 5MB)</span>
                                 </label>
-                                <div className='relative'>
-                                    <input
-                                        type='file'
-                                        onChange={handleFileChange}
-                                        className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium file:cursor-pointer hover:file:bg-blue-700 file:transition-all text-gray-400'
-                                    />
-                                </div>
-                                {formData.file && (
-                                    <div className='bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 mt-3'>
-                                        <p className='text-sm text-gray-300 flex items-center gap-2'>
-                                            <Paperclip size={16} className="text-blue-400" />
-                                            <span className="font-medium">{formData.file}</span>
-                                        </p>
+
+                                {!formData.imagePreview ? (
+                                    <div className='relative'>
+                                        <input
+                                            type='file'
+                                            accept='image/*'
+                                            onChange={handleImageChange}
+                                            className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium file:cursor-pointer hover:file:bg-blue-700 file:transition-all text-gray-400'
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className='bg-gray-800/50 border border-gray-700 rounded-xl p-4'>
+                                        <div className='flex items-start gap-3'>
+                                            <img
+                                                src={formData.imagePreview}
+                                                alt="Preview"
+                                                className='w-20 h-20 object-cover rounded-lg'
+                                            />
+                                            <div className='flex-1'>
+                                                <p className='text-sm text-gray-300 font-medium'>{formData.image?.name}</p>
+                                                <p className='text-xs text-gray-500 mt-1'>
+                                                    {(formData.image?.size / 1024).toFixed(2)} KB
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={removeImage}
+                                                className='text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded-lg transition-all'
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>

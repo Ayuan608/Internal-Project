@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login, verify2FA } from "../redux/authSlice";
 import toast from "react-hot-toast";
+import { recordLogin } from "../redux/activitylogSlice";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -64,7 +65,11 @@ const Login = () => {
           setRequireOtp(true);
           toast.success("2FA required. Please enter your Authenticator code.");
         } else if (payload?.token && !payload?.require2FA) {
-          toast.success("Login successful!");
+          toast.success("Login successful!"); try {
+            await dispatch(recordLogin());
+          } catch (err) {
+            console.error("Activity log failed:", err);
+          }
           navigate("/dashboard");
         } else {
           toast.error("Invalid response from server");
@@ -77,6 +82,7 @@ const Login = () => {
         if (payload?.token) {
           toast.success("Login successful!");
           const role = payload?.user?.role;
+
           switch (role) {
             case "Admin":
               navigate("/admin");
@@ -97,6 +103,11 @@ const Login = () => {
               navigate("/login");
               toast.error("Invalid role detected");
               break;
+          }
+          try {
+            await dispatch(recordLogin());
+          } catch (err) {
+            console.error("Activity log failed:", err);
           }
         } else {
           toast.error("Invalid OTP");

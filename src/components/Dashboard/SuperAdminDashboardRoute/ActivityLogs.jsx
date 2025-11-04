@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
   MapPin,
@@ -7,109 +7,55 @@ import {
   Globe,
   Shield,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllActivities, terminateSession } from "../../../redux/activitylogSlice";
+
 
 const ActivityLogs = () => {
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { activities } = useSelector((state) => state.activity);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    fetchLoginActivities();
-    const interval = setInterval(fetchLoginActivities, 30000);
-
+    dispatch(getAllActivities());
+    const interval = setInterval(() => {
+      dispatch(getAllActivities());
+    }, 30000);
     return () => clearInterval(interval);
-  }, [filter]);
+  }, [dispatch, filter]);
 
-  const fetchLoginActivities = async () => {
-    try {
-      // Mock data — replace with backend API call
-      const mockData = [
-        {
-          _id: "1",
-          userId: { name: "John Doe", email: "john@example.com" },
-          timestamp: new Date(Date.now() - 5000),
-          loginAttempt: "Success",
-          ipAddress: "192.168.1.100",
-          location: { city: "New York", country: "USA", region: "NY" },
-          terminated: false,
-        },
-        {
-          _id: "2",
-          userId: { name: "Jane Smith", email: "jane@example.com" },
-          timestamp: new Date(Date.now() - 120000),
-          loginAttempt: "Failed",
-          ipAddress: "203.0.113.45",
-          location: { city: "London", country: "UK", region: "England" },
-          terminated: false,
-        },
-        {
-          _id: "3",
-          userId: { name: "Bob Johnson", email: "bob@example.com" },
-          timestamp: new Date(Date.now() - 300000),
-          loginAttempt: "Success",
-          ipAddress: "198.51.100.78",
-          location: { city: "Tokyo", country: "Japan", region: "Kanto" },
-          terminated: false,
-        },
-        {
-          _id: "4",
-          userId: { name: "Alice Williams", email: "alice@example.com" },
-          timestamp: new Date(Date.now() - 600000),
-          loginAttempt: "Success",
-          ipAddress: "192.0.2.123",
-          location: { city: "Sydney", country: "Australia", region: "NSW" },
-          terminated: false,
-        },
-      ];
-
-      const filtered =
-        filter === "all"
-          ? mockData
-          : mockData.filter(
-              (a) => a.loginAttempt.toLowerCase() === filter
-            );
-
-      setActivities(filtered);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching activities:", error);
-      setLoading(false);
+  const handleTerminate = (id) => {
+    if (window.confirm("Are you sure you want to terminate this session?")) {
+      dispatch(terminateSession(id));
     }
   };
-
-  const handleTerminate = async (sessionId) => {
-    if (!window.confirm("Are you sure you want to terminate this session?"))
-      return;
-
-    setActivities(
-      activities.map((a) =>
-        a._id === sessionId ? { ...a, terminated: true } : a
-      )
-    );
-  };
+const handleActivate = (id) => {
+  if (window.confirm("Do you want to reactivate this session?")) {
+    dispatch(activateSession(id));
+  }
+};
 
   const formatTime = (date) => {
     const now = new Date();
     const diff = Math.floor((now - new Date(date)) / 1000);
-
     if (diff < 60) return "Just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return new Date(date).toLocaleDateString();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  // ✅ Filter logic for successful/failed
+  const filteredActivities =
+    filter === "all"
+      ? activities
+      : activities.filter(
+        (a) => a.loginAttempt?.toLowerCase() === filter.toLowerCase()
+      );
+
 
   return (
-    <div className="min-h-screen  p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-full mx-auto">
-
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">
@@ -139,8 +85,7 @@ const ActivityLogs = () => {
               <div>
                 <p className="text-sm text-white">Successful</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {activities.filter((a) => a.loginAttempt === "Success")
-                    .length}
+                  {activities.filter((a) => a.loginAttempt === "Success").length}
                 </p>
               </div>
               <Shield className="w-8 h-8 text-green-500" />
@@ -152,8 +97,7 @@ const ActivityLogs = () => {
               <div>
                 <p className="text-sm text-white">Failed</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {activities.filter((a) => a.loginAttempt === "Failed")
-                    .length}
+                  {activities.filter((a) => a.loginAttempt === "Failed").length}
                 </p>
               </div>
               <AlertCircle className="w-8 h-8 text-red-500" />
@@ -167,8 +111,7 @@ const ActivityLogs = () => {
                 <p className="text-2xl font-bold text-blue-600">
                   {
                     activities.filter((a) => {
-                      const diff =
-                        Date.now() - new Date(a.timestamp).getTime();
+                      const diff = Date.now() - new Date(a.createdAt).getTime();
                       return diff < 900000 && a.loginAttempt === "Success";
                     }).length
                   }
@@ -184,33 +127,30 @@ const ActivityLogs = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition ${filter === "all"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
             >
               All Activities
             </button>
 
             <button
-              onClick={() => setFilter("success")}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === "success"
-                  ? "bg-green-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
+              onClick={() => setFilter("Success")}
+              className={`px-4 py-2 rounded-lg font-medium transition ${filter === "Success"
+                ? "bg-green-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
             >
               Successful
             </button>
 
             <button
-              onClick={() => setFilter("failed")}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === "failed"
-                  ? "bg-red-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
+              onClick={() => setFilter("Failed")}
+              className={`px-4 py-2 rounded-lg font-medium transition ${filter === "Failed"
+                ? "bg-red-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
             >
               Failed
             </button>
@@ -233,15 +173,16 @@ const ActivityLogs = () => {
               </thead>
 
               <tbody className="divide-y divide-slate-900">
-                {activities.map((activity) => (
+                {filteredActivities.map((activity) => (
                   <tr key={activity._id} className="hover:bg-slate-900/40">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium">
-                          {activity.userId.name}
+                        <div className="font-medium  capitalize text-white">
+                          {activity.user?.FullName || "Unknown"}
                         </div>
                         <div className="text-sm text-slate-500">
-                          {activity.userId.email}
+                          {activity.user?.department || "N/A"} —{" "}
+                          {activity.user?.role || "N/A"}
                         </div>
                       </div>
                     </td>
@@ -251,15 +192,11 @@ const ActivityLogs = () => {
                         <Clock className="w-4 h-4 mr-2 text-slate-400" />
                         <div>
                           <div>
-                            {new Date(
-                              activity.timestamp
-                            ).toLocaleDateString()}
+                            {new Date(activity.createdAt).toLocaleDateString()}
                           </div>
                           <div className="text-xs text-slate-500">
-                            {new Date(
-                              activity.timestamp
-                            ).toLocaleTimeString()}{" "}
-                            ({formatTime(activity.timestamp)})
+                            {new Date(activity.createdAt).toLocaleTimeString()}{" "}
+                            ({formatTime(activity.createdAt)})
                           </div>
                         </div>
                       </div>
@@ -267,60 +204,60 @@ const ActivityLogs = () => {
 
                     <td className="px-6 py-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          activity.loginAttempt === "Success"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${activity.loginAttempt === "Success"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                          }`}
                       >
                         {activity.loginAttempt}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 font-mono">
+                    <td className="px-6 py-4 font-mono text-white">
                       {activity.ipAddress}
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-white">
                       <div className="flex items-center text-sm">
                         <MapPin className="w-4 h-4 mr-2 text-slate-400" />
                         <div>
-                          {activity.location.city},{" "}
-                          {activity.location.country}
+                          {activity.location?.city || "Unknown"},{" "}
+                          {activity.location?.country || "Unknown"}
                           <div className="text-xs text-slate-500">
-                            {activity.location.region}
+                            {activity.location?.region || ""}
                           </div>
                         </div>
                       </div>
                     </td>
 
                     <td className="px-6 py-4">
-                      {activity.loginAttempt === "Success" &&
-                        !activity.terminated && (
-                          <button
-                            onClick={() =>
-                              handleTerminate(activity._id)
-                            }
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
-                          >
-                            Terminate
-                          </button>
-                        )}
-
-                      {activity.terminated && (
-                        <span className="text-sm text-slate-500">
-                          Terminated
-                        </span>
+                      {activity.loginAttempt === "Success" && (
+                        <>
+                          {!activity.terminated ? (
+                            <button
+                              onClick={() => handleTerminate(activity._id)}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
+                            >
+                              Terminate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleActivate(activity._id)}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                            >
+                              Activate
+                            </button>
+                          )}
+                        </>
                       )}
                     </td>
+
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
         </div>
-
       </div>
     </div>
   );
