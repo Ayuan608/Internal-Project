@@ -12,10 +12,11 @@ const initialState = {
 export const getReports = createAsyncThunk("report/get", async () => {
     try {
         const res = await axiosInstance.get("/report/get");
-        console.log('report form redux', res.data.reports)
+        console.log('📊 Reports from Redux:', res.data.reports);
         return res.data.reports;
     } catch (error) {
-        toast.error(error?.response?.data?.message || "Failed to fetch reports");
+        const message = error?.response?.data?.message || "Failed to fetch reports";
+        toast.error(message);
         throw error;
     }
 });
@@ -24,9 +25,11 @@ export const getReports = createAsyncThunk("report/get", async () => {
 export const getAllReports = createAsyncThunk("report/getAll", async () => {
     try {
         const res = await axiosInstance.get("/report/getAll");
+        console.log('📊 All Reports:', res.data.reports);
         return res.data.reports;
     } catch (error) {
-        toast.error(error?.response?.data?.message || "Failed to fetch all reports");
+        const message = error?.response?.data?.message || "Failed to fetch all reports";
+        toast.error(message);
         throw error;
     }
 });
@@ -37,21 +40,31 @@ export const getDeletedReports = createAsyncThunk("report/deleted", async () => 
         const res = await axiosInstance.get("/report/deleted");
         return res.data.reports;
     } catch (error) {
-        toast.error(error?.response?.data?.message || "Failed to fetch deleted reports");
+        const message = error?.response?.data?.message || "Failed to fetch deleted reports";
+        toast.error(message);
         throw error;
     }
 });
 
-// Create new report
+// Create new report with single image
 export const createReport = createAsyncThunk("report/create", async (data) => {
     try {
-        const payload = {
-            date: data?.date,
-            purpose: data?.purpose,
-            details: data?.details,
-        };
+        const formData = new FormData();
+        formData.append("date", data.date);
+        formData.append("purpose", data.purpose);
+        formData.append("details", data.details);
 
-        const res = axiosInstance.post("/report/create", payload);
+        // Append single image if exists
+        if (data.image) {
+            formData.append("image", data.image);
+            console.log('📎 Image attached:', data.image.name);
+        }
+
+        const res = axiosInstance.post("/report/create", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
 
         toast.promise(res, {
             loading: "Creating report...",
@@ -60,9 +73,11 @@ export const createReport = createAsyncThunk("report/create", async (data) => {
         });
 
         const response = await res;
+        console.log('✅ Report created:', response.data.report);
         return response.data.report;
     } catch (error) {
-        toast.error(error?.response?.data?.message || "Failed to create report");
+        const message = error?.response?.data?.message || "Failed to create report";
+        toast.error(message);
         throw error;
     }
 });
@@ -78,13 +93,15 @@ export const deleteReport = createAsyncThunk("report/delete", async (id) => {
             error: "Failed to delete report",
         });
 
-        const response = await res;
+        await res;
         return id;
     } catch (error) {
-        toast.error(error?.response?.data?.message || "Failed to delete report");
+        const message = error?.response?.data?.message || "Failed to delete report";
+        toast.error(message);
         throw error;
     }
 });
+
 // Mark report as seen
 export const markReportAsSeen = createAsyncThunk(
     "report/markAsSeen",
@@ -99,7 +116,7 @@ export const markReportAsSeen = createAsyncThunk(
             });
 
             const res = await resPromise;
-            return res.data.report; // The updated report object from backend
+            return res.data.report;
         } catch (error) {
             const message = error?.response?.data?.message || "Error marking as seen";
             toast.error(message);
@@ -151,7 +168,6 @@ const reportSlice = createSlice({
                     report._id === updatedReport._id ? updatedReport : report
                 );
             });
-
     },
 });
 

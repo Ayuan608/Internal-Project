@@ -1,5 +1,3 @@
-// public/firebase-messaging-sw.js
-
 importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js");
 
@@ -15,14 +13,38 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Background message handler
-messaging.onBackgroundMessage(function (payload) {
-  console.log("Received background message: ", payload);
-  const notificationTitle = payload.notification.title;
+messaging.onBackgroundMessage((payload) => {
+  console.log("Background notification received:", payload);
+
+  const notificationTitle = payload.notification.title || "New Notification";
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: "/firebase-logo.png",
+    body: payload.notification.body || "",
+    icon: "/logo.png",
+    badge: "/badge.png",
+    tag: payload.data?.notificationId || "notification",
+    requireInteraction: payload.data?.priority === "urgent",
+    data: payload.data,
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener("notificationclick", (event) => {
+  console.log("Notification clicked:", event.notification);
+
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("/notifications") && "focus" in client) {
+          return client.focus();
+        }
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow("/notifications");
+      }
+    })
+  );
 });

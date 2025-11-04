@@ -17,7 +17,6 @@ const store = configureStore({
         quota: quotaSliceReducer,
         report: reportSliceReducer,
         stat: statSliceReducer,
-        file: fileSliceReducer,
         sheet: sheetSliceReducer,
         announcements: announcementSliceReducer,
         combinedQuota: combinedQuotaReducer,

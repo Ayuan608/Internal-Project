@@ -4,31 +4,11 @@ import { TeamStats } from "../../Helpers/Helper";
 import CustomizedDataGrid from "./SuperAdminDashboardRoute/ui/data/CustomizedDataGrid";
 import ExampleIosSwitch from "./SuperAdminDashboardRoute/ui/Switch";
 import { useState } from 'react';
-import { useEffect } from 'react';
-import { checkNotificationPermission, initializeNotifications } from "../../services/notificationService";
-
 import { useSelector } from "react-redux";
 
 
 export default function Dashboard() {
   const [teamLeaderData, setTeamLeaderData] = useState([]);
-  const [fcmToken, setFcmToken] = useState(null);
-  const [permission, setPermission] = useState('default');
-
-  useEffect(() => {
-    // Check current notification permission
-    setPermission(checkNotificationPermission());
-
-    // Initialize FCM
-    const initFCM = async () => {
-      const token = await initializeNotifications();
-      if (token) {
-        setFcmToken(token);
-      }
-    };
-
-    initFCM();
-  }, []);
 
   const userId = useSelector((state) => state.auth?.data?._id);
 

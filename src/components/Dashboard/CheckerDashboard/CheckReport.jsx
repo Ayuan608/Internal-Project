@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle, Eye } from 'lucide-react'
+import { X, Send, Calendar, User, FileText, Paperclip, Clock, CheckCircle, Eye, Image as ImageIcon } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { createReport, getAllReports } from '../../../redux/reportSlice';
 
 function CheckReport() {
     const dispatch = useDispatch();
     const { allReports } = useSelector((state) => state.report);
-    console.log("report data user", allReports)
     const [isReportModal, setIsReportModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [timeFilter, setTimeFilter] = useState('6');
@@ -19,7 +18,8 @@ function CheckReport() {
         date: new Date().toLocaleDateString('en-US'),
         purpose: 'Daily Performance Report',
         details: '',
-        file: null
+        image: null, // Single image
+        imagePreview: null, // For preview
     });
 
     const handleSubmit = async () => {
@@ -28,22 +28,28 @@ function CheckReport() {
             return;
         }
 
-        const reportData = {
+        const dataToSend = {
             date: formData.date,
             purpose: formData.purpose,
             details: formData.details,
+            image: formData.image, // Single image file
         };
 
-        const result = await dispatch(createReport(reportData));
+        console.log('📤 Submitting report:', {
+            ...dataToSend,
+            image: dataToSend.image ? dataToSend.image.name : null
+        });
+
+        const result = await dispatch(createReport(dataToSend));
 
         if (result.type === 'report/create/fulfilled') {
             await dispatch(getAllReports());
-
             setFormData({
                 date: new Date().toLocaleDateString('en-US'),
                 purpose: 'Daily Performance Report',
                 details: '',
-                file: null
+                image: null,
+                imagePreview: null,
             });
             setIsReportModal(false);
         } else {
@@ -51,11 +57,41 @@ function CheckReport() {
         }
     };
 
-    const handleFileChange = (e) => {
+    const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setFormData({ ...formData, file: file.name });
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData({
+                    ...formData,
+                    image: file,
+                    imagePreview: reader.result
+                });
+            };
+            reader.readAsDataURL(file);
+
+            console.log('🖼️ Image selected:', file.name);
         }
+    };
+
+    const removeImage = () => {
+        setFormData({
+            ...formData,
+            image: null,
+            imagePreview: null
+        });
     };
 
     const formatDate = (dateString) => {
@@ -82,9 +118,7 @@ function CheckReport() {
         });
     };
 
-    // Filter based on selected time period
     const getFilteredDate = () => {
-        const today = new Date();
         const filterDate = new Date();
         filterDate.setMonth(filterDate.getMonth() - parseInt(timeFilter));
         return filterDate;
@@ -147,7 +181,6 @@ function CheckReport() {
                                     onClick={() => setSelectedReport(report)}
                                     className="bg-gray-900/60 backdrop-blur-md border border-gray-800 hover:shadow-xl rounded-xl p-6 transition-all duration-300 cursor-pointer"
                                 >
-                                    {/* Header */}
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex-1">
                                             <h3 className="font-semibold text-white text-base">
@@ -179,21 +212,18 @@ function CheckReport() {
                                         </div>
                                     </div>
 
-                                    {/* Purpose Tag */}
                                     <span className="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1 rounded-full inline-block mb-3">
                                         {report.purpose}
                                     </span>
 
-                                    {/* Details */}
                                     <p className="text-gray-300 text-sm leading-relaxed line-clamp-6 whitespace-pre-line">
                                         {report.details}
                                     </p>
 
-                                    {/* File */}
-                                    {report.file && (
+                                    {report.imageUrl && (
                                         <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50 mt-4">
-                                            <Paperclip size={14} />
-                                            <span>Attachment: {report.file}</span>
+                                            <ImageIcon size={14} />
+                                            <span>Image attached</span>
                                         </div>
                                     )}
                                 </div>
@@ -207,7 +237,6 @@ function CheckReport() {
             {selectedReport && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
                     <div className="bg-slate-900/50 backdrop-blur-lg rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-800">
-                        {/* Modal Header */}
                         <div className="sticky top-0 bg-slate-900/50 border-b border-gray-800 p-6 flex justify-between items-start">
                             <div className="flex items-center gap-4">
                                 <div className="bg-blue-600 rounded-full p-3">
@@ -230,9 +259,7 @@ function CheckReport() {
                             </button>
                         </div>
 
-                        {/* Modal Body */}
                         <div className="p-6 space-y-6">
-                            {/* Status and Purpose */}
                             <div className="flex gap-3 flex-wrap">
                                 <span className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${selectedReport.status === 'seen'
                                     ? 'bg-green-600/20 text-green-400'
@@ -255,7 +282,6 @@ function CheckReport() {
                                 </span>
                             </div>
 
-                            {/* Date and Time */}
                             <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
                                 <h3 className="text-sm font-semibold text-gray-400 mb-3">Date & Time Information</h3>
                                 <div className="space-y-2">
@@ -270,7 +296,6 @@ function CheckReport() {
                                 </div>
                             </div>
 
-                            {/* Report Details */}
                             <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
                                 <h3 className="text-sm font-semibold text-gray-400 mb-3">Report Details</h3>
                                 <div className="max-h-96 overflow-y-auto">
@@ -280,18 +305,17 @@ function CheckReport() {
                                 </div>
                             </div>
 
-                            {/* File Attachment */}
-                            {selectedReport.file && (
+                            {selectedReport.imageUrl && (
                                 <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
                                     <h3 className="text-sm font-semibold text-gray-400 mb-3">Attachment</h3>
-                                    <div className="flex items-center gap-2 text-white">
-                                        <Paperclip size={18} className="text-blue-400" />
-                                        <span className="text-sm">{selectedReport.file}</span>
-                                    </div>
+                                    <img 
+                                        src={selectedReport.imageUrl} 
+                                        alt="Report attachment" 
+                                        className="w-full rounded-lg border border-gray-700"
+                                    />
                                 </div>
                             )}
 
-                            {/* Close Button */}
                             <div className="flex justify-end pt-4 border-t border-gray-700">
                                 <button
                                     onClick={() => setSelectedReport(null)}
@@ -328,25 +352,22 @@ function CheckReport() {
                                 <label className='block text-sm font-semibold mb-2.5 text-gray-200'>
                                     Date <span className="text-red-400">*</span>
                                 </label>
-                                <div className="relative">
-                                    <input
-                                        type='text'
-                                        value={formData.date}
-                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                        className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-500'
-                                        placeholder="MM/DD/YYYY"
-                                    />
-                                </div>
+                                <input
+                                    type='text'
+                                    value={formData.date}
+                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                    className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-500'
+                                    placeholder="MM/DD/YYYY"
+                                />
                             </div>
 
-                            {/* Purpose */}
                             {/* Purpose */}
                             <div>
                                 <label className='block text-sm font-semibold mb-2.5 text-gray-200'>
                                     Purpose <span className="text-red-400">*</span>
                                 </label>
                                 <select
-                                    value={formData.purpose === 'Daily Performance Report' || formData.purpose === 'Weekly Summary Report' || formData.purpose === 'Issue Report' || formData.purpose === 'Progress Report' ? formData.purpose : 'Others'}
+                                    value={['Daily Performance Report', 'Weekly Summary Report', 'Issue Report', 'Progress Report'].includes(formData.purpose) ? formData.purpose : 'Others'}
                                     onChange={(e) => {
                                         if (e.target.value === 'Others') {
                                             setFormData({ ...formData, purpose: '' });
@@ -363,8 +384,7 @@ function CheckReport() {
                                     <option>Others</option>
                                 </select>
 
-                                {/* Conditional input for "Others" */}
-                                {(formData.purpose === '' || (formData.purpose !== 'Daily Performance Report' && formData.purpose !== 'Weekly Summary Report' && formData.purpose !== 'Issue Report' && formData.purpose !== 'Progress Report')) && (
+                                {!['Daily Performance Report', 'Weekly Summary Report', 'Issue Report', 'Progress Report'].includes(formData.purpose) && (
                                     <input
                                         type='text'
                                         value={formData.purpose}
@@ -383,36 +403,47 @@ function CheckReport() {
                                 <textarea
                                     value={formData.details}
                                     onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-                                    placeholder='Enter report details...
-
-Example:
-- Team Performance: 15/20 members met quota (75%)
-- Morning Shift: 87% quota achievement (+5% from last week)
-- Night Shift: 73% quota achievement (-3% from last week)
-- Notable Issues: 2 attendance violations recorded
-- Action Items: Follow-up meetings scheduled with underperforming members'
+                                    placeholder='Enter report details...'
                                     className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[220px] resize-none text-white placeholder-gray-500 leading-relaxed'
                                 />
                             </div>
 
-                            {/* File Upload */}
+                            {/* Single Image Upload */}
                             <div>
                                 <label className='block text-sm font-semibold mb-2.5 text-gray-200'>
-                                    Attach Performance Data <span className="text-gray-500">(Optional)</span>
+                                    Attach Image <span className="text-gray-500">(Optional - Max 5MB)</span>
                                 </label>
-                                <div className='relative'>
-                                    <input
-                                        type='file'
-                                        onChange={handleFileChange}
-                                        className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium file:cursor-pointer hover:file:bg-blue-700 file:transition-all text-gray-400'
-                                    />
-                                </div>
-                                {formData.file && (
-                                    <div className='bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 mt-3'>
-                                        <p className='text-sm text-gray-300 flex items-center gap-2'>
-                                            <Paperclip size={16} className="text-blue-400" />
-                                            <span className="font-medium">{formData.file}</span>
-                                        </p>
+                                
+                                {!formData.imagePreview ? (
+                                    <div className='relative'>
+                                        <input
+                                            type='file'
+                                            accept='image/*'
+                                            onChange={handleImageChange}
+                                            className='w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium file:cursor-pointer hover:file:bg-blue-700 file:transition-all text-gray-400'
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className='bg-gray-800/50 border border-gray-700 rounded-xl p-4'>
+                                        <div className='flex items-start gap-3'>
+                                            <img 
+                                                src={formData.imagePreview} 
+                                                alt="Preview" 
+                                                className='w-20 h-20 object-cover rounded-lg'
+                                            />
+                                            <div className='flex-1'>
+                                                <p className='text-sm text-gray-300 font-medium'>{formData.image?.name}</p>
+                                                <p className='text-xs text-gray-500 mt-1'>
+                                                    {(formData.image?.size / 1024).toFixed(2)} KB
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={removeImage}
+                                                className='text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded-lg transition-all'
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>

@@ -31,8 +31,26 @@ import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import ShiftManagement from "./components/Dashboard/AdminDashboard/shift-management";
 import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-whiteList";
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
+import { useEffect } from "react";
+import { onMessageListener, requestForToken } from "./services/firebase/firebase";
 
 function App() {
+  // console.log("==========app entry point")
+  // useEffect(() => {
+  //   requestForToken();
+
+  //   onMessageListener().then((payload) => {
+  //     console.log("🎯 Notification Received in Foreground:", payload);
+  //     alert(`${payload.notification.title}\n${payload.notification.body}`);
+  //   });
+  // }, []);
+  //  const currentUser = useSelector((state) => state.auth.user);
+  // const userId = currentUser?._id;
+  // const { unreadCount } = useNotifications(userId);
+
+  // useEffect(() => {
+  //   console.log("📊 Unread notifications:", unreadCount);
+  // }, [unreadCount]);
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
