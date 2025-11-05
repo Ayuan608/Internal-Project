@@ -50,20 +50,20 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
         if (!isHeaderRow && row[1] && row[1] !== '') {
           // Extract transaction data (assuming index 2 has transaction count)
           const transactions = parseInt(row[2]) || 0;
-          
+
           // Define quota based on department
-          let quota = 1000;
-          if (department === "Deposit") quota = 800;
-          if (department === "Withdrawal") quota = 600;
+          let quota = 530;
+          if (department === "Deposit") quota = 530;
+          if (department === "Withdrawal") quota = 1500;
 
           // Calculate quota percentage
           const quotaPercentage = (transactions / quota) * 100;
-          
+
           // If quota not met (less than 70%), add to non-quota list
-          if (quotaPercentage < 70) {
+          if (quotaPercentage <= 70) {
             nonQuotaData.push({
               date: "October 2024", // You can extract actual date from your data
-              name: row[1] || 'Unknown Agent',
+              name: row[2] || 'Unknown Agent',
               role: "Agent",
               department: department,
               output: transactions,
@@ -80,7 +80,6 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     });
 
     console.log(`Non-Quota Agents for ${department}:`, nonQuotaData);
-
 
     return nonQuotaData;
   };
