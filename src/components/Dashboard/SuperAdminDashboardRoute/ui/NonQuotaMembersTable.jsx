@@ -48,17 +48,17 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
           row[0]?.toLowerCase().includes('trainees');
 
         if (!isHeaderRow && row[1] && row[1] !== '') {
-
+          // Extract transaction data (assuming index 2 has transaction count)
           const transactions = parseInt(row[2]) || 0;
-
+          
           // Define quota based on department
-          let quota = 580;
-          if (department === "Deposit") quota = 580;
-          if (department === "Withdrawal") quota = 1500;
+          let quota = 1000;
+          if (department === "Deposit") quota = 800;
+          if (department === "Withdrawal") quota = 600;
 
           // Calculate quota percentage
           const quotaPercentage = (transactions / quota) * 100;
-
+          
           // If quota not met (less than 70%), add to non-quota list
           if (quotaPercentage < 70) {
             nonQuotaData.push({
@@ -80,6 +80,8 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     });
 
     console.log(`Non-Quota Agents for ${department}:`, nonQuotaData);
+
+
     return nonQuotaData;
   };
 
