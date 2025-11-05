@@ -51,6 +51,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const { lastUpdated, loading: quotaLoading } = useSelector(
     (state: any) => state.quota
   );
+
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state: any) => state.combinedQuota
   );
@@ -214,6 +215,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       ),
     [monthlyData]
   );
+
 
   const filteredWithdraw = React.useMemo(
     () =>
