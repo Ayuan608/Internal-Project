@@ -15,7 +15,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     priority: "Medium"
   });
 
-  // Remove the local department state and use the prop instead
+
   useEffect(() => {
     if (department === "All") {
       setFilteredData(data);

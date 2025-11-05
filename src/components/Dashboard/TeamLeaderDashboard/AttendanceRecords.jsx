@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Search } from "lucide-react";
+import { AlertCircle, CheckCircle, Search, Calendar, Clock, Users, TrendingUp, XCircle, Coffee, LogOut, LogIn } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance } from "./../../../redux/attendenceSlice";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ const AttendanceRecords = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedDepartment, setSelectedDepartment] = useState("All");
     const [selectedRole, setSelectedRole] = useState("All");
+    const [selectedPeriod, setSelectedPeriod] = useState('daily');
     const dispatch = useDispatch();
 
     const { allAttendance } = useSelector((state) => state.attendance);
@@ -38,15 +39,15 @@ const AttendanceRecords = () => {
 
     const getStatusIcon = (status) =>
         status === "VIOLATION" ? (
-            <AlertCircle className="w-4 h-4 text-red-500" />
+            <AlertCircle className="w-4 h-4 text-red-400" />
         ) : (
-            <CheckCircle className="w-4 h-4 text-green-500" />
+            <CheckCircle className="w-4 h-4 text-green-400" />
         );
 
     const getStatusColor = (status) =>
         status === "VIOLATION"
-            ? "text-red-600 bg-red-50 border-red-200"
-            : "text-green-600 bg-green-50 border-green-200";
+            ? "text-red-400 bg-red-500/20 border-red-500/30"
+            : "text-green-400 bg-green-500/20 border-green-500/30";
 
     // 🔍 Filter Data by Search
     const filteredData = attendanceData.filter((record) => {
@@ -65,130 +66,335 @@ const AttendanceRecords = () => {
         );
     });
 
+    // Calculate metrics
+    const calculateMetrics = () => {
+        const totalRecords = filteredData.length;
+        const missedPunchIn = filteredData.filter(r => !r.clockIn).length;
+        const missedPunchOut = filteredData.filter(r => !r.clockOut).length;
+        const violations = filteredData.filter(r => r.alert === 'VIOLATION').length;
+        const completeShifts = filteredData.filter(r => {
+            if (!r.workingHours) return false;
+            const hours = parseFloat(r.workingHours);
+            return hours >= 6;
+        }).length;
+
+        return {
+            totalRecords,
+            missedPunchIn,
+            missedPunchOut,
+            violations,
+            completeShifts,
+            avgMissedPunchIn: totalRecords > 0 ? ((missedPunchIn / totalRecords) * 100).toFixed(1) : '0.0',
+            avgMissedPunchOut: totalRecords > 0 ? ((missedPunchOut / totalRecords) * 100).toFixed(1) : '0.0',
+            completionRate: totalRecords > 0 ? ((completeShifts / totalRecords) * 100).toFixed(1) : '0.0',
+            violationRate: totalRecords > 0 ? ((violations / totalRecords) * 100).toFixed(1) : '0.0'
+        };
+    };
+
+    const metrics = calculateMetrics();
+    const activeEmployees = new Set(filteredData.map(r => r.user?.FullName).filter(Boolean)).size;
+
     return (
-        <>
-            <div className="flex flex-wrap items-center gap-3 justify-end my-5">
-                {/* Search Input */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-                    <input
-                        type="text"
-                        placeholder="Search by name, role or dept..."   
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 pr-3 py-2 rounded-md text-white text-sm border border-slate-800 focus:outline-none bg-transparent min-w-[280px]"
-                    />
-                </div>
-            </div>
-
-            <div className="w-[calc(100vw-240px)] bg-[rgba(59,130,246,0.03)] rounded-lg shadow-lg border_gray overflow-hidden m-2">
+        <div className="min-h-screen  text-white p-6">
+            <div className="max-w-full mx-auto">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-white">
+                <div className="mb-8">
+                    <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                         Attendance Records
-                    </h2>
-
-                    {/* 🔍 Filters */}
-
+                    </h1>
+                    <p className="text-slate-400">Monitor attendance metrics and track violations</p>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-[rgba(59,130,246,0.03)] border-b border-gray-200">
-                            <tr>
-                                {[
-                                    "USER ID",
-                                    "DATE",
-                                    "NAME",
-                                    "ROLE",
-                                    "PUNCH IN",
-                                    "SHIFT",
-                                    "DEPARTMENT",
-                                    "PUNCH OUT",
-                                    "TOTAL HOURS",
-                                    "STATUS",
-                                ].map((header) => (
-                                    <th
-                                        key={header}
-                                        className="px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider whitespace-nowrap"
-                                    >
-                                        {header}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
+                {/* Period Selector */}
+                <div className="flex gap-2 mb-6">
+                    <button
+                        onClick={() => setSelectedPeriod('daily')}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
+                            selectedPeriod === 'daily'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
+                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
+                        }`}
+                    >
+                        Daily
+                    </button>
+                    <button
+                        onClick={() => setSelectedPeriod('weekly')}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
+                            selectedPeriod === 'weekly'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
+                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
+                        }`}
+                    >
+                        Weekly
+                    </button>
+                    <button
+                        onClick={() => setSelectedPeriod('monthly')}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
+                            selectedPeriod === 'monthly'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
+                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
+                        }`}
+                    >
+                        Monthly
+                    </button>
+                </div>
 
-                        <tbody className="bg-[rgba(59,130,246,0.03)]">
-                            {filteredData.length > 0 ? (
-                                filteredData.map((record, index) => (
-                                    <tr key={index} className="border_gray">
-                                        <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
-                                            {record._id ? record._id.slice(0, 8) : ""}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {new Date(record.date).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.user?.FullName}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.user?.role}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.clockIn
-                                                ? new Date(record.clockIn).toLocaleTimeString()
-                                                : "Not Punched In"}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.shift}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.user?.department}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.clockOut
-                                                ? new Date(record.clockOut).toLocaleTimeString()
-                                                : "Not Punched Out"}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-white whitespace-nowrap">
-                                            {record.workingHours}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div
-                                                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                                                    record.alert
-                                                )}`}
-                                            >
-                                                {getStatusIcon(record.alert)}
-                                                {record.alert}
+                {/* Overview Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Total Records */}
+                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-3 rounded-xl">
+                                <Calendar className="w-6 h-6 text-blue-400" />
+                            </div>
+                            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                                {selectedPeriod === 'daily' ? 'Today' : selectedPeriod === 'weekly' ? 'This Week' : 'This Month'}
+                            </span>
+                        </div>
+                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
+                            {metrics.totalRecords}
+                        </h3>
+                        <p className="text-sm text-slate-400">Total Records</p>
+                    </div>
+
+                    {/* Complete Shifts */}
+                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-3 rounded-xl">
+                                <CheckCircle className="w-6 h-6 text-green-400" />
+                            </div>
+                            <span className="text-sm text-green-400 font-bold">{metrics.completionRate}%</span>
+                        </div>
+                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-green-400 to-green-300 bg-clip-text text-transparent">
+                            {metrics.completeShifts}
+                        </h3>
+                        <p className="text-sm text-slate-400">Complete Shifts (≥6h)</p>
+                    </div>
+
+                    {/* Active Employees */}
+                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-3 rounded-xl">
+                                <Users className="w-6 h-6 text-purple-400" />
+                            </div>
+                        </div>
+                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
+                            {activeEmployees}
+                        </h3>
+                        <p className="text-sm text-slate-400">Active Employees</p>
+                    </div>
+
+                    {/* Violations */}
+                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-red-500/10 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 p-3 rounded-xl">
+                                <AlertCircle className="w-6 h-6 text-red-400" />
+                            </div>
+                            <span className="text-sm text-red-400 font-bold">{metrics.violationRate}%</span>
+                        </div>
+                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
+                            {metrics.violations}
+                        </h3>
+                        <p className="text-sm text-slate-400">Total Violations</p>
+                    </div>
+                </div>
+
+                {/* Violations Metrics */}
+                <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 mb-8 border border-slate-700/50 backdrop-blur-sm">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 p-2 rounded-xl">
+                            <AlertCircle className="w-6 h-6 text-yellow-400" />
+                        </div>
+                        <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                            Attendance Violations & Averages
+                        </span>
+                    </h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Missed Punch In */}
+                        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-5 border border-red-500/20 hover:border-red-500/40 transition-all duration-300">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 p-3 rounded-xl">
+                                    <LogIn className="w-6 h-6 text-red-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Missed Punch In</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-3xl font-bold text-red-400">{metrics.missedPunchIn}</span>
+                                        <span className="text-sm text-slate-500">records</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                                <span className="text-xs text-slate-500 font-medium">Average</span>
+                                <span className="text-lg font-bold text-red-400">{metrics.avgMissedPunchIn}%</span>
+                            </div>
+                        </div>
+
+                        {/* Missed Punch Out */}
+                        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-5 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/20 p-3 rounded-xl">
+                                    <LogOut className="w-6 h-6 text-orange-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Missed Punch Out</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-3xl font-bold text-orange-400">{metrics.missedPunchOut}</span>
+                                        <span className="text-sm text-slate-500">records</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                                <span className="text-xs text-slate-500 font-medium">Average</span>
+                                <span className="text-lg font-bold text-orange-400">{metrics.avgMissedPunchOut}%</span>
+                            </div>
+                        </div>
+
+                        {/* Total Violations */}
+                        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-5 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-3 rounded-xl">
+                                    <XCircle className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">All Violations</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-3xl font-bold text-purple-400">{metrics.violations}</span>
+                                        <span className="text-sm text-slate-500">issues</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                                <span className="text-xs text-slate-500 font-medium">Violation Rate</span>
+                                <span className="text-lg font-bold text-purple-400">{metrics.violationRate}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Search and Table Section */}
+                <div className="bg-[rgba(59,130,246,0.03)]rounded-2xl overflow-hidden border border-slate-700/50 backdrop-blur-sm">
+                    {/* Header with Search */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 py-5 border-b border-slate-700/50">
+                        <h2 className="text-xl font-bold text-white">
+                            Detailed Records
+                        </h2>
+
+                        {/* Search Input */}
+                        <div className="relative">
+                            <Search className="absolute left-4 top-3 text-slate-400 w-5 h-5" />
+                            <input
+                                type="text"
+                                placeholder="Search by name, role or department..."   
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-12 pr-4 py-3 rounded-xl text-white text-sm border border-slate-700 focus:outline-none focus:border-blue-500 bg-slate-900/50 min-w-[320px] transition-all duration-300"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-slate-900/80 border-b border-slate-700/50">
+                                <tr>
+                                    {[
+                                        "USER ID",
+                                        "DATE",
+                                        "NAME",
+                                        "SHIFT",
+                                        "PUNCH IN",
+                                        "PUNCH OUT",
+                                        "TOTAL HOURS",
+                                        "STATUS",
+                                    ].map((header) => (
+                                        <th
+                                            key={header}
+                                            className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
+                                        >
+                                            {header}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+
+                            <tbody className="divide-y divide-slate-700/30">
+                                {filteredData.length > 0 ? (
+                                    filteredData.map((record, index) => (
+                                        <tr key={index} className="hover:bg-slate-800/30 transition-colors duration-200">
+                                            <td className="px-6 py-4 text-sm text-slate-300 font-mono whitespace-nowrap">
+                                                {record._id ? record._id.slice(0, 8) : ""}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
+                                                {new Date(record.date).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
+                                                {record.user?.FullName}
+                                            </td>
+                                           
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-semibold border border-blue-500/30">
+                                                    {record.shift}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
+                                                {record.clockIn
+                                                    ? new Date(record.clockIn).toLocaleTimeString()
+                                                    : <span className="text-red-400 font-semibold">Not Punched In</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                {record.clockOut
+                                                    ? <span className="text-slate-300">{new Date(record.clockOut).toLocaleTimeString()}</span>
+                                                    : <span className="text-orange-400 font-semibold">Not Punched Out</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                <span className={`font-bold ${
+                                                    parseFloat(record.workingHours) < 6 ? 'text-yellow-400' : 'text-green-400'
+                                                }`}>
+                                                    {record.workingHours}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div
+                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border ${getStatusColor(
+                                                        record.alert
+                                                    )}`}
+                                                >
+                                                    {getStatusIcon(record.alert)}
+                                                    {record.alert}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan="8"
+                                            className="text-center text-slate-400 py-12 text-sm"
+                                        >
+                                            <div className="flex flex-col items-center gap-3">
+                                                <AlertCircle className="w-12 h-12 text-slate-600" />
+                                                <p className="text-lg font-medium">No records found</p>
+                                                <p className="text-xs text-slate-500">Try adjusting your search criteria</p>
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan="10"
-                                        className="text-center text-gray-400 py-6 text-sm"
-                                    >
-                                        No records found
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-                {/* Footer */}
-                <div className="bg-[rgba(59,130,246,0.03)] px-6 py-3 border-t border-gray-200">
-                    <div className="flex justify-between items-center text-sm text-white">
-                        <span>Showing {filteredData.length} records</span>
-                        <span>Updated: {new Date().toLocaleDateString()}</span>
+                    {/* Footer */}
+                    <div className="bg-slate-900/80 px-6 py-4 border-t border-slate-700/50">
+                        <div className="flex justify-between items-center text-sm text-slate-300">
+                            <span className="font-medium">Showing <span className="text-blue-400 font-bold">{filteredData.length}</span> records</span>
+                            <span className="text-slate-400">Updated: {new Date().toLocaleDateString()}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

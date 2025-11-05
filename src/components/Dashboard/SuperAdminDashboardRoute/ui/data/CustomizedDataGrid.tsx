@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Doughnut } from "react-chartjs-2";
 import {
@@ -12,12 +12,26 @@ import {
 import { getDashboardStats } from "../../../../../redux/QuotaSlice";
 import { fetchCombinedDepartmentsData } from "../../../../../redux/combinedQuotaSlice";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
-import { TrendingUp, Users, MessageCircle, Target } from "lucide-react";
+import {
+  TrendingUp,
+  Users,
+  MessageCircle,
+  Target,
+  RefreshCw,
+} from "lucide-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 interface CustomizedDataGridProps {
   onStatsUpdate?: (data: any[]) => void;
+}
+
+interface DepartmentResult {
+  abovePercent: number;
+  belowPercent: number;
+  total: number;
+  values: number[];
+  aboveTarget: number;
 }
 
 const formatNumber = (number: number): string => {
@@ -34,20 +48,28 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   onStatsUpdate,
 }) => {
   const dispatch = useDispatch<any>();
-  const { lastUpdated } = useSelector((state: any) => state.quota);
-  const { data } = useSelector((state: any) => state.combinedQuota);
-
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    new Date().toLocaleString("default", { month: "long" })
+  const { lastUpdated, loading: quotaLoading } = useSelector(
+    (state: any) => state.quota
   );
 
-  const parseNumber = (value: any): number => {
+  const { data, loading: combinedQuotaLoading } = useSelector(
+    (state: any) => state.combinedQuota
+  );
+
+  const [selectedMonth, setSelectedMonth] = useState<string>("September");
+
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  const loading = quotaLoading || combinedQuotaLoading || isRefreshing;
+
+  const parseNumber = useCallback((value: any): number => {
     if (typeof value === "string") return Number(value.replace(/,/g, ""));
     return Number(value) || 0;
-  };
+  }, []);
 
-  const extractAvailableMonths = (data: any[]): string[] => {
-    if (!data || !Array.isArray(data)) return [];
+  const extractAvailableMonths = useCallback((data: any[]): string[] => {
+    if (!data || !Array.isArray(data)) return ["September"];
     const months: string[] = [];
     data.forEach((row: any) => {
       if (Array.isArray(row) && row[0] === "CSR" && row[1] === "" && row[2]) {
@@ -55,73 +77,80 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         if (month && !months.includes(month)) months.push(month);
       }
     });
-    return months;
-  };
+    return months.length > 0 ? months : ["September"];
+  }, []);
 
-  const getRowMonth = (row: any): string | null => {
+  const getRowMonth = useCallback((row: any): string | null => {
     if (!Array.isArray(row) || row.length === 0) return null;
     if (row[0] === "CSR" && row[1] === "" && row[2]) return row[2];
     return null;
-  };
+  }, []);
 
-  const filterDataByMonth = (data: any[], targetMonth: string): any[] => {
-    if (!data || !Array.isArray(data)) return [];
-    let currentMonth = targetMonth;
-    const filteredData: any[] = [];
-    let includeCurrentData = false;
+  const filterDataByMonth = useCallback(
+    (data: any[], targetMonth: string): any[] => {
+      if (!data || !Array.isArray(data)) return [];
+      let currentMonth = targetMonth;
+      const filteredData: any[] = [];
+      let includeCurrentData = false;
 
-    data.forEach((row: any) => {
-      const rowMonth = getRowMonth(row);
-      if (rowMonth) {
-        currentMonth = rowMonth;
-        includeCurrentData = currentMonth === targetMonth;
-      } else if (includeCurrentData && Array.isArray(row) && row.length > 0) {
-        filteredData.push(row);
+      data.forEach((row: any) => {
+        const rowMonth = getRowMonth(row);
+        if (rowMonth) {
+          currentMonth = rowMonth;
+          includeCurrentData = currentMonth === targetMonth;
+        } else if (includeCurrentData && Array.isArray(row) && row.length > 0) {
+          filteredData.push(row);
+        }
+      });
+      return filteredData;
+    },
+    [getRowMonth]
+  );
+
+  const calculateDepartmentStatus = useCallback(
+    (
+      departmentData: any[],
+      quotaIndex: number,
+      targetQuota: number
+    ): DepartmentResult => {
+      if (!departmentData?.length) {
+        return {
+          abovePercent: 0,
+          belowPercent: 100,
+          total: 0,
+          values: [],
+          aboveTarget: 0,
+        };
       }
-    });
-    return filteredData;
-  };
 
-  const calculateDepartmentStatus = (
-    departmentData: any[],
-    quotaIndex: number,
-    targetQuota: number
-  ) => {
-    if (!departmentData?.length)
+      const values = departmentData
+        .map((row: any) => parseNumber(row[quotaIndex]))
+        .filter((num: number) => !isNaN(num) && num !== 0);
+
+      let belowTarget = 0;
+      let aboveTarget = 0;
+
+      values.forEach((num) => {
+        if (num >= targetQuota) aboveTarget++;
+        else belowTarget++;
+      });
+
+      const total = values.length || 1;
+      const abovePercent = Number(((aboveTarget / total) * 100).toFixed(2));
+      const belowPercent = Number(((belowTarget / total) * 100).toFixed(2));
+
       return {
-        abovePercent: 0,
-        belowPercent: 100,
-        total: 0,
-        values: [],
-        aboveTarget: 0,
+        abovePercent,
+        belowPercent,
+        total,
+        values,
+        aboveTarget,
       };
+    },
+    [parseNumber]
+  );
 
-    const values = departmentData
-      ?.map((row: any) => parseNumber(row[quotaIndex]))
-      .filter((num: number) => num !== 0);
-
-    let belowTarget = 0;
-    let aboveTarget = 0;
-
-    values.forEach((num) => {
-      if (num >= targetQuota) aboveTarget++;
-      else belowTarget++;
-    });
-
-    const total = values.length || 1;
-    const abovePercent = Number(((aboveTarget / total) * 100).toFixed(2));
-    const belowPercent = Number(((belowTarget / total) * 100).toFixed(2));
-
-    return {
-      abovePercent,
-      belowPercent,
-      total,
-      values,
-      aboveTarget,
-    };
-  };
-
-  const getPreviousMonth = (monthName: string): string => {
+  const getPreviousMonth = useCallback((monthName: string): string => {
     const months = [
       "January",
       "February",
@@ -139,97 +168,177 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     const index = months.indexOf(monthName);
     if (index <= 0) return months[11];
     return months[index - 1];
-  };
+  }, []);
 
-  const availableMonths = extractAvailableMonths(data);
-  const monthOptions =
-    availableMonths.length > 0
-      ? availableMonths
-      : [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ];
-
-  const monthlyData = filterDataByMonth(data, selectedMonth);
-  const previousMonth = getPreviousMonth(selectedMonth);
-  const prevMonthData = filterDataByMonth(data, previousMonth);
-
-  const filteredCSR = monthlyData.filter((row: any) =>
-    row[0]?.toLowerCase().includes("csr")
-  );
-  const filteredDeposit = monthlyData.filter((row: any) =>
-    row[0]?.toLowerCase().includes("deposit")
-  );
-  const filteredWithdraw = monthlyData.filter((row: any) =>
-    row[0]?.toLowerCase().includes("withdraw")
+  // Memoized data calculations
+  const availableMonths = React.useMemo(
+    () => extractAvailableMonths(data),
+    [data, extractAvailableMonths]
   );
 
-  const filteredPrevCSR = prevMonthData.filter((row: any) =>
-    row[0]?.toLowerCase().includes("csr")
-  );
-  const filteredPrevDeposit = prevMonthData.filter((row: any) =>
-    row[0]?.toLowerCase().includes("deposit")
-  );
-  const filteredPrevWithdraw = prevMonthData.filter((row: any) =>
-    row[0]?.toLowerCase().includes("withdraw")
+  // Auto-select first available month if current selection not available
+  useEffect(() => {
+    if (
+      availableMonths.length > 0 &&
+      !availableMonths.includes(selectedMonth)
+    ) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth]);
+
+  const monthlyData = React.useMemo(
+    () => filterDataByMonth(data, selectedMonth),
+    [data, selectedMonth, filterDataByMonth]
   );
 
-  const csrResult = calculateDepartmentStatus(filteredCSR, 2, 530);
-  const depositResult = calculateDepartmentStatus(filteredDeposit, 9, 530);
-  const withdrawResult = calculateDepartmentStatus(filteredWithdraw, 7, 1500);
-
-  const prevCSRResult = calculateDepartmentStatus(filteredPrevCSR, 2, 530);
-  const prevDepositResult = calculateDepartmentStatus(
-    filteredPrevDeposit,
-    9,
-    530
-  );
-  const prevWithdrawResult = calculateDepartmentStatus(
-    filteredPrevWithdraw,
-    7,
-    1500
+  const previousMonth = React.useMemo(
+    () => getPreviousMonth(selectedMonth),
+    [selectedMonth, getPreviousMonth]
   );
 
-  const csrCurrentMonth = csrResult.values.reduce(
-    (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-    0
+  const prevMonthData = React.useMemo(
+    () => filterDataByMonth(data, previousMonth),
+    [data, previousMonth, filterDataByMonth]
   );
-  const csrPreviousMonth = prevCSRResult.values.reduce(
-    (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-    0
+
+  // Filter departments data
+  const filteredCSR = React.useMemo(
+    () =>
+      monthlyData.filter((row: any) => row[0]?.toLowerCase().includes("csr")),
+    [monthlyData]
   );
+
+  const filteredDeposit = React.useMemo(
+    () =>
+      monthlyData.filter((row: any) =>
+        row[0]?.toLowerCase().includes("deposit")
+      ),
+    [monthlyData]
+  );
+
+
+  const filteredWithdraw = React.useMemo(
+    () =>
+      monthlyData.filter((row: any) =>
+        row[0]?.toLowerCase().includes("withdraw")
+      ),
+    [monthlyData]
+  );
+
+  const filteredPrevCSR = React.useMemo(
+    () =>
+      prevMonthData.filter((row: any) => row[0]?.toLowerCase().includes("csr")),
+    [prevMonthData]
+  );
+
+  const filteredPrevDeposit = React.useMemo(
+    () =>
+      prevMonthData.filter((row: any) =>
+        row[0]?.toLowerCase().includes("deposit")
+      ),
+    [prevMonthData]
+  );
+
+  const filteredPrevWithdraw = React.useMemo(
+    () =>
+      prevMonthData.filter((row: any) =>
+        row[0]?.toLowerCase().includes("withdraw")
+      ),
+    [prevMonthData]
+  );
+
+  // Calculate department results
+  const csrResult = React.useMemo(
+    () => calculateDepartmentStatus(filteredCSR, 2, 530),
+    [filteredCSR, calculateDepartmentStatus]
+  );
+
+  const depositResult = React.useMemo(
+    () => calculateDepartmentStatus(filteredDeposit, 9, 530),
+    [filteredDeposit, calculateDepartmentStatus]
+  );
+
+  const withdrawResult = React.useMemo(
+    () => calculateDepartmentStatus(filteredWithdraw, 7, 1500),
+    [filteredWithdraw, calculateDepartmentStatus]
+  );
+
+  const prevCSRResult = React.useMemo(
+    () => calculateDepartmentStatus(filteredPrevCSR, 2, 530),
+    [filteredPrevCSR, calculateDepartmentStatus]
+  );
+
+  const prevDepositResult = React.useMemo(
+    () => calculateDepartmentStatus(filteredPrevDeposit, 9, 530),
+    [filteredPrevDeposit, calculateDepartmentStatus]
+  );
+
+  const prevWithdrawResult = React.useMemo(
+    () => calculateDepartmentStatus(filteredPrevWithdraw, 7, 1500),
+    [filteredPrevWithdraw, calculateDepartmentStatus]
+  );
+
+  // Calculate totals and differences
+  const csrCurrentMonth = React.useMemo(
+    () =>
+      csrResult.values.reduce(
+        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
+        0
+      ),
+    [csrResult.values]
+  );
+
+  const csrPreviousMonth = React.useMemo(
+    () =>
+      prevCSRResult.values.reduce(
+        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
+        0
+      ),
+    [prevCSRResult.values]
+  );
+
   const csrDifference = csrCurrentMonth - csrPreviousMonth;
   const isCSRPositive = csrDifference >= 0;
 
-  const depositCurrentMonth = depositResult.values.reduce(
-    (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-    0
+  const depositCurrentMonth = React.useMemo(
+    () =>
+      depositResult.values.reduce(
+        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
+        0
+      ),
+    [depositResult.values]
   );
-  const depositPreviousMonth = prevDepositResult.values.reduce(
-    (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-    0
+
+  const depositPreviousMonth = React.useMemo(
+    () =>
+      prevDepositResult.values.reduce(
+        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
+        0
+      ),
+    [prevDepositResult.values]
   );
+
   const depositDifference = depositCurrentMonth - depositPreviousMonth;
   const isDepositPositive = depositDifference >= 0;
 
-  const withdrawCurrentMonth = withdrawResult.values.reduce(
-    (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-    0
+  const withdrawCurrentMonth = React.useMemo(
+    () =>
+      withdrawResult.values.reduce(
+        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
+        0
+      ),
+    [withdrawResult.values]
   );
-  const withdrawPreviousMonth = prevWithdrawResult.values.reduce(
-    (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-    0
+
+  const withdrawPreviousMonth = React.useMemo(
+    () =>
+      prevWithdrawResult.values.reduce(
+        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
+        0
+      ),
+    [prevWithdrawResult.values]
   );
+
   const withdrawDifference = withdrawCurrentMonth - withdrawPreviousMonth;
   const isWithdrawPositive = withdrawDifference >= 0;
 
@@ -253,57 +362,58 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       totalAgents) *
     100;
 
-  const generateSparklineData = (
-    current: number,
-    previous: number,
-    trend: string
-  ) => {
-    const dataPoints = [];
-    const steps = 7;
-
-    dataPoints.push(previous);
-
-    for (let i = 1; i < steps - 1; i++) {
-      const progress = i / (steps - 1);
-      let baseValue;
-
-      if (trend === "up") {
-        baseValue = previous + (current - previous) * progress;
-      } else {
-        baseValue = previous - (previous - current) * progress;
+  // Initialize data
+  const initializeData = useCallback(async () => {
+    if (!isInitialized) {
+      setIsRefreshing(true);
+      try {
+        await Promise.all([
+          dispatch(fetchCombinedDepartmentsData()),
+          dispatch(getDashboardStats()),
+        ]);
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+      } finally {
+        setIsRefreshing(false);
       }
-
-      const volatility = 0.15;
-      const midPointFactor = Math.sin(Math.PI * progress) * 0.5 + 0.5;
-      const fluctuation =
-        (Math.random() - 0.5) * baseValue * volatility * midPointFactor;
-
-      const fluctuatedValue = Math.max(0, baseValue + fluctuation);
-      dataPoints.push(Math.round(fluctuatedValue));
     }
-
-    dataPoints.push(current);
-    return dataPoints;
-  };
+  }, [dispatch, isInitialized]);
 
   useEffect(() => {
-    dispatch(fetchCombinedDepartmentsData());
-    dispatch(getDashboardStats());
+    initializeData();
+  }, [initializeData]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        dispatch(fetchCombinedDepartmentsData()),
+        dispatch(getDashboardStats()),
+      ]);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [dispatch]);
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      title: {
-        display: true,
-        color: "#f8fafc",
-        font: { size: 16, weight: "bold" } as any,
+  const chartOptions = React.useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          color: "#f8fafc",
+          font: { size: 16, weight: "bold" } as any,
+        },
       },
-    },
-    cutout: "70%",
-  };
+      cutout: "70%",
+    }),
+    []
+  );
 
   const centerTextPlugin: Plugin<"doughnut"> = {
     id: "centerText",
@@ -328,114 +438,37 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     },
   };
 
-  const createChartData = (met: number, nonMet: number, color: string) => ({
-    labels: ["Quota Met", "Not Met"],
-    datasets: [
-      {
-        data: [met, nonMet],
-        backgroundColor: [color, "#1f2937"],
-        borderColor: "#0f172a",
-        borderWidth: 2,
-      },
-    ],
-  });
+  const createChartData = React.useCallback(
+    (met: number, nonMet: number, color: string) => ({
+      labels: ["Quota Met", "Not Met"],
+      datasets: [
+        {
+          data: [met, nonMet],
+          backgroundColor: [color, "#1f2937"],
+          borderColor: "#0f172a",
+          borderWidth: 2,
+        },
+      ],
+    }),
+    []
+  );
 
-  const TradingSparkline = ({
-    data,
-    isPositive,
-  }: {
-    data: number[];
-    isPositive: boolean;
-  }) => {
-    if (!data || data.length === 0) return null;
-
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
-    const width = 120;
-    const height = 40;
-
-    const points = data
-      .map((value, index) => {
-        const x = (index / (data.length - 1)) * width;
-        const y = height - 8 - ((value - min) / range) * (height - 16);
-        return `${x},${y}`;
-      })
-      .join(" ");
-
-    const firstValue = data[0];
-    const lastValue = data[data.length - 1];
-    const startX = 2;
-    const endX = width - 2;
-    const startY = height - 8 - ((firstValue - min) / range) * (height - 16);
-    const endY = height - 8 - ((lastValue - min) / range) * (height - 16);
-
-    const percentageChange = ((lastValue - firstValue) / firstValue) * 100;
-
-    return (
-      <div className="mt-3">
-        <svg width={width} height={height} className="mx-auto">
-          <polyline
-            fill="none"
-            stroke={isPositive ? "#00ff00" : "#ff4444"}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            points={points}
-          />
-          <circle
-            cx={startX}
-            cy={startY}
-            r="2"
-            fill={isPositive ? "#00ff00" : "#ff4444"}
-            opacity="0.8"
-          />
-          <circle
-            cx={endX}
-            cy={endY}
-            r="3.5"
-            fill={isPositive ? "#00ff00" : "#ff4444"}
-            opacity="1"
-            stroke="#1f2937"
-            strokeWidth="1.5"
-          />
-        </svg>
-        <div className="flex justify-center items-center mt-1">
-          <div
-            className={`text-xs font-semibold ${
-              isPositive ? "text-green-400" : "text-red-400"
-            }`}
-          >
-            {isPositive ? "+" : ""}
-            {percentageChange.toFixed(1)}%
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const ProgressCard = ({
-    title,
-    current,
-    previous,
-    difference,
-    isPositive,
-    color,
-  }: {
-    title: string;
-    current: number;
-    previous: number;
-    difference: number;
-    isPositive: boolean;
-    color: string;
-  }) => {
-    const sparklineData = generateSparklineData(
+  const ProgressCard = React.memo(
+    ({
+      title,
       current,
       previous,
-      isPositive ? "up" : "down"
-    );
-
-    return (
+      difference,
+      isPositive,
+      color,
+    }: {
+      title: string;
+      current: number;
+      previous: number;
+      difference: number;
+      isPositive: boolean;
+      color: string;
+    }) => (
       <div className={`p-4 rounded-xl border-l-4 ${color} bg-gray-800/30`}>
         <div className="flex justify-between items-start mb-3">
           <h4 className="font-semibold text-white text-sm">{title}</h4>
@@ -464,83 +497,137 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           </div>
         </div>
       </div>
-    );
-  };
+    )
+  );
 
-  const PerformanceMetric = ({
-    icon: Icon,
-    title,
-    value,
-    subtitle,
-    color = "text-blue-400",
-  }: {
-    icon: any;
-    title: string;
-    value: string;
-    subtitle: string;
-    color?: string;
-  }) => {
-    const formattedValue = value.includes("%")
-      ? value
-      : formatNumber(Number(value));
+  const PerformanceMetric = React.memo(
+    ({
+      icon: Icon,
+      title,
+      value,
+      subtitle,
+      color = "text-blue-400",
+    }: {
+      icon: any;
+      title: string;
+      value: string;
+      subtitle: string;
+      color?: string;
+    }) => {
+      const formattedValue = value.includes("%")
+        ? value
+        : formatNumber(Number(value));
 
-    return (
-      <div className="text-center p-4 bg-gray-800/30 rounded-lg">
-        <Icon className={`w-8 h-8 mx-auto mb-2 ${color}`} />
-        <div className="text-2xl font-bold text-white">{formattedValue}</div>
-        <div className="text-sm text-gray-300 font-medium">{title}</div>
-        <div className="text-xs text-gray-400 mt-1">{subtitle}</div>
-      </div>
-    );
-  };
+      return (
+        <div className="text-center p-4 bg-gray-800/30 rounded-lg">
+          <Icon className={`w-8 h-8 mx-auto mb-2 ${color}`} />
+          <div className="text-2xl font-bold text-white">{formattedValue}</div>
+          <div className="text-sm text-gray-300 font-medium">{title}</div>
+          <div className="text-xs text-gray-400 mt-1">{subtitle}</div>
+        </div>
+      );
+    }
+  );
 
-  const teamLeaderData = [
-    {
-      title: "CSR Department",
-      value: `${csrResult.aboveTarget}`,
-      interval: `Prev Month: ${prevCSRResult.aboveTarget}`,
-      trend: csrCurrentMonth > csrPreviousMonth ? "up" : "down",
-      data: csrResult.values || [],
-      totalCompleted: csrCurrentMonth,
-      prevTotalCompleted: csrPreviousMonth,
-      difference: csrDifference,
-      isPositive: isCSRPositive,
-    },
-    {
-      title: "Deposit Department",
-      value: `${depositResult.aboveTarget}`,
-      interval: `Prev Month: ${prevDepositResult.aboveTarget}`,
-      trend: depositCurrentMonth > depositPreviousMonth ? "up" : "down",
-      data: depositResult.values || [],
-      totalCompleted: depositCurrentMonth,
-      prevTotalCompleted: depositPreviousMonth,
-      difference: depositDifference,
-      isPositive: isDepositPositive,
-    },
-    {
-      title: "Withdraw Department",
-      value: `${withdrawResult.aboveTarget}`,
-      interval: `Prev Month: ${prevWithdrawResult.aboveTarget}`,
-      trend: withdrawCurrentMonth > withdrawPreviousMonth ? "up" : "down",
-      data: withdrawResult.values || [],
-      totalCompleted: withdrawCurrentMonth,
-      prevTotalCompleted: withdrawPreviousMonth,
-      difference: withdrawDifference,
-      isPositive: isWithdrawPositive,
-    },
-  ];
+  const teamLeaderData = React.useMemo(
+    () => [
+      {
+        title: "CSR Department",
+        value: `${csrResult.aboveTarget}`,
+        interval: `Prev Month: ${prevCSRResult.aboveTarget}`,
+        trend: csrCurrentMonth > csrPreviousMonth ? "up" : "down",
+        data: csrResult.values || [],
+        totalCompleted: csrCurrentMonth,
+        prevTotalCompleted: csrPreviousMonth,
+        difference: formatNumber(csrDifference),
+        isPositive: isCSRPositive,
+      },
+      {
+        title: "Deposit Department",
+        value: `${depositResult.aboveTarget}`,
+        interval: `Prev Month: ${prevDepositResult.aboveTarget}`,
+        trend: depositCurrentMonth > depositPreviousMonth ? "up" : "down",
+        data: depositResult.values || [],
+        totalCompleted: depositCurrentMonth,
+        prevTotalCompleted: depositPreviousMonth,
+        difference: formatNumber(depositDifference),
+        isPositive: isDepositPositive,
+      },
+      {
+        title: "Withdraw Department",
+        value: `${withdrawResult.aboveTarget}`,
+        interval: `Prev Month: ${prevWithdrawResult.aboveTarget}`,
+        trend: withdrawCurrentMonth > withdrawPreviousMonth ? "up" : "down",
+        data: withdrawResult.values || [],
+        totalCompleted: withdrawCurrentMonth,
+        prevTotalCompleted: withdrawPreviousMonth,
+        difference: formatNumber(withdrawDifference),
+        isPositive: isWithdrawPositive,
+      },
+    ],
+    [
+      csrResult,
+      prevCSRResult,
+      csrCurrentMonth,
+      csrPreviousMonth,
+      csrDifference,
+      isCSRPositive,
+      depositResult,
+      prevDepositResult,
+      depositCurrentMonth,
+      depositPreviousMonth,
+      depositDifference,
+      isDepositPositive,
+      withdrawResult,
+      prevWithdrawResult,
+      withdrawCurrentMonth,
+      withdrawPreviousMonth,
+      withdrawDifference,
+      isWithdrawPositive,
+    ]
+  );
 
   useEffect(() => {
-    if (onStatsUpdate) onStatsUpdate(teamLeaderData);
-  }, [selectedMonth, data]);
+    if (onStatsUpdate && isInitialized && !loading) {
+      onStatsUpdate(teamLeaderData);
+    }
+  }, [teamLeaderData, onStatsUpdate, isInitialized, loading]);
+
+  // Loading state
+  if (loading && !isInitialized) {
+    return (
+      <div className="flex justify-center items-center min-h-96">
+        <div className="text-center">
+          <RefreshCw className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <div className="text-white text-lg">Loading dashboard data...</div>
+          <div className="text-gray-400 text-sm mt-2">
+            Please wait while we fetch the latest information
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="text-white mt-6">
       <div className="px-2">
+        {/* Header with Refresh Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-white">
+            Department Performance Dashboard
+          </h2>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "Refreshing..." : "Refresh Data"}
+          </button>
+        </div>
+
+        {/* Progress Cards */}
         <div className="mb-6">
-          <h3 className="text-xl font-bold text-white mb-4">
-            Department Progress - Month Comparison
-          </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <ProgressCard
               title="CSR Department"
@@ -569,6 +656,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           </div>
         </div>
 
+        {/* Performance Summary */}
         <div className="mb-6 bg-gradient-to-br from-gray-900/50 to-gray-800/50 border border-gray-700 rounded-xl p-6">
           <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-green-400" />
@@ -608,6 +696,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           </div>
         </div>
 
+        {/* Charts Section */}
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-bold">Department Performance Charts</h2>
           <div className="flex items-center gap-4">
@@ -619,8 +708,9 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             >
-              {monthOptions.map((month) => (
+              {availableMonths.map((month) => (
                 <option key={month} value={month}>
                   {month}
                 </option>
@@ -629,6 +719,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           </div>
         </div>
 
+        {/* Charts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-full">
           <div className="rounded-xl p-6 shadow-lg border border-gray-700">
             <div className="h-72 w-72 mx-auto relative">
@@ -728,16 +819,18 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           />
         </div>
 
+        {/* Footer */}
         <div className="text-center mt-8 text-gray-500 text-sm">
           Last updated:{" "}
           {lastUpdated
             ? new Date(lastUpdated).toLocaleTimeString()
             : new Date().toLocaleTimeString()}{" "}
           • Showing data for: {selectedMonth}
+          {loading && " • Updating..."}
         </div>
       </div>
     </div>
   );
 };
 
-export default CustomizedDataGrid;
+export default React.memo(CustomizedDataGrid);
