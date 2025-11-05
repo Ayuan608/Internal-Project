@@ -216,7 +216,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     [monthlyData]
   );
 
-
   const filteredWithdraw = React.useMemo(
     () =>
       monthlyData.filter((row: any) =>
@@ -712,7 +711,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             >
               {availableMonths.map((month) => (
                 <option key={month} value={month}>
-                  {month}
+                  {month.charAt(0).toUpperCase() + month.slice(1).toLowerCase()}
                 </option>
               ))}
             </select>

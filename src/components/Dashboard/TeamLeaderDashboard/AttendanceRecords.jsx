@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Search, Calendar, Clock, Users, TrendingUp, XCircle, Coffee, LogOut, LogIn } from "lucide-react";
+import { AlertCircle, CheckCircle, Search, Calendar, Clock, Users, TrendingUp, XCircle, Coffee, LogOut, LogIn, FileText, PlusCircle, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance } from "./../../../redux/attendenceSlice";
 import { useEffect, useState } from "react";
@@ -14,6 +14,24 @@ const AttendanceRecords = () => {
 
     const { allAttendance } = useSelector((state) => state.attendance);
     const attendanceData = allAttendance || [];
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCase, setSelectedCase] = useState("");
+
+    const caseOptions = [
+        "Missed Punch-In",
+        "Missed Punch-Out",
+        "Late Arrival",
+        "Early Leave",
+        "System Error",
+        "Other",
+    ];
+
+    const handleCreateCase = () => {
+        if (!selectedCase) return alert("Please select a case type!");
+        console.log("Creating case for:", record._id, "Type:", selectedCase);
+        setIsModalOpen(false);
+        // 🔥 you can call API or Redux action here
+    };
 
     useEffect(() => {
         const fetchAttendanceData = async () => {
@@ -100,7 +118,7 @@ const AttendanceRecords = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                        Attendance Records
+                        Daily Punch Record
                     </h1>
                     <p className="text-slate-400">Monitor attendance metrics and track violations</p>
                 </div>
@@ -109,95 +127,35 @@ const AttendanceRecords = () => {
                 <div className="flex gap-2 mb-6">
                     <button
                         onClick={() => setSelectedPeriod('daily')}
-                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
-                            selectedPeriod === 'daily'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
-                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
-                        }`}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${selectedPeriod === 'daily'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
+                            : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
+                            }`}
                     >
                         Daily
                     </button>
                     <button
                         onClick={() => setSelectedPeriod('weekly')}
-                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
-                            selectedPeriod === 'weekly'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
-                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
-                        }`}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${selectedPeriod === 'weekly'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
+                            : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
+                            }`}
                     >
                         Weekly
                     </button>
                     <button
                         onClick={() => setSelectedPeriod('monthly')}
-                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
-                            selectedPeriod === 'monthly'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
-                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
-                        }`}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${selectedPeriod === 'monthly'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/50'
+                            : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700'
+                            }`}
                     >
                         Monthly
                     </button>
                 </div>
 
-                {/* Overview Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Total Records */}
-                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-3 rounded-xl">
-                                <Calendar className="w-6 h-6 text-blue-400" />
-                            </div>
-                            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                                {selectedPeriod === 'daily' ? 'Today' : selectedPeriod === 'weekly' ? 'This Week' : 'This Month'}
-                            </span>
-                        </div>
-                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
-                            {metrics.totalRecords}
-                        </h3>
-                        <p className="text-sm text-slate-400">Total Records</p>
-                    </div>
 
-                    {/* Complete Shifts */}
-                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-3 rounded-xl">
-                                <CheckCircle className="w-6 h-6 text-green-400" />
-                            </div>
-                            <span className="text-sm text-green-400 font-bold">{metrics.completionRate}%</span>
-                        </div>
-                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-green-400 to-green-300 bg-clip-text text-transparent">
-                            {metrics.completeShifts}
-                        </h3>
-                        <p className="text-sm text-slate-400">Complete Shifts (≥6h)</p>
-                    </div>
 
-                    {/* Active Employees */}
-                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-3 rounded-xl">
-                                <Users className="w-6 h-6 text-purple-400" />
-                            </div>
-                        </div>
-                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
-                            {activeEmployees}
-                        </h3>
-                        <p className="text-sm text-slate-400">Active Employees</p>
-                    </div>
-
-                    {/* Violations */}
-                    <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm hover:shadow-xl hover:shadow-red-500/10 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 p-3 rounded-xl">
-                                <AlertCircle className="w-6 h-6 text-red-400" />
-                            </div>
-                            <span className="text-sm text-red-400 font-bold">{metrics.violationRate}%</span>
-                        </div>
-                        <h3 className="text-3xl font-bold mb-1 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
-                            {metrics.violations}
-                        </h3>
-                        <p className="text-sm text-slate-400">Total Violations</p>
-                    </div>
-                </div>
 
                 {/* Violations Metrics */}
                 <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl p-6 mb-8 border border-slate-700/50 backdrop-blur-sm">
@@ -209,7 +167,7 @@ const AttendanceRecords = () => {
                             Attendance Violations & Averages
                         </span>
                     </h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Missed Punch In */}
                         <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-5 border border-red-500/20 hover:border-red-500/40 transition-all duration-300">
@@ -286,7 +244,7 @@ const AttendanceRecords = () => {
                             <Search className="absolute left-4 top-3 text-slate-400 w-5 h-5" />
                             <input
                                 type="text"
-                                placeholder="Search by name, role or department..."   
+                                placeholder="Search by name, role or department..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-12 pr-4 py-3 rounded-xl text-white text-sm border border-slate-700 focus:outline-none focus:border-blue-500 bg-slate-900/50 min-w-[320px] transition-all duration-300"
@@ -332,7 +290,7 @@ const AttendanceRecords = () => {
                                             <td className="px-6 py-4 text-sm text-white font-medium whitespace-nowrap">
                                                 {record.user?.FullName}
                                             </td>
-                                           
+
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">
                                                 <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-semibold border border-blue-500/30">
                                                     {record.shift}
@@ -349,13 +307,12 @@ const AttendanceRecords = () => {
                                                     : <span className="text-orange-400 font-semibold">Not Punched Out</span>}
                                             </td>
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                <span className={`font-bold ${
-                                                    parseFloat(record.workingHours) < 6 ? 'text-yellow-400' : 'text-green-400'
-                                                }`}>
+                                                <span className={`font-bold ${parseFloat(record.workingHours) < 6 ? 'text-yellow-400' : 'text-green-400'
+                                                    }`}>
                                                     {record.workingHours}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-6 py-4 flex items-center gap-3 whitespace-nowrap">
                                                 <div
                                                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border ${getStatusColor(
                                                         record.alert
@@ -364,7 +321,53 @@ const AttendanceRecords = () => {
                                                     {getStatusIcon(record.alert)}
                                                     {record.alert}
                                                 </div>
+
+                                                <div onClick={() => setIsModalOpen(true)} className="flex items-center gap-1 bg-yellow-300 text-black rounded-md px-4 py-1.5 cursor-pointer hover:text-blue-800">
+                                                    <FileText size={18} />
+                                                    <span className="text-sm font-medium">File</span>
+                                                </div>
                                             </td>
+                                            {isModalOpen && (
+                                                <div className="fixed inset-0 bg-black/80  flex items-center justify-center z-50">
+                                                    <div className="  w-[400px] rounded-xl shadow-lg p-6 relative">
+                                                        {/* Close Icon */}
+                                                        <button
+                                                            onClick={() => setIsModalOpen(false)}
+                                                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                                                        >
+                                                            <X size={20} />
+                                                        </button>
+
+                                                        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+                                                            Create Case
+                                                        </h2>
+
+                                                        <div className="space-y-3">
+                                                            {caseOptions.map((option, idx) => (
+                                                                <div
+                                                                    key={idx}
+                                                                    onClick={() => setSelectedCase(option)}
+                                                                    className={`cursor-pointer px-4 py-2 rounded-md border transition ${selectedCase === option
+                                                                            ? "bg-blue-600 text-white border-blue-600"
+                                                                            : "hover:bg-gray-100 border-gray-300"
+                                                                        }`}
+                                                                >
+                                                                    {option}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        {/* Create Button */}
+                                                        <button
+                                                            onClick={handleCreateCase}
+                                                            className="mt-5 w-full bg-green-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-green-700 transition"
+                                                        >
+                                                            <PlusCircle size={18} />
+                                                            Create Case
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </tr>
                                     ))
                                 ) : (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { ChevronDown, Users, Target, TrendingUp, BarChart3 } from "lucide-react";
@@ -12,229 +12,163 @@ ChartJS.register(ArcElement, Tooltip, Legend, Title);
 const Department = () => {
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dispatch = useDispatch();
+  const [departmentStats, setDepartmentStats] = useState({
+    CSR: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
+    Deposit: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
+    Withdrawal: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 }
+  });
+  const dispatch = useDispatch()
 
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state) => state.combinedQuota
   );
 
-  useEffect(() => {
-    dispatch(fetchCombinedDepartmentsData());
-  }, []);
-
-  const parseNumber = useCallback((value) => {
-    if (typeof value === "string") return Number(value.replace(/,/g, ""));
-    return Number(value) || 0;
-  }, []);
-
-  const extractAvailableMonths = useCallback((data) => {
-    if (!data || !Array.isArray(data)) return ["September"];
-    const months = [];
-    data.forEach((row) => {
-      if (Array.isArray(row) && row.length >= 3 && row[1] === "" && row[2] && typeof row[2] === 'string') {
-        const month = row[2];
-        if (!months.includes(month)) months.push(month);
-      }
-    });
-    return months.length > 0 ? months : ["September"];
-  }, []);
-
-  const getRowMonth = useCallback((row) => {
-    if (!Array.isArray(row) || row.length < 3) return null;
-    if (row[1] === "" && row[2] && typeof row[2] === 'string') return row[2];
-    return null;
-  }, []);
-
-  const filterDataByMonth = useCallback(
-    (data, targetMonth) => {
-      if (!data || !Array.isArray(data)) return [];
-      let currentMonth = targetMonth;
-      const filteredData = [];
-      let includeCurrentData = false;
-
-      data.forEach((row) => {
-        const rowMonth = getRowMonth(row);
-        if (rowMonth) {
-          currentMonth = rowMonth;
-          includeCurrentData = currentMonth === targetMonth;
-        } else if (includeCurrentData && Array.isArray(row) && row.length > 0) {
-          filteredData.push(row);
-        }
-      });
-      return filteredData;
-    },
-    [getRowMonth]
-  );
-
-  const availableMonths = useMemo(
-    () => extractAvailableMonths(data),
-    [data, extractAvailableMonths]
-  );
-
-  // Get current month and previous month according to calendar
-  const getCurrentMonth = () => {
-    const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const currentDate = new Date();
-    return months[currentDate.getMonth()];
-  };
-
-  const getPreviousMonth = () => {
-    const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const currentDate = new Date();
-    let previousMonthIndex = currentDate.getMonth() - 1;
-
-    // Handle January case (previous month would be December)
-    if (previousMonthIndex < 0) {
-      previousMonthIndex = 11; // December
-    }
-
-    return months[previousMonthIndex];
-  };
-
-  // Get the month we want to show data for (Previous Month)
-  const displayMonth = useMemo(() => {
-    const currentMonth = getCurrentMonth();
-    const previousMonth = getPreviousMonth();
-
-    console.log("=== MONTH CALCULATION ===");
-    console.log("📅 Current Month:", currentMonth);
-    console.log("📅 Previous Month:", previousMonth);
-    console.log("📊 Available Months in Data:", availableMonths);
-
-    // Always try to show previous month's data
-    if (availableMonths.includes(previousMonth)) {
-      console.log("✅ PREVIOUS MONTH FOUND IN DATA - Showing:", previousMonth);
-      return previousMonth;
-    }
-
-    // If previous month not available, show the latest available month
-    const monthOrder = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-
-    if (availableMonths.length === 0) {
-      console.log("❌ NO DATA AVAILABLE - Defaulting to:", previousMonth);
-      return previousMonth;
-    }
-
-    let latestMonth = availableMonths[0];
-    let highestIndex = monthOrder.indexOf(availableMonths[0]);
-
-    availableMonths.forEach(month => {
-      const currentIndex = monthOrder.indexOf(month);
-      if (currentIndex > highestIndex) {
-        highestIndex = currentIndex;
-        latestMonth = month;
-      }
-    });
-
-    console.log("📈 LATEST MONTH FROM DATA - Showing:", latestMonth);
-    console.log("=== MONTH CALCULATION COMPLETE ===");
-
-    return latestMonth;
-  }, [availableMonths]);
-
-  console.log('🎯 FINAL DISPLAY MONTH:', displayMonth);
-  console.log('📋 ALL AVAILABLE MONTHS:', availableMonths);
-
-  const monthlyData = useMemo(
-    () => filterDataByMonth(data, displayMonth),
-    [data, displayMonth, filterDataByMonth]
-  );
-
-  console.log('📊 MONTHLY DATA FOR', displayMonth, ':', monthlyData);
-  console.log('📊 DATA ROWS COUNT:', monthlyData.length);
-
-  const getDepartmentData = useCallback((dept) => {
-    console.log(`🔍 Getting ${dept} department data for ${displayMonth}`);
-
-    let quotaIndex, target;
-    if (dept === 'CSR') {
-      quotaIndex = 2;
-      target = 530;
-    } else if (dept === 'Deposit') {
-      quotaIndex = 9;
-      target = 530;
-    } else if (dept === 'Withdrawal') {
-      quotaIndex = 7;
-      target = 1500;
+  // Number formatting function
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'k';
     } else {
-      return {
-        transactions: 0,
-        quota: 0,
-        agents: 0,
-        completion: 0,
-        quotaMet: 0,
-        nonQuota: 100,
-        chartData: {
-          labels: ["Quota Met", "Non-Quota"],
-          datasets: [
-            {
-              data: [0, 100],
-              backgroundColor: ["#00C49F", "#FF5A5F"],
-            },
-          ],
-        }
-      };
+      return num.toString();
     }
+  };
 
-    const filtered = monthlyData.filter((row) =>
-      row[0]?.toLowerCase().includes(dept.toLowerCase()) &&
-      Array.isArray(row) &&
-      row.length > quotaIndex + 1 &&
-      row[1] &&
-      typeof row[1] === 'string' &&
-      !row[1].includes('shift') &&
-      row[1] !== 'Member'
-    );
+  useEffect(() => {
+    dispatch(fetchCombinedDepartmentsData())
+  }, [])
 
-    console.log(`👥 ${dept} agents found:`, filtered.length);
+  // Calculate real-time department statistics
+  const calculateDepartmentStats = () => {
+    if (!data || data.length === 0) return;
 
-    const values = filtered
-      .map((row) => parseNumber(row[quotaIndex]))
-      .filter((num) => !isNaN(num) && num !== 0);
+    const stats = {
+      CSR: { transactions: 0, quota: 580, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
+      Deposit: { transactions: 0, quota: 580, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
+      Withdrawal: { transactions: 0, quota: 1500, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 }
+    };
 
-    const agents = filtered.length;
-    const totalTransactions = values.reduce((acc, curr) => acc + curr, 0);
-    const aboveTargetCount = values.filter((v) => v >= target).length;
-    const quotaMetPercent = agents > 0 ? (aboveTargetCount / agents) * 100 : 0;
-    const quotaTotal = target * agents;
+    let currentDepartment = "";
+    let currentMonth = "";
 
-    console.log(`📈 ${dept} Summary:`, {
-      agents,
-      totalTransactions,
-      aboveTargetCount,
-      quotaMetPercent: Math.round(quotaMetPercent),
-      quotaTotal
+    data.forEach((row) => {
+      // Detect department
+      if (row[0] && typeof row[0] === 'string') {
+        const firstItem = row[0].toLowerCase();
+        if (firstItem.includes('csr')) currentDepartment = "CSR";
+        else if (firstItem.includes('deposit')) currentDepartment = "Deposit";
+        else if (firstItem.includes('withdraw')) currentDepartment = "Withdrawal";
+      }
+
+      // Detect month
+      if (row[2] && typeof row[2] === 'string') {
+        const monthName = row[2].toLowerCase();
+        if (monthName.includes('october')) currentMonth = "October";
+        else if (monthName.includes('november')) currentMonth = "November";
+      }
+
+      // Process data rows for October
+      if (currentMonth === "October" && currentDepartment && row.length > 5) {
+        const isHeaderRow =
+          row[1] === 'Member' ||
+          row[1] === '' ||
+          row[0]?.toLowerCase().includes('shift') ||
+          row[0]?.toLowerCase().includes('trainees');
+
+        if (!isHeaderRow && row[1] && row[1] !== '') {
+          // Extract transaction data (assuming index 2 has transaction count)
+          const transactions = parseInt(row[2]) || 0;
+          stats[currentDepartment].transactions += transactions;
+          stats[currentDepartment].agents += 1;
+
+          // Calculate quota met based on some logic (you can adjust this)
+          const quotaPercentage = (transactions / stats[currentDepartment].quota) * 100;
+          if (quotaPercentage >= 70) {
+            stats[currentDepartment].quotaMet += 1;
+          } else {
+            stats[currentDepartment].nonQuota += 1;
+          }
+        }
+      }
     });
 
-    return {
-      transactions: totalTransactions,
-      quota: quotaTotal,
-      agents,
-      completion: Math.round(quotaMetPercent),
-      quotaMet: Math.round(quotaMetPercent),
-      nonQuota: 100 - Math.round(quotaMetPercent),
+    // Calculate completion percentages
+    Object.keys(stats).forEach(dept => {
+      const deptStats = stats[dept];
+      if (deptStats.agents > 0) {
+        deptStats.completion = Math.round((deptStats.transactions / deptStats.quota) * 100);
+        deptStats.quotaMet = Math.round((deptStats.quotaMet / deptStats.agents) * 100);
+        deptStats.nonQuota = 100 - deptStats.quotaMet;
+      }
+    });
+
+    console.log("Real-time Department Stats:", stats);
+    setDepartmentStats(stats);
+  };
+
+  // Process data when it loads
+  useEffect(() => {
+    if (data && data.length > 0) {
+      calculateDepartmentStats();
+    }
+  }, [data]);
+
+  // Dynamic department data based on real stats
+  const departmentData = {
+    CSR: {
+      transactions: departmentStats.CSR.transactions,
+      quota: departmentStats.CSR.quota,
+      agents: departmentStats.CSR.agents,
+      completion: departmentStats.CSR.completion,
+      quotaMet: departmentStats.CSR.quotaMet,
+      nonQuota: departmentStats.CSR.nonQuota,
       chartData: {
         labels: ["Quota Met", "Non-Quota"],
         datasets: [
           {
-            data: [Math.round(quotaMetPercent), 100 - Math.round(quotaMetPercent)],
+            data: [departmentStats.CSR.quotaMet, departmentStats.CSR.nonQuota],
             backgroundColor: ["#00C49F", "#FF5A5F"],
           },
         ],
       }
-    };
-  }, [monthlyData, parseNumber, displayMonth]);
+    },
+    Deposit: {
+      transactions: departmentStats.Deposit.transactions,
+      quota: departmentStats.Deposit.quota,
+      agents: departmentStats.Deposit.agents,
+      completion: departmentStats.Deposit.completion,
+      quotaMet: departmentStats.Deposit.quotaMet,
+      nonQuota: departmentStats.Deposit.nonQuota,
+      chartData: {
+        labels: ["Quota Met", "Non-Quota"],
+        datasets: [
+          {
+            data: [departmentStats.Deposit.quotaMet, departmentStats.Deposit.nonQuota],
+            backgroundColor: ["#00C49F", "#FF5A5F"],
+          },
+        ],
+      }
+    },
+    Withdrawal: {
+      transactions: departmentStats.Withdrawal.transactions,
+      quota: departmentStats.Withdrawal.quota,
+      agents: departmentStats.Withdrawal.agents,
+      completion: departmentStats.Withdrawal.completion,
+      quotaMet: departmentStats.Withdrawal.quotaMet,
+      nonQuota: departmentStats.Withdrawal.nonQuota,
+      chartData: {
+        labels: ["Quota Met", "Non-Quota"],
+        datasets: [
+          {
+            data: [departmentStats.Withdrawal.quotaMet, departmentStats.Withdrawal.nonQuota],
+            backgroundColor: ["#00C49F", "#FF5A5F"],
+          },
+        ],
+      }
+    },
+  };
 
-  const currentData = useMemo(() => getDepartmentData(activeTab), [activeTab, getDepartmentData]);
+  const currentData = departmentData[activeTab];
 
   const chartOptions = {
     responsive: true,
@@ -243,7 +177,7 @@ const Department = () => {
     plugins: {
       title: {
         display: true,
-        text: `${activeTab} Department - ${displayMonth}`,
+        text: `${activeTab} Department Quota`,
         font: { size: 18 },
         color: "#fff",
       },
@@ -275,41 +209,21 @@ const Department = () => {
     return colors[dept] || "from-gray-500 to-gray-600";
   };
 
-  if (combinedQuotaLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <div className="text-white text-lg">Loading department data...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mt-5 px-2">
       {/* Title */}
       <div className="flex justify-between items-center mt-6">
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Department Performance - {displayMonth}
+            Department Management
           </h1>
           <p className="text-gray-500">
-            Showing data for previous month performance
+            Monitor and manage department quotas and performance
           </p>
-          {/* Debug info */}
-          <div className="text-xs text-gray-400 mt-1 bg-gray-800/50 p-2 rounded">
-            <div>🔄 Current Month: <span className="text-green-300">{getCurrentMonth()}</span></div>
-            <div>📅 Previous Month: <span className="text-blue-300">{getPreviousMonth()}</span></div>
-            <div>🎯 Showing Data For: <span className="text-yellow-300 font-bold">{displayMonth}</span></div>
-            <div>📊 Available Data: <span className="text-purple-300">{availableMonths.join(", ")}</span></div>
-            <div>📈 Data Rows: <span className="text-orange-300">{monthlyData.length}</span></div>
-          </div>
         </div>
         <ExampleIosSwitch />
       </div>
 
-      {/* Rest of your component remains the same */}
       {/* Enhanced Department Filter */}
       <div className="mt-6 flex justify-end">
         <div className="relative inline-block w-64">
@@ -333,8 +247,8 @@ const Department = () => {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-10 overflow-hidden">
-              {["CSR", "Deposit", "Withdrawal"].map((department) => (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-10 overflow-hidden ">
+              {Object.keys(departmentData).map((department) => (
                 <button
                   key={department}
                   onClick={() => {
@@ -360,34 +274,29 @@ const Department = () => {
 
       {/* Enhanced Department Stats */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg border-blue-500/30">
+        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-2">Total Completed</p>
-              <p className="text-white text-2xl font-bold">{currentData.transactions.toLocaleString()}</p>
+              <p className="text-gray-400 text-sm font-medium mb-2">Total Transactions</p>
+              <p className="text-white text-2xl font-bold">{formatNumber(currentData.transactions)}</p>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">
               <BarChart3 size={24} className="text-blue-400" />
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <div className="w-full bg-gray-700 rounded-full h-2">
-              <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${(currentData.transactions / currentData.quota) * 100}%` }}
-              ></div>
-            </div>
+
             <span className="text-xs text-gray-400 whitespace-nowrap">
-              {Math.round((currentData.transactions / currentData.quota) * 100)}%
+              {formatNumber(currentData.completion)}%
             </span>
           </div>
         </div>
 
-        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg border-green-500/30">
+        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-2">Total Quota</p>
-              <p className="text-white text-2xl font-bold">{currentData.quota.toLocaleString()}</p>
+              <p className="text-gray-400 text-sm font-medium mb-2">Daily Quota</p>
+              <p className="text-white text-2xl font-bold">{formatNumber(currentData.quota)}</p>
             </div>
             <div className="p-3 bg-green-500/10 rounded-lg">
               <Target size={24} className="text-green-400" />
@@ -395,16 +304,16 @@ const Department = () => {
           </div>
           <div className="mt-3">
             <span className="text-xs text-gray-400">
-              Remaining: {(currentData.quota - currentData.transactions).toLocaleString()}
+              Remaining: {formatNumber((currentData.quota, currentData.transactions))}
             </span>
           </div>
         </div>
 
-        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg border-purple-500/30">
+        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm font-medium mb-2">Active Agents</p>
-              <p className="text-white text-2xl font-bold">{currentData.agents}</p>
+              <p className="text-white text-2xl font-bold">{formatNumber(currentData.agents)}</p>
             </div>
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Users size={24} className="text-purple-400" />
@@ -412,15 +321,15 @@ const Department = () => {
           </div>
           <div className="mt-3">
             <span className="text-xs text-gray-400">
-              {currentData.agents > 0 ? Math.round((currentData.agents / currentData.agents) * currentData.completion) : 0} agents met quota
+              {formatNumber(Math.round(currentData.agents * (currentData.quotaMet / 100)))} agents met quota
             </span>
           </div>
         </div>
 
-        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg border-orange-500/30">
+        <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-2">Quota Met Rate</p>
+              <p className="text-gray-400 text-sm font-medium mb-2">Quota Completion</p>
               <p className="text-white text-2xl font-bold">{currentData.quotaMet}%</p>
             </div>
             <div className="p-3 bg-orange-500/10 rounded-lg">
@@ -439,7 +348,7 @@ const Department = () => {
       </div>
 
       {/* Dual Charts - Centered */}
-      <div className="flex gap-6 mt-6">
+      <div className="flex gap-6 mt-6 rounded-lg">
         <div className="rounded-xl shadow-xl bg-slate-900/40 border-slate-800 border w-1/3">
           <div className="relative w-80 h-80 mx-auto flex items-center justify-center p-4">
             {/* Donut Chart */}

@@ -103,7 +103,7 @@ export const TeamButtons = [
   { to: "/team/non-quotamember", label: "Non-Quota Members", icon: FileText },
   {
     to: "/team/attendancerecords",
-    label: "Attendance Records",
+    label: "Daily Punch Record",
     icon: CalendarCheck2,
   },
   { to: "/team/Performance", label: "Team Performance", icon: KeyRound },

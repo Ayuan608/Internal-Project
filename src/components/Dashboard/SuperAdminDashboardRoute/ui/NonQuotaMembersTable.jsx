@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Download, Filter, X, Mail, Plus } from "lucide-react";
 import { useSelector } from "react-redux";
-import { data } from "../../../../Helpers/Helper";
 
 const NonQuotaMembersTable = ({ department = "CSR" }) => {
-  const { role } = useSelector((state) => state.auth)
+  const { role } = useSelector((state) => state.auth);
+  const { data: reduxData } = useSelector((state) => state.combinedQuota);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -15,22 +15,87 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     priority: "Medium"
   });
 
+  // Function to get non-quota agents from Redux data
+  const getNonQuotaAgents = () => {
+    if (!reduxData || reduxData.length === 0) return [];
+
+    const nonQuotaData = [];
+    let currentDepartment = "";
+    let currentMonth = "";
+
+    reduxData.forEach((row, index) => {
+      // Detect department
+      if (row[0] && typeof row[0] === 'string') {
+        const firstItem = row[0].toLowerCase();
+        if (firstItem.includes('csr')) currentDepartment = "CSR";
+        else if (firstItem.includes('deposit')) currentDepartment = "Deposit";
+        else if (firstItem.includes('withdraw')) currentDepartment = "Withdrawal";
+      }
+
+      // Detect month
+      if (row[2] && typeof row[2] === 'string') {
+        const monthName = row[2].toLowerCase();
+        if (monthName.includes('october')) currentMonth = "October";
+        else if (monthName.includes('november')) currentMonth = "November";
+      }
+
+      // Process data rows for current department and October month
+      if (currentMonth === "October" && currentDepartment === department && row.length > 5) {
+        const isHeaderRow =
+          row[1] === 'Member' ||
+          row[1] === '' ||
+          row[0]?.toLowerCase().includes('shift') ||
+          row[0]?.toLowerCase().includes('trainees');
+
+        if (!isHeaderRow && row[1] && row[1] !== '') {
+
+          const transactions = parseInt(row[2]) || 0;
+
+          // Define quota based on department
+          let quota = 580;
+          if (department === "Deposit") quota = 580;
+          if (department === "Withdrawal") quota = 1500;
+
+          // Calculate quota percentage
+          const quotaPercentage = (transactions / quota) * 100;
+
+          // If quota not met (less than 70%), add to non-quota list
+          if (quotaPercentage < 70) {
+            nonQuotaData.push({
+              date: "October 2024", // You can extract actual date from your data
+              name: row[1] || 'Unknown Agent',
+              role: "Agent",
+              department: department,
+              output: transactions,
+              target: quota,
+              variance: transactions - quota,
+              quotaPercentage: Math.round(quotaPercentage),
+              email: `${row[1]?.toLowerCase().replace(/\s+/g, '.')}@company.com` || 'unknown@company.com',
+              originalData: row,
+              index: index
+            });
+          }
+        }
+      }
+    });
+
+    console.log(`Non-Quota Agents for ${department}:`, nonQuotaData);
+    return nonQuotaData;
+  };
 
   useEffect(() => {
-    if (department === "All") {
-      setFilteredData(data);
-    } else {
-      const filtered = data.filter(item => item.department === department);
-      setFilteredData(filtered);
+    if (reduxData && reduxData.length > 0) {
+      const nonQuotaAgents = getNonQuotaAgents();
+      setFilteredData(nonQuotaAgents);
     }
-  }, [department]);
+  }, [reduxData, department]);
 
   const handleCreateCase = (employee) => {
     setSelectedEmployee(employee);
     setFormData({
       to: employee.email,
       cc: "manager@mytechliance.com",
-      message: `Dear [Employee],\n\nI wanted to reach out regarding your performance metrics for today. I noticed that your output was below the target quota.`,
+      message: `Dear ${employee.name},\n\nI wanted to reach out regarding your performance metrics for today. I noticed that your output was below the target quota.\n\nYour Output: ${employee.output}\nTarget: ${employee.target}\nCompletion: ${employee.quotaPercentage}%`,
       priority: "Medium"
     });
     setIsModalOpen(true);
@@ -63,9 +128,20 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     alert("PDF export functionality");
   };
 
+  // Format number function
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'k';
+    } else {
+      return num.toString();
+    }
+  };
+
   return (
     <div className="shadow-md rounded-lg px-3 w-full">
-      {/* Header - Remove the department filter from here since it's coming from parent */}
+      {/* Header */}
       <div className="flex items-center lg:flex-row lg:items-center gap-4 mb-4 mt-4 justify-end">
         <div className="flex sm:flex-row gap-3 w-full lg:w-auto ">
           <div className="flex gap-2">
@@ -96,15 +172,15 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
 
       {/* Results Count */}
       <div className="mb-4 text-sm text-white">
-        Showing {filteredData.length} of {data.length} records
-        {/* <span className="ml-2 px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs">
-          Department: 
-        </span> */}
+        Showing {filteredData.length} non-quota agents in {department} department
+        <span className="ml-2 px-2 py-1 bg-red-900/30 text-red-300 rounded text-xs">
+          Quota Not Met
+        </span>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left  rounded-lg whitespace-nowrap">
+        <table className="min-w-full text-sm text-left rounded-lg whitespace-nowrap">
           <thead className="text-white font-semibold">
             <tr>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DATE</th>
@@ -113,6 +189,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DEPARTMENT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">OUTPUT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">TARGET</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">COMPLETION</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">VARIANCE</th>
               {
                 role === "Team-Leader" && <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">ACTION</th>
@@ -123,8 +200,8 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
           <tbody>
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan="8" className="px-4 py-4 text-center text-white border-b border-[#9e9fa74d]/40">
-                  No records found for {department} department
+                <td colSpan={role === "Team-Leader" ? "9" : "8"} className="px-4 py-4 text-center text-white border-b border-[#9e9fa74d]/40">
+                  {reduxData ? `No non-quota agents found for ${department} department` : "Loading data..."}
                 </td>
               </tr>
             ) : (
@@ -146,16 +223,21 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
                     </span>
                   </td>
                   <td className="px-4 py-2 border-b border-[#9e9fa74d]/40 font-semibold text-white">
-                    {member.output}
+                    {formatNumber(member.output)}
                   </td>
                   <td className="px-4 py-2 border-b border-[#9e9fa74d]/40 text-white-300">
-                    {member.target}
+                    {formatNumber(member.target)}
+                  </td>
+                  <td className="px-4 py-2 border-b border-[#9e9fa74d]/40">
+                    <span className={`font-bold ${member.quotaPercentage < 50 ? "text-red-400" : "text-yellow-400"}`}>
+                      {member.quotaPercentage}%
+                    </span>
                   </td>
                   <td
                     className={`px-4 py-2 border-b border-[#9e9fa74d]/40 font-bold ${member.variance < 0 ? "text-red-400" : "text-green-400"
                       }`}
                   >
-                    {member.variance > 0 ? `+${member.variance}` : member.variance}
+                    {member.variance > 0 ? `+${formatNumber(member.variance)}` : formatNumber(member.variance)}
                   </td>
                   {
                     role === "Team-Leader" && <td className="px-4 py-2 border-b border-[#9e9fa74d]/40">
@@ -175,7 +257,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
         </table>
       </div>
 
-      {/* Modal - Remains exactly the same */}
+      {/* Modal */}
       {isModalOpen && selectedEmployee && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-xl border border-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -200,10 +282,10 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
                   <span className="font-semibold text-white-900">Employee:</span> {selectedEmployee.name}
                 </div>
                 <div className="text-sm text-white mt-1">
-                  <span className="font-semibold text-white-900">Output:</span> {selectedEmployee.output} |
-                  <span className="font-semibold text-white-900"> Target:</span> {selectedEmployee.target} |
-                  <span className={`font-semibold ${selectedEmployee.variance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {' '}Variance: {selectedEmployee.variance}
+                  <span className="font-semibold text-white-900">Output:</span> {formatNumber(selectedEmployee.output)} |
+                  <span className="font-semibold text-white-900"> Target:</span> {formatNumber(selectedEmployee.target)} |
+                  <span className={`font-semibold ${selectedEmployee.quotaPercentage < 50 ? 'text-red-600' : 'text-yellow-600'}`}>
+                    {' '}Completion: {selectedEmployee.quotaPercentage}%
                   </span>
                 </div>
               </div>
