@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import NonQuotaMembersTable from "./ui/NonQuotaMembersTable";
 
 const NonQuota = () => {
-const {department}=useSelector((state)=>state.auth.data)
+const {department}=useSelector((state)=>state.auth.data);
   return (
     <div className="h-full  rounded-2xl p-4">
       <div className="flex justify-between items-start">

@@ -8,6 +8,7 @@ import sheetSliceReducer from './sheetSlice'
 import announcementSliceReducer from './announcementSlice'
 import combinedQuotaReducer from './combinedQuotaSlice'
 import activitySliceReducer from './activitylogSlice'
+import employeeOfMonthReducer from './employeeOfMonthSlice'
 const store = configureStore({
     reducer: {
         auth: authSliceReducer,
@@ -19,6 +20,7 @@ const store = configureStore({
         sheet: sheetSliceReducer,
         announcements: announcementSliceReducer,
         combinedQuota: combinedQuotaReducer,
+        employeeOfMonth:employeeOfMonthReducer
     },
     devtools: true
 })

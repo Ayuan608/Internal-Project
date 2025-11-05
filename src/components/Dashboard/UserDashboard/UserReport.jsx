@@ -43,7 +43,31 @@ function UserReport() {
         const result = await dispatch(createReport(reportData));
 
         if (result.type === 'report/create/fulfilled') {
+            const adminToken = localStorage.getItem("superAdminFcmToken");
+            if (adminToken) {
+                const notificationPayload = {
+                    to: adminToken,
+                    notification: {
+                        title: "📝 New Report Submitted",
+                        body: `${formData.purpose} — ${formData.details.slice(0, 60)}...`,
+                        icon: "/firebase-logo.png",
+                        click_action: "http://localhost:5173/dashboard",
+                    },
+                };
 
+                await fetch("https://fcm.googleapis.com/fcm/send", {
+                    method: "POST",
+                    headers: {
+                        Authorization: "BPRGFHQY1lsEbWVSqe7ovs4IP3Cdh2AnDm372BY7vl27eUkOSYBgx-LkAGrqQ6D9-R_m9TKUsa8FtPgXjEde_zg", // 🔥 from Firebase Cloud Messaging
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(notificationPayload),
+                });
+
+                console.log("✅ Notification sent to Super Admin via FCM");
+            } else {
+                console.warn("⚠️ No Super Admin FCM token found in localStorage");
+            }
             setFormData({
                 date: new Date().toLocaleDateString('en-US'),
                 purpose: 'Daily Performance Report',

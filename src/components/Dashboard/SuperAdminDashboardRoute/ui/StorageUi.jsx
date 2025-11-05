@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Card,
@@ -14,89 +14,102 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Paper,
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
     MenuItem,
+    TextField,
     Tooltip,
 } from '@mui/material';
 import {
     Storage,
-    CloudUpload,
     Download,
     Delete,
-    InsertDriveFile,
-    Image,
-    VideoLibrary,
-    Audiotrack,
     Archive,
     Refresh,
-    FolderOpen,
-    Security,
-    Speed,
     CheckCircle,
     Warning,
     Error as ErrorIcon
 } from '@mui/icons-material';
+import { useDispatch, useSelector } from 'react-redux';
+import { getDeletedReports } from '../../../../redux/reportSlice';
 
 const StoragePage = () => {
-    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState(null);
+    const dispatch = useDispatch();
     const [filterType, setFilterType] = useState('all');
+    const { deletedReports } = useSelector((state) => state.report);
 
-    // Vibrant color scheme
+    useEffect(() => {
+        dispatch(getDeletedReports());
+    }, [dispatch]);
+
     const colors = {
         primary: '#6366F1',
         success: '#10B981',
         warning: '#F59E0B',
         error: '#EF4444',
         info: '#3B82F6',
-        documents: '#8B5CF6',
-        images: '#EC4899',
-        videos: '#F97316',
-        audio: '#06B6D4',
         archives: '#84CC16'
     };
 
-    // Mock data with vibrant colors
+    // Calculate file size in MB based on content length
+    const calculateFileSize = (content) => {
+        if (!content) return '0.00';
+        const sizeInBytes = new Blob([content]).size;
+        const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+        return sizeInMB;
+    };
+
+    // Format date to readable format
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        });
+    };
+
+    // Determine status based on report status
+    const getReportStatus = (status) => {
+        if (status === 'seen') return 'active';
+        if (status === 'sent') return 'warning';
+        return 'error';
+    };
+
+    // Convert deleted reports to files data
+    const filesData = deletedReports && deletedReports.length > 0 
+        ? deletedReports.map((report) => ({
+            id: report._id,
+            name: `${report.purpose || 'Report'}_${formatDate(report.date).replace(/\//g, '-')}.zip`,
+            type: 'archive',
+            size: calculateFileSize(report.details),
+            date: formatDate(report.deletedAt || report.date),
+            status: getReportStatus(report.status),
+            rawData: report
+        }))
+        : [];
+
+    // Calculate total storage used by deleted reports
+    const totalUsedStorageMB = filesData.reduce((acc, file) => acc + parseFloat(file.size), 0);
+    const totalStorageGB = (totalUsedStorageMB / 1024).toFixed(2);
+    const totalCapacityGB = 1024;
+    const availableGB = (totalCapacityGB - totalUsedStorageMB / 1024).toFixed(2);
+    const usagePercentage = Math.min(Math.round((totalUsedStorageMB / (totalCapacityGB * 1024)) * 100), 100);
+
     const storageData = {
-        total: 1024,
-        used: 687,
-        available: 337,
-        usagePercentage: 67,
+        total: totalCapacityGB,
+        used: totalStorageGB,
+        available: availableGB,
+        usagePercentage: usagePercentage,
         categories: [
             {
-                name: 'Documents',
-                used: 245,
-                color: colors.documents,
-                icon: <InsertDriveFile />,
-                growth: '+12%'
-            },
-            
-         
-        
-            {
                 name: 'Archives',
-                used: 50,
+                used: totalStorageGB,
                 color: colors.archives,
                 icon: <Archive />,
-                growth: '+3%'
+                count: filesData.length
             },
         ]
     };
-
-    const filesData = [
-        { id: 1, name: 'Annual_Report_2024.pdf', type: 'document', size: '15.2 MB', date: '2024-01-15', status: 'active' },
-        { id: 2, name: 'Vacation_Photos_Summer.zip', type: 'archive', size: '245.7 MB', date: '2024-01-14', status: 'active' },
-        { id: 3, name: 'Product_Launch_Presentation.pptx', type: 'document', size: '32.1 MB', date: '2024-01-13', status: 'warning' },
-        { id: 4, name: 'Background_Music_Track.mp3', type: 'audio', size: '8.7 MB', date: '2024-01-12', status: 'active' },
-        { id: 5, name: 'Company_Brand_Assets.png', type: 'image', size: '12.1 MB', date: '2024-01-11', status: 'active' },
-        { id: 6, name: 'Training_Video_Tutorial.mp4', type: 'video', size: '156.3 MB', date: '2024-01-10', status: 'active' },
-    ];
 
     const getStatusIcon = (status) => {
         const icons = {
@@ -107,31 +120,11 @@ const StoragePage = () => {
         return icons[status] || icons.active;
     };
 
-    const getFileIcon = (type) => {
-        const icons = {
-            document: <InsertDriveFile sx={{ color: colors.documents, fontSize: 24 }} />,
-            image: <Image sx={{ color: colors.images, fontSize: 24 }} />,
-            video: <VideoLibrary sx={{ color: colors.videos, fontSize: 24 }} />,
-            audio: <Audiotrack sx={{ color: colors.audio, fontSize: 24 }} />,
-            archive: <Archive sx={{ color: colors.archives, fontSize: 24 }} />
-        };
-        return icons[type] || <InsertDriveFile sx={{ color: colors.primary, fontSize: 24 }} />;
+    const getFileIcon = () => {
+        return <Archive sx={{ color: colors.archives, fontSize: 24 }} />;
     };
 
-    const getTypeColor = (type) => {
-        const typeColors = {
-            document: colors.documents,
-            image: colors.images,
-            video: colors.videos,
-            audio: colors.audio,
-            archive: colors.archives
-        };
-        return typeColors[type] || colors.primary;
-    };
-
-    const filteredFiles = filterType === 'all'
-        ? filesData
-        : filesData.filter(file => file.type === filterType);
+    const filteredFiles = filterType === 'all' ? filesData : filesData.filter(file => file.type === filterType);
 
     return (
         <Box sx={{ p: 3, minHeight: '100vh', background: 'rgba(59,130,246,0.03)' }}>
@@ -142,9 +135,9 @@ const StoragePage = () => {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                background: `radial-gradient(circle at 20% 80%, ${colors.documents}20 0%, transparent 50%),
-                    radial-gradient(circle at 80% 20%, ${colors.images}20 0%, transparent 50%),
-                    radial-gradient(circle at 40% 40%, ${colors.videos}15 0%, transparent 50%)`,
+                background: `radial-gradient(circle at 20% 80%, ${colors.archives}20 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, ${colors.primary}20 0%, transparent 50%),
+                    radial-gradient(circle at 40% 40%, ${colors.info}15 0%, transparent 50%)`,
                 zIndex: -1
             }} />
 
@@ -165,10 +158,9 @@ const StoragePage = () => {
                         Cloud Storage
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#94A3B8', fontWeight: 300 }}>
-                        Manage your files with style and efficiency
+                        Manage your deleted reports archive
                     </Typography>
                 </Box>
-            
             </Box>
 
             {/* Storage Overview Cards */}
@@ -259,7 +251,7 @@ const StoragePage = () => {
                             </Typography>
                             <Grid container spacing={3}>
                                 {storageData.categories.map((category, index) => (
-                                    <Grid item xs={12} sm={6} key={index}>
+                                    <Grid item xs={12} key={index}>
                                         <Box sx={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -280,11 +272,11 @@ const StoragePage = () => {
                                                     {category.name}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-                                                    {category.used} GB • {category.growth}
+                                                    {category.used} GB • {category.count} files
                                                 </Typography>
                                             </Box>
                                             <Chip
-                                                label={`${Math.round((category.used / storageData.used) * 100)}%`}
+                                                label="100%"
                                                 size="small"
                                                 sx={{
                                                     background: category.color,
@@ -301,12 +293,11 @@ const StoragePage = () => {
                 </Grid>
             </Grid>
 
-
             {/* Files Table Section */}
             <Card sx={{
                 background: 'rgba(59,130,246,0.03)',
                 backdropFilter: 'blur(20px)',
-                border: `1px solid ${colors.videos}30`,
+                border: `1px solid ${colors.archives}30`,
                 borderRadius: 4,
                 overflow: 'hidden'
             }}>
@@ -319,7 +310,7 @@ const StoragePage = () => {
                     }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
-                                Files & Documents
+                                Deleted Reports ({filteredFiles.length})
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                 <TextField
@@ -337,20 +328,19 @@ const StoragePage = () => {
                                         }
                                     }}
                                 >
-                                    <MenuItem value="all">All File Types</MenuItem>
-                                    <MenuItem value="document">📄 Documents</MenuItem>
-                                    <MenuItem value="image">🖼️ Images</MenuItem>
-                                    <MenuItem value="video">🎥 Videos</MenuItem>
-                                    <MenuItem value="audio">🎵 Audio</MenuItem>
+                                    <MenuItem value="all">All Files</MenuItem>
                                     <MenuItem value="archive">📦 Archives</MenuItem>
                                 </TextField>
                                 <Tooltip title="Refresh Files">
-                                    <IconButton sx={{
-                                        color: colors.info,
-                                        '&:hover': {
-                                            background: `${colors.info}20`,
-                                        }
-                                    }}>
+                                    <IconButton 
+                                        onClick={() => dispatch(getDeletedReports())}
+                                        sx={{
+                                            color: colors.info,
+                                            '&:hover': {
+                                                background: `${colors.info}20`,
+                                            }
+                                        }}
+                                    >
                                         <Refresh />
                                     </IconButton>
                                 </Tooltip>
@@ -363,7 +353,7 @@ const StoragePage = () => {
                         <Table>
                             <TableHead>
                                 <TableRow sx={{ background: 'rgba(59,130,246,0.1)' }}>
-                                    {['File Name', 'Type', 'Size', 'Date', 'Status', 'Actions'].map((header, index) => (
+                                    {['File Name', 'Type', 'Size', 'Deleted Date', 'Status', 'Actions'].map((header) => (
                                         <TableCell
                                             key={header}
                                             sx={{
@@ -379,172 +369,103 @@ const StoragePage = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredFiles.map((file, index) => (
-                                    <TableRow
-                                        key={file.id}
-                                        sx={{
-                                            '&:hover': {
-                                                background: 'rgba(255,255,255,0.05)',
-                                                transition: 'all 0.3s ease'
-                                            },
-                                            borderBottom: '1px solid rgba(255,255,255,0.1)'
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                {getFileIcon(file.type)}
-                                                <Typography sx={{ color: 'white', fontWeight: '500' }}>
-                                                    {file.name}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={file.type}
-                                                size="small"
-                                                sx={{
-                                                    background: getTypeColor(file.type),
-                                                    color: 'white',
-                                                    fontWeight: 'bold',
-                                                    textTransform: 'capitalize',
-                                                }}
-                                            />
-                                        </TableCell>
-                                        <TableCell sx={{ color: 'white', fontWeight: '500' }}>
-                                            {file.size}
-                                        </TableCell>
-                                        <TableCell sx={{ color: '#94A3B8' }}>
-                                            {file.date}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                {getStatusIcon(file.status)}
-                                                <Typography sx={{
-                                                    color: 'white',
-                                                    textTransform: 'capitalize',
-                                                    fontWeight: '500'
-                                                }}>
-                                                    {file.status}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <Tooltip title="Download">
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{
-                                                            color: colors.success,
-                                                            '&:hover': {
-                                                                background: `${colors.success}20`,
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Download />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{
-                                                            color: colors.error,
-                                                            '&:hover': {
-                                                                background: `${colors.error}20`,
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Delete />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
+                                {filteredFiles.length > 0 ? (
+                                    filteredFiles.map((file) => (
+                                        <TableRow
+                                            key={file.id}
+                                            sx={{
+                                                '&:hover': {
+                                                    background: 'rgba(255,255,255,0.05)',
+                                                    transition: 'all 0.3s ease'
+                                                },
+                                                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                    {getFileIcon()}
+                                                    <Typography sx={{ color: 'white', fontWeight: '500' }}>
+                                                        {file.name}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label="Archive"
+                                                    size="small"
+                                                    sx={{
+                                                        background: colors.archives,
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                        textTransform: 'capitalize',
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ color: 'white', fontWeight: '500' }}>
+                                                {file.size} MB
+                                            </TableCell>
+                                            <TableCell sx={{ color: '#94A3B8' }}>
+                                                {file.date}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    {getStatusIcon(file.status)}
+                                                    <Typography sx={{
+                                                        color: 'white',
+                                                        textTransform: 'capitalize',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        {file.status}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    <Tooltip title="Download">
+                                                        <IconButton
+                                                            size="small"
+                                                            sx={{
+                                                                color: colors.success,
+                                                                '&:hover': {
+                                                                    background: `${colors.success}20`,
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Download />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Delete Permanently">
+                                                        <IconButton
+                                                            size="small"
+                                                            sx={{
+                                                                color: colors.error,
+                                                                '&:hover': {
+                                                                    background: `${colors.error}20`,
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Delete />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                                            <Archive sx={{ fontSize: 64, color: '#94A3B8', mb: 2 }} />
+                                            <Typography variant="h6" sx={{ color: '#94A3B8' }}>
+                                                No deleted reports found
+                                            </Typography>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
                 </CardContent>
             </Card>
-
-            {/* Upload Dialog */}
-            <Dialog
-                open={uploadDialogOpen}
-                onClose={() => setUploadDialogOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-                        borderRadius: 4
-                    }
-                }}
-            >
-                <DialogTitle sx={{
-                    color: 'white',
-                    fontWeight: 'bold',
-                    background: `linear-gradient(90deg, ${colors.primary}, ${colors.info})`,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                }}>
-                    Upload New File
-                </DialogTitle>
-                <DialogContent sx={{ p: 4 }}>
-                    <Box sx={{
-                        border: `2px dashed ${colors.primary}`,
-                        borderRadius: 3,
-                        p: 6,
-                        textAlign: 'center',
-                        background: 'rgba(255,255,255,0.05)',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            background: 'rgba(255,255,255,0.1)',
-                            border: `2px dashed ${colors.info}`,
-                        }
-                    }}>
-                        <CloudUpload sx={{ fontSize: 48, color: colors.primary, mb: 2 }} />
-                        <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
-                            Drop your files here or click to browse
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-                            Supports: PDF, Images, Videos, Audio, Archives
-                        </Typography>
-                        <input
-                            type="file"
-                            style={{ display: 'none' }}
-                            onChange={(e) => setSelectedFile(e.target.files[0])}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 3, gap: 2 }}>
-                    <Button
-                        onClick={() => setUploadDialogOpen(false)}
-                        sx={{
-                            color: '#94A3B8',
-                            '&:hover': { color: 'white' }
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        disabled={!selectedFile}
-                        onClick={() => setUploadDialogOpen(false)}
-                        sx={{
-                            background: `linear-gradient(45deg, ${colors.primary}, ${colors.info})`,
-                            borderRadius: 2,
-                            px: 4,
-                            fontWeight: 'bold',
-                            '&:hover': {
-                                background: `linear-gradient(45deg, ${colors.info}, ${colors.primary})`,
-                                transform: 'translateY(-2px)'
-                            }
-                        }}
-                    >
-                        Upload File
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Box>
     );
 };
