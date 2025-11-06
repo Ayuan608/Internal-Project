@@ -1,3 +1,4 @@
+// Updated AttendanceDashboard component
 import React, { useEffect } from "react";
 import PageContainer from "./PageContainer";
 import { ButtonGroup } from "../../CommonButton/Button";
@@ -16,8 +17,9 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
-import { useAttendanceDashboard } from "./../../hooks/useAttendanceHooks";
+import { useAttendanceAnnouncement, useAttendanceDashboard } from "./../../hooks/useAttendanceHooks";
 import ShowOffDay from "../../popup/ShowOffDay";
+import AttendanceAnnouncementPopup from "../../popup/AttendanceAnnouncementPopup";
 
 // Constants
 const COLORS = ["#10b981", "#60a5fa", "#f59e0b", "#a855f7"];
@@ -469,7 +471,26 @@ const AttendanceDashboardUI = ({
   );
 };
 
+
 export default function AttendanceDashboard() {
   const hookProps = useAttendanceDashboard();
-  return <AttendanceDashboardUI {...hookProps} />;
+  const announcementProps = useAttendanceAnnouncement();
+  return (
+    <>
+      <AttendanceDashboardUI {...hookProps} />
+
+      <AttendanceAnnouncementPopup
+        visible={announcementProps.showAnnouncement}
+        onClose={() => announcementProps.setShowAnnouncement(false)}
+        onProceed={() => announcementProps.setShowAnnouncement(false)}
+        userHasPunchedInToday={announcementProps.hasPunchedIn}
+        userHasPunchedOutToday={announcementProps.hasPunchedOut}
+        forgotPunchIn={announcementProps.forgotPunchIn}
+        forgotPunchOut={announcementProps.forgotPunchOut}
+        excessiveBreaks={announcementProps.excessiveBreaks}
+        latePunchOut={announcementProps.latePunchOut} // NEW: Pass this
+        totalBreakMinutes={announcementProps.totalBreakMinutes}
+      />
+    </>
+  );
 }

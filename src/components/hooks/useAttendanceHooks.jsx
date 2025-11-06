@@ -1,40 +1,94 @@
+// hooks/useAttendanceHooks.js
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getUserAttendance } from "../../redux/attendenceSlice";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
 // Constants
 const INITIAL_PAGE_SIZE = 10;
+const SMOKE_WC_DURATION = 300; // seconds
+const LUNCH_DURATION = 3600; // seconds
+const MAX_STALE_TIMER_MINUTES = 5;
 
-// Helper functions for localStorage
-const getStoredBreakCounts = () => {
+// FIXED: User-specific localStorage helpers
+const getStoredBreakCounts = (userId) => {
+  if (!userId) return { smoke: 0, wc: 0, lunch: 0, lastReset: new Date().toDateString() };
+
   const today = new Date().toDateString();
-  const stored = localStorage.getItem(`breakCounts_${today}`);
-  return stored ? JSON.parse(stored) : { smoke: 0, wc: 0, lunch: 0, lastReset: today };
+  const stored = localStorage.getItem(`breakCounts_${userId}_${today}`);
+  return stored ? JSON.parse(stored) : {
+    smoke: 0,
+    wc: 0,
+    lunch: 0,
+    lastReset: today,
+    userId: userId
+  };
 };
 
-const setStoredBreakCounts = (counts) => {
+const setStoredBreakCounts = (counts, userId) => {
+  if (!userId) return;
   const today = new Date().toDateString();
-  localStorage.setItem(`breakCounts_${today}`, JSON.stringify({ ...counts, lastReset: today }));
+  localStorage.setItem(`breakCounts_${userId}_${today}`, JSON.stringify({
+    ...counts,
+    lastReset: today,
+    userId: userId
+  }));
 };
 
-const getStoredBreakHistory = () => {
-  const stored = localStorage.getItem("breakHistory");
+// FIXED: User-specific break history
+const getStoredBreakHistory = (userId) => {
+  if (!userId) return [];
+  const stored = localStorage.getItem(`breakHistory_${userId}`);
   return stored ? JSON.parse(stored) : [];
 };
 
-const addToBreakHistory = (breakRecord) => {
-  const history = getStoredBreakHistory();
+const addToBreakHistory = (breakRecord, userId) => {
+  if (!userId) return;
+  const history = getStoredBreakHistory(userId);
   const updatedHistory = [breakRecord, ...history].slice(0, 50);
-  localStorage.setItem("breakHistory", JSON.stringify(updatedHistory));
+  localStorage.setItem(`breakHistory_${userId}`, JSON.stringify(updatedHistory));
 };
 
-// Clear localStorage for breaks when database is reset
-const clearBreakStorage = () => {
+// FIXED: User-specific active timer
+const getStoredActiveTimer = (userId) => {
+  if (!userId) return null;
+  const stored = localStorage.getItem(`activeTimer_${userId}`);
+  if (!stored) return null;
+  try {
+    const timer = JSON.parse(stored);
+    const now = new Date();
+    const startTime = new Date(timer.startTime);
+    const elapsedMinutes = (now - startTime) / (1000 * 60);
+    if (elapsedMinutes > MAX_STALE_TIMER_MINUTES) {
+      console.log("Discarding stale active timer for user:", userId);
+      localStorage.removeItem(`activeTimer_${userId}`);
+      return null;
+    }
+    return timer;
+  } catch (error) {
+    console.error("Error parsing stored active timer:", error);
+    localStorage.removeItem(`activeTimer_${userId}`);
+    return null;
+  }
+};
+
+const setStoredActiveTimer = (timer, userId) => {
+  if (!userId) return;
+  if (timer) {
+    localStorage.setItem(`activeTimer_${userId}`, JSON.stringify(timer));
+  } else {
+    localStorage.removeItem(`activeTimer_${userId}`);
+  }
+};
+
+// FIXED: User-specific storage clearing
+const clearBreakStorage = (userId) => {
+  if (!userId) return;
   const today = new Date().toDateString();
-  localStorage.removeItem(`breakCounts_${today}`);
-  localStorage.removeItem("breakHistory");
+  localStorage.removeItem(`breakCounts_${userId}_${today}`);
+  localStorage.removeItem(`breakHistory_${userId}`);
+  localStorage.removeItem(`activeTimer_${userId}`);
 };
 
 // API calls for breaks
@@ -65,16 +119,20 @@ const fetchBreakRecords = async (userId, date) => {
 export const useAttendanceDashboard = () => {
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.auth.data?._id, (a, b) => a === b);
+
+  // FIXED: Add user change detection
+  const [previousUserId, setPreviousUserId] = useState(null);
+
   const { attendanceList, isLoading } = useSelector(
     (state) => state.attendance,
     (a, b) => a.attendanceList === b.attendanceList && a.isLoading === b.isLoading
   );
 
-  // States
-  const [activeTimer, setActiveTimer] = useState(null);
+  // States - FIXED: Initialize with userId
+  const [activeTimer, setActiveTimer] = useState(() => getStoredActiveTimer(userId));
   const [timeLeft, setTimeLeft] = useState(300);
-  const [breakCounts, setBreakCounts] = useState(() => getStoredBreakCounts());
-  const [breakHistory, setBreakHistory] = useState(() => getStoredBreakHistory());
+  const [breakCounts, setBreakCounts] = useState(() => getStoredBreakCounts(userId));
+  const [breakHistory, setBreakHistory] = useState(() => getStoredBreakHistory(userId));
   const [showDayOffModal, setShowDayOffModal] = useState(false);
   const [dayOffForm, setDayOffForm] = useState({
     date: "",
@@ -82,59 +140,10 @@ export const useAttendanceDashboard = () => {
     attachmentType: "medical",
   });
   const [error, setError] = useState(null);
+  const [warningShown, setWarningShown] = useState(false);
+  const timerIntervalRef = useRef(null);
 
-  // Memoized loadBreakData
-  const loadBreakData = useCallback(async () => {
-    if (!userId) return;
-    const today = new Date().toISOString().split("T")[0];
-    try {
-      const breaks = await fetchBreakRecords(userId, today);
-      const counts = {
-        smoke: 0,
-        wc: 0,
-        lunch: 0,
-        lastReset: today,
-      };
-      breaks.forEach((record) => {
-        if (record.type === "smoke" && record.endTime) counts.smoke++;
-        else if (record.type === "wc" && record.endTime) counts.wc++;
-        else if (record.type === "lunch" && record.endTime) counts.lunch++;
-      });
-      setBreakCounts((prev) => {
-        if (
-          prev.smoke === counts.smoke &&
-          prev.wc === counts.wc &&
-          prev.lunch === counts.lunch &&
-          prev.lastReset === counts.lastReset
-        ) {
-          return prev;
-        }
-        setStoredBreakCounts(counts);
-        return counts;
-      });
-      setBreakHistory((prev) => {
-        if (JSON.stringify(prev) === JSON.stringify(breaks)) return prev;
-        return breaks;
-      });
-      if (breaks.length > 0) {
-        addToBreakHistory(breaks[0]);
-      }
-    } catch (err) {
-      console.error("Failed to load break data, using localStorage", err);
-      setBreakCounts((prev) => {
-        const stored = getStoredBreakCounts();
-        if (JSON.stringify(prev) === JSON.stringify(stored)) return prev;
-        return stored;
-      });
-      setBreakHistory((prev) => {
-        const stored = getStoredBreakHistory();
-        if (JSON.stringify(prev) === JSON.stringify(stored)) return prev;
-        return stored;
-      });
-    }
-  }, [userId]);
-
-  // Check punch status
+  // FIXED: Check punch status - MOVE THIS BEFORE startBreak function
   const hasPunchedOutToday = useMemo(() => {
     if (!Array.isArray(attendanceList) || attendanceList.length === 0) return false;
     const today = new Date().toISOString().split("T")[0];
@@ -155,19 +164,134 @@ export const useAttendanceDashboard = () => {
     return todayRecord?.clockIn && todayRecord.clockIn !== "";
   }, [attendanceList]);
 
-  // Format time for display
-  const formatTime = useCallback((seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return hours > 0
-      ? `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-      : `${mins}:${secs.toString().padStart(2, "0")}`;
-  }, []);
+  // FIXED: Detect user change and reset data
+  useEffect(() => {
+    if (userId && userId !== previousUserId) {
+      console.log("User changed from", previousUserId, "to", userId, "- Resetting break data");
 
-  // End break - Moved before useEffect
+      // Clear previous user's timer
+      if (previousUserId) {
+        setStoredActiveTimer(null, previousUserId);
+      }
+
+      // Reset states for new user
+      setActiveTimer(getStoredActiveTimer(userId));
+      setBreakCounts(getStoredBreakCounts(userId));
+      setBreakHistory(getStoredBreakHistory(userId));
+      setTimeLeft(300);
+      setWarningShown(false);
+
+      setPreviousUserId(userId);
+    }
+  }, [userId, previousUserId]);
+
+  // FIXED: Update timeLeft based on activeTimer with userId
+  useEffect(() => {
+    if (!activeTimer) {
+      setTimeLeft(300);
+      setWarningShown(false);
+      return;
+    }
+
+    const now = new Date();
+    const elapsedSeconds = Math.floor((now.getTime() - new Date(activeTimer.startTime).getTime()) / 1000);
+    const duration = activeTimer.type === "lunch" ? LUNCH_DURATION : SMOKE_WC_DURATION;
+    const remaining = duration - elapsedSeconds;
+
+    setTimeLeft(remaining);
+    setWarningShown(remaining <= 0);
+
+    if (remaining <= 0 && !warningShown) {
+      toast.error(`Your ${activeTimer.type} break time has already exceeded! Please end the break immediately.`);
+      setWarningShown(true);
+    }
+  }, [activeTimer, warningShown]);
+
+  // FIXED: loadBreakData with userId
+  const loadBreakData = useCallback(async () => {
+    if (!userId) return;
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const breaks = await fetchBreakRecords(userId, today);
+      const counts = {
+        smoke: 0,
+        wc: 0,
+        lunch: 0,
+        lastReset: today,
+        userId: userId
+      };
+
+      breaks.forEach((record) => {
+        if (record.type === "smoke" && record.endTime) counts.smoke++;
+        else if (record.type === "wc" && record.endTime) counts.wc++;
+        else if (record.type === "lunch" && record.endTime) counts.lunch++;
+      });
+
+      setBreakCounts((prev) => {
+        if (
+          prev.smoke === counts.smoke &&
+          prev.wc === counts.wc &&
+          prev.lunch === counts.lunch &&
+          prev.lastReset === counts.lastReset
+        ) {
+          return prev;
+        }
+        setStoredBreakCounts(counts, userId);
+        return counts;
+      });
+
+      setBreakHistory((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(breaks)) return prev;
+        return breaks;
+      });
+
+      if (breaks.length > 0) {
+        addToBreakHistory(breaks[0], userId);
+      }
+    } catch (err) {
+      console.error("Failed to load break data, using localStorage", err);
+      setBreakCounts((prev) => {
+        const stored = getStoredBreakCounts(userId);
+        if (JSON.stringify(prev) === JSON.stringify(stored)) return prev;
+        return stored;
+      });
+      setBreakHistory((prev) => {
+        const stored = getStoredBreakHistory(userId);
+        if (JSON.stringify(prev) === JSON.stringify(stored)) return prev;
+        return stored;
+      });
+    }
+  }, [userId]);
+
+  // FIXED: Check and reset break counts daily with userId
+  useEffect(() => {
+    if (!userId) return;
+
+    const today = new Date().toDateString();
+    if (breakCounts.lastReset !== today) {
+      console.log("Resetting break counts for new day for user:", userId);
+      const resetCounts = {
+        smoke: 0,
+        wc: 0,
+        lunch: 0,
+        lastReset: today,
+        userId: userId
+      };
+      setBreakCounts(resetCounts);
+      setStoredBreakCounts(resetCounts, userId);
+      setBreakHistory([]);
+      clearBreakStorage(userId);
+    }
+  }, [breakCounts.lastReset, userId]);
+
+  // FIXED: endBreak with userId
   const endBreak = useCallback(async () => {
-    if (!activeTimer) return;
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    if (!activeTimer || !userId) return;
     const breakType = activeTimer.type;
     const endTime = new Date();
     const duration = Math.floor((endTime.getTime() - activeTimer.startTime.getTime()) / 1000);
@@ -183,7 +307,7 @@ export const useAttendanceDashboard = () => {
 
     setBreakCounts((prev) => {
       const newCounts = { ...prev, [breakType]: prev[breakType] + 1 };
-      setStoredBreakCounts(newCounts);
+      setStoredBreakCounts(newCounts, userId);
       return newCounts;
     });
 
@@ -191,49 +315,109 @@ export const useAttendanceDashboard = () => {
       const savedBreak = await saveBreakRecord(breakRecord);
       const updatedBreaks = await fetchBreakRecords(userId, breakRecord.date);
       setBreakHistory(updatedBreaks);
-      addToBreakHistory({ ...breakRecord, id: savedBreak._id || Date.now().toString() });
+      addToBreakHistory({ ...breakRecord, id: savedBreak._id || Date.now().toString() }, userId);
     } catch (err) {
       console.error("Failed to save break end:", err);
-      addToBreakHistory({ ...breakRecord, id: Date.now().toString() });
-      setBreakHistory(getStoredBreakHistory());
+      addToBreakHistory({ ...breakRecord, id: Date.now().toString() }, userId);
+      setBreakHistory(getStoredBreakHistory(userId));
     }
 
+    setStoredActiveTimer(null, userId);
     setActiveTimer(null);
     setTimeLeft(300);
+    setWarningShown(false);
   }, [activeTimer, userId]);
 
-  // Timer countdown effect
+  // FIXED: startBreak with userId - NOW hasPunchedOutToday is defined
+  const startBreak = useCallback(
+    async (type) => {
+      if (!userId) {
+        toast.error("User not found. Please login again.");
+        return;
+      }
+
+      if (hasPunchedOutToday) {
+        toast.error("You have already punched out for today. Breaks are not allowed after punch out.");
+        return;
+      }
+      if (!hasPunchedInToday) {
+        toast.error("Please punch in first before taking a break.");
+        return;
+      }
+
+      const limits = { smoke: 3, wc: 3, lunch: 1 };
+      if (breakCounts[type] >= limits[type]) {
+        toast.error(`Maximum ${type} breaks (${limits[type]}) reached for today!`);
+        return;
+      }
+      if (activeTimer) {
+        toast.error(`Please finish your ${activeTimer.type} break first!`);
+        return;
+      }
+
+      const duration = type === "lunch" ? LUNCH_DURATION : SMOKE_WC_DURATION;
+      const newTimer = { type, startTime: new Date() };
+      setActiveTimer(newTimer);
+      setTimeLeft(duration);
+      setWarningShown(false);
+
+      setStoredActiveTimer(newTimer, userId);
+
+      const today = new Date().toISOString().split("T")[0];
+      const breakRecord = {
+        userId,
+        type,
+        startTime: newTimer.startTime.toISOString(),
+        date: today,
+      };
+
+      try {
+        const savedBreak = await saveBreakRecord(breakRecord);
+        addToBreakHistory({ ...breakRecord, id: savedBreak._id || Date.now().toString() }, userId);
+        setBreakHistory(getStoredBreakHistory(userId));
+      } catch (err) {
+        console.error("Failed to save break start:", err);
+        addToBreakHistory({ ...breakRecord, id: Date.now().toString() }, userId);
+        setBreakHistory(getStoredBreakHistory(userId));
+      }
+    },
+    [hasPunchedOutToday, hasPunchedInToday, breakCounts, activeTimer, userId]
+  );
+
+  // Timer countdown effect - UPDATED to allow negative and show warning
   useEffect(() => {
-    if (!activeTimer) return;
-    const interval = setInterval(() => {
+    if (!activeTimer) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Clear any existing interval
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+
+    timerIntervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          endBreak();
-          return 300;
+        const newTime = prev - 1;
+        // Show warning only once when it first hits 0 or below
+        if (newTime <= 0 && prev > 0 && !warningShown) {
+          toast.error(`Your ${activeTimer.type} break time has exceeded! Please end the break immediately.`);
+          setWarningShown(true);
         }
-        return prev - 1;
+        return newTime; // Allow negative
       });
     }, 1000);
-    return () => clearInterval(interval);
-  }, [activeTimer, endBreak]);
 
-  // Check and reset break counts daily
-  useEffect(() => {
-    const today = new Date().toDateString();
-    if (breakCounts.lastReset !== today) {
-      const resetCounts = {
-        smoke: 0,
-        wc: 0,
-        lunch: 0,
-        lastReset: today,
-      };
-      setBreakCounts(resetCounts);
-      setStoredBreakCounts(resetCounts);
-      setBreakHistory([]);
-      clearBreakStorage();
-    }
-  }, [breakCounts.lastReset]);
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [activeTimer, warningShown]);
 
   // Load attendance and break data on mount
   useEffect(() => {
@@ -263,52 +447,6 @@ export const useAttendanceDashboard = () => {
     if (hasPunchedInToday) return "Currently Working";
     return "Ready";
   }, [hasPunchedOutToday, activeTimer, hasPunchedInToday]);
-
-  // Start break
-  const startBreak = useCallback(
-    async (type) => {
-      if (hasPunchedOutToday) {
-        toast.error("You have already punched out for today. Breaks are not allowed after punch out.");
-        return;
-      }
-      if (!hasPunchedInToday) {
-        toast.error("Please punch in first before taking a break.");
-        return;
-      }
-      const limits = { smoke: 3, wc: 3, lunch: 1 };
-      if (breakCounts[type] >= limits[type]) {
-        toast.error(`Maximum ${type} breaks (${limits[type]}) reached for today!`);
-        return;
-      }
-      if (activeTimer) {
-        toast.error(`Please finish your ${activeTimer.type} break first!`);
-        return;
-      }
-      const duration = type === "lunch" ? 3600 : 300;
-      const newTimer = { type, startTime: new Date() };
-      setActiveTimer(newTimer);
-      setTimeLeft(duration);
-
-      const today = new Date().toISOString().split("T")[0];
-      const breakRecord = {
-        userId,
-        type,
-        startTime: newTimer.startTime.toISOString(),
-        date: today,
-      };
-
-      try {
-        const savedBreak = await saveBreakRecord(breakRecord);
-        addToBreakHistory({ ...breakRecord, id: savedBreak._id || Date.now().toString() });
-        setBreakHistory(getStoredBreakHistory());
-      } catch (err) {
-        console.error("Failed to save break start:", err);
-        addToBreakHistory({ ...breakRecord, id: Date.now().toString() });
-        setBreakHistory(getStoredBreakHistory());
-      }
-    },
-    [hasPunchedOutToday, hasPunchedInToday, breakCounts, activeTimer, userId]
-  );
 
   // Calculate break time from history
   const calculateBreakTimeFromHistory = useCallback((rowDate, breakType) => {
@@ -377,7 +515,7 @@ export const useAttendanceDashboard = () => {
     [calculateBreakTimeFromHistory]
   );
 
-  // NEW: Calculate total break time for a record
+  // Calculate total break time for a record
   const calculateTotalBreakTime = useCallback((row) => {
     let totalBreakMinutes = 0;
 
@@ -433,7 +571,7 @@ export const useAttendanceDashboard = () => {
     return totalBreakMinutes;
   }, [breakHistory]);
 
-  // NEW: Format breaks display with types and total time
+  // Format breaks display with types and total time
   const formatBreaksDisplay = useCallback((row) => {
     const breaks = [];
     let totalBreakMinutes = calculateTotalBreakTime(row);
@@ -516,7 +654,7 @@ export const useAttendanceDashboard = () => {
       totalWcBreak: "0 min",
       totalSmokeBreak: "0 min",
       totalLunchBreak: "0 min",
-      totalAllBreaks: "0 min", // NEW: Total of all breaks
+      totalAllBreaks: "0 min",
       hasPendingPunchOut: false,
       currentStreak: 0,
       lastPunchIn: "No data",
@@ -662,7 +800,7 @@ export const useAttendanceDashboard = () => {
       totalWcBreak: formatBreakTime(totalWcMinutes),
       totalSmokeBreak: formatBreakTime(totalSmokeMinutes),
       totalLunchBreak: formatBreakTime(totalLunchMinutes),
-      totalAllBreaks: formatBreakTime(totalBreakMinutes), // NEW: Total of all breaks
+      totalAllBreaks: formatBreakTime(totalBreakMinutes),
       hasPendingPunchOut: pendingPunchOutToday,
       currentStreak: consecutiveDays,
       lastPunchIn: lastPunchInFormatted,
@@ -671,9 +809,19 @@ export const useAttendanceDashboard = () => {
     };
   }, [attendanceList, breakHistory]);
 
+  // FIXED: handleRefresh with userId
   const handleRefresh = useCallback(() => {
-    clearBreakStorage();
-    setBreakCounts({ smoke: 0, wc: 0, lunch: 0, lastReset: new Date().toDateString() });
+    if (!userId) return;
+
+    clearBreakStorage(userId);
+    const resetCounts = {
+      smoke: 0,
+      wc: 0,
+      lunch: 0,
+      lastReset: new Date().toDateString(),
+      userId: userId
+    };
+    setBreakCounts(resetCounts);
     setBreakHistory([]);
     dispatch(getUserAttendance({ userId, page: 1, limit: INITIAL_PAGE_SIZE }));
     loadBreakData();
@@ -702,6 +850,18 @@ export const useAttendanceDashboard = () => {
     } catch {
       return "-";
     }
+  }, []);
+
+  const formatTime = useCallback((seconds) => {
+    const absSeconds = Math.abs(seconds);
+    const hours = Math.floor(absSeconds / 3600);
+    const mins = Math.floor((absSeconds % 3600) / 60);
+    const secs = absSeconds % 60;
+    const sign = seconds < 0 ? "-" : "";
+    const timeStr = hours > 0
+      ? `${sign}${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+      : `${sign}${mins}:${secs.toString().padStart(2, "0")}`;
+    return timeStr;
   }, []);
 
   const isSmokeBreakDisabled = useMemo(
@@ -747,7 +907,83 @@ export const useAttendanceDashboard = () => {
     calculateBreakTime,
     calculateWcBreakTime,
     calculateLunchBreakTime,
-    calculateTotalBreakTime, // NEW: Export the total break time calculator
-    formatBreaksDisplay,     // NEW: Export the formatted breaks display
+    calculateTotalBreakTime,
+    formatBreaksDisplay,
+  };
+};
+
+// FIXED: Updated useAttendanceAnnouncement hook
+export const useAttendanceAnnouncement = () => {
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const attendanceList = useSelector((state) => state.attendance.attendanceList);
+  const userId = useSelector((state) => state.auth.data?._id);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const hasPunchedInToday = useMemo(() => {
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
+      return false;
+    }
+    const todayRecord = attendanceList.find((row) => {
+      const rowDate = new Date(row.date).toISOString().split("T")[0];
+      return rowDate === today;
+    });
+    return todayRecord?.clockIn && todayRecord.clockIn !== "";
+  }, [attendanceList, today]);
+
+  const hasPunchedOutToday = useMemo(() => {
+    if (!Array.isArray(attendanceList) || attendanceList.length === 0) return false;
+    const todayRecord = attendanceList.find((row) => {
+      const rowDate = new Date(row.date).toISOString().split("T")[0];
+      return rowDate === today;
+    });
+    return todayRecord?.clockOut && todayRecord.clockOut !== "";
+  }, [attendanceList, today]);
+
+  // FIXED: User-specific break history for announcement
+  const totalTodayBreakMinutes = useMemo(() => {
+    if (!userId) return 0;
+    const history = getStoredBreakHistory(userId);
+    const todayBreaks = history.filter((record) => record.date === today);
+    const totalSeconds = todayBreaks.reduce((sum, record) => sum + (record.duration || 0), 0);
+    return Math.floor(totalSeconds / 60);
+  }, [today, userId]);
+
+  const isAfter630PM = useMemo(() => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const isAfter = (hours > 17) || (hours === 17 && minutes >= 34);
+    return isAfter;
+  }, []);
+
+  const forgotPunchIn = !hasPunchedInToday;
+  const forgotPunchOut = hasPunchedInToday && !hasPunchedOutToday;
+  const excessiveBreaks = totalTodayBreakMinutes > 60;
+  const latePunchOut = isAfter630PM && !hasPunchedOutToday;
+
+  const shouldShow = forgotPunchIn || forgotPunchOut || excessiveBreaks || latePunchOut;
+
+  useEffect(() => {
+    // FIXED: User-specific hide preference
+    const hide = localStorage.getItem(`hideAttendanceAnnouncement_${userId}`) === "true";
+    if (hide) {
+      setShowAnnouncement(false);
+      return;
+    }
+
+    setShowAnnouncement(shouldShow);
+  }, [forgotPunchIn, forgotPunchOut, excessiveBreaks, latePunchOut, shouldShow, userId]);
+
+  return {
+    showAnnouncement,
+    setShowAnnouncement,
+    hasPunchedIn: hasPunchedInToday,
+    hasPunchedOut: hasPunchedOutToday,
+    forgotPunchIn,
+    forgotPunchOut,
+    excessiveBreaks,
+    latePunchOut,
+    totalBreakMinutes: totalTodayBreakMinutes,
   };
 };
