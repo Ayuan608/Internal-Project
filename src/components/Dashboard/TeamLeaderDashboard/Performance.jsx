@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, Download, Search, AlertCircle, Database } from 'lucide-react';
+import { RefreshCw, Download, Search, AlertCircle, Database, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSheetDataByDepartment } from '../../../redux/sheetSlice';
 import * as XLSX from 'xlsx';
@@ -11,11 +11,99 @@ const Performance = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [selectedShift, setSelectedShift] = useState('all'); // 'all', 'morning', 'night'
+    const [selectedShift, setSelectedShift] = useState('all');
+    const [tableHeaders, setTableHeaders] = useState([]);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
         dispatch(fetchSheetDataByDepartment());
     }, [dispatch]);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, startDate, endDate, selectedShift]);
+
+    // Custom headers based on your requirements
+    const customHeaders = [
+        'NAME',
+        'TG NAME',
+        'TOTAL WORKING HOURS',
+        'TIME START',
+        'TIME END',
+        'TOTAL TIME',
+        'TASK',
+        'TIME RANGE',
+        'DEPOSIT',
+        'CALLBACK/AGENT'
+    ];
+
+    // Function to calculate time difference
+    const calculateTimeDifference = (startTime, endTime) => {
+        if (!startTime || !endTime) return '0:00';
+
+        try {
+            const parseTime = (timeStr) => {
+                // Handle different time formats
+                let time = timeStr.toString().trim();
+
+                // Remove any AM/PM and extra spaces
+                time = time.replace(/[AP]M/gi, '').trim();
+
+                // Handle 24-hour format
+                if (time.includes(':')) {
+                    const [hours, minutes] = time.split(':').map(part => parseInt(part) || 0);
+                    return hours * 60 + minutes;
+                }
+
+                // Handle decimal format (like 6.5 hours)
+                if (time.includes('.')) {
+                    return Math.floor(parseFloat(time) * 60);
+                }
+
+                return parseInt(time) * 60 || 0;
+            };
+
+            const startMinutes = parseTime(startTime);
+            const endMinutes = parseTime(endTime);
+
+            let diffMinutes = endMinutes - startMinutes;
+
+            // Handle overnight shifts (end time is next day)
+            if (diffMinutes < 0) {
+                diffMinutes += 24 * 60; // Add 24 hours
+            }
+
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+
+            return `${hours}:${minutes.toString().padStart(2, '0')}`;
+        } catch (error) {
+            console.error('Error calculating time difference:', error);
+            return '0:00';
+        }
+    };
+
+    // Function to format date to MM/DD/YYYY
+    const formatDate = (dateString) => {
+        if (!dateString) return dateString;
+
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const year = date.getFullYear();
+
+            return `${month}/${day}/${year}`;
+        } catch (error) {
+            return dateString;
+        }
+    };
 
     // Function to process data and group by shifts
     const processShiftData = () => {
@@ -25,9 +113,14 @@ const Performance = () => {
         const nightShift = [];
         let currentShift = null;
 
-        data.forEach((row, index) => {
+        data.forEach((row) => {
+            // Skip empty rows
+            if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+                return;
+            }
+
             // Check if this row indicates a shift header
-            if (row.length > 0 && typeof row[0] === 'string') {
+            if (typeof row[0] === 'string') {
                 const firstCell = row[0].toLowerCase();
 
                 if (firstCell.includes('morning shift')) {
@@ -39,8 +132,11 @@ const Performance = () => {
                 }
             }
 
-            // Skip empty rows
-            if (row.length === 0 || (row.length === 1 && !row[0])) {
+            // Skip header rows
+            if (row.some(cell =>
+                typeof cell === 'string' &&
+                (cell.toUpperCase().includes('NAME') && cell.toUpperCase().includes('TG NAME'))
+            )) {
                 return;
             }
 
@@ -53,6 +149,38 @@ const Performance = () => {
         });
 
         return { morning: morningShift, night: nightShift };
+    };
+
+    // Function to process and enhance rows with calculated time
+    const processRowsWithTimeCalculation = (rows) => {
+        return rows.map(row => {
+            // Your data structure analysis:
+            // Index 3: Start Time (e.g., '13:30')
+            // Index 4: End Time (e.g., '19:30') 
+            // Index 5: Total Time (e.g., '6:00:00')
+
+            const startTime = row[3]; // Start Time
+            const endTime = row[4];   // End Time
+
+            // Calculate total time
+            const calculatedTotalTime = calculateTimeDifference(startTime, endTime);
+
+            // Create enhanced row with calculated time
+            const enhancedRow = [...row];
+
+            // Replace or add calculated total time at index 5
+            if (enhancedRow.length > 5) {
+                enhancedRow[5] = calculatedTotalTime;
+            } else {
+                // If row doesn't have enough columns, add the calculated time
+                while (enhancedRow.length < 6) {
+                    enhancedRow.push('');
+                }
+                enhancedRow[5] = calculatedTotalTime;
+            }
+
+            return enhancedRow;
+        });
     };
 
     // Function to filter rows with names and process data
@@ -68,17 +196,15 @@ const Performance = () => {
             shiftData = [...morning, ...night];
         }
 
-        // Filter rows that have NAME value
-        return shiftData.filter((row) => {
-            // Find NAME column index (assuming it's the first column with actual name data)
-            const nameIndex = 0; // Based on your data structure
+        // Filter rows that have NAME value and process time calculation
+        const filtered = shiftData.filter((row) => {
+            const nameIndex = 0;
             const nameCell = row[nameIndex];
 
-            // Check if this row has a valid name (not empty, not a header, not "Total", etc.)
+            // Check if this row has a valid name
             if (!nameCell ||
                 typeof nameCell !== 'string' ||
                 nameCell.trim() === '' ||
-                nameCell.toLowerCase().includes('name') ||
                 nameCell.toLowerCase().includes('total') ||
                 nameCell.toLowerCase().includes('workload')) {
                 return false;
@@ -92,6 +218,20 @@ const Performance = () => {
 
             return matchesSearch;
         });
+
+        // Process rows with time calculation
+        return processRowsWithTimeCalculation(filtered)
+            .map(row =>
+                row.map(cell => {
+                    // Format date cells (check if it looks like a date)
+                    if (typeof cell === 'string' &&
+                        (cell.includes('-') || cell.includes('/')) &&
+                        cell.match(/\d{4}/)) {
+                        return formatDate(cell);
+                    }
+                    return cell;
+                })
+            );
     };
 
     // Function to extract total workload for each person
@@ -108,8 +248,8 @@ const Performance = () => {
             // Check if this is a name row
             if (nameCell && typeof nameCell === 'string' &&
                 nameCell.trim() !== '' &&
-                !nameCell.toLowerCase().includes('name') &&
-                !nameCell.toLowerCase().includes('total')) {
+                !nameCell.toLowerCase().includes('total') &&
+                !nameCell.toLowerCase().includes('workload')) {
 
                 // Look for TOTAL WORKLOAD in subsequent rows
                 for (let i = index + 1; i < Math.min(index + 10, allData.length); i++) {
@@ -137,12 +277,24 @@ const Performance = () => {
     const filteredRows = getFilteredRows();
     const workloadData = getTotalWorkloadData();
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentRows = filteredRows.slice(indexOfFirstRow, indexOfLastRow);
+
+    // Pagination handlers
+    const goToFirstPage = () => setCurrentPage(1);
+    const goToLastPage = () => setCurrentPage(totalPages);
+    const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+    const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+
     const handleRefresh = () => dispatch(fetchSheetDataByDepartment());
 
     const handleExport = () => {
         if (filteredRows.length === 0) return alert('No data to export');
 
-        const dataToExport = [headers, ...filteredRows];
+        const dataToExport = [customHeaders, ...filteredRows];
         const ws = XLSX.utils.aoa_to_sheet(dataToExport);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, department || 'Sheet');
@@ -153,33 +305,17 @@ const Performance = () => {
         setSearchTerm('');
         setStartDate('');
         setEndDate('');
+        setCurrentPage(1);
     };
 
     // Function to get cell color based on column header and value
     const getCellColor = (header, value) => {
-        const headerLower = header?.toLowerCase();
+        if (!header) return 'text-white';
 
-        // For "Completed" column - check if >= 530
-        if (headerLower === 'completed convo') {
-            const numValue = parseFloat(value);
-            if (!isNaN(numValue)) {
-                return numValue >= 530 ? 'text-green-400' : 'text-orange-400';
-            }
-        }
+        const headerLower = header.toLowerCase();
 
-        if (headerLower === 'online time') {
-            if (typeof value === 'string' && value.includes(':')) {
-                const [hoursStr, minutesStr] = value.split(':');
-                const hours = parseInt(hoursStr, 10);
-                const minutes = parseInt(minutesStr, 10);
-                const totalMinutes = hours * 60 + minutes;
-                const cutoff = 10 * 60 + 30;
-                return totalMinutes >= cutoff ? 'text-green-400' : 'text-red-400';
-            }
-        }
-
-        // For workload cells - color code based on value
-        if (headerLower?.includes('workload') || headerLower?.includes('deposit')) {
+        // For deposit column
+        if (headerLower.includes('deposit')) {
             const numValue = parseFloat(value);
             if (!isNaN(numValue)) {
                 if (numValue >= 500) return 'text-green-400';
@@ -188,8 +324,24 @@ const Performance = () => {
             }
         }
 
+        // For total time column
+        if (headerLower.includes('total time')) {
+            if (typeof value === 'string' && value.includes(':')) {
+                const [hours] = value.split(':');
+                const totalHours = parseInt(hours);
+                if (!isNaN(totalHours)) {
+                    if (totalHours >= 8) return 'text-green-400';
+                    if (totalHours >= 6) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+        }
+
         return 'text-white';
     };
+
+    console.log('Custom Headers:', customHeaders);
+    console.log('Filtered Rows with Time Calculation:', filteredRows);
 
     return (
         <div className="p-4">
@@ -310,7 +462,7 @@ const Performance = () => {
                     </h2>
                     <span className="text-sm text-gray-400">
                         {filteredRows.length > 0
-                            ? `Showing ${filteredRows.length} records`
+                            ? `Showing ${indexOfFirstRow + 1}-${Math.min(indexOfLastRow, filteredRows.length)} of ${filteredRows.length} records`
                             : 'No data'}
                     </span>
                 </div>
@@ -319,8 +471,8 @@ const Performance = () => {
                     <table className="w-full text-sm">
                         <thead className="bg-[rgba(59,130,246,0.05)] whitespace-nowrap border-b border-gray-700">
                             <tr>
-                                {headers.map((header, index) => (
-                                    <th key={index} className="px-6 py-4 text-left font-semibold uppercase text-white">
+                                {customHeaders.map((header, index) => (
+                                    <th key={index} className="px-6 py-4 font-semibold uppercase text-white text-start">
                                         {header}
                                     </th>
                                 ))}
@@ -329,30 +481,30 @@ const Performance = () => {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={headers.length} className="text-center py-8 text-gray-400">
+                                    <td colSpan={customHeaders.length} className="text-center py-8 text-gray-400">
                                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                                         Loading data...
                                     </td>
                                 </tr>
-                            ) : filteredRows.length === 0 ? (
+                            ) : currentRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={headers.length} className="text-center py-8 text-gray-400">
+                                    <td colSpan={customHeaders.length} className="text-center py-8 text-gray-400">
                                         <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         No records found.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredRows.map((row, i) => (
+                                currentRows.map((row, i) => (
                                     <tr
                                         key={i}
                                         className="border-b border-gray-800 hover:bg-[rgba(59,130,246,0.05)] transition-colors"
                                     >
-                                        {row.map((cell, j) => (
+                                        {customHeaders.map((header, j) => (
                                             <td
                                                 key={j}
-                                                className={`px-6 py-4 whitespace-nowrap text-center ${getCellColor(headers[j], cell)}`}
+                                                className={`px-6 py-4 whitespace-nowrap text-start ${getCellColor(header, row[j] || '')}`}
                                             >
-                                                {cell || '-'}
+                                                {row[j] || '-'}
                                             </td>
                                         ))}
                                     </tr>
@@ -362,24 +514,107 @@ const Performance = () => {
                     </table>
                 </div>
 
-                <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
-                    <span className="text-gray-400">
-                        Showing {filteredRows.length} records
-                    </span>
+                {/* Pagination Controls */}
+                {filteredRows.length > 0 && (
+                    <div className="bg-[#f5f6fa13] px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-4">
+                            <span className="text-gray-400 text-sm">
+                                Showing {indexOfFirstRow + 1}-{Math.min(indexOfLastRow, filteredRows.length)} of {filteredRows.length} records
+                            </span>
 
+                            {/* Rows per page selector */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-400 text-sm">Rows per page:</span>
+                                <select
+                                    value={rowsPerPage}
+                                    onChange={(e) => {
+                                        setRowsPerPage(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                    className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {/* Page navigation */}
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={goToFirstPage}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded border border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+                                >
+                                    <ChevronsLeft className="w-4 h-4 text-gray-300" />
+                                </button>
+                                <button
+                                    onClick={goToPrevPage}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded border border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4 text-gray-300" />
+                                </button>
+
+                                <span className="px-3 py-1 text-sm text-gray-300">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+
+                                <button
+                                    onClick={goToNextPage}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded border border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+                                >
+                                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                                </button>
+                                <button
+                                    onClick={goToLastPage}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded border border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+                                >
+                                    <ChevronsRight className="w-4 h-4 text-gray-300" />
+                                </button>
+                            </div>
+
+                            {/* Page number input */}
+                            <div className="flex items-center gap-2 ml-4">
+                                <span className="text-gray-400 text-sm">Go to:</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={totalPages}
+                                    value={currentPage}
+                                    onChange={(e) => {
+                                        const page = Number(e.target.value);
+                                        if (page >= 1 && page <= totalPages) {
+                                            setCurrentPage(page);
+                                        }
+                                    }}
+                                    className="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
                     <div className="flex flex-wrap gap-3 items-center">
-                        <span className="text-gray-400 font-semibold">Workload Legend:</span>
+                        <span className="text-gray-400 font-semibold">Color Legend:</span>
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-green-500 rounded"></div>
-                            <span className="text-green-400">≥ 500</span>
+                            <span className="text-green-400">Deposit ≥ 500 / Time ≥ 8h</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                            <span className="text-yellow-400">300-499</span>
+                            <span className="text-yellow-400">Deposit 300-499 / Time 6-7h</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-red-500 rounded"></div>
-                            <span className="text-red-400">&lt; 300</span>
+                            <span className="text-red-400">Deposit &lt; 300 / Time &lt; 6h</span>
                         </div>
                     </div>
 
