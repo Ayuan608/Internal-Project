@@ -23,6 +23,9 @@ const Department = () => {
     (state) => state.combinedQuota
   );
 
+
+  
+
   // Number formatting function
   const formatNumber = (num) => {
     if (num >= 1000000) {

@@ -11,32 +11,131 @@ const Performance = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [selectedShift, setSelectedShift] = useState('all'); // 'all', 'morning', 'night'
 
     useEffect(() => {
         dispatch(fetchSheetDataByDepartment());
     }, [dispatch]);
 
-    // Filtered rows based on search and date range
-    const filteredRows = data.filter((row) => {
-        const matchesSearch =
-            !searchTerm ||
-            row.some((cell) =>
-                String(cell).toLowerCase().includes(searchTerm.toLowerCase())
-            );
+    // Function to process data and group by shifts
+    const processShiftData = () => {
+        if (!data || data.length === 0) return { morning: [], night: [] };
 
-        const dateIndex = headers.findIndex((h) =>
-            h.toLowerCase().includes('date')
-        );
-        if (dateIndex === -1) return matchesSearch;
+        const morningShift = [];
+        const nightShift = [];
+        let currentShift = null;
 
-        const dateValue = new Date(row[dateIndex]);
-        const start = startDate ? new Date(startDate) : null;
-        const end = endDate ? new Date(endDate) : null;
-        const withinDate =
-            (!start || dateValue >= start) && (!end || dateValue <= end);
+        data.forEach((row, index) => {
+            // Check if this row indicates a shift header
+            if (row.length > 0 && typeof row[0] === 'string') {
+                const firstCell = row[0].toLowerCase();
 
-        return matchesSearch && withinDate;
-    });
+                if (firstCell.includes('morning shift')) {
+                    currentShift = 'morning';
+                    return;
+                } else if (firstCell.includes('night shift')) {
+                    currentShift = 'night';
+                    return;
+                }
+            }
+
+            // Skip empty rows
+            if (row.length === 0 || (row.length === 1 && !row[0])) {
+                return;
+            }
+
+            // Add to appropriate shift based on currentShift
+            if (currentShift === 'morning') {
+                morningShift.push(row);
+            } else if (currentShift === 'night') {
+                nightShift.push(row);
+            }
+        });
+
+        return { morning: morningShift, night: nightShift };
+    };
+
+    // Function to filter rows with names and process data
+    const getFilteredRows = () => {
+        const { morning, night } = processShiftData();
+        let shiftData = [];
+
+        if (selectedShift === 'morning') {
+            shiftData = morning;
+        } else if (selectedShift === 'night') {
+            shiftData = night;
+        } else {
+            shiftData = [...morning, ...night];
+        }
+
+        // Filter rows that have NAME value
+        return shiftData.filter((row) => {
+            // Find NAME column index (assuming it's the first column with actual name data)
+            const nameIndex = 0; // Based on your data structure
+            const nameCell = row[nameIndex];
+
+            // Check if this row has a valid name (not empty, not a header, not "Total", etc.)
+            if (!nameCell ||
+                typeof nameCell !== 'string' ||
+                nameCell.trim() === '' ||
+                nameCell.toLowerCase().includes('name') ||
+                nameCell.toLowerCase().includes('total') ||
+                nameCell.toLowerCase().includes('workload')) {
+                return false;
+            }
+
+            // Additional search filter
+            const matchesSearch = !searchTerm ||
+                row.some((cell) =>
+                    String(cell).toLowerCase().includes(searchTerm.toLowerCase())
+                );
+
+            return matchesSearch;
+        });
+    };
+
+    // Function to extract total workload for each person
+    const getTotalWorkloadData = () => {
+        const { morning, night } = processShiftData();
+        const allData = selectedShift === 'all' ? [...morning, ...night] :
+            selectedShift === 'morning' ? morning : night;
+
+        const workloadData = [];
+
+        allData.forEach((row, index) => {
+            const nameCell = row[0];
+
+            // Check if this is a name row
+            if (nameCell && typeof nameCell === 'string' &&
+                nameCell.trim() !== '' &&
+                !nameCell.toLowerCase().includes('name') &&
+                !nameCell.toLowerCase().includes('total')) {
+
+                // Look for TOTAL WORKLOAD in subsequent rows
+                for (let i = index + 1; i < Math.min(index + 10, allData.length); i++) {
+                    const nextRow = allData[i];
+                    if (nextRow && nextRow.length > 0) {
+                        const firstCell = String(nextRow[0] || '').toLowerCase();
+                        const lastCell = nextRow[nextRow.length - 1];
+
+                        if (firstCell.includes('total workload') && lastCell) {
+                            workloadData.push({
+                                name: nameCell.trim(),
+                                workload: lastCell,
+                                shift: morning.includes(row) ? 'Morning' : 'Night'
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        return workloadData;
+    };
+
+    const filteredRows = getFilteredRows();
+    const workloadData = getTotalWorkloadData();
 
     const handleRefresh = () => dispatch(fetchSheetDataByDepartment());
 
@@ -60,9 +159,6 @@ const Performance = () => {
     const getCellColor = (header, value) => {
         const headerLower = header?.toLowerCase();
 
-        console.log(headerLower)
-
-
         // For "Completed" column - check if >= 530
         if (headerLower === 'completed convo') {
             const numValue = parseFloat(value);
@@ -72,58 +168,25 @@ const Performance = () => {
         }
 
         if (headerLower === 'online time') {
-            // Handle both "10:15", "09:45", etc.
             if (typeof value === 'string' && value.includes(':')) {
                 const [hoursStr, minutesStr] = value.split(':');
                 const hours = parseInt(hoursStr, 10);
                 const minutes = parseInt(minutesStr, 10);
-
-                // Convert time into minutes from midnight for easy comparison
                 const totalMinutes = hours * 60 + minutes;
-
-                // 10:30 AM = 630 minutes after midnight
                 const cutoff = 10 * 60 + 30;
-
                 return totalMinutes >= cutoff ? 'text-green-400' : 'text-red-400';
             }
         }
 
-
-        // For "Online Time" column - match with legend colors
-        if (headerLower === 'online time' || headerLower?.includes('online')) {
-            const timeStr = String(value).toLowerCase();
-
-            // Detect color keywords in the value
-            if (timeStr.includes('green') || timeStr.includes('reached')) {
-                return 'text-green-400';
-            }
-            if (timeStr.includes('red') || timeStr.includes('failed')) {
+        // For workload cells - color code based on value
+        if (headerLower?.includes('workload') || headerLower?.includes('deposit')) {
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                if (numValue >= 500) return 'text-green-400';
+                if (numValue >= 300) return 'text-yellow-400';
                 return 'text-red-400';
             }
-            if (timeStr.includes('yellow') || timeStr.includes('half')) {
-                return 'text-yellow-400';
-            }
-            if (timeStr.includes('cyan') || timeStr.includes('zoho')) {
-                return 'text-cyan-400';
-            }
         }
-
-        // For "FRT" column
-        if (headerLower === 'frt') {
-            return 'text-green-400';
-        }
-
-        // For "Positive %" column
-        if (headerLower?.includes('positive')) {
-            return 'text-green-400';
-        }
-
-        // For "Negatives" column
-        if (headerLower?.includes('negative')) {
-            return 'text-red-400';
-        }
-
-
 
         return 'text-white';
     };
@@ -133,6 +196,17 @@ const Performance = () => {
             {/* Filters & Actions */}
             <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
                 <div className="flex items-center gap-3 flex-1">
+                    {/* Shift Filter */}
+                    <select
+                        value={selectedShift}
+                        onChange={(e) => setSelectedShift(e.target.value)}
+                        className="px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                    >
+                        <option value="all">All Shifts</option>
+                        <option value="morning">Morning Shift</option>
+                        <option value="night">Night Shift</option>
+                    </select>
+
                     {/* Search */}
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -193,6 +267,29 @@ const Performance = () => {
                 </div>
             </div>
 
+            {/* Total Workload Summary */}
+            {workloadData.length > 0 && (
+                <div className="mb-6 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <h3 className="text-lg font-semibold text-white mb-3">Total Workload Summary</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {workloadData.map((item, index) => (
+                            <div key={index} className="bg-gray-700/30 rounded p-3 border border-gray-600">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-white font-medium">{item.name}</span>
+                                    <span className={`px-2 py-1 rounded text-xs ${item.shift === 'Morning' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'
+                                        }`}>
+                                        {item.shift}
+                                    </span>
+                                </div>
+                                <div className="text-2xl font-bold text-green-400 mt-2">
+                                    {item.workload}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Error Message */}
             {error && (
                 <div className="mb-4 bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-lg flex items-start gap-2">
@@ -208,11 +305,12 @@ const Performance = () => {
             <div className="w-full bg-[rgba(59,130,246,0.03)] rounded-xl border border-gray-700 shadow-xl overflow-hidden">
                 <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-b border-gray-700 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-white">
-                        {department ? `${department} Department Data` : 'Performance Data'}
+                        {selectedShift === 'all' ? 'All Shifts' :
+                            selectedShift === 'morning' ? 'Morning Shift' : 'Night Shift'}
                     </h2>
                     <span className="text-sm text-gray-400">
                         {filteredRows.length > 0
-                            ? `Showing ${filteredRows.length} of ${data.length} records`
+                            ? `Showing ${filteredRows.length} records`
                             : 'No data'}
                     </span>
                 </div>
@@ -266,30 +364,24 @@ const Performance = () => {
 
                 <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
                     <span className="text-gray-400">
-                        Showing {filteredRows.length} of {data.length} records
+                        Showing {filteredRows.length} records
                     </span>
-                    {   department === "CSR"&& (
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <span className="text-gray-400 font-semibold">Color Legend:</span>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                                <span className="text-green-400">Reached Quota</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-red-500 rounded"></div>
-                                <span className="text-red-400">Failed to Reach Quota</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                                <span className="text-yellow-400">Half Data / No Data</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-cyan-400 rounded"></div>
-                                <span className="text-cyan-400">Assigned in Zoho</span>
-                            </div>
-                        </div>
-                    )}
 
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <span className="text-gray-400 font-semibold">Workload Legend:</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-green-500 rounded"></div>
+                            <span className="text-green-400">≥ 500</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                            <span className="text-yellow-400">300-499</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-red-500 rounded"></div>
+                            <span className="text-red-400">&lt; 300</span>
+                        </div>
+                    </div>
 
                     {department && <span className="text-blue-400">{department} Department</span>}
                 </div>
