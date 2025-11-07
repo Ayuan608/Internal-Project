@@ -9,8 +9,10 @@ import announcementSliceReducer from './announcementSlice'
 import combinedQuotaReducer from './combinedQuotaSlice'
 import activitySliceReducer from './activitylogSlice'
 import employeeOfMonthReducer from './employeeOfMonthSlice'
+import statSliceReducer from './statSlice'
 const store = configureStore({
     reducer: {
+        stat:statSliceReducer,
         auth: authSliceReducer,
         attendance: attendenceSliceReducer,
         notifications: notificationSliceReducer,
