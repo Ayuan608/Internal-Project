@@ -1,4 +1,4 @@
-// Updated AttendanceDashboard component
+// src/components/AttendanceDashboard.jsx
 import React, { useEffect } from "react";
 import PageContainer from "./PageContainer";
 import { ButtonGroup } from "../../CommonButton/Button";
@@ -76,15 +76,13 @@ const AttendanceDashboardUI = ({
   calculateWcBreakTime,
   calculateLunchBreakTime,
 }) => {
-  // Debug rendering
   useEffect(() => {
     console.log("AttendanceDashboardUI Rendered:", {
       stats,
-      breakCounts,
-      breakHistory,
-      currentStatus,
+
     });
   });
+
 
   return (
     <PageContainer
@@ -113,6 +111,7 @@ const AttendanceDashboardUI = ({
               <p className="text-red-300">{error}</p>
             </div>
           )}
+
           {/* Current Status Banner */}
           <div className="mb-6 p-4 bg-[rgba(59,130,246,0.03)] border-l-2 text-white rounded-xl">
             <div className="flex items-center justify-between">
@@ -173,116 +172,56 @@ const AttendanceDashboardUI = ({
 
           {/* Break Controls */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-red-500 font-semibold">Smoke Break</span>
-                <span className="text-xs text-gray-400">{breakCounts.smoke}/3 used today</span>
-              </div>
-              <button
-                onClick={() => startBreak("smoke")}
-                disabled={isSmokeBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isSmokeBreakDisabled
-                  ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                  : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white hover:bg-blue-500/20"
-                  }`}
-              >
-                <Play size={16} />
-                {isSmokeBreakDisabled ? "Cannot Start Break" : "Start Smoke Break"}
-              </button>
-              {isSmokeBreakDisabled && (
-                <div className="mt-2 text-xs text-sky-300 text-center">
-                  {breakCounts.smoke >= 3
-                    ? "Limit reached"
-                    : !hasPunchedInToday
-                      ? "Punch in first"
-                      : "Another break in progress"}
+            {["smoke", "wc", "lunch"].map((type) => {
+              const isDisabled =
+                type === "smoke"
+                  ? isSmokeBreakDisabled
+                  : type === "wc"
+                    ? isWcBreakDisabled
+                    : isLunchBreakDisabled;
+              const count = breakCounts[type];
+              const limit = type === "lunch" ? 1 : 3;
+              const color = type === "smoke" ? "red" : type === "wc" ? "yellow" : "blue";
+
+              return (
+                <div key={type} className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`font-semibold ${color === "red" ? "text-red-500" : color === "yellow" ? "text-yellow-500" : "text-blue-500"}`}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)} Break
+                    </span>
+                    <span className="text-xs text-gray-400">{count}/{limit} used today</span>
+                  </div>
+                  <button
+                    onClick={() => startBreak(type)}
+                    disabled={isDisabled}
+                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isDisabled
+                      ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                      : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white hover:bg-blue-500/20"
+                      }`}
+                  >
+                    <Play size={16} />
+                    {isDisabled ? "Cannot Start Break" : `Start ${type.charAt(0).toUpperCase() + type.slice(1)} Break`}
+                  </button>
+                  {isDisabled && (
+                    <div className="mt-2 text-xs text-center">
+                      {count >= limit
+                        ? "Limit reached"
+                        : !hasPunchedInToday
+                          ? "Punch in first"
+                          : "Another break in progress"}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-yellow-500 font-semibold">WC Break</span>
-                <span className="text-xs text-gray-400">{breakCounts.wc}/3 used today</span>
-              </div>
-              <button
-                onClick={() => startBreak("wc")}
-                disabled={isWcBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isWcBreakDisabled
-                  ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                  : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white hover:bg-blue-500/20"
-                  }`}
-              >
-                <Play size={16} />
-                {isWcBreakDisabled ? "Cannot Start Break" : "Start WC Break"}
-              </button>
-              {isWcBreakDisabled && (
-                <div className="mt-2 text-xs text-blue-300 text-center">
-                  {breakCounts.wc >= 3
-                    ? "Limit reached"
-                    : !hasPunchedInToday
-                      ? "Punch in first"
-                      : "Another break in progress"}
-                </div>
-              )}
-            </div>
-            <div className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-blue-500 font-semibold">Lunch Break</span>
-                <span className="text-xs text-gray-400">{breakCounts.lunch}/1 used today</span>
-              </div>
-              <button
-                onClick={() => startBreak("lunch")}
-                disabled={isLunchBreakDisabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isLunchBreakDisabled
-                  ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                  : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white hover:bg-blue-500/20"
-                  }`}
-              >
-                <Play size={16} />
-                {isLunchBreakDisabled ? "Cannot Start Break" : "Start Lunch Break"}
-              </button>
-              {isLunchBreakDisabled && (
-                <div className="mt-2 text-xs text-purple-300 text-center">
-                  {breakCounts.lunch >= 1
-                    ? "Limit reached"
-                    : !hasPunchedInToday
-                      ? "Punch in first"
-                      : "Another break in progress"}
-                </div>
-              )}
-            </div>
+              );
+            })}
           </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <StatCard
-              icon={Calendar}
-              title="Total Working Hours"
-              value={stats.todayWorkedHours}
-              subtitle={stats.todayStatus}
-              color="blue"
-            />
-            <StatCard
-              icon={Clock}
-              title="Days Worked"
-              value={stats.daysWorked.toString()}
-              subtitle="Total days"
-              color="green"
-            />
-            <StatCard
-              icon={TrendingUp}
-              title="Avg Daily Hours"
-              value={stats.avgDailyHours}
-              subtitle="Average per day"
-              color="orange"
-            />
-            <StatCard
-              icon={Zap}
-              title="Overtime"
-              value={stats.overtimeHours}
-              subtitle="Extra hours"
-              color="purple"
-            />
+            <StatCard icon={Calendar} title="Total Working Hours" value={stats.todayWorkedHours} subtitle={stats.todayStatus} color="blue" />
+            <StatCard icon={Clock} title="Days Worked" value={stats.daysWorked.toString()} subtitle="Total days" color="green" />
+            <StatCard icon={TrendingUp} title="Avg Daily Hours" value={stats.avgDailyHours} subtitle="Average per day" color="orange" />
+            <StatCard icon={Zap} title="Overtime" value={stats.overtimeHours} subtitle="Extra hours" color="purple" />
           </div>
 
           {/* Attendance Table */}
@@ -317,6 +256,7 @@ const AttendanceDashboardUI = ({
                   ) : (
                     attendanceList.slice(0, 1).map((row) => {
                       const rowDate = new Date(row.date).toISOString().split("T")[0];
+
                       return (
                         <tr
                           key={row._id}
@@ -325,11 +265,7 @@ const AttendanceDashboardUI = ({
                           <td className="px-4 py-3 text-[#e2e8f0] font-medium">{formatDate(row.date)}</td>
                           <td className="px-4 py-3 text-[#e2e8f0]">{formatTimeDisplay(row.clockIn)}</td>
                           <td className="px-4 py-3 text-[#e2e8f0]">
-                            {row.clockOut ? (
-                              formatTimeDisplay(row.clockOut)
-                            ) : (
-                              <span className="text-orange-400">Not punched out</span>
-                            )}
+                            {row.clockOut ? formatTimeDisplay(row.clockOut) : <span className="text-orange-400">Not punched out</span>}
                           </td>
                           <td className="px-4 py-3 text-center text-[#60a5fa]">
                             {calculateWcBreakTime(row.wcStart, row.wcEnd, rowDate)}
@@ -464,13 +400,17 @@ const AttendanceDashboardUI = ({
       {/* Day Off Request Modal */}
       {showDayOffModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <ShowOffDay handleDayOffSubmit={handleDayOffSubmit} setShowDayOffModal={setShowDayOffModal} setDayOffForm={setDayOffForm} dayOffForm={dayOffForm} />
+          <ShowOffDay
+            handleDayOffSubmit={handleDayOffSubmit}
+            setShowDayOffModal={setShowDayOffModal}
+            setDayOffForm={setDayOffForm}
+            dayOffForm={dayOffForm}
+          />
         </div>
       )}
     </PageContainer>
   );
 };
-
 
 export default function AttendanceDashboard() {
   const hookProps = useAttendanceDashboard();
@@ -478,7 +418,6 @@ export default function AttendanceDashboard() {
   return (
     <>
       <AttendanceDashboardUI {...hookProps} />
-
       <AttendanceAnnouncementPopup
         visible={announcementProps.showAnnouncement}
         onClose={() => announcementProps.setShowAnnouncement(false)}
@@ -488,7 +427,7 @@ export default function AttendanceDashboard() {
         forgotPunchIn={announcementProps.forgotPunchIn}
         forgotPunchOut={announcementProps.forgotPunchOut}
         excessiveBreaks={announcementProps.excessiveBreaks}
-        latePunchOut={announcementProps.latePunchOut} // NEW: Pass this
+        latePunchOut={announcementProps.latePunchOut}
         totalBreakMinutes={announcementProps.totalBreakMinutes}
       />
     </>

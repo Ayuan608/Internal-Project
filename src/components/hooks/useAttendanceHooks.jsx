@@ -53,35 +53,42 @@ const addToBreakHistory = (breakRecord, userId) => {
 // FIXED: User-specific active timer
 const getStoredActiveTimer = (userId) => {
   if (!userId) return null;
-  const stored = localStorage.getItem(`activeTimer_${userId}`);
+  const key = `activeTimer_${userId}`;
+  const stored = localStorage.getItem(key);
   if (!stored) return null;
+
   try {
     const timer = JSON.parse(stored);
     const now = new Date();
-    const startTime = new Date(timer.startTime);
+    const startTime = new Date(timer.startTime); // Parse string to Date
     const elapsedMinutes = (now - startTime) / (1000 * 60);
+
     if (elapsedMinutes > MAX_STALE_TIMER_MINUTES) {
-      console.log("Discarding stale active timer for user:", userId);
-      localStorage.removeItem(`activeTimer_${userId}`);
+      console.log("Discarding stale timer:", timer);
+      localStorage.removeItem(key);
       return null;
     }
-    return timer;
+
+    return { ...timer, startTime }; // Return Date object
   } catch (error) {
-    console.error("Error parsing stored active timer:", error);
-    localStorage.removeItem(`activeTimer_${userId}`);
+    console.error("Error parsing active timer:", error);
+    localStorage.removeItem(key);
     return null;
   }
 };
 
 const setStoredActiveTimer = (timer, userId) => {
   if (!userId) return;
+  const key = `activeTimer_${userId}`;
   if (timer) {
-    localStorage.setItem(`activeTimer_${userId}`, JSON.stringify(timer));
+    localStorage.setItem(key, JSON.stringify({
+      ...timer,
+      startTime: timer.startTime.toISOString() // Store as ISO string
+    }));
   } else {
-    localStorage.removeItem(`activeTimer_${userId}`);
+    localStorage.removeItem(key);
   }
 };
-
 // FIXED: User-specific storage clearing
 const clearBreakStorage = (userId) => {
   if (!userId) return;
@@ -911,6 +918,9 @@ export const useAttendanceDashboard = () => {
     formatBreaksDisplay,
   };
 };
+
+
+
 
 // FIXED: Updated useAttendanceAnnouncement hook
 export const useAttendanceAnnouncement = () => {

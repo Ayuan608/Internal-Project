@@ -3,105 +3,141 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import SuperAdminData from "../SuperAdminDashboardRoute/ui/SuperAdminData";
 import { getUserAttendance } from "../../../redux/attendenceSlice";
-import { useAttendanceDashboard } from "../../hooks/useAttendanceHooks"
+import { useAttendanceDashboard } from "../../hooks/useAttendanceHooks";
 
 function DailyTimeRecord() {
   const dispatch = useDispatch();
   const [view, setView] = useState("weekly");
-
-  // ADD MISSING STATE
   const [isLoading, setIsLoading] = useState(false);
+  const [componentError, setComponentError] = useState(null); // ✅ Renamed to avoid conflict
 
-  // Use the attendance dashboard hook
   const {
     attendanceList,
-    pagination,
-    formatBreaksDisplay, // Use the formatted breaks display from hook
+    formatBreaksDisplay,
     formatDate,
     formatTimeDisplay,
-    stats, // Get stats from hook
-    breakCounts, // Get break counts from hook
+    stats,
+    breakCounts,
+    breakHistory,
   } = useAttendanceDashboard();
 
-  const [error, setError] = useState(null);
+  const userId = useSelector((state) => state?.auth?.data?._id);
 
-  // Get userId from auth state
-  const userId = useSelector(
-    (state) => state?.auth?.data?._id
-  );
+  // **FIXED: Calculate breaks for EACH DATE from breakHistory**
+  const getBreaksForDate = (dateStr) => {
+    if (!breakHistory || breakHistory.length === 0) return "0m 0s";
 
-  // Clear local storage breaks when user is deleted/not found
+    const dateBreaks = breakHistory.filter(record => record.date === dateStr);
+    if (dateBreaks.length === 0) return "0m 0s";
+
+    const totalSeconds = dateBreaks.reduce((total, record) => {
+      return total + (record.duration || 0);
+    }, 0);
+
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
+
+    if (totalMinutes >= 60) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      if (hours > 0 && minutes > 0 && remainingSeconds > 0) {
+        return `${hours}h ${minutes}m ${remainingSeconds}s`;
+      } else if (hours > 0 && minutes > 0) {
+        return `${hours}h ${minutes}m`;
+      } else if (hours > 0 && remainingSeconds > 0) {
+        return `${hours}h ${remainingSeconds}s`;
+      } else {
+        return `${hours}h`;
+      }
+    }
+
+    // For less than 1 hour
+    if (totalMinutes > 0 && remainingSeconds > 0) {
+      return `${totalMinutes}m ${remainingSeconds}s`;
+    } else if (totalMinutes > 0) {
+      return `${totalMinutes}m`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
+  };
+
+  // **FIXED: Calculate Total Breaks (Time + Count) - TODAY ONLY**
+  const calculateTotalBreaks = () => {
+    if (!stats || !breakCounts) return "0m (0 breaks)";
+
+    const totalCount = breakCounts.smoke + breakCounts.wc + breakCounts.lunch;
+    const totalTime = stats.totalAllBreaks || "0m";
+
+    return `${totalTime} (${totalCount} ${totalCount === 1 ? "break" : "breaks"})`;
+  };
+
+  // **Calculate total breaks from localStorage**
+  const calculateTotalBreakMinutes = () => {
+    const data = JSON.parse(localStorage.getItem(`breakHistory_${userId}`)) || [];
+
+    if (data.length === 0) {
+      console.log("No break data found for user:", userId);
+      return 0;
+    }
+
+    const totalBreakMinutes = data.reduce((total, item) => {
+      if (item.endTime && item.startTime) {
+        const start = new Date(item.startTime);
+        const end = new Date(item.endTime);
+        const diffMinutes = (end - start) / 1000 / 60;
+        return total + diffMinutes;
+      } else if (item.duration) {
+        return total + (item.duration / 60);
+      } else {
+        return total;
+      }
+    }, 0);
+
+    console.log(`Total break time for user ${userId}: ${totalBreakMinutes.toFixed(2)} minutes`);
+    return totalBreakMinutes;
+  };
+
+  // Clear local storage if no user
   useEffect(() => {
     if (!userId) {
-      // Clear break-related local storage when no user is found
       const today = new Date().toDateString();
       localStorage.removeItem(`breakCounts_${today}`);
       localStorage.removeItem("breakHistory");
       localStorage.removeItem("dayOffRequests");
-      console.log("Local storage cleared - no user found");
+      console.log("Local storage cleared - no user");
     }
   }, [userId]);
 
-  // Calculate date ranges for weekly/monthly view
+  // Get date range for weekly/monthly
   const getDateRange = () => {
     const today = new Date();
     let startDate, endDate;
 
     if (view === "weekly") {
-      // Get current week (Sunday to Saturday)
       const currentDay = today.getDay();
       startDate = new Date(today);
       startDate.setDate(today.getDate() - currentDay);
       endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
     } else {
-      // Get current month
       startDate = new Date(today.getFullYear(), today.getMonth(), 1);
       endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     }
 
     return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
     };
   };
 
-  // Calculate total breaks from break counts and stats
-  const calculateTotalBreaks = () => {
-    if (!stats || !breakCounts) return "0m";
-
-    // Calculate total break count
-    const totalBreakCount = breakCounts.smoke + breakCounts.wc + breakCounts.lunch;
-
-    // Get total break time from stats if available
-    if (stats.totalAllBreaks && stats.totalAllBreaks !== "0m") {
-      return `${stats.totalAllBreaks} (${totalBreakCount} breaks)`;
-    }
-
-    // Fallback calculation
-    const smokeMinutes = parseInt(stats.totalSmokeBreak) || 0;
-    const wcMinutes = parseInt(stats.totalWcBreak) || 0;
-    const lunchMinutes = parseInt(stats.totalLunchBreak) || 0;
-    const totalMinutes = smokeMinutes + wcMinutes + lunchMinutes;
-
-    if (totalMinutes >= 60) {
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      return minutes > 0
-        ? `${hours}h ${minutes}m (${totalBreakCount} breaks)`
-        : `${hours}h (${totalBreakCount} breaks)`;
-    }
-
-    return `${totalMinutes}m (${totalBreakCount} breaks)`;
-  };
-
-  // Fetch attendance data
+  // Fetch attendance
   useEffect(() => {
     const fetchAttendance = async () => {
       if (!userId) return;
 
       setIsLoading(true);
-      setError(null);
+      setComponentError(null); // ✅ Use the renamed variable
 
       try {
         const { startDate, endDate } = getDateRange();
@@ -111,11 +147,11 @@ function DailyTimeRecord() {
             startDate,
             endDate,
             page: 1,
-            limit: 100
+            limit: 100,
           })
         ).unwrap();
       } catch (err) {
-        setError(err?.message || "Failed to load attendance data");
+        setComponentError(err?.message || "Failed to load attendance data"); // ✅ Use the renamed variable
       } finally {
         setIsLoading(false);
       }
@@ -124,6 +160,7 @@ function DailyTimeRecord() {
     fetchAttendance();
   }, [dispatch, userId, view]);
 
+  // Status color
   const getStatusColor = (status) => {
     const colors = {
       Normal: "bg-green-100 text-green-800",
@@ -136,7 +173,7 @@ function DailyTimeRecord() {
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  // Format time (fallback if hook doesn't provide it)
+  // Format time fallback
   const formatTime = (timeStr) => {
     if (!timeStr) return "-";
     try {
@@ -151,51 +188,36 @@ function DailyTimeRecord() {
     }
   };
 
-  // UPDATED: Simple status logic - Only show absent after 6:20 PM if no punch in
+  // Status logic – Absent only after 6:20 PM
   const getStatus = (row) => {
     const today = new Date();
     const recordDate = new Date(row.date);
     const isToday = recordDate.toDateString() === today.toDateString();
 
-    // If no punch in
     if (!row.clockIn) {
       if (isToday) {
-        const currentTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes
-        const sixTwentyPM = 18 * 60 + 20; // 6:20 PM in minutes
-
-        // Only show absent if it's past 6:20 PM and no punch in
-        if (currentTime >= sixTwentyPM) {
-          return "Absent";
-        }
+        const currentMins = today.getHours() * 60 + today.getMinutes();
+        if (currentMins >= 18 * 60 + 20) return "Absent";
+      } else {
+        return "Absent";
       }
-      // For past dates with no punch in, show absent
       return "Absent";
     }
 
-    // If punched in but no punch out
     if (!row.clockOut) {
       if (isToday) {
-        const currentTime = today.getHours() * 60 + today.getMinutes();
-        const sixTwentyPM = 18 * 60 + 20;
-
-        // If it's past 6:20 PM and no punch out, show absent
-        if (currentTime >= sixTwentyPM) {
-          return "Absent";
-        }
+        const currentMins = today.getHours() * 60 + today.getMinutes();
+        if (currentMins >= 18 * 60 + 20) return "Absent";
       }
-      return "Active"; // Show active if punched in but not out (before 6:20 PM)
+      return "Active";
     }
 
-    // Parse working hours
-    const workingHours = row.workingHours || "0h 0m";
-    const match = workingHours.match(/(\d+)h/);
+    const match = (row.workingHours || "0h 0m").match(/(\d+)h/);
     const hours = match ? parseInt(match[1]) : 0;
-
-    if (hours >= 8) return "Normal";
-    return "Active";
+    return hours >= 8 ? "Normal" : "Active";
   };
 
-  // UPDATED: Function to format punch in display
+  // Punch In Display
   const formatPunchIn = (record) => {
     if (!record.clockIn) {
       const today = new Date();
@@ -203,22 +225,18 @@ function DailyTimeRecord() {
       const isToday = recordDate.toDateString() === today.toDateString();
 
       if (isToday) {
-        const currentTime = today.getHours() * 60 + today.getMinutes();
-        const sixTwentyPM = 18 * 60 + 20;
-
-        // Only show absent after 6:20 PM
-        if (currentTime >= sixTwentyPM) {
+        const currentMins = today.getHours() * 60 + today.getMinutes();
+        if (currentMins >= 18 * 60 + 20) {
           return <span className="text-red-400">Absent</span>;
         }
       }
-      // For past dates, show absent
       return <span className="text-red-400">Absent</span>;
     }
 
     return formatTimeDisplay ? formatTimeDisplay(record.clockIn) : formatTime(record.clockIn);
   };
 
-  // UPDATED: Function to format punch out display
+  // Punch Out Display
   const formatPunchOut = (record) => {
     if (!record.clockOut) {
       const today = new Date();
@@ -226,11 +244,8 @@ function DailyTimeRecord() {
       const isToday = recordDate.toDateString() === today.toDateString();
 
       if (isToday) {
-        const currentTime = today.getHours() * 60 + today.getMinutes();
-        const sixTwentyPM = 18 * 60 + 20;
-
-        // If it's past 6:20 PM and no punch out, show absent
-        if (currentTime >= sixTwentyPM) {
+        const currentMins = today.getHours() * 60 + today.getMinutes();
+        if (currentMins >= 18 * 60 + 20) {
           return <span className="text-red-400">Absent</span>;
         }
       }
@@ -240,21 +255,9 @@ function DailyTimeRecord() {
     return formatTimeDisplay ? formatTimeDisplay(record.clockOut) : formatTime(record.clockOut);
   };
 
-  // Export function (placeholder)
   const handleExport = () => {
     alert("Export functionality will be implemented with backend API");
   };
-
-  // Debug log to check data
-  useEffect(() => {
-    console.log("DailyTimeRecord Data:", {
-      stats,
-      breakCounts,
-      totalBreaks: calculateTotalBreaks(),
-      attendanceListCount: attendanceList?.length,
-      userId
-    });
-  }, [stats, breakCounts, attendanceList, userId]);
 
   return (
     <>
@@ -269,14 +272,13 @@ function DailyTimeRecord() {
             </p>
           </div>
 
-          {/* Error Message */}
-          {error && (
+          {/* ✅ FIXED: Use the renamed error variable */}
+          {componentError && (
             <div className="mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
-              <p className="text-red-300">{error}</p>
+              <p className="text-red-300">{componentError}</p>
             </div>
           )}
 
-          {/* No User ID Warning */}
           {!userId && (
             <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
               <p className="text-yellow-300">User ID not found. Please log in.</p>
@@ -294,7 +296,6 @@ function DailyTimeRecord() {
               >
                 Weekly View
               </button>
-
               <button
                 onClick={() => setView("monthly")}
                 className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${view === "monthly"
@@ -308,9 +309,11 @@ function DailyTimeRecord() {
 
             {/* Total Breaks Display */}
             <div className="flex items-center gap-4 text-white/80">
-              <div className="bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
+              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 px-4 py-2 rounded-lg border border-purple-500/30">
                 <span className="text-sm font-medium">Total Breaks Today: </span>
-                <span className="text-blue-300 font-bold">{calculateTotalBreaks()}</span>
+                <span className="text-purple-300 font-bold">
+                  {calculateTotalBreaks()}
+                </span>
               </div>
               <span className="text-sm font-medium">
                 Read Only - Cannot be edited
@@ -318,15 +321,13 @@ function DailyTimeRecord() {
             </div>
           </div>
 
-          <SuperAdminData view={view} setView={setView} />
+          <SuperAdminData Totalbreak={calculateTotalBreakMinutes()} view={view} setView={setView} />
 
           {/* DTR Table */}
           <div className="bg-[#10101b94] border border-gray-500 rounded-lg shadow text-white">
             <div className="p-6 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-white">
-                {view === "weekly"
-                  ? "Weekly DTR - Current Week"
-                  : "Monthly DTR - Current Month"}
+                {view === "weekly" ? "Weekly DTR - Current Week" : "Monthly DTR - Current Month"}
               </h2>
 
               <div className="flex items-center gap-4">
@@ -353,24 +354,12 @@ function DailyTimeRecord() {
               <table className="w-full">
                 <thead className="bg-[#3b83f60c]">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                      DATE
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                      PUNCH IN
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                      BREAKS
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                      PUNCH OUT
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                      TOTAL HOURS
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
-                      STATUS
-                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">DATE</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">PUNCH IN</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">BREAKS</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">PUNCH OUT</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">TOTAL HOURS</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">STATUS</th>
                   </tr>
                 </thead>
 
@@ -389,57 +378,48 @@ function DailyTimeRecord() {
                       </td>
                     </tr>
                   ) : (
-                    attendanceList.map((record, index) => (
-                      <tr key={record._id || index} className="hover:bg-[#10101b]">
-                        <td className="px-6 py-4 text-sm">
-                          {formatDate(record.date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          {formatPunchIn(record)}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          {stats.totalAllBreaks || "0m"}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          {formatPunchOut(record)}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          {record.workingHours || "0h 0m"}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              getStatus(record)
-                            )}`}
-                          >
-                            {getStatus(record)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
+                    attendanceList.map((record, index) => {
+                      const recordDate = new Date(record.date).toISOString().split('T')[0];
+
+                      return (
+                        <tr key={record._id || index} className="hover:bg-[#10101b]">
+                          <td className="px-6 py-4 text-sm">{formatDate(record.date)}</td>
+                          <td className="px-6 py-4 text-sm">{formatPunchIn(record)}</td>
+                          <td className="px-6 py-4 text-sm">
+
+                            {getBreaksForDate(recordDate)}
+                          </td>
+                          <td className="px-6 py-4 text-sm">{formatPunchOut(record)}</td>
+                          <td className="px-6 py-4 text-sm">{record.workingHours || "0h 0m"}</td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                getStatus(record)
+                              )}`}
+                            >
+                              {getStatus(record)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination Info */}
-            {pagination && attendanceList?.length > 0 && (
+            {attendanceList?.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-700 flex justify-between items-center">
                 <span className="text-sm text-gray-400">
-                  Showing {attendanceList.length} of {pagination.total} records
-                </span>
-                <span className="text-sm text-gray-400">
-                  Page {pagination.currentPage} of {pagination.totalPages}
+                  Showing {attendanceList.length} records
                 </span>
               </div>
             )}
           </div>
-
-
         </div>
       </div>
 
-      {/* INFO ALERT BAR */}
+      {/* Info Bar */}
       <div className="border-l-2 pt-4 border-blue-200 text-white mx-4 bg-[rgba(59,131,246,0.06)] px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
         <Info className="w-5 h-5 mt-[2px]" />
         <p className="text-sm">

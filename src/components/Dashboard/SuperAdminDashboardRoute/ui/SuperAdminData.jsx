@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-const SuperAdminData = ({ view, setView }) => {
+const SuperAdminData = ({ view, setView, Totalbreak }) => {
+
+  const formatBreakTime = (minutes) => {
+    if (typeof minutes !== 'number') return "0m 0s";
+
+    const totalSeconds = Math.round(minutes * 60);
+    const hours = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${mins}m ${secs}s`;
+    } else if (mins > 0) {
+      return `${mins}m ${secs}s`;
+    } else {
+      return `${secs}s`;
+    }
+  };
+
+ 
   const dispatch = useDispatch();
   const { attendanceList } = useSelector((state) => state.attendance);
   const [currentData, setCurrentData] = useState({
@@ -257,7 +276,7 @@ const SuperAdminData = ({ view, setView }) => {
         </div>
         <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-4 border-[var(--box-border)]">
           <p className="text-sm text-white mb-1">TOTAL BREAKS</p>
-          <p className="text-4xl font-bold text-white mb-2">{currentData.summary.breaks}</p>
+          <p className="text-4xl font-bold text-white mb-2">{formatBreakTime(Totalbreak)}</p>
           <p className="text-sm text-gray-500">{view === "weekly" ? "This week" : "This month"}</p>
         </div>
         <div className="bg-[#3b83f60e] rounded-lg shadow-[0_0_10px_black] p-6 border-l-4 border-[var(--box-border)]">
