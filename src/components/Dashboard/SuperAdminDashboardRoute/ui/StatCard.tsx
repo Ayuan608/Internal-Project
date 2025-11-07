@@ -14,6 +14,7 @@ export type StatCardProps = {
   trend: "up" | "down" | "neutral";
   data: number[];
   difference: any;
+  role?: "superAdmin" | "teamLeader" | "user"; // 👈 added
 };
 
 function getDaysInMonth(month: number, year: number) {
@@ -38,6 +39,7 @@ export default function StatCard({
   trend,
   data,
   difference,
+  role = "user",
 }: StatCardProps) {
   const theme = useTheme();
   const daysInWeek = getDaysInMonth(4, 2024);
@@ -65,7 +67,16 @@ export default function StatCard({
 
   const color = labelColors[trend];
   const chartColor = trendColors[trend];
-  const trendValues = { up: "+25%", down: "-25%", neutral: "+5%" };
+
+  // 👇 format label based on role
+  const formattedLabel =
+    role === "superAdmin"
+      ? trend === "up"
+        ? `+${value}%`
+        : trend === "down"
+        ? `-${value}%`
+        : `${value}%`
+      : `${value}`; // 👈 teamLeader sees only raw value
 
   return (
     <Card variant="outlined" sx={{ height: "100%", flexGrow: 1 }}>
@@ -85,7 +96,9 @@ export default function StatCard({
               <Typography variant="h4" component="p">
                 {difference}
               </Typography>
-              <Chip size="small" color={color} label={trendValues[trend]} />
+
+              {/* 👇 chip will show formattedLabel */}
+              <Chip size="small" color={color} label={formattedLabel} />
             </Stack>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {interval}
@@ -109,7 +122,7 @@ export default function StatCard({
                   md: "repeat(3, 1fr)",
                   lg: "repeat(4, 1fr)",
                 },
-                width: "300px",
+                width: "350px",
                 "& path": {
                   fill: "none",
                 },
