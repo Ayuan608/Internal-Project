@@ -29,6 +29,6 @@ export default function TeamLeaderStats({ title, data, SecondaryTitle }) {
           </Grid>
         ))}
       </Grid>
-    </Box>
+    </Box>  
   );
 }
