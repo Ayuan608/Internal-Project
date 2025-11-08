@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle, Search, Calendar, Clock, Users, TrendingUp, X
 import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance } from "./../../../redux/attendenceSlice";
 import { useEffect, useState } from "react";
+import { sendCaseMail } from "../../../redux/statSlice";
 
 const AttendanceRecords = () => {
     const [startDate, setStartDate] = useState("");
@@ -13,6 +14,7 @@ const AttendanceRecords = () => {
     const dispatch = useDispatch();
 
     const { allAttendance } = useSelector((state) => state.attendance);
+    const { loading: caseLoading } = useSelector((state) => state.stat); // Get loading state
     const attendanceData = allAttendance || [];
 
     // Modal states
@@ -226,23 +228,29 @@ Team Leader`
         setCaseFormData({ ...caseFormData, [field]: value });
     };
 
-    const handleSendCase = () => {
-        console.log("Case sent:", caseFormData);
-        alert("Case created and sent successfully!");
+    const handleSendCase = async () => {
+        try {
+            // Send case mail via Redux action
+            await dispatch(sendCaseMail({
+                title: caseFormData.title,
+                nature: caseFormData.nature,
+                content: caseFormData.content
+            })).unwrap();
 
-        // 🔥 Call API or Redux action here
-        // await dispatch(createCase(caseFormData));
-
-        setIsCaseTemplateOpen(false);
-        setSelectedCase("");
-        setSelectedRecord(null);
-        setCaseFormData({
-            title: '',
-            nature: '',
-            from: 'Team Leader',
-            to: '',
-            content: ''
-        });
+            // Close modal and reset form
+            setIsCaseTemplateOpen(false);
+            setSelectedCase("");
+            setSelectedRecord(null);
+            setCaseFormData({
+                title: '',
+                nature: '',
+                from: 'Team Leader',
+                to: '',
+                content: ''
+            });
+        } catch (error) {
+            console.error("Failed to send case:", error);
+        }
     };
 
     const metrics = calculateMetrics();
@@ -458,8 +466,6 @@ Team Leader`
                                                     <FileText size={18} />
                                                     <span className="text-sm">File</span>
                                                 </button>
-
-
                                             </td>
                                         </tr>
                                     ))
@@ -493,7 +499,7 @@ Team Leader`
 
             {/* Filing Modal - Select Case Type */}
             {isFilingModalOpen && (
-                <div className="fixed inset-0 bg-black/50  backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-md text-white rounded-xl shadow-2xl p-6 w-full max-w-md border border-gray-800">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-semibold">
@@ -537,9 +543,9 @@ Team Leader`
             {/* Case Template Modal */}
             {isCaseTemplateOpen && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 text-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-700">
+                    <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-md text-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-800">
                         {/* Header */}
-                        <div className="bg-gray-800 p-5 border-b border-gray-700 flex items-center justify-between">
+                        <div className="bg-[rgba(59,130,246,0.03)] p-5 border-b border-gray-800 flex items-center justify-between">
                             <h2 className="text-2xl font-bold tracking-wide">CASE TEMPLATE</h2>
                             <button
                                 onClick={() => setIsCaseTemplateOpen(false)}
@@ -558,7 +564,7 @@ Team Leader`
                                     type="text"
                                     value={caseFormData.title}
                                     onChange={(e) => handleCaseFormChange('title', e.target.value)}
-                                    className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="flex-1 bg-[rgba(59,130,246,0.03)] border border-gray-800 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                             </div>
 
@@ -569,7 +575,7 @@ Team Leader`
                                     type="text"
                                     value={caseFormData.nature}
                                     onChange={(e) => handleCaseFormChange('nature', e.target.value)}
-                                    className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="flex-1 bg-[rgba(59,130,246,0.03)] border border-gray-800 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                             </div>
 
@@ -580,7 +586,7 @@ Team Leader`
                                     type="text"
                                     value={caseFormData.from}
                                     onChange={(e) => handleCaseFormChange('from', e.target.value)}
-                                    className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="flex-1 bg-[rgba(59,130,246,0.03)] border border-gray-800 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                             </div>
 
@@ -591,7 +597,7 @@ Team Leader`
                                     type="text"
                                     value={caseFormData.to}
                                     onChange={(e) => handleCaseFormChange('to', e.target.value)}
-                                    className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="flex-1 bg-[rgba(59,130,246,0.03)] border border-gray-800 rounded px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                             </div>
 
@@ -601,14 +607,14 @@ Team Leader`
                                 <textarea
                                     value={caseFormData.content}
                                     onChange={(e) => handleCaseFormChange('content', e.target.value)}
-                                    className="w-full h-80 bg-gray-800 border border-gray-600 rounded px-4 py-3 text-white focus:outline-none focus:border-blue-500 resize-none font-mono text-sm leading-relaxed"
+                                    className="w-full h-80 bg-[rgba(59,130,246,0.03)] border border-gray-800 rounded px-4 py-3 text-white focus:outline-none focus:border-blue-500 resize-none font-mono text-sm leading-relaxed"
                                     placeholder="Letter content..."
                                 />
                             </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="bg-gray-800 px-6 py-4 border-t border-gray-700 flex justify-between gap-3">
+                        <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-t border-gray-800 flex items-end gap-3">
                             <button
                                 onClick={() => setIsCaseTemplateOpen(false)}
                                 className="px-6 py-2.5 bg-gray-700 text-white hover:bg-gray-600 rounded transition-colors font-semibold"
@@ -617,10 +623,20 @@ Team Leader`
                             </button>
                             <button
                                 onClick={handleSendCase}
-                                className="px-6 py-2.5 bg-white text-gray-900 hover:bg-gray-100 rounded transition-colors flex items-center gap-2 font-semibold"
+                                disabled={caseLoading}
+                                className="px-6 py-2.5 bg-white text-gray-900 hover:bg-gray-100 rounded transition-colors flex items-center gap-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Send size={18} />
-                                Send
+                                {caseLoading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={18} />
+                                        Send
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

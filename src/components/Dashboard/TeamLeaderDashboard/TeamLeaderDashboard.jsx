@@ -17,7 +17,9 @@ export default function TeamLeaderDashboard() {
     setIsRefreshing,
     timeFilter,
     setTimeFilter,
-    filteredStats
+    filteredStats,
+    shiftChartData,
+    quotaManagementData
   } = useTeamLeaderDashboard();
 
   const dispatch = useDispatch();
@@ -60,7 +62,6 @@ export default function TeamLeaderDashboard() {
     return () => clearInterval(interval);
   }, [dispatch, isInitialized, department]);
 
-  // FIX: Better loading state handling
   if (combinedQuotaLoading && !isInitialized) {
     return (
       <div className="min-h-screen text-gray-100 bg-black flex items-center justify-center">
@@ -69,7 +70,6 @@ export default function TeamLeaderDashboard() {
     );
   }
 
-  // FIX: Check if we have data to display
   if (!department || (!data && isInitialized)) {
     return (
       <div className="min-h-screen text-gray-100 bg-black flex items-center justify-center">
@@ -88,6 +88,8 @@ export default function TeamLeaderDashboard() {
       department={department}
       timeFilter={timeFilter}
       setTimeFilter={setTimeFilter}
+      shiftChartData={shiftChartData}
+      quotaManagementData={quotaManagementData}
     />
   );
 }

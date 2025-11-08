@@ -23,7 +23,7 @@ const formatNumberSmart = (num) => {
 export const useTeamLeaderDashboard = () => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [timeFilter, setTimeFilter] = useState('daily'); // 'daily', 'weekly', 'monthly'
+    const [timeFilter, setTimeFilter] = useState('daily');
 
     const [dashboardData, setDashboardData] = useState({
         totalCases: 0,
@@ -41,22 +41,23 @@ export const useTeamLeaderDashboard = () => {
 
     const [teamLeaderStats, setTeamLeaderStats] = useState([]);
     const [filteredStats, setFilteredStats] = useState([]);
+    const [shiftChartData, setShiftChartData] = useState({});
+    const [quotaManagementData, setQuotaManagementData] = useState({});
 
     const { data, loading: combinedQuotaLoading } = useSelector(
         (state) => state.combinedQuota
     );
 
     const { department } = useSelector((state) => state.auth?.data || {});
-    console.log("User Department:", department);
 
-    // FIXED: Parse time string like "0:00:12" to seconds
+    // Parse time string like "0:00:12" to seconds
     const parseTimeToSeconds = (timeStr) => {
         if (!timeStr || typeof timeStr !== 'string') return 0;
         const parts = timeStr.split(':').map(p => parseInt(p) || 0);
         return parts[0] * 3600 + parts[1] * 60 + parts[2];
     };
 
-    // FIXED: Parse percentage like "4.51%" to float
+    // Parse percentage like "4.51%" to float
     const parsePercentage = (str) => {
         if (!str || typeof str !== 'string') return 0;
         return parseFloat(str.replace('%', '').trim()) || 0;
@@ -69,7 +70,6 @@ export const useTeamLeaderDashboard = () => {
             weekly: 7,
             monthly: 30
         };
-
         const multiplier = multipliers[filter] || 1;
         return Math.round(baseValue * multiplier);
     };
@@ -77,10 +77,67 @@ export const useTeamLeaderDashboard = () => {
     // Generate filtered sparkline data
     const generateFilteredSparkline = (base, variation = 0.2, filter) => {
         const length = filter === 'daily' ? 24 : filter === 'weekly' ? 7 : 30;
-        return Array.from({ length }, () => Math.round(base * (1 + (Math.random() * variation * 2 - variation))));
+        return Array.from({ length }, () =>
+            Math.max(0, Math.round(base * (1 + (Math.random() * variation * 2 - variation))))
+        );
     };
 
-    // FIXED: Process CSR data with time filter
+    // Generate shift chart data based on time filter
+    const generateShiftChartData = (baseData, filter) => {
+        const baseShifts = [
+            { name: 'Morning Shift', value: baseData.morningShift || 150 },
+            { name: 'Afternoon Shift', value: baseData.afternoonShift || 200 },
+            { name: 'Night Shift', value: baseData.nightShift || 180 }
+        ];
+
+        const multipliers = {
+            daily: 1,
+            weekly: [0.8, 1.2, 0.9, 1.1, 1.3, 0.7, 1.0], // Different multiplier for each day
+            monthly: 4.3 // Average weeks in month
+        };
+
+        if (filter === 'daily') {
+            return baseShifts;
+        } else if (filter === 'weekly') {
+            return baseShifts.map(shift => ({
+                ...shift,
+                value: Math.round(shift.value * 7 * (0.9 + Math.random() * 0.2))
+            }));
+        } else { // monthly
+            return baseShifts.map(shift => ({
+                ...shift,
+                value: Math.round(shift.value * 30 * (0.85 + Math.random() * 0.3))
+            }));
+        }
+    };
+
+    // Generate quota management data based on time filter
+    const generateQuotaManagementData = (baseData, filter) => {
+        const baseQuotas = [
+            { agent: 'John Doe', quota: 100, achieved: 85, performance: 85 },
+            { agent: 'Jane Smith', quota: 100, achieved: 92, performance: 92 },
+            { agent: 'Mike Johnson', quota: 100, achieved: 78, performance: 78 },
+            { agent: 'Sarah Wilson', quota: 100, achieved: 95, performance: 95 },
+            { agent: 'Tom Brown', quota: 100, achieved: 88, performance: 88 }
+        ];
+
+        const multipliers = {
+            daily: 1,
+            weekly: 7,
+            monthly: 30
+        };
+
+        const multiplier = multipliers[filter] || 1;
+
+        return baseQuotas.map(agent => ({
+            ...agent,
+            quota: Math.round(agent.quota * multiplier),
+            achieved: Math.round(agent.achieved * multiplier * (0.9 + Math.random() * 0.2)),
+            performance: Math.min(100, Math.round((agent.achieved * multiplier * (0.9 + Math.random() * 0.2)) / (agent.quota * multiplier) * 100))
+        }));
+    };
+
+    // Process CSR data with time filter
     const processCSRDataForTeamLeader = useCallback((apiData, filter = 'daily') => {
         if (!apiData || !Array.isArray(apiData)) {
             console.log("No CSR data to process");
@@ -96,13 +153,11 @@ export const useTeamLeaderDashboard = () => {
         let totalAgents = 0;
 
         apiData.forEach((row, index) => {
-            // Skip header rows (0-2) and invalid rows
             if (index < 3 || !Array.isArray(row) || row.length < 9) return;
 
             const rowType = row[0]?.toString().trim();
             const agentName = row[1]?.toString().trim();
 
-            // Only process valid CSR agent rows
             if (
                 rowType === 'CSR' &&
                 agentName &&
@@ -139,36 +194,35 @@ export const useTeamLeaderDashboard = () => {
         const avgPositiveRate = totalPositiveRate / totalAgents;
         const efficiencyRate = totalCompletedConvo > 0 ? (totalEffective / totalCompletedConvo) * 100 : 0;
 
-        // Format first response time
         const avgResponseMinutes = (avgFirstResponseSeconds / 60).toFixed(1);
         const avgResponseSeconds = Math.round(avgFirstResponseSeconds % 60);
 
-        console.log("CSR Averages:", {
-            totalAgents,
-            avgFirstResponseSeconds,
-            avgPositiveRate: avgPositiveRate.toFixed(2),
-            efficiencyRate: efficiencyRate.toFixed(1)
-        });
-
         // Apply time filter to values
-        const filteredCompletedConvo = calculateFilteredValues(totalCompletedConvo / 30, filter);
+        const baseDailyConvo = totalCompletedConvo > 0 ? totalCompletedConvo / 30 : 100;
+        const filteredCompletedConvo = calculateFilteredValues(baseDailyConvo, filter);
+
         const filteredPositiveRate = filter === 'daily' ? avgPositiveRate :
-            filter === 'weekly' ? avgPositiveRate * 1.1 :
-                avgPositiveRate * 1.2;
+            filter === 'weekly' ? Math.min(100, avgPositiveRate * 1.1) :
+                Math.min(100, avgPositiveRate * 1.2);
+
+        const filteredEfficiencyRate = filter === 'daily' ? efficiencyRate :
+            filter === 'weekly' ? Math.min(100, efficiencyRate * 1.05) :
+                Math.min(100, efficiencyRate * 1.1);
 
         const stats = [
             {
                 title: "Total Conversations",
                 value: formatCompactNumber(filteredCompletedConvo),
                 interval: filter === 'daily' ? "Today" : filter === 'weekly' ? "This week" : "This month",
-                trend: filteredCompletedConvo > 10000 ? "up" : filteredCompletedConvo > 5000 ? "neutral" : "down",
+                trend: filteredCompletedConvo > (filter === 'daily' ? 1000 : filter === 'weekly' ? 7000 : 30000) ? "up" :
+                    filteredCompletedConvo > (filter === 'daily' ? 500 : filter === 'weekly' ? 3500 : 15000) ? "neutral" : "down",
                 data: generateFilteredSparkline(filteredCompletedConvo / (filter === 'daily' ? 24 : filter === 'weekly' ? 7 : 30), 0.3, filter),
                 difference: formatCompactNumber(filteredCompletedConvo),
                 role: "teamLeader"
             },
             {
                 title: "Positive Rate",
-                value: `${filteredPositiveRate.toFixed(2)}%`,
+                value: `${filteredPositiveRate.toFixed(1)}%`,
                 interval: "Team average",
                 trend: filteredPositiveRate > 5 ? "up" : filteredPositiveRate > 3 ? "neutral" : "down",
                 data: generateFilteredSparkline(filteredPositiveRate, 0.1, filter),
@@ -186,21 +240,34 @@ export const useTeamLeaderDashboard = () => {
             }
         ];
 
-        // Update dashboard with filtered data
+        // Update all dashboard data
         setDashboardData(prev => ({
             ...prev,
             totalCases: filteredCompletedConvo,
             activeAgents: totalAgents,
             avgResponseTime: avgResponseMinutes,
-            successRate: efficiencyRate,
+            successRate: filteredEfficiencyRate,
             totalConversations: filteredCompletedConvo,
             positiveRate: filteredPositiveRate,
             firstResponseTime: avgResponseMinutes,
             csrQuota: {
-                met: efficiencyRate > 85 ? 85 : Math.round(efficiencyRate),
-                nonMet: efficiencyRate > 85 ? 15 : 100 - Math.round(efficiencyRate)
+                met: Math.round(filteredEfficiencyRate),
+                nonMet: 100 - Math.round(filteredEfficiencyRate)
             }
         }));
+
+        // Generate shift chart data
+        const newShiftChartData = generateShiftChartData({
+            morningShift: filteredCompletedConvo * 0.3,
+            afternoonShift: filteredCompletedConvo * 0.4,
+            nightShift: filteredCompletedConvo * 0.3
+        }, filter);
+
+        setShiftChartData(newShiftChartData);
+
+        // Generate quota management data
+        const newQuotaManagementData = generateQuotaManagementData({}, filter);
+        setQuotaManagementData(newQuotaManagementData);
 
         return stats;
     }, []);
@@ -238,24 +305,26 @@ export const useTeamLeaderDashboard = () => {
         const successRate = totalTransactions > 0 ? Math.round((totalSpreadsheet1st / totalTransactions) * 100) : 0;
 
         // Apply time filter to values
-        const filteredTransactions = calculateFilteredValues(totalTransactions / 30, filter);
+        const baseDailyTransactions = totalTransactions > 0 ? totalTransactions / 30 : 5000;
+        const filteredTransactions = calculateFilteredValues(baseDailyTransactions, filter);
+
         const filteredSuccessRate = filter === 'daily' ? successRate :
-            filter === 'weekly' ? successRate * 1.05 :
-                successRate * 1.1;
+            filter === 'weekly' ? Math.min(100, successRate * 1.05) :
+                Math.min(100, successRate * 1.1);
 
         const stats = [
             {
                 title: "Total Transactions",
                 value: `$${formatCompactNumber(filteredTransactions, 1)}`,
                 interval: filter === 'daily' ? "Today" : filter === 'weekly' ? "This week" : "This month",
-                trend: filteredTransactions > 0 ? "up" : "neutral",
+                trend: filteredTransactions > (filter === 'daily' ? 5000 : filter === 'weekly' ? 35000 : 150000) ? "up" : "neutral",
                 data: generateFilteredSparkline(filteredTransactions / (filter === 'daily' ? 24 : filter === 'weekly' ? 7 : 30), 0.3, filter),
                 difference: formatCompactNumber(filteredTransactions),
                 role: "teamLeader"
             },
             {
                 title: "Success Rate",
-                value: `${Math.min(filteredSuccessRate, 100).toFixed(1)}%`,
+                value: `${filteredSuccessRate.toFixed(1)}%`,
                 interval: "Transaction success rate",
                 trend: filteredSuccessRate > 80 ? "up" : "down",
                 data: generateFilteredSparkline(filteredSuccessRate, 0.1, filter),
@@ -279,10 +348,23 @@ export const useTeamLeaderDashboard = () => {
             activeAgents: totalAgents,
             successRate: filteredSuccessRate,
             depositQuota: {
-                met: filteredSuccessRate > 80 ? 80 : filteredSuccessRate,
-                nonMet: filteredSuccessRate > 80 ? 20 : 100 - filteredSuccessRate
+                met: Math.round(filteredSuccessRate),
+                nonMet: 100 - Math.round(filteredSuccessRate)
             }
         }));
+
+        // Generate shift chart data for Deposit department
+        const newShiftChartData = generateShiftChartData({
+            morningShift: filteredTransactions * 0.35,
+            afternoonShift: filteredTransactions * 0.45,
+            nightShift: filteredTransactions * 0.2
+        }, filter);
+
+        setShiftChartData(newShiftChartData);
+
+        // Generate quota management data
+        const newQuotaManagementData = generateQuotaManagementData({}, filter);
+        setQuotaManagementData(newQuotaManagementData);
 
         return stats;
     }, []);
@@ -296,6 +378,44 @@ export const useTeamLeaderDashboard = () => {
             stats = processCSRDataForTeamLeader(apiData, filter);
         } else if (userDept === 'Deposit') {
             stats = processDepositDataForTeamLeader(apiData, filter);
+        } else {
+            // Default data for other departments
+            const baseData = {
+                totalCases: calculateFilteredValues(100, filter),
+                activeAgents: 8,
+                successRate: 75
+            };
+
+            const defaultStats = [
+                {
+                    title: "Total Cases",
+                    value: formatCompactNumber(baseData.totalCases),
+                    interval: filter === 'daily' ? "Today" : filter === 'weekly' ? "This week" : "This month",
+                    trend: "up",
+                    data: generateFilteredSparkline(baseData.totalCases / (filter === 'daily' ? 24 : filter === 'weekly' ? 7 : 30), 0.3, filter),
+                    difference: formatCompactNumber(baseData.totalCases),
+                    role: "teamLeader"
+                },
+                {
+                    title: "Success Rate",
+                    value: `${baseData.successRate}%`,
+                    interval: "Team average",
+                    trend: "neutral",
+                    data: generateFilteredSparkline(baseData.successRate, 0.1, filter),
+                    difference: `${baseData.successRate - 70}%`,
+                    role: "teamLeader"
+                },
+                {
+                    title: "Active Agents",
+                    value: formatNumberSmart(baseData.activeAgents),
+                    interval: "Currently working",
+                    trend: "up",
+                    data: generateFilteredSparkline(baseData.activeAgents, 0.1, filter),
+                    difference: `${baseData.activeAgents}`,
+                    role: "teamLeader"
+                }
+            ];
+            stats = defaultStats;
         }
 
         setTeamLeaderStats(stats);
@@ -321,6 +441,8 @@ export const useTeamLeaderDashboard = () => {
         setIsInitialized,
         setIsRefreshing,
         timeFilter,
-        setTimeFilter
+        setTimeFilter,
+        shiftChartData,
+        quotaManagementData
     };
 };
