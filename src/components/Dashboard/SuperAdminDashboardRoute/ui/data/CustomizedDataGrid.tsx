@@ -470,7 +470,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       isPositive: boolean;
       color: string;
     }) => (
-      <div className={`p-4 rounded-xl border-l-4 ${color} bg-gray-800/30`}>
+      <div className={`p-4 rounded-xl border-l-4 ${color} border-l`}>
         <div className="flex justify-between items-start mb-3">
           <h4 className="font-semibold text-white text-sm">{title}</h4>
           <div
@@ -644,7 +644,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         </div>
 
         {/* Performance Summary */}
-        <div className="mb-6 bg-slate-900/30 rounded-xl p-6">
+        <div className="mb-6 border bg-[rgba(59,130,246,0.03)] border-gray-700 rounded-xl p-6">
           <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-green-400" />
             Overall Performance Summary

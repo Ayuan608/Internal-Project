@@ -13,18 +13,15 @@ const Department = () => {
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [departmentStats, setDepartmentStats] = useState({
-    CSR: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
-    Deposit: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
-    Withdrawal: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 }
+    CSR: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
+    Deposit: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
+    Withdrawal: { transactions: 0, quota: 0, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 }
   });
   const dispatch = useDispatch()
 
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state) => state.combinedQuota
   );
-
-
-  
 
   // Number formatting function
   const formatNumber = (num) => {
@@ -41,18 +38,19 @@ const Department = () => {
     dispatch(fetchCombinedDepartmentsData())
   }, [])
 
-  // Calculate real-time department statistics
+  // Calculate real-time department statistics - IMPROVED VERSION
   const calculateDepartmentStats = () => {
     if (!data || data.length === 0) return;
 
     const stats = {
-      CSR: { transactions: 0, quota: 580, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
-      Deposit: { transactions: 0, quota: 580, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 },
-      Withdrawal: { transactions: 0, quota: 1500, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0 }
+      CSR: { transactions: 0, quota: 530, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
+      Deposit: { transactions: 0, quota: 530, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
+      Withdrawal: { transactions: 0, quota: 1500, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 }
     };
 
     let currentDepartment = "";
     let currentMonth = "";
+
 
     data.forEach((row) => {
       // Detect department
@@ -76,36 +74,71 @@ const Department = () => {
           row[1] === 'Member' ||
           row[1] === '' ||
           row[0]?.toLowerCase().includes('shift') ||
-          row[0]?.toLowerCase().includes('trainees');
+          row[0]?.toLowerCase().includes('trainee') ||
+          row[1]?.toLowerCase().includes('shift') ||
+          row[1]?.toLowerCase().includes('trainee') ||
+          !row[1] ||
+          row[1] === 'HIGHLIGHTS' ||
+          row[1] === 'TOTAL';
 
         if (!isHeaderRow && row[1] && row[1] !== '') {
-          // Extract transaction data (assuming index 2 has transaction count)
-          const transactions = parseInt(row[2]) || 0;
-          stats[currentDepartment].transactions += transactions;
-          stats[currentDepartment].agents += 1;
+          // Extract transaction data based on department
+          let transactions = 0;
 
-          // Calculate quota met based on some logic (you can adjust this)
-          const quotaPercentage = (transactions / stats[currentDepartment].quota) * 100;
-          if (quotaPercentage >= 70) {
-            stats[currentDepartment].quotaMet += 1;
-          } else {
-            stats[currentDepartment].nonQuota += 1;
+          if (currentDepartment === "CSR") {
+            transactions = parseInt(row[2]) || 0;
+          } else if (currentDepartment === "Deposit") {
+            // Deposit: Use Total (row[8])
+            transactions = parseInt(row[8]) || 0;
+          } else if (currentDepartment === "Withdrawal") {
+            // Withdrawal: Use Total (row[8])
+            transactions = parseInt(row[5]) || 0;
+          }
+
+          if (transactions > 0) {
+            stats[currentDepartment].transactions += transactions;
+            stats[currentDepartment].totalAgents += 1;
+
+            // Calculate quota percentage
+            const quotaPercentage = (transactions / stats[currentDepartment].quota) * 100;
+
+            if (quotaPercentage >= 70) {
+              stats[currentDepartment].quotaMetCount += 1;
+            } else {
+              stats[currentDepartment].nonQuotaCount += 1;
+            }
           }
         }
       }
     });
 
-    // Calculate completion percentages
+    // Calculate percentages
     Object.keys(stats).forEach(dept => {
       const deptStats = stats[dept];
-      if (deptStats.agents > 0) {
-        deptStats.completion = Math.round((deptStats.transactions / deptStats.quota) * 100);
-        deptStats.quotaMet = Math.round((deptStats.quotaMet / deptStats.agents) * 100);
-        deptStats.nonQuota = 100 - deptStats.quotaMet;
-      }
+
+      // Calculate completion percentage
+      deptStats.completion = deptStats.quota > 0 ?
+        Math.round((deptStats.transactions / deptStats.quota) * 100) : 0;
+
+      // Calculate quota met percentage
+      deptStats.quotaMet = deptStats.totalAgents > 0 ?
+        Math.round((deptStats.quotaMetCount / deptStats.totalAgents) * 100) : 0;
+
+      deptStats.nonQuota = 100 - deptStats.quotaMet;
+      deptStats.agents = deptStats.totalAgents;
+
+      console.log(`📊 ${dept} Stats:`, {
+        transactions: deptStats.transactions,
+        quota: deptStats.quota,
+        totalAgents: deptStats.totalAgents,
+        quotaMetCount: deptStats.quotaMetCount,
+        nonQuotaCount: deptStats.nonQuotaCount,
+        quotaMetPercentage: deptStats.quotaMet,
+        nonQuotaPercentage: deptStats.nonQuota
+      });
     });
 
-    console.log("Real-time Department Stats:", stats);
+    console.log("🎯 Final Department Stats:", stats);
     setDepartmentStats(stats);
   };
 
@@ -125,12 +158,15 @@ const Department = () => {
       completion: departmentStats.CSR.completion,
       quotaMet: departmentStats.CSR.quotaMet,
       nonQuota: departmentStats.CSR.nonQuota,
+      quotaMetCount: departmentStats.CSR.quotaMetCount,
+      nonQuotaCount: departmentStats.CSR.nonQuotaCount,
       chartData: {
         labels: ["Quota Met", "Non-Quota"],
         datasets: [
           {
             data: [departmentStats.CSR.quotaMet, departmentStats.CSR.nonQuota],
             backgroundColor: ["#00C49F", "#FF5A5F"],
+            borderWidth: 0,
           },
         ],
       }
@@ -142,12 +178,15 @@ const Department = () => {
       completion: departmentStats.Deposit.completion,
       quotaMet: departmentStats.Deposit.quotaMet,
       nonQuota: departmentStats.Deposit.nonQuota,
+      quotaMetCount: departmentStats.Deposit.quotaMetCount,
+      nonQuotaCount: departmentStats.Deposit.nonQuotaCount,
       chartData: {
         labels: ["Quota Met", "Non-Quota"],
         datasets: [
           {
             data: [departmentStats.Deposit.quotaMet, departmentStats.Deposit.nonQuota],
             backgroundColor: ["#00C49F", "#FF5A5F"],
+            borderWidth: 0,
           },
         ],
       }
@@ -159,12 +198,15 @@ const Department = () => {
       completion: departmentStats.Withdrawal.completion,
       quotaMet: departmentStats.Withdrawal.quotaMet,
       nonQuota: departmentStats.Withdrawal.nonQuota,
+      quotaMetCount: departmentStats.Withdrawal.quotaMetCount,
+      nonQuotaCount: departmentStats.Withdrawal.nonQuotaCount,
       chartData: {
         labels: ["Quota Met", "Non-Quota"],
         datasets: [
           {
             data: [departmentStats.Withdrawal.quotaMet, departmentStats.Withdrawal.nonQuota],
             backgroundColor: ["#00C49F", "#FF5A5F"],
+            borderWidth: 0,
           },
         ],
       }
@@ -181,8 +223,9 @@ const Department = () => {
       title: {
         display: true,
         text: `${activeTab} Department Quota`,
-        font: { size: 18 },
+        font: { size: 16, weight: 'bold' },
         color: "#fff",
+        padding: { bottom: 20 }
       },
       legend: {
         display: true,
@@ -193,7 +236,17 @@ const Department = () => {
           pointStyle: "circle",
           padding: 20,
           boxWidth: 10,
+          font: { size: 12 }
         },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            return `${label}: ${value}%`;
+          }
+        }
       }
     },
     elements: {
@@ -280,7 +333,11 @@ const Department = () => {
         <div className="bg-[rgba(59,130,246,0.03)] rounded-xl p-6 border-l-2 transition-all duration-200 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-2">Total Transactions</p>
+              <p className="text-gray-400 text-sm font-medium mb-2">
+                {activeTab === "CSR" ? "Total Conversation" :
+                  activeTab === "Deposit" ? "Total Transaction" :
+                    "Total Transaction Process"}
+              </p>
               <p className="text-white text-2xl font-bold">{formatNumber(currentData.transactions)}</p>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">
@@ -288,9 +345,8 @@ const Department = () => {
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2">
-
             <span className="text-xs text-gray-400 whitespace-nowrap">
-              {formatNumber(currentData.completion)}%
+              {formatNumber(currentData.completion)}% of target
             </span>
           </div>
         </div>
@@ -307,7 +363,7 @@ const Department = () => {
           </div>
           <div className="mt-3">
             <span className="text-xs text-gray-400">
-              Remaining: {formatNumber((currentData.quota, currentData.transactions))}
+              Remaining: {formatNumber(Math.max(0, currentData.quota - currentData.transactions))}
             </span>
           </div>
         </div>
@@ -316,7 +372,7 @@ const Department = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm font-medium mb-2">Active Agents</p>
-              <p className="text-white text-2xl font-bold">{formatNumber(currentData.agents)}</p>
+              <p className="text-white text-2xl font-bold">{currentData.agents}</p>
             </div>
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Users size={24} className="text-purple-400" />
@@ -324,7 +380,7 @@ const Department = () => {
           </div>
           <div className="mt-3">
             <span className="text-xs text-gray-400">
-              {formatNumber(Math.round(currentData.agents * (currentData.quotaMet / 100)))} agents met quota
+              {currentData.quotaMetCount} met quota • {currentData.nonQuotaCount} below quota
             </span>
           </div>
         </div>
@@ -363,11 +419,15 @@ const Department = () => {
                 {currentData.quotaMet}%
               </p>
               <p className="text-gray-400 text-sm font-medium">Quota Met</p>
+              <p className="text-gray-400 text-xs mt-1">
+                {currentData.quotaMetCount}/{currentData.agents} agents
+              </p>
             </div>
           </div>
         </div>
 
         <div className="bg-slate-900/40 border-slate-800 border rounded-xl w-2/3">
+          {/* Pass activeTab as prop to NonQuota component */}
           <NonQuota department={activeTab} />
         </div>
       </div>

@@ -7,6 +7,8 @@ import AttendanceChartMonth from "./ui/AttendanceChartMonth";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance } from "../../../redux/attendenceSlice";
 import { headers } from "../../../Helpers/Helper";
+import AttendanceStatsChart from "./ui/AttendanceChartMonth";
+import AttendanceDashboard from "../TeamLeaderDashboard/RestDay";
 
 const OverallAttendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,7 +23,6 @@ const OverallAttendance = () => {
     (state) => state.attendance
   );
 
-  console.log(allAttendance, 'lele')
 
   // Fetch attendance data on component mount and when filters change
   useEffect(() => {
@@ -432,7 +433,7 @@ const OverallAttendance = () => {
       </div>
 
       <style>{scrollbarStyles}</style>
-      <AttendanceChartMonth attendanceData={transformedAttendanceData} />
+        <AttendanceDashboard />
     </div>
   );
 };

@@ -22,7 +22,7 @@ export default function TeamLeaderStats({ title, data, SecondaryTitle }) {
       >
         {data.map((card, index) => (
           <Grid key={index} item xs={12} sm={3} lg={3}>
-            <StatCard {...card} />
+            <StatCard {...card} index={index} />
           </Grid>
         ))}
       </Grid>
