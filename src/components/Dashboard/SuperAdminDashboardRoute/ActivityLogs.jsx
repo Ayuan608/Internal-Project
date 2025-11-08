@@ -29,11 +29,11 @@ const ActivityLogs = () => {
       dispatch(terminateSession(id));
     }
   };
-const handleActivate = (id) => {
-  if (window.confirm("Do you want to reactivate this session?")) {
-    dispatch(activateSession(id));
-  }
-};
+  const handleActivate = (id) => {
+    if (window.confirm("Do you want to reactivate this session?")) {
+      dispatch(activateSession(id));
+    }
+  };
 
   const formatTime = (date) => {
     const now = new Date();
@@ -68,47 +68,49 @@ const handleActivate = (id) => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-slate-900/40 rounded-lg shadow p-4">
+          {/* Total Logins */}
+          <div className="bg-blue-500/20 border border-blue-500/30 text-blue-300 rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white">Total Logins</p>
-                <p className="text-2xl font-bold text-white">
-                  {activities.length}
-                </p>
+                <p className="text-sm">Total Logins</p>
+                <p className="text-2xl font-bold">{activities.length}</p>
               </div>
-              <User className="w-8 h-8 text-blue-500" />
+              <User className="w-8 h-8 text-blue-400" />
             </div>
           </div>
 
-          <div className="bg-slate-900/40 rounded-lg shadow p-4">
+          {/* Successful */}
+          <div className="bg-green-500/20 border border-green-500/30 text-green-300 rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white">Successful</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm">Successful</p>
+                <p className="text-2xl font-bold">
                   {activities.filter((a) => a.loginAttempt === "Success").length}
                 </p>
               </div>
-              <Shield className="w-8 h-8 text-green-500" />
+              <Shield className="w-8 h-8 text-green-400" />
             </div>
           </div>
 
-          <div className="bg-slate-900/40 rounded-lg shadow p-4">
+          {/* Failed */}
+          <div className="bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white">Failed</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-sm">Failed</p>
+                <p className="text-2xl font-bold">
                   {activities.filter((a) => a.loginAttempt === "Failed").length}
                 </p>
               </div>
-              <AlertCircle className="w-8 h-8 text-red-500" />
+              <AlertCircle className="w-8 h-8 text-purple-400" />
             </div>
           </div>
 
-          <div className="bg-slate-900/40 rounded-lg shadow p-4">
+          {/* Active Now */}
+          <div className="bg-orange-500/20 border border-orange-500/30 text-orange-300 rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white">Active Now</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-sm">Active Now</p>
+                <p className="text-2xl font-bold">
                   {
                     activities.filter((a) => {
                       const diff = Date.now() - new Date(a.createdAt).getTime();
@@ -117,10 +119,11 @@ const handleActivate = (id) => {
                   }
                 </p>
               </div>
-              <Globe className="w-8 h-8 text-blue-500" />
+              <Globe className="w-8 h-8 text-orange-400" />
             </div>
           </div>
         </div>
+
 
         {/* Filters */}
         <div className="bg-slate-900/40 border border-slate-800/40 rounded-lg shadow p-4 mb-6">

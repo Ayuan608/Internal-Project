@@ -490,7 +490,7 @@ function Admin() {
                       >
                         <Shield className="w-4 h-4" />
                       </motion.button>
-                      {role !== "Team-Leader" && (
+                      {role !== "Admin" && (
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}

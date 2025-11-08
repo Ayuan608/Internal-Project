@@ -3,6 +3,7 @@ import axiosInstance from "../Helpers/axiosInstance";
 
 const initialState = {
     activities: [],
+    whitelistedIPs: [],
     loading: false,
     error: null,
 };
@@ -68,7 +69,72 @@ export const activateSession = createAsyncThunk(
         }
     }
 );
+export const addWhitelistIp = createAsyncThunk(
+    "ipWhitelist/add",
+    async (ipData, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.post('/activity/add', ipData, {
+                withCredentials: true,
+            });
+            return data.data;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to add IP to whitelist"
+            );
+        }
+    }
+);
 
+// Get all whitelisted IPs
+export const getAllIPWhitelist = createAsyncThunk(
+    "ipWhitelist/getAll",
+    async (_, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.get('/activity/getAllIpWhiteList', {
+                withCredentials: true,
+            });
+            return data.data;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to fetch whitelisted IPs"
+            );
+        }
+    }
+);
+
+// Edit whitelisted IP
+export const editWhitelistIp = createAsyncThunk(
+    "ipWhitelist/edit",
+    async ({ id, ipData }, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.put(`/activity/ipwhitelist/${id}`, ipData, {
+                withCredentials: true,
+            });
+            return data.updatedIp;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to update whitelisted IP"
+            );
+        }
+    }
+);
+
+// Delete whitelisted IP
+export const deleteWhitelistIp = createAsyncThunk(
+    "ipWhitelist/delete",
+    async (id, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.delete(`/activity/deleteIpwhitelist/${id}`, {
+                withCredentials: true,
+            });
+            return { id, message: data.message };
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to delete whitelisted IP"
+            );
+        }
+    }
+);
 
 const activitySlice = createSlice({
     name: "activity",
@@ -121,6 +187,60 @@ const activitySlice = createSlice({
                 );
             })
             .addCase(activateSession.rejected, (state, action) => {
+                state.error = action.payload;
+            })
+            .addCase(addWhitelistIp.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(addWhitelistIp.fulfilled, (state, action) => {
+                state.loading = false;
+                state.whitelistedIPs.unshift(action.payload);
+            })
+            .addCase(addWhitelistIp.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            // ===== Get All Whitelisted IPs =====
+            .addCase(getAllIPWhitelist.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(getAllIPWhitelist.fulfilled, (state, action) => {
+                state.loading = false;
+                state.whitelistedIPs = action.payload;
+            })
+            .addCase(getAllIPWhitelist.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            // ===== Edit Whitelisted IP =====
+            .addCase(editWhitelistIp.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(editWhitelistIp.fulfilled, (state, action) => {
+                state.loading = false;
+                state.whitelistedIPs = state.whitelistedIPs.map((ip) =>
+                    ip._id === action.payload._id ? action.payload : ip
+                );
+            })
+            .addCase(editWhitelistIp.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            // ===== Delete Whitelisted IP =====
+            .addCase(deleteWhitelistIp.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(deleteWhitelistIp.fulfilled, (state, action) => {
+                state.loading = false;
+                state.whitelistedIPs = state.whitelistedIPs.filter(
+                    (ip) => ip._id !== action.payload.id
+                );
+            })
+            .addCase(deleteWhitelistIp.rejected, (state, action) => {
+                state.loading = false;
                 state.error = action.payload;
             });
 
