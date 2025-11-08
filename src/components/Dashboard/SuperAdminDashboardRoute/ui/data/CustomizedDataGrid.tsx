@@ -594,20 +594,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     }
   }, [teamLeaderData, onStatsUpdate, isInitialized, loading]);
 
-  // Loading state
-  if (loading && !isInitialized) {
-    return (
-      <div className="flex justify-center items-center min-h-96">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-          <div className="text-white text-lg">Loading dashboard data...</div>
-          <div className="text-gray-400 text-sm mt-2">
-            Please wait while we fetch the latest information
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="text-white mt-6">
@@ -658,7 +644,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         </div>
 
         {/* Performance Summary */}
-        <div className="mb-6 bg-gradient-to-br from-gray-900/50 to-gray-800/50 border border-gray-700 rounded-xl p-6">
+        <div className="mb-6 bg-slate-900/30 rounded-xl p-6">
           <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-green-400" />
             Overall Performance Summary
