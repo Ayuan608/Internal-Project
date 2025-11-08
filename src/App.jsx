@@ -32,6 +32,7 @@ import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-white
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
+import ModernDashboard from "./components/ModernChart/ModernDashboard";
 
 function App() {
   console.log("==========app entry point")

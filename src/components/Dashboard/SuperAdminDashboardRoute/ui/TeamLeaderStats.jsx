@@ -4,9 +4,6 @@ import Typography from "@mui/material/Typography";
 import StatCard from "./StatCard";
 
 export default function TeamLeaderStats({ title, data, SecondaryTitle }) {
-
-  console.log(data)
-
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%" } }}>
       {/* cards */}
