@@ -1,0 +1,144 @@
+import { Search } from "lucide-react";
+import { Doughnut } from "react-chartjs-2";
+import TeamLeaderStats from "./TeamLeaderStats";
+import ExampleIosSwitch from './Switch';
+import ShiftChart from './ShiftChart';
+import QuotaManagement from './QuotaManagement';
+
+export default function TeamLeaderDashboardUI({
+    dashboardData,
+    teamLeaderStats,
+    isRefreshing,
+    department,
+    timeFilter,
+    setTimeFilter
+}) {
+    // Chart helpers
+    const createChartData = (met, nonMet) => ({
+        labels: ["Quota Met", "Quota Not Met"],
+        datasets: [{
+            data: [met, nonMet],
+            backgroundColor: ["#3b82f6", "#f53)h3a"],
+            borderColor: "#1f2937",
+            borderWidth: 2,
+            hoverOffset: 8,
+        }],
+    });
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: "bottom", labels: { color: "#e5e7eb", font: { size: 12 }, padding: 15 } },
+            title: { display: true, color: "#f8fafc", font: { size: 16, weight: "bold" }, padding: { bottom: 10 } },
+        },
+        cutout: "60%",
+    };
+
+    const getChartTitle = () => {
+        switch (department) {
+            case 'CSR': return "CSR Quota Performance";
+            case 'Deposit': return "Deposit Quota Performance";
+            case 'Withdrawal': case 'Withdraw': return "Withdrawal Quota Performance";
+            default: return "Quota Performance";
+        }
+    };
+
+    const getQuotaData = () => {
+        switch (department) {
+            case 'CSR': return dashboardData.csrQuota;
+            case 'Deposit': return dashboardData.depositQuota;
+            case 'Withdrawal': case 'Withdraw': return dashboardData.withdrawalQuota;
+            default: return dashboardData.csrQuota;
+        }
+    };
+
+    const getFilterText = () => {
+        switch (timeFilter) {
+            case 'daily': return 'Today';
+            case 'weekly': return 'This Week';
+            case 'monthly': return 'This Month';
+            default: return 'Today';
+        }
+    };
+
+    const chartTitle = getChartTitle();
+    const quotaData = getQuotaData();
+
+    return (
+        <div className="min-h-screen text-gray-100 bg-black">
+            <div className="top-0 rounded-lg p-2 z-auto backdrop-blur-3xl" style={{ zIndex: 9 }}>
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-start w-[25%]">
+                        <div className="relative w-full">
+                            <input
+                                type="text"
+                                placeholder="Search contacts, deals, campaigns..."
+                                className="bg-[#f5f6fa13] text-white rounded-full pl-9 pr-3 py-2 w-full text-sm focus:outline-none placeholder:text-white"
+                            />
+                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        {/* Time Filter Buttons */}
+                        <div className="flex bg-gray-800 rounded-lg p-1">
+                            {['daily', 'weekly', 'monthly'].map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setTimeFilter(filter)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${timeFilter === filter
+                                            ? 'bg-blue-600 text-white shadow-lg'
+                                            : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                                        }`}
+                                >
+                                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="text-sm text-blue-400 bg-blue-900/30 px-3 py-1 rounded-full">
+                            {department} Team Leader
+                        </div>
+                        {isRefreshing && <div className="text-sm text-green-400">Refreshing data...</div>}
+                        <ExampleIosSwitch />
+                    </div>
+                </div>
+
+                <div className="p-2 bg-[#282e3c38] rounded-xl mb-4">
+                    <TeamLeaderStats
+                        title={`${department} Performance Trends - ${getFilterText()}`}
+                        data={teamLeaderStats}
+                        SecondaryTitle={`Real-time ${department} metrics • ${getFilterText()} • ${new Date().toLocaleTimeString()}`}
+                    />
+                </div>
+            </div>
+
+            <div className="flex gap-6 mt-2 overflow-y-auto px-2">
+                <ShiftChart timeFilter={timeFilter} />
+
+                <div className="rounded-xl p-6 shadow-lg border border-gray-700">
+                    <div className="h-72 w-72 items-center justify-center">
+                        <Doughnut
+                            data={createChartData(quotaData.met, quotaData.nonMet)}
+                            options={{
+                                ...chartOptions,
+                                plugins: {
+                                    ...chartOptions.plugins,
+                                    title: {
+                                        ...chartOptions.plugins.title,
+                                        text: `${chartTitle} - ${getFilterText()}`
+                                    },
+                                },
+                            }}
+                        />
+                    </div>
+                    <div className="text-center mt-4 text-sm text-gray-400">
+                        {quotaData.met}% Met • {quotaData.nonMet}% Not Met
+                    </div>
+                </div>
+            </div>
+
+            <QuotaManagement timeFilter={timeFilter} />
+        </div>
+    );
+}
