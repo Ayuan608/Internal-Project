@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCombinedDepartmentsData } from "../../../redux/combinedQuotaSlice";
 import TeamLeaderDashboardUI from "../SuperAdminDashboardRoute/ui/TeamLeaderDashboardUI";
@@ -31,9 +31,9 @@ export default function TeamLeaderDashboard() {
       setIsRefreshing(true);
       try {
         await dispatch(fetchCombinedDepartmentsData());
-        setIsInitialized(true); 
+        setIsInitialized(true);
       } catch (error) {
-        console.error("Error initializing data:", error);
+        console.error("❌ Error initializing data:", error);
       } finally {
         setIsRefreshing(false);
       }
@@ -43,6 +43,7 @@ export default function TeamLeaderDashboard() {
   // Process when data changes
   useEffect(() => {
     if (data && data.length > 0 && department) {
+
       processRealData(data, department, timeFilter);
     }
   }, [data, department, processRealData, timeFilter]);
@@ -56,9 +57,10 @@ export default function TeamLeaderDashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (isInitialized && department) {
+        console.log("🔄 Auto-refreshing data...");
         dispatch(fetchCombinedDepartmentsData());
       }
-    }, 120000);
+    }, 120000); // 2 minutes
     return () => clearInterval(interval);
   }, [dispatch, isInitialized, department]);
 
@@ -67,8 +69,13 @@ export default function TeamLeaderDashboard() {
   if (!department || (!data && isInitialized)) {
     return (
       <div className="min-h-screen text-gray-100 bg-black flex items-center justify-center">
-        <div className="text-xl">
-          {!department ? "Department information not available" : "No data available"}
+        <div className="text-center">
+          <div className="text-xl mb-4">
+            {!department ? "Department information not available" : "No data available"}
+          </div>
+          {!department && (
+            <p className="text-sm text-gray-400">Please make sure you are logged in with proper department access.</p>
+          )}
         </div>
       </div>
     );

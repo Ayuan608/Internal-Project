@@ -15,12 +15,15 @@ export default function TeamLeaderDashboardUI({
     shiftChartData,
     quotaManagementData
 }) {
-    // Chart helpers
+
+
+    console.log(quotaManagementData, "agent of department wise")
+    // Chart helpers - FIXED COLOR CODES
     const createChartData = (met, nonMet) => ({
         labels: ["Quota Met", "Quota Not Met"],
         datasets: [{
             data: [met, nonMet],
-            backgroundColor: ["#3b82f6", "#f53)h3a"],
+            backgroundColor: ["#3b82f6", "#ef4444"],
             borderColor: "#1f2937",
             borderWidth: 2,
             hoverOffset: 8,
@@ -31,8 +34,30 @@ export default function TeamLeaderDashboardUI({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { position: "bottom", labels: { color: "#e5e7eb", font: { size: 12 }, padding: 15 } },
-            title: { display: true, color: "#f8fafc", font: { size: 16, weight: "bold" }, padding: { bottom: 10 } },
+            legend: {
+                position: "bottom",
+                labels: {
+                    color: "#e5e7eb",
+                    font: { size: 12 },
+                    padding: 15,
+                    usePointStyle: true,
+                }
+            },
+            title: {
+                display: true,
+                color: "#f8fafc",
+                font: { size: 16, weight: "bold" },
+                padding: { bottom: 10 }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        const label = context.label || '';
+                        const value = context.parsed;
+                        return `${label}: ${value}%`;
+                    }
+                }
+            }
         },
         cutout: "60%",
     };
@@ -67,6 +92,8 @@ export default function TeamLeaderDashboardUI({
     const chartTitle = getChartTitle();
     const quotaData = getQuotaData();
 
+
+
     return (
         <div className="min-h-screen text-gray-100 bg-black">
             <div className="top-0 rounded-lg p-2 z-auto backdrop-blur-3xl" style={{ zIndex: 9 }}>
@@ -89,8 +116,8 @@ export default function TeamLeaderDashboardUI({
                                     key={filter}
                                     onClick={() => setTimeFilter(filter)}
                                     className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${timeFilter === filter
-                                            ? 'bg-gray-800   backdrop-blur-2xl text-white shadow-lg transform scale-105'
-                                            : 'text-gray-300 hover:text-white'
+                                        ? 'bg-gray-800 backdrop-blur-2xl text-white shadow-lg transform scale-105'
+                                        : 'text-gray-300 hover:text-white'
                                         }`}
                                 >
                                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
