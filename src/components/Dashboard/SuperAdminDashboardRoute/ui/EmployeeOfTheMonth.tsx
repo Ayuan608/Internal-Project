@@ -46,6 +46,7 @@ const EmployeeOfTheMonthAdmin = () => {
     },
     { id: "Deposit", name: "Deposit Department", color: "emerald" },
     { id: "Withdrawal", name: "Withdrawal Department", color: "purple" },
+    { id: "Marketing", name: "Marketing Department", color: "pink" },
   ];
 
   const [formData, setFormData] = useState({
@@ -120,16 +121,6 @@ const EmployeeOfTheMonthAdmin = () => {
       return;
     }
 
-    // if (
-    //   !formData.hasGoodPerformance ||
-    //   !formData.hasNoLate ||
-    //   !formData.hasNoMissingPunches
-    // ) {
-    //   alert(
-    //     "Employee must meet all selection criteria: Good Performance, No Late, and No Missing Punches"
-    //   );
-    //   return;
-    // }
 
     const employeeData = {
       employeeName: formData.employeeName,
@@ -277,7 +268,7 @@ const EmployeeOfTheMonthAdmin = () => {
             )}
 
             {/* Department Stats */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-6">
               {departments.map((dept) => (
                 <div
                   key={dept.id}

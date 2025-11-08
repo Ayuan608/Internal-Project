@@ -18,6 +18,10 @@
   'https://api.dicebear.com/6.x/avataaars/svg?seed=Jasper',
   'https://api.dicebear.com/6.x/avataaars/svg?seed=Luna',
   'https://api.dicebear.com/6.x/avataaars/svg?seed=Zoe',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Max',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
 ]
 
 
