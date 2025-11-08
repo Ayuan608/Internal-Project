@@ -81,8 +81,9 @@ export const useTeamLeaderDashboard = () => {
     };
 
     const generateShiftChartData = (totalValue, filter) => {
+
+        console.log(totalValue,filter,"Sheetdata")
         const morning = Math.round(totalValue * 0.3);
-        const afternoon = Math.round(totalValue * 0.45);
         const night = Math.round(totalValue * 0.25);
         const rand = (v) => Math.round(v * (0.7 + Math.random() * 0.6));
 
@@ -163,7 +164,7 @@ export const useTeamLeaderDashboard = () => {
         const baseQuota = agents.length > 0 ? Math.round(totalValue / agents.length / multiplier) : 0;
 
         return agents.map((agent) => {
-            const variance = 0.7 + Math.random() * 0.5; // 70%–120%
+            const variance = 0.7 + Math.random() * 0.5;
             const achieved = Math.round(baseQuota * variance * multiplier);
             const quota = Math.round(baseQuota * multiplier);
             const performance = quota > 0 ? Math.min(100, Math.round((achieved / quota) * 100)) : 0;
@@ -245,7 +246,7 @@ export const useTeamLeaderDashboard = () => {
                     title: "Positive Rate",
                     value: `${filteredPos.toFixed(1)}%`,
                     interval: "Team average",
-                    trend: filteredPos > 5 ? "up" : filteredPos > 3 ? "neutral" : "down",
+                    trend: filteredPos > 10 ? "down" : filteredPos > 20 ? "neutral" : "up",
                     data: generateFilteredSparkline(filteredPos, 0.1, filter),
                     difference: `${filteredPos.toFixed(1)}%`,
                     role: "teamLeader",

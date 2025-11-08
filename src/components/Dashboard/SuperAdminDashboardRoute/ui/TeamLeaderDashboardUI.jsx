@@ -16,8 +16,6 @@ export default function TeamLeaderDashboardUI({
     quotaManagementData
 }) {
 
-
-    console.log(quotaManagementData, "agent of department wise")
     // Chart helpers - FIXED COLOR CODES
     const createChartData = (met, nonMet) => ({
         labels: ["Quota Met", "Quota Not Met"],

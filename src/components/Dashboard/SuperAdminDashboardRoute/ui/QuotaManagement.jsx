@@ -18,7 +18,7 @@ const QuotaManagement = ({ timeFilter, data, title }) => {
   // Fallback data
 
 
-  const quotaData = (data && Array.isArray(data) && data.length > 0) ? data : defaultData;
+  const quotaData = (data && Array.isArray(data) && data.length > 0) ? data : data;
 
   // Pagination Logic
   const totalPages = Math.ceil(quotaData.length / itemsPerPage);
@@ -266,7 +266,7 @@ const QuotaManagement = ({ timeFilter, data, title }) => {
                 <tr key={index} className="border-b border-gray-700/50 hover:bg-gray-800/30 transition-colors">
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
                         {item.agent.split(" ").map((n) => n[0].toUpperCase()).join("")}
                       </div>
                       <span className="text-white font-medium">{item.agent}</span>

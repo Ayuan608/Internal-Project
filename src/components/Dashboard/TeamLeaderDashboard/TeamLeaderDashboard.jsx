@@ -57,7 +57,6 @@ export default function TeamLeaderDashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (isInitialized && department) {
-        console.log("🔄 Auto-refreshing data...");
         dispatch(fetchCombinedDepartmentsData());
       }
     }, 120000); // 2 minutes
@@ -66,20 +65,7 @@ export default function TeamLeaderDashboard() {
 
 
 
-  if (!department || (!data && isInitialized)) {
-    return (
-      <div className="min-h-screen text-gray-100 bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-xl mb-4">
-            {!department ? "Department information not available" : "No data available"}
-          </div>
-          {!department && (
-            <p className="text-sm text-gray-400">Please make sure you are logged in with proper department access.</p>
-          )}
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <TeamLeaderDashboardUI
