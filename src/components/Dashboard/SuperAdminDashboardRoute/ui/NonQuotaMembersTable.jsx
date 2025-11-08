@@ -3,8 +3,10 @@ import { Download, Filter, X, Mail, Plus } from "lucide-react";
 import { useSelector } from "react-redux";
 
 const NonQuotaMembersTable = ({ department = "CSR" }) => {
+
   const { role } = useSelector((state) => state.auth);
   const { data: reduxData } = useSelector((state) => state.combinedQuota);
+
   const [filteredData, setFilteredData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -15,79 +17,100 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     priority: "Medium"
   });
 
-  // Function to get non-quota agents from Redux data
+  // Function to get non-quota agents from Redux data - FIXED VERSION
   const getNonQuotaAgents = () => {
     if (!reduxData || reduxData.length === 0) return [];
 
-    const nonQuotaData = [];
+    const allDepartmentsData = {
+      CSR: [],
+      Deposit: [],
+      Withdrawal: [],
+    };
+
     let currentDepartment = "";
     let currentMonth = "";
 
     reduxData.forEach((row, index) => {
+      if (!Array.isArray(row) || row.length === 0) return;
+
       // Detect department
-      if (row[0] && typeof row[0] === 'string') {
+      if (row[0] && typeof row[0] === "string") {
         const firstItem = row[0].toLowerCase();
-        if (firstItem.includes('csr')) currentDepartment = "CSR";
-        else if (firstItem.includes('deposit')) currentDepartment = "Deposit";
-        else if (firstItem.includes('withdraw')) currentDepartment = "Withdrawal";
+        if (firstItem.includes("csr")) currentDepartment = "CSR";
+        else if (firstItem.includes("deposit")) currentDepartment = "Deposit";
+        else if (firstItem.includes("withdraw")) currentDepartment = "Withdrawal";
       }
 
       // Detect month
-      if (row[2] && typeof row[2] === 'string') {
+      if (row[2] && typeof row[2] === "string") {
         const monthName = row[2].toLowerCase();
-        if (monthName.includes('october')) currentMonth = "October";
-        else if (monthName.includes('november')) currentMonth = "November";
+        if (monthName.includes("october")) currentMonth = "October";
+        else if (monthName.includes("november")) currentMonth = "November";
       }
 
-      // Process data rows for current department and October month
-      if (currentMonth === "October" && currentDepartment === department && row.length > 5) {
+      if (currentMonth === "October" && currentDepartment && row.length > 5) {
         const isHeaderRow =
-          row[1] === 'Member' ||
-          row[1] === '' ||
-          row[0]?.toLowerCase().includes('shift') ||
-          row[0]?.toLowerCase().includes('trainees');
+          row[1] === "Member" ||
+          row[1] === "" ||
+          row[0]?.toLowerCase().includes("shift") ||
+          row[0]?.toLowerCase().includes("trainee") ||
+          row[1]?.toLowerCase().includes("shift") ||
+          row[1]?.toLowerCase().includes("trainee") ||
+          !row[1] ||
+          row[1] === "HIGHLIGHTS" ||
+          row[1] === "TOTAL";
 
-        if (!isHeaderRow && row[1] && row[1] !== '') {
-          // Extract transaction data (assuming index 2 has transaction count)
-          const transactions = parseInt(row[2]) || 0;
+        if (!isHeaderRow && row[1]) {
+          let output = 0;
+          let quota = 0;
 
-          // Define quota based on department
-          let quota = 530;
-          if (department === "Deposit") quota = 530;
-          if (department === "Withdrawal") quota = 1500;
+          if (currentDepartment === "CSR") {
+            output = parseInt(row[2]) || 0;
+            quota = 100;
+          } else if (currentDepartment === "Deposit") {
+            output = parseInt(row[8]) || 0;
+            quota = 530;
+          } else if (currentDepartment === "Withdrawal") {
+            output = parseInt(row[8]) || 0;
+            quota = 1500;
+          }
 
-          // Calculate quota percentage
-          const quotaPercentage = (transactions / quota) * 100;
+          const quotaPercentage = quota > 0 ? (output / quota) * 100 : 0;
 
-          // If quota not met (less than 70%), add to non-quota list
-          if (quotaPercentage <= 70) {
-            nonQuotaData.push({
-              date: "October 2024", // You can extract actual date from your data
-              name: row[2] || 'Unknown Agent',
-              role: "Agent",
-              department: department,
-              output: transactions,
+          if (quotaPercentage < 70 && output > 0) {
+            const agentName = row[1] || "Unknown Agent";
+            allDepartmentsData[currentDepartment].push({
+              date: "October 2024",
+              name: agentName,
+              department: currentDepartment,
+              output,
               target: quota,
-              variance: transactions - quota,
+              variance: output - quota,
               quotaPercentage: Math.round(quotaPercentage),
-              email: `${row[1]?.toLowerCase().replace(/\s+/g, '.')}@company.com` || 'unknown@company.com',
+              email: `${agentName.toLowerCase().replace(/\s+/g, ".")}@company.com`,
               originalData: row,
-              index: index
+              index,
             });
           }
         }
       }
     });
 
-    console.log(`Non-Quota Agents for ${department}:`, nonQuotaData);
+    console.log(currentDepartment,'helo')
 
-    return nonQuotaData;
+    // If you still want to return only the current department’s data
+    return allDepartmentsData[department] || [];
   };
 
+
+  // Update filtered data when department or reduxData changes
   useEffect(() => {
     if (reduxData && reduxData.length > 0) {
+      console.log(`🔄 Refreshing data for department: ${department}`);
       const nonQuotaAgents = getNonQuotaAgents();
       setFilteredData(nonQuotaAgents);
+    } else {
+      setFilteredData([]);
     }
   }, [reduxData, department]);
 
@@ -95,7 +118,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     setSelectedEmployee(employee);
     setFormData({
       to: employee.email,
-      cc: "manager@mytechliance.com",
+      cc: "manager@company.com",
       message: `Dear ${employee.name},\n\nI wanted to reach out regarding your performance metrics for today. I noticed that your output was below the target quota.\n\nYour Output: ${employee.output}\nTarget: ${employee.target}\nCompletion: ${employee.quotaPercentage}%`,
       priority: "Medium"
     });
@@ -244,7 +267,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
                     role === "Team-Leader" && <td className="px-4 py-2 border-b border-[#9e9fa74d]/40">
                       <button
                         onClick={() => handleCreateCase(member)}
-                        className="bg-[var(--button-color)] hover:bg-[var(--hover-color)] text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center gap-1"
                       >
                         <Plus size={12} />
                         Create Case
@@ -326,7 +349,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
                   type="email"
                   value={formData.cc}
                   onChange={(e) => setFormData({ ...formData, cc: e.target.value })}
-                  placeholder="manager@mytechliance.com"
+                  placeholder="manager@company.com"
                   className="w-full px-3 py-2 border border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -390,7 +413,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
               </button>
               <button
                 onClick={handleSendEmail}
-                className="px-4 py-2 bg-[var(--button-color)] text-white hover:bg-[var(--hover-color)] rounded-lg transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
               >
                 Send Email
               </button>

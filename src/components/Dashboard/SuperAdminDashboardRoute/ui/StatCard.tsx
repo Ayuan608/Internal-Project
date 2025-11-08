@@ -15,11 +15,14 @@ export type StatCardProps = {
   data: number[];
   difference: any;
   role?: "superAdmin" | "teamLeader" | "user";
+  index?: number;
 };
 
 function getDaysInMonth(month: number, year: number) {
   const date = new Date(year, month, 0);
-  const monthName = date.toLocaleDateString("en-US", { month: "short" });
+  const monthName = date.toLocaleDateString("en-US", {
+    month: "short",
+  });
   const daysInMonth = date.getDate();
   const days = [];
   let i = 1;
@@ -38,12 +41,10 @@ export default function StatCard({
   data,
   difference,
   role = "user",
+  index = 0,
 }: StatCardProps) {
   const theme = useTheme();
-  const xAxisLabels = getDaysInMonth(4, 2024); // 30 labels for April
-
-  // Fix: Slice data to match xAxis length
-  const chartData = data.slice(0, xAxisLabels.length);
+  const daysInWeek = getDaysInMonth(4, 2024);
 
   const trendColors = {
     up:
@@ -69,6 +70,16 @@ export default function StatCard({
   const color = labelColors[trend];
   const chartColor = trendColors[trend];
 
+  // 3 color options for borders
+  const BorderColors = [
+    "rgba(59,130,246,0.5)",
+    "rgba(249, 115, 22, 0.8)",
+    "rgba(168,85,247,0.5)",
+  ];
+
+  const borderColor = BorderColors[index % BorderColors.length];
+
+  // 👇 format label based on role
   const formattedLabel =
     role === "superAdmin"
       ? trend === "up"
@@ -80,10 +91,16 @@ export default function StatCard({
 
   return (
     <Card variant="outlined" sx={{ height: "100%", flexGrow: 1 }}>
-      <CardContent sx={{ borderLeft: "2px solid white", borderRadius: "12px" }}>
+      <CardContent
+        sx={{
+          borderLeft: `6px solid ${borderColor}`,
+          borderRadius: "12px",
+        }}
+      >
         <Typography component="h2" variant="subtitle2" gutterBottom>
           {title}
         </Typography>
+
         <Stack
           direction="column"
           sx={{ justifyContent: "space-between", gap: 1 }}
@@ -96,6 +113,7 @@ export default function StatCard({
               <Typography variant="h4" component="p">
                 {difference}
               </Typography>
+
               <Chip size="small" color={color} label={formattedLabel} />
             </Stack>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -103,27 +121,20 @@ export default function StatCard({
             </Typography>
           </Stack>
 
-          {/* Fixed Sparkline */}
           <Box sx={{ width: "100%", height: 50 }}>
             <SparkLineChart
               color={chartColor}
-              data={chartData} 
-              area={true}
+              data={data || []}
               showHighlight
               showTooltip
               xAxis={{
                 scaleType: "band",
-                data: xAxisLabels,
+                data: daysInWeek,
               }}
               sx={{
-                "& .MuiAreaElement-root": {
-                  fill: `${chartColor}20`,
-                  fillOpacity: 1,
-                  display: "block",
-                },
-                "& .MuiLineElement-root": {
-                  strokeWidth: 2,
-                },
+                width: "350px",
+                "& path": { fill: "none" },
+                "& .MuiAreaElement-root": { display: "none" },
               }}
             />
           </Box>

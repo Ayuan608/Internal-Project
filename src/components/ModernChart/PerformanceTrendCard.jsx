@@ -3,7 +3,7 @@ import { Activity } from 'lucide-react';
 import { PerformanceTrendChart } from './ChartComponents';
 
 const GlassCard = ({ children, className = '' }) => (
-    <div className={`backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 shadow-2xl hover:bg-white/10 transition-all duration-300 ${className}`}>
+    <div className={`backdrop-blur-xl  rounded-2xl border border-white/10 shadow-2xl  transition-all duration-300 ${className}`}>
         {children}
     </div>
 );

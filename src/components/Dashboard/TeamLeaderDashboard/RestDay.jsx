@@ -12,6 +12,10 @@ export default function AttendanceDashboard() {
     (state) => state.attendance
   );
 
+
+  const { role } = useSelector((state) => state?.auth);
+
+
   // Fetch department data on component mount
   useEffect(() => {
     const fetchDepartmentData = async () => {
@@ -85,78 +89,82 @@ export default function AttendanceDashboard() {
 
       <div className="relative z-10 p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Attendance Dashboard</h1>
-              <p className="text-blue-300">Department: <span className="font-semibold text-blue-100">{userDepartment}</span></p>
+        {role !== "Super-Admin" && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-2">Attendance Dashboard</h1>
+                <p className="text-blue-300">Department: <span className="font-semibold text-blue-100">{userDepartment}</span></p>
+              </div>
+              <div className="text-right text-slate-400">
+                <p className="text-sm">{new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+              </div>
             </div>
-            <div className="text-right text-slate-400">
-              <p className="text-sm">{new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-emerald-900/30 to-emerald-900/10 border border-emerald-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-emerald-500/60 transition">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-emerald-300 mb-1">Today's Present</p>
+                    <p className="text-3xl font-bold text-emerald-100">{stats.present}</p>
+                    <p className="text-xs text-emerald-400 mt-2">Out of {stats.total}</p>
+                  </div>
+                  <UserCheck className="w-10 h-10 text-emerald-500/60" />
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-red-900/30 to-red-900/10 border border-red-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-red-500/60 transition">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-red-300 mb-1">Today's Absent</p>
+                    <p className="text-3xl font-bold text-red-100">{stats.absent}</p>
+                    <p className="text-xs text-red-400 mt-2">Needs follow-up</p>
+                  </div>
+                  <UserX className="w-10 h-10 text-red-500/60" />
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-amber-900/30 to-amber-900/10 border border-amber-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-amber-500/60 transition">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-amber-300 mb-1">Today's Leave</p>
+                    <p className="text-3xl font-bold text-amber-100">{stats.leave}</p>
+                    <p className="text-xs text-amber-400 mt-2">Approved</p>
+                  </div>
+                  <Calendar className="w-10 h-10 text-amber-500/60" />
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-900/30 to-blue-900/10 border border-blue-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-blue-500/60 transition">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-300 mb-1">Total Staff</p>
+                    <p className="text-3xl font-bold text-blue-100">{stats.total}</p>
+                    <p className="text-xs text-blue-400 mt-2">Registered</p>
+                  </div>
+                  <Users className="w-10 h-10 text-blue-500/60" />
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-emerald-900/30 to-emerald-900/10 border border-emerald-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-emerald-500/60 transition">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-emerald-300 mb-1">Today's Present</p>
-                  <p className="text-3xl font-bold text-emerald-100">{stats.present}</p>
-                  <p className="text-xs text-emerald-400 mt-2">Out of {stats.total}</p>
-                </div>
-                <UserCheck className="w-10 h-10 text-emerald-500/60" />
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-red-900/30 to-red-900/10 border border-red-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-red-500/60 transition">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-red-300 mb-1">Today's Absent</p>
-                  <p className="text-3xl font-bold text-red-100">{stats.absent}</p>
-                  <p className="text-xs text-red-400 mt-2">Needs follow-up</p>
-                </div>
-                <UserX className="w-10 h-10 text-red-500/60" />
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-amber-900/30 to-amber-900/10 border border-amber-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-amber-500/60 transition">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-amber-300 mb-1">Today's Leave</p>
-                  <p className="text-3xl font-bold text-amber-100">{stats.leave}</p>
-                  <p className="text-xs text-amber-400 mt-2">Approved</p>
-                </div>
-                <Calendar className="w-10 h-10 text-amber-500/60" />
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-900/30 to-blue-900/10 border border-blue-500/30 rounded-lg p-4 backdrop-blur-sm hover:border-blue-500/60 transition">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-300 mb-1">Total Staff</p>
-                  <p className="text-3xl font-bold text-blue-100">{stats.total}</p>
-                  <p className="text-xs text-blue-400 mt-2">Registered</p>
-                </div>
-                <Users className="w-10 h-10 text-blue-500/60" />
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Search Bar */}
-        <div className="flex justify-end mb-3">
-          <div className="flex items-center bg-slate-900/50 border border-slate-700 rounded-lg pl-4 pr-4 py-2 text-slate-100 placeholder-slate-500  focus-within:bg-slate-900/70 transition">
-            <Search className="w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search employee name..."
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              className="bg-transparent w-full rounded-lg pl-2 pr-4 py-1 text-slate-100 placeholder-slate-500 focus:outline-none transition"
-            />
+        {role !== "Super-Admin" && (
+          <div className="flex justify-end mb-3">
+            <div className="flex items-center bg-slate-900/50 border border-slate-700 rounded-lg pl-4 pr-4 py-2 text-slate-100 placeholder-slate-500  focus-within:bg-slate-900/70 transition">
+              <Search className="w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search employee name..."
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="bg-transparent w-full rounded-lg pl-2 pr-4 py-1 text-slate-100 placeholder-slate-500 focus:outline-none transition"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Attendance Table */}
         <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl overflow-hidden backdrop-blur-sm">
@@ -173,7 +181,7 @@ export default function AttendanceDashboard() {
                   <th className="px-4 py-3 text-left">Schedule</th>
                   <th className="px-4 py-3 text-left">Shift</th>
                   <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Pattern (31 Days)</th>
+                  <th className="px-4 py-3 text-left">Month Pattern</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/30">
