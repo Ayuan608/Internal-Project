@@ -5,12 +5,20 @@ import CustomizedDataGrid from "./SuperAdminDashboardRoute/ui/data/CustomizedDat
 import ExampleIosSwitch from "./SuperAdminDashboardRoute/ui/Switch";
 import { useState } from 'react';
 import { useSelector } from "react-redux";
-
+import ModernDashboard from "../ModernChart/ModernDashboard";
+import PerformanceTrendCard from "../ModernChart/PerformanceTrendCard";
 
 export default function Dashboard() {
   const [teamLeaderData, setTeamLeaderData] = useState([]);
 
   const userId = useSelector((state) => state.auth?.data?._id);
+
+  const performanceTrendData = Array.from({ length: 30 }, (_, i) => ({
+    day: `Day ${i + 1}`,
+    CSR: 75 + Math.random() * 20,
+    Deposit: 60 + Math.random() * 25,
+    Withdrawal: 85 + Math.random() * 15
+  }));
 
   return (
     <>
@@ -34,7 +42,10 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex gap-6 mt-2 overflow-y-auto px-2">
-          <Charts />
+          <PerformanceTrendCard
+            data={performanceTrendData}
+            title="30-Day Performance Trend (vs Yesterday)"
+          />
         </div>
 
         <CustomizedDataGrid onStatsUpdate={setTeamLeaderData} />

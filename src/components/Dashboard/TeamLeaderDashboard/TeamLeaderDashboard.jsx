@@ -62,13 +62,7 @@ export default function TeamLeaderDashboard() {
     return () => clearInterval(interval);
   }, [dispatch, isInitialized, department]);
 
-  if (combinedQuotaLoading && !isInitialized) {
-    return (
-      <div className="min-h-screen text-gray-100 bg-black flex items-center justify-center">
-        <div className="text-xl">Loading dashboard data...</div>
-      </div>
-    );
-  }
+
 
   if (!department || (!data && isInitialized)) {
     return (

@@ -32,7 +32,7 @@ import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-white
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
-import ModernDashboard from "./components/Dashboard/TeamLeaderDashboard/ModernDashboard";
+import ModernDashboard from "./components/ModernChart/ModernDashboard";
 
 function App() {
   console.log("==========app entry point")
@@ -108,7 +108,6 @@ function App() {
       {/* TEAM LEADER ROUTES */}
       <Route element={<RequireAuth allowedRoles={["Team-Leader"]} />}>
         <Route path="/team" element={<Layout />}>
-          {/* <Route index element={<ModernDashboard />} /> */}
           <Route index element={<TeamLeaderDashboard />} />
           <Route path="employeeDirectory" element={<EmployeeDirectory />} />
           <Route path="restday" element={<RestDay />} />
