@@ -14,14 +14,12 @@ export type StatCardProps = {
   trend: "up" | "down" | "neutral";
   data: number[];
   difference: any;
-  role?: "superAdmin" | "teamLeader" | "user"; // 👈 added
+  role?: "superAdmin" | "teamLeader" | "user";
 };
 
 function getDaysInMonth(month: number, year: number) {
   const date = new Date(year, month, 0);
-  const monthName = date.toLocaleDateString("en-US", {
-    month: "short",
-  });
+  const monthName = date.toLocaleDateString("en-US", { month: "short" });
   const daysInMonth = date.getDate();
   const days = [];
   let i = 1;
@@ -42,7 +40,10 @@ export default function StatCard({
   role = "user",
 }: StatCardProps) {
   const theme = useTheme();
-  const daysInWeek = getDaysInMonth(4, 2024);
+  const xAxisLabels = getDaysInMonth(4, 2024); // 30 labels for April
+
+  // Fix: Slice data to match xAxis length
+  const chartData = data.slice(0, xAxisLabels.length);
 
   const trendColors = {
     up:
@@ -68,7 +69,6 @@ export default function StatCard({
   const color = labelColors[trend];
   const chartColor = trendColors[trend];
 
-  // 👇 format label based on role
   const formattedLabel =
     role === "superAdmin"
       ? trend === "up"
@@ -76,7 +76,7 @@ export default function StatCard({
         : trend === "down"
         ? `-${value}%`
         : `${value}%`
-      : `${value}`; // 👈 teamLeader sees only raw value
+      : `${value}`;
 
   return (
     <Card variant="outlined" sx={{ height: "100%", flexGrow: 1 }}>
@@ -96,38 +96,33 @@ export default function StatCard({
               <Typography variant="h4" component="p">
                 {difference}
               </Typography>
-
-              {/* 👇 chip will show formattedLabel */}
               <Chip size="small" color={color} label={formattedLabel} />
             </Stack>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {interval}
             </Typography>
           </Stack>
+
+          {/* Fixed Sparkline */}
           <Box sx={{ width: "100%", height: 50 }}>
             <SparkLineChart
               color={chartColor}
-              data={data || []}
+              data={chartData} 
+              area={true}
               showHighlight
               showTooltip
               xAxis={{
                 scaleType: "band",
-                data: daysInWeek,
+                data: xAxisLabels,
               }}
               sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                  lg: "repeat(4, 1fr)",
-                },
-                width: "350px",
-                "& path": {
-                  fill: "none",
-                },
                 "& .MuiAreaElement-root": {
-                  display: "none",
+                  fill: `${chartColor}20`,
+                  fillOpacity: 1,
+                  display: "block",
+                },
+                "& .MuiLineElement-root": {
+                  strokeWidth: 2,
                 },
               }}
             />

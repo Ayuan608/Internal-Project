@@ -21,7 +21,7 @@ export default function TeamLeaderStats({ title, data, SecondaryTitle }) {
         sx={{ mb: (theme) => theme.spacing(2) }}
       >
         {data.map((card, index) => (
-          <Grid key={index} item xs={12} sm={6} lg={4}>
+          <Grid key={index} item xs={12} sm={3} lg={3}>
             <StatCard {...card} />
           </Grid>
         ))}

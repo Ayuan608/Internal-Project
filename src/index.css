@@ -248,3 +248,9 @@ button {
   background-color: #05070a !important;
   color: white !important;
 }
+
+
+.css-1ff8dc2-MuiGrid-root{
+  display: grid !important;
+  grid-template-columns: repeat(3,1fr) !important;
+}
