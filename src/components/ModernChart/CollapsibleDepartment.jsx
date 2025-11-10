@@ -35,15 +35,17 @@ const AnimatedMetricCard = ({ title, value, change, icon: Icon, color }) => (
   </GlassCard>
 );
 
-const StaffPill = ({ staffPerShift, deptKey }) => {
+// 🧩 Updated Staff Pill (Now showing real user total count)
+const StaffPill = ({ staffPerShift, deptKey, deptData }) => {
   const s = staffPerShift?.[deptKey] || { morning: 0, night: 0 };
-  const total = s.morning + s.night;
+  const totalStaff = deptData.length || 0; // ✅ real total users from your data
+
   return (
     <div className="relative group">
       <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/10 border border-white/10 text-xs">
         <Users size={14} className="opacity-80" />
-        <span className="font-semibold">{total}</span>
-        <span className="opacity-70">staff</span>
+        <span className="font-semibold">{totalStaff}</span>
+        <span className="opacity-70">users</span>
       </div>
       <div className="absolute top-full right-0 mt-1 z-50 hidden group-hover:block whitespace-nowrap px-2.5 py-1.5 rounded-md text-[11px] bg-black/80 text-white border border-white/10 shadow-lg">
         <div className="flex items-center gap-2">
@@ -69,19 +71,17 @@ export const CollapsibleDepartment = ({
   data,
   staffPerShift = {},
 }) => {
-  // Filter department-specific data
+  // 🔍 Filter department data
   const filterByKeyword = (keyword) =>
     (data || []).filter((row) =>
       row.join(" ").toLowerCase().includes(keyword.toLowerCase())
     );
 
-
-
   const csrData = filterByKeyword("csr");
   const depositData = filterByKeyword("deposit");
   const withdrawData = filterByKeyword("withdraw");
 
-  // choose department data
+
   const deptData =
     deptKey === "csr"
       ? csrData
@@ -90,25 +90,35 @@ export const CollapsibleDepartment = ({
         : withdrawData;
 
   const total = deptData.length;
+
   const completed = deptData.filter((r) =>
-    r.join(" ").toLowerCase().includes("completed")
-  ).length;
+    r[2] <= 530
+  );
+
+  let final = completed.length
+
+  // console.log(completed, 'hiii')
 
   const missed = deptData.filter((r) =>
     r.join(" ").toLowerCase().includes("missed")
   ).length;
+
+  const rejected = deptData.filter((r) => r[4])
+
+  console.log(rejected, "reject value")
+
   const avgOnline = (Math.random() * 5 + 4).toFixed(1) + "h";
   const avgNegativeRate = (Math.random() * 10 + 5).toFixed(1);
   const positive = (100 - avgNegativeRate).toFixed(1);
 
-  // metrics for each department (using your exact count)
+  // 🎯 Metrics per department
   let dynamicMetrics = [];
 
   if (deptKey === "csr") {
     dynamicMetrics = [
       {
         title: "Completed",
-        value: completed,
+        value: final,
         change: "+12.5%",
         icon: CheckCircle,
         color: "from-blue-500 to-cyan-500",
@@ -201,18 +211,18 @@ export const CollapsibleDepartment = ({
         color: "from-red-500 to-pink-500",
       },
     ];
-  } else if (deptKey === "withdraw") {
+  } else if (deptKey === "withdrawal") {
     dynamicMetrics = [
       {
         title: "Passed",
-        value: completed,
+        value: final,
         change: "+18.5%",
         icon: CheckCircle,
         color: "from-green-500 to-emerald-500",
       },
       {
         title: "Amount",
-        value: `$${(total * 15000).toLocaleString()}`,
+        value: `$${(total).toLocaleString()}`,
         change: "+22.3%",
         icon: DollarSign,
         color: "from-purple-500 to-pink-500",
@@ -264,7 +274,11 @@ export const CollapsibleDepartment = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <StaffPill staffPerShift={staffPerShift} deptKey={deptKey} />
+          <StaffPill
+            staffPerShift={staffPerShift}
+            deptKey={deptKey}
+            deptData={deptData}
+          />
           <span className="text-sm text-gray-400">
             {expandedDept?.[deptKey] ? "Hide Details" : "Show Details"}
           </span>
