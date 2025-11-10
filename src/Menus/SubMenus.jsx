@@ -97,7 +97,7 @@ const Menus = ({ toggle, onTitleChange }) => {
   return (
     <>
       {toggle ? (
-        <div className="flex flex-col justify-between h-screen px-2.5 overflow-hidden">
+        <div className="flex flex-col justify-between h-screen px-4 overflow-hidden border-r border-white/10">
           <div className="absolute inset-0 -z-10">
             <div className="absolute -top-[0%] left-[20%] w-36 h-36 rounded-full bg-[#3B82F6] opacity-60 blur-[70px]" />
             <div className="absolute top-1/2 right-[30%] w-72 h-72 rounded-full bg-[#3B82F6] opacity-40 blur-[90px] -translate-y-1/2" />
@@ -114,7 +114,7 @@ const Menus = ({ toggle, onTitleChange }) => {
               </h1>
             </Link>
 
-            <div className="text-white text-base mt-1 space-y-[10px]">
+            <div className="text-white text-base mt-1 space-y-4">
               {navItems.map(({ to, label, icon }) => {
                 const isActive = location.pathname === to;
                 return (
@@ -135,7 +135,7 @@ const Menus = ({ toggle, onTitleChange }) => {
               })}
 
               {role === "Super-Admin" && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-4">
                   {superAdminButtons.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
@@ -158,7 +158,7 @@ const Menus = ({ toggle, onTitleChange }) => {
               )}
 
               {role === "Admin" && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-4">
                   {AdminRoutes.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
@@ -181,7 +181,7 @@ const Menus = ({ toggle, onTitleChange }) => {
               )}
 
               {role === "Checker" && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-4">
                   {CheckerButtons.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
@@ -204,7 +204,7 @@ const Menus = ({ toggle, onTitleChange }) => {
               )}
 
               {role === "Team-Leader" && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-4">
                   {TeamButtons.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
@@ -228,7 +228,7 @@ const Menus = ({ toggle, onTitleChange }) => {
             </div>
             {role === "Super-Admin" && (
 
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-4">
                 <button
                   onClick={toggleContent}
                   className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm transition-all duration-200 hover:bg-[#3b83f620]"

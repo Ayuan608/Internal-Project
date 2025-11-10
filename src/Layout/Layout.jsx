@@ -62,7 +62,7 @@ const Layout = () => {
         if (res?.payload?.success) navigate("/");
     }
 
-    const sidebarWidth = toggle ? 240 : 80;
+    const sidebarWidth = toggle ? 300 : 80;
 
     return (
         <>

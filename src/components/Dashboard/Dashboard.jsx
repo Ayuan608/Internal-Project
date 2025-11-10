@@ -23,17 +23,13 @@ export default function Dashboard() {
   return (
     <>
 
-      <div className="min-h-screen text-gray-100 px-10">
+      <div className="min-h-screen text-gray-100 p-4">
         <div
           className=" top-0 rounded-lg p-2 z-auto backdrop-blur-3xl "
           style={{ zIndex: 9 }}
         >
-          <div className="flex justify-end p-2 ">
-
-            <ExampleIosSwitch />
-          </div>
-
           <div className="p-4 bg-[#282e3c38] rounded-xl mb-4 w-full">
+           
             <TeamLeaderStats
               title="Dashboard Overview"
               SecondaryTitle="Monitor real-time metrics and performance across all departments"
