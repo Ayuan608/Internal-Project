@@ -96,7 +96,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
       }
     });
 
-    console.log(currentDepartment,'helo')
+    console.log(currentDepartment, 'helo')
 
     // If you still want to return only the current department’s data
     return allDepartmentsData[department] || [];
@@ -230,6 +230,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
               </tr>
             ) : (
               filteredData.map((member, index) => (
+                console.log(member, "non met"),
                 <tr key={index} className="hover:bg-[#1a1f3664] transition-colors">
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 text-white-300">{member.date}</td>
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 font-medium text-white">

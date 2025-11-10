@@ -22,8 +22,10 @@ import {
   superAdminButtons,
   TeamButtons,
 } from "../Helpers/Helper";
+import { useTranslation } from "react-i18next";
 
 const Menus = ({ toggle, onTitleChange }) => {
+  const { t } = useTranslation()
   const contentRef = useRef(null);
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [showDraftPopup, setShowDraftPopup] = useState(false);
@@ -61,7 +63,7 @@ const Menus = ({ toggle, onTitleChange }) => {
         },
       ]
       : []),
- 
+
 
     ...(role === "User"
       ? [
@@ -72,14 +74,14 @@ const Menus = ({ toggle, onTitleChange }) => {
         },
       ]
       : []), ...(role === "User"
-      ? [
-        {
-          to: "/user/report",
-          label: "Report",
-          icon: <Proportions />,
-        },
-      ]
-      : []),
+        ? [
+          {
+            to: "/user/report",
+            label: "Report",
+            icon: <Proportions />,
+          },
+        ]
+        : []),
   ];
 
   useEffect(() => {
@@ -121,7 +123,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                   <Link
                     key={to}
                     to={to}
-                    onClick={() => onTitleChange(label)}
+                    onClick={() => onTitleChange(t(label))}
                     className={`flex items-center space-x-[12px] cursor-pointer px-[12px] py-[10px] rounded-lg transition-all duration-200
                       ${isActive
                         ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -129,7 +131,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                       }`}
                   >
                     <span className="text-[20px]">{icon}</span>
-                    <span className="text-[16px]">{label}</span>
+                    <span className="text-[16px]">{t(label)}</span>
                   </Link>
                 );
               })}
@@ -142,7 +144,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(label)}
+                        onClick={() => onTitleChange(t(label))}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -150,7 +152,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{label}</span>
+                        <span className="text-[16px] ml-2">{t(label)}</span>
                       </Link>
                     );
                   })}

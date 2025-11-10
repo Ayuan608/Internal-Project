@@ -16,6 +16,7 @@ const initialState = {
   users: [],
   tempToken: null,
   require2FA: false,
+  fcmToken: localStorage.getItem("fcmToken") || null,
 };
 
 // function to handle signup
@@ -80,6 +81,24 @@ export const login = createAsyncThunk("auth/login", async (data) => {
     toast.error(error.message);
   }
 });
+export const addFcm = createAsyncThunk(
+  "/auth/add-fcm",
+  async (fcmToken, { rejectWithValue }) => {
+    try {
+
+      const res = axiosInstance.post("/user/updateFCM", { fcmToken });
+
+   
+      const response = await res;
+      return response.data;
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.message || "Failed to update FCM token";
+        return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 export const verify2FA = createAsyncThunk(
   "/auth/verify-2fa",
   async ({ otp }, { rejectWithValue }) => {
@@ -377,7 +396,14 @@ const authSlice = createSlice({
         if (action.payload?.success && state.users) {
           state.users.push(action.payload.newUser);
         }
-      });
+      })
+      .addCase(addFcm.fulfilled, (state, action) => {
+        if (action.payload?.success) {
+          state.fcmToken = action.payload?.user?.fcmToken;
+          localStorage.setItem("fcmToken", action.payload?.user?.fcmToken);
+        }
+      })
+
   },
 });
 

@@ -34,7 +34,6 @@ import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
 
 function App() {
-  console.log("==========app entry point")
   useEffect(() => {
     requestForToken();
 

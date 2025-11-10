@@ -23,7 +23,6 @@ const ModernDashboard = () => {
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     };
 
-    // --- Mock data calculations ---
 
     // Avg Online Hours
     const onlineSessionList = [

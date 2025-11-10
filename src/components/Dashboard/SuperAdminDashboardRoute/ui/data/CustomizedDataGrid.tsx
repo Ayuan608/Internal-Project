@@ -428,13 +428,13 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       ctx.textBaseline = "middle";
       const text = `${value}%`;
       const textX = Math.round((width - ctx.measureText(text).width) / 2);
-      const textY = height / 2 - 5;
+      const textY = height / 1.8 - 5;
       ctx.fillText(text, textX, textY);
       ctx.font = `${(Number(fontSize) * 0.4).toFixed(2)}em sans-serif`;
       ctx.fillStyle = "#9ca3af";
       const subText = "Quota Met";
       const subX = Math.round((width - ctx.measureText(subText).width) / 2);
-      ctx.fillText(subText, subX, textY + 18);
+      ctx.fillText(subText, subX, textY + 28);
       ctx.restore();
     },
   };
@@ -594,95 +594,9 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     }
   }, [teamLeaderData, onStatsUpdate, isInitialized, loading]);
 
-
   return (
-    <div className="text-white mt-6">
+    <div className="text-white mt-6 bg-[#00010B]">
       <div className="px-2">
-        {/* Header with Refresh Button */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">
-            Department Performance Dashboard
-          </h2>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 px-4 py-2 rounded-lg text-white font-medium transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            {loading ? "Refreshing..." : "Refresh Data"}
-          </button>
-        </div>
-
-        {/* Progress Cards */}
-        <div className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ProgressCard
-              title="CSR Department"
-              current={csrCurrentMonth}
-              previous={csrPreviousMonth}
-              difference={csrDifference}
-              isPositive={isCSRPositive}
-              color="border-blue-500"
-            />
-            <ProgressCard
-              title="Deposit Department"
-              current={depositCurrentMonth}
-              previous={depositPreviousMonth}
-              difference={depositDifference}
-              isPositive={isDepositPositive}
-              color="border-green-500"
-            />
-            <ProgressCard
-              title="Withdraw Department"
-              current={withdrawCurrentMonth}
-              previous={withdrawPreviousMonth}
-              difference={withdrawDifference}
-              isPositive={isWithdrawPositive}
-              color="border-purple-500"
-            />
-          </div>
-        </div>
-
-        {/* Performance Summary */}
-        <div className="mb-6 border bg-[rgba(59,130,246,0.03)] border-gray-700 rounded-xl p-6">
-          <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-green-400" />
-            Overall Performance Summary
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <PerformanceMetric
-              icon={Users}
-              title="Total Agents"
-              value={totalAgents.toString()}
-              subtitle="Active Departments"
-              color="text-blue-400"
-            />
-            <PerformanceMetric
-              icon={MessageCircle}
-              title="Total Conversations"
-              value={currentMonthTotalCompleted.toString()}
-              subtitle={`${isTotalPositive ? "+" : ""}${formatNumber(
-                totalDifference
-              )} from last month`}
-              color="text-green-400"
-            />
-            <PerformanceMetric
-              icon={Target}
-              title="Success Rate"
-              value={`${successRate.toFixed(1)}%`}
-              subtitle="Quota Achievement"
-              color="text-purple-400"
-            />
-            <PerformanceMetric
-              icon={TrendingUp}
-              title="Avg per Agent"
-              value={avgConversationsPerAgent.toString()}
-              subtitle="Conversations per agent"
-              color="text-yellow-400"
-            />
-          </div>
-        </div>
-
         {/* Charts Section */}
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-xl font-bold">Department Performance Charts</h2>
@@ -694,7 +608,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
               id="monthFilter"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-[#282e3c38] border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none"
               disabled={loading}
             >
               {availableMonths.map((month) => (
@@ -707,14 +621,14 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-full">
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700">
+        <div className="flex  gap-4 h-full ">
+          <div className="p-4 bg-[#282e3c38] rounded-2xl border border-white/10">
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
                   csrResult.abovePercent,
                   csrResult.belowPercent,
-                  "#3b82f6"
+                  "rgba(59, 130, 246, 0.8)"
                 )}
                 options={{
                   ...chartOptions,
@@ -738,13 +652,13 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             </div>
           </div>
 
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700">
+          <div className="p-4 bg-[#282e3c38] rounded-2xl border border-white/10">
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
                   depositResult.abovePercent,
                   depositResult.belowPercent,
-                  "#22c55e"
+                  "rgba(16, 185, 129, 0.8"
                 )}
                 options={{
                   ...chartOptions,
@@ -768,13 +682,13 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             </div>
           </div>
 
-          <div className="rounded-xl p-6 shadow-lg border border-gray-700">
+          <div className="p-4 bg-[#282e3c38] rounded-2xl border border-white/10">
             <div className="h-72 w-72 mx-auto relative">
               <Doughnut
                 data={createChartData(
                   withdrawResult.abovePercent,
                   withdrawResult.belowPercent,
-                  "#8b5cf6"
+                  "rgba(168, 85, 247, 1)"
                 )}
                 options={{
                   ...chartOptions,

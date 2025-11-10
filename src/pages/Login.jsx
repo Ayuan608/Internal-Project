@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { login, verify2FA } from "../redux/authSlice";
+import { addFcm, login, verify2FA } from "../redux/authSlice";
 import toast from "react-hot-toast";
 import { recordLogin } from "../redux/activitylogSlice";
+import { requestForToken } from "../services/firebase/firebase";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -51,12 +52,12 @@ const Login = () => {
 
     try {
       if (!requireOtp) {
-        // Login step
+        // 🔹 Step 1: Normal Login
         const res = await dispatch(login(loginData));
         const payload = res?.payload;
 
         if (!payload) {
-          toast.error("Unexpected error");
+          toast.error("Unexpected error occurred");
           setIsLoading(false);
           return;
         }
@@ -65,17 +66,29 @@ const Login = () => {
           setRequireOtp(true);
           toast.success("2FA required. Please enter your Authenticator code.");
         } else if (payload?.token && !payload?.require2FA) {
-          toast.success("Login successful!"); try {
+          toast.success("Login successful!");
+          try {
             await dispatch(recordLogin());
           } catch (err) {
             console.error("Activity log failed:", err);
           }
+
+          // 🔹 Step 2: Get FCM Token & send to backend
+          const fcmToken = await requestForToken();
+          if (fcmToken) {
+            console.log("📨 Sending FCM token to backend:", fcmToken);
+            await dispatch(addFcm(fcmToken));
+          } else {
+            console.warn("⚠️ No FCM token available.");
+          }
+
+          // 🔹 Step 3: Navigate to dashboard
           navigate("/dashboard");
         } else {
           toast.error("Invalid response from server");
         }
       } else {
-        // 2FA Verification
+        // 🔹 Step 1: Verify 2FA OTP
         const res = await dispatch(verify2FA({ otp }));
         const payload = res?.payload;
 
@@ -83,6 +96,22 @@ const Login = () => {
           toast.success("Login successful!");
           const role = payload?.user?.role;
 
+          try {
+            await dispatch(recordLogin());
+          } catch (err) {
+            console.error("Activity log failed:", err);
+          }
+
+          // 🔹 Step 2: Get FCM Token & send to backend
+          const fcmToken = await requestForToken();
+          if (fcmToken) {
+            console.log("📨 Sending FCM token to backend:", fcmToken);
+            await dispatch(addFcm(fcmToken));
+          } else {
+            console.warn("⚠️ No FCM token available.");
+          }
+
+          // 🔹 Step 3: Navigate based on role
           switch (role) {
             case "Admin":
               navigate("/admin");
@@ -104,17 +133,13 @@ const Login = () => {
               toast.error("Invalid role detected");
               break;
           }
-          try {
-            await dispatch(recordLogin());
-          } catch (err) {
-            console.error("Activity log failed:", err);
-          }
         } else {
           toast.error("Invalid OTP");
         }
       }
     } catch (err) {
-      toast.error("Something went wrong");
+      console.error("Error in login process:", err);
+      toast.error("Something went wrong during login.");
     }
 
     setIsLoading(false);
@@ -152,8 +177,9 @@ const Login = () => {
                 type="text"
                 name="username"
                 placeholder="Username"
-                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${errors.username ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${
+                  errors.username ? "border-red-500" : "border-gray-300"
+                }`}
                 value={loginData.username}
                 onChange={handleInputChange}
               />
@@ -170,8 +196,9 @@ const Login = () => {
                 type="password"
                 name="password"
                 placeholder="Password"
-                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
                 ref={passwordRef}
                 value={loginData.password}
                 onChange={handleInputChange}
@@ -204,8 +231,9 @@ const Login = () => {
               name="otp"
               placeholder="Enter 6-digit code"
               maxLength={6}
-              className={`p-3 bg-gray-700 focus:outline-none rounded-lg text-center text-lg tracking-widest ${errors.otp ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`p-3 bg-gray-700 focus:outline-none rounded-lg text-center text-lg tracking-widest ${
+                errors.otp ? "border-red-500" : "border-gray-300"
+              }`}
               value={otp}
               onChange={handleOtpChange}
             />

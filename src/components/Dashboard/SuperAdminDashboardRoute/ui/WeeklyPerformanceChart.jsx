@@ -55,23 +55,17 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
       {
         label: "CSR",
         data: weeklyData.csr,
-        backgroundColor: "#3b82f6",
-        borderColor: "#3b82f6",
-        borderWidth: 1,
+        backgroundColor: "rgba(59, 130, 246, 0.8)",
       },
       {
         label: "Deposit",
         data: weeklyData.deposit,
-        backgroundColor: "#10b981",
-        borderColor: "#10b981",
-        borderWidth: 1,
+        backgroundColor: "rgba(16, 185, 129, 0.8",
       },
       {
         label: "Withdrawal",
         data: weeklyData.withdraw,
-        backgroundColor: "#8b5cf6",
-        borderColor: "#8b5cf6",
-        borderWidth: 1,
+        backgroundColor: "rgba(168, 85, 247, 1)",
       },
     ],
   };
@@ -163,7 +157,7 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
   };
 
   return (
-    <div className="rounded-xl p-2 shadow-lg border border-gray-700 max-w-[450px]">
+    <div className="rounded-xl p-2 shadow-lg border border-white/10 bg-[#282e3c38] w-full">
       <div className="h-80">
         <Bar data={chartData} options={chartOptions} />
       </div>
