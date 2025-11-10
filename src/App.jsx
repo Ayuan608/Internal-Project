@@ -55,7 +55,8 @@ function App() {
       <Route element={<RequireAuth allowedRoles={["Super-Admin"]} />}>
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="department" element={<Department />} />
+          {/* <Route path="department" element={<Department />} /> */}
+          <Route path="department" element={<ModernDashboard />} />
           <Route path="nonQuta" element={<NonQuota />} />
           <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="add" element={<Admin />} />

@@ -921,7 +921,6 @@ export const useAttendanceDashboard = () => {
 
 
 
-
 // FIXED: Updated useAttendanceAnnouncement hook
 export const useAttendanceAnnouncement = () => {
   const [showAnnouncement, setShowAnnouncement] = useState(false);

@@ -60,8 +60,8 @@ export const SparklineChart = ({ data, stroke, height = 48 }) => {
     );
 };
 
-// Performance Trend Chart Component
-export const PerformanceTrendChart = ({ data, height = 300 }) => {
+
+export const PerformanceTrendChart = ({ data, height = 400, stacked = false }) => {
     return (
         <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data}>
@@ -83,14 +83,43 @@ export const PerformanceTrendChart = ({ data, height = 300 }) => {
                 <XAxis dataKey="day" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
                 <YAxis stroke="#9CA3AF" />
                 <Tooltip content={<TrendTooltip />} />
-                <Area type="monotone" dataKey="CSR" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCSR)" strokeWidth={2} />
-                <Area type="monotone" dataKey="Deposit" stroke="#10B981" fillOpacity={1} fill="url(#colorDeposit)" strokeWidth={2} />
-                <Area type="monotone" dataKey="Withdrawal" stroke="#A855F7" fillOpacity={1} fill="url(#colorWithdrawal)" strokeWidth={2} />
+
+
+                {/* Stacked areas */}
+                <Area
+                    type="monotone"
+                    dataKey="CSR"
+                    stackId="1"
+                    stroke="#3B82F6"
+                    fillOpacity={1}
+                    fill="url(#colorCSR)"
+                    strokeWidth={2}
+                    name="CSR"
+                />
+                <Area
+                    type="monotone"
+                    dataKey="Deposit"
+                    stackId="1"
+                    stroke="#10B981"
+                    fillOpacity={1}
+                    fill="url(#colorDeposit)"
+                    strokeWidth={2}
+                    name="Deposit"
+                />
+                <Area
+                    type="monotone"
+                    dataKey="Withdrawal"
+                    stackId="1"
+                    stroke="#A855F7"
+                    fillOpacity={1}
+                    fill="url(#colorWithdrawal)"
+                    strokeWidth={2}
+                    name="Withdrawal"
+                />
             </AreaChart>
         </ResponsiveContainer>
     );
 };
-
 // Bar Chart Component (if needed later)
 export const BarChartComponent = ({ data, dataKey, fill, height = 300 }) => {
     return (

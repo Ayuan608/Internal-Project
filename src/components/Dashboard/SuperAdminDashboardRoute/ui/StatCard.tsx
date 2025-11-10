@@ -72,9 +72,9 @@ export default function StatCard({
 
   // 3 color options for borders
   const BorderColors = [
-    "rgba(59,130,246,0.5)",
-    "rgba(249, 115, 22, 0.8)",
-    "rgba(168,85,247,0.5)",
+    "rgba(59, 130, 246, 0.8) ",
+    "rgba(16, 185, 129, 0.8)",
+    "rgba(168, 85, 247, 1)",
   ];
 
   const borderColor = BorderColors[index % BorderColors.length];
@@ -90,7 +90,10 @@ export default function StatCard({
       : `${value}`;
 
   return (
-    <Card variant="outlined" sx={{ height: "100%", flexGrow: 1 }}>
+    <Card
+      variant="outlined"
+      sx={{ height: "100%", flexGrow: 1, bgcolor: "#282e3c38", color: "white" }}
+    >
       <CardContent
         sx={{
           borderLeft: `6px solid ${borderColor}`,
@@ -114,9 +117,9 @@ export default function StatCard({
                 {difference}
               </Typography>
 
-              <Chip size="small" color={color} label={formattedLabel} />
+              <Chip size="large" color={color} label={formattedLabel} />
             </Stack>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography fontSize={16} className="text-white/80">
               {interval}
             </Typography>
           </Stack>

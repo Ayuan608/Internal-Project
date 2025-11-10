@@ -66,7 +66,7 @@ const Layout = () => {
 
     return (
         <>
-            <div className="relative w-screen h-screen overflow-hidden text-white bg-black">
+            <div className="relative w-screen h-screen overflow-hidden text-white bg-[#00010B]">
                 <div
                     className="fixed top-0 left-0 h-full transition-all duration-300 z-10 flex flex-col bg-[#00010B]"
                     style={{ width: `${sidebarWidth}px` }}
@@ -90,7 +90,7 @@ const Layout = () => {
                         width: `calc(100% - ${sidebarWidth}px)`,
                     }}
                 >
-                    <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-black">
+                    <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-[#00010B]">
 
 
 
