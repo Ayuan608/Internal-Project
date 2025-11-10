@@ -270,18 +270,19 @@ const Department = () => {
       {/* Title */}
       <div className="flex justify-between items-center mt-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
             Department Management
           </h1>
-          <p className="text-gray-500">
+          <p className="text-gray-400">
             Monitor and manage department quotas and performance
           </p>
         </div>
+      
         <ExampleIosSwitch />
       </div>
 
       {/* Enhanced Department Filter */}
-      <div className="mt-6 flex justify-end">
+      <div className="mt-4 flex justify-end">
         <div className="relative inline-block w-64">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}

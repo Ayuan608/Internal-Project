@@ -8,6 +8,7 @@ import BindGoogleModal from "./BIndGoogle";
 import RecentAnnoucement from "../components/popup/RecentAnnoucement";
 import { logout } from "../redux/authSlice";
 import ProfileModal from "../components/popup/ProfileModal";
+import LanguageChange from "../components/popup/LanguageChange";
 
 const Layout = () => {
     const dispatch = useDispatch();
@@ -98,6 +99,7 @@ const Layout = () => {
                             <span className="whitespace-nowrap">{dateTime}</span>
                             <NotificationPopup />
                             <RecentAnnoucement />
+                            <LanguageChange/>
                             <div className="flex items-center gap-3" ref={menuRef}>
                                 <button
                                     onClick={() => setIsOpen((o) => !o)}

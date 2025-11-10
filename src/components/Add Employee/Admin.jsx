@@ -256,7 +256,6 @@ function Admin() {
         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-              <Users className="w-8 h-8 text-sky-400" />
               User Management
             </h1>
             <p className="text-gray-400">

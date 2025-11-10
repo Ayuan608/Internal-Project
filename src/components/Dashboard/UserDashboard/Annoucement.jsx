@@ -215,11 +215,14 @@ export default function Announcement() {
     <div className="min-h-screen px-2 mt-4">
       <div className="w-full mx-auto">
         <div className="flex justify-between items-center mb-6 pb-4">
+
           <div>
-            <h1 className="font-semibold text-white text-3xl">Announcements</h1>
-            <div className="text-gray-400">
+            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+              Announcements
+            </h1>
+            <p className="text-gray-400">
               Create and manage company-wide announcements
-            </div>
+            </p>
           </div>
 
           {(role === 'Admin' || role === 'Super-Admin') && (

@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllActivities, terminateSession } from "../../../redux/activitylogSlice";
 
 
-const ActivityLogs = () => {
+const   ActivityLogs = () => {
   const dispatch = useDispatch();
   const { activities } = useSelector((state) => state.activity);
   const [filter, setFilter] = useState("all");
