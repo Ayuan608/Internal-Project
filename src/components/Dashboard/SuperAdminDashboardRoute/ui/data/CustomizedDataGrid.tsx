@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Activity } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Doughnut } from "react-chartjs-2";
 import {
@@ -12,14 +12,19 @@ import {
 import { getDashboardStats } from "../../../../../redux/QuotaSlice";
 import { fetchCombinedDepartmentsData } from "../../../../../redux/combinedQuotaSlice";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
+
+import CollapsibleDepartment from "../../../../ModernChart/CollapsibleDepartment";
 import {
-  TrendingUp,
-  Users,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  DollarSign,
   MessageCircle,
   Target,
-  RefreshCw,
+  TrendingDown,
+  TrendingUp,
+  XCircle,
 } from "lucide-react";
-
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 interface CustomizedDataGridProps {
@@ -55,8 +60,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state: any) => state.combinedQuota
   );
-
-  console.log(data, "sheet data");
 
   const [selectedMonth, setSelectedMonth] = useState<string>("September");
 
@@ -530,6 +533,200 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     }
   );
 
+  const toSeconds = (t: any) => {
+    const [h, m, s] = t.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+  };
+
+  const fromSecondsHM = (sec: any) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+
+  // Avg Online Hours
+  const onlineSessionList = [
+    "10:40:41",
+    "10:47:00",
+    "10:35:25",
+    "10:45:59",
+    "10:31:00",
+    "10:49:19",
+    "10:33:37",
+    "10:41:46",
+    "10:51:00",
+    "10:37:57",
+    "00:00:00",
+    "00:00:00",
+    "11:55:45",
+  ];
+  const avgOnlineSeconds = Math.floor(
+    onlineSessionList.reduce((a, t) => a + toSeconds(t), 0) /
+      onlineSessionList.length
+  );
+  const avgOnlineHM = fromSecondsHM(avgOnlineSeconds);
+
+  // Negative Rate Avg
+  const negativeRates = [
+    71.43, 50.0, 0.0, 55.4, 64.44, 0.0, 100.0, 59.15, 55.56, 0.0, 46.67, 0.0,
+    37.5, 52.63,
+  ];
+  const avgNegativeRate = (
+    negativeRates.reduce((a, b) => a + b, 0) / negativeRates.length
+  ).toFixed(2);
+  const [expandedDept, setExpandedDept] = useState({
+    csr: true,
+    deposit: true,
+    withdrawal: true,
+  });
+  // Staff per shift data
+  const staffPerShift = {
+    csr: { morning: 24, night: 12 },
+    deposit: { morning: 10, night: 5 },
+    withdrawal: { morning: 12, night: 6 },
+  };
+  const csrMetrics = [
+    {
+      title: "Completed",
+      value: "850",
+      change: "+12.5%",
+      icon: CheckCircle,
+      color: "from-blue-500 to-cyan-500",
+    },
+    {
+      title: "Effective",
+      value: "720",
+      change: "+8.3%",
+      icon: Target,
+      color: "from-purple-500 to-pink-500",
+    },
+    {
+      title: "Messages",
+      value: "3.2K",
+      change: "+15.7%",
+      icon: MessageCircle,
+      color: "from-green-500 to-emerald-500",
+    },
+    {
+      title: "Missed",
+      value: "45",
+      change: "-5.2%",
+      icon: XCircle,
+      color: "from-red-500 to-orange-500",
+    },
+    {
+      title: "Avg Online",
+      value: avgOnlineHM,
+      change: "+3.8%",
+      icon: Clock,
+      color: "from-yellow-500 to-orange-500",
+    },
+    {
+      title: "Positive",
+      value: "94.5%",
+      change: "+2.4%",
+      icon: TrendingUp,
+      color: "from-teal-500 to-cyan-500",
+    },
+    {
+      title: "Negative Rate Avg",
+      value: `${avgNegativeRate}%`,
+      change: "-4.5%",
+      icon: AlertTriangle,
+      color: "from-red-600 to-orange-500",
+    },
+  ];
+
+  const depositMetrics = [
+    {
+      title: "Live Check",
+      value: "156",
+      change: "+9.2%",
+      icon: Activity,
+      color: "from-blue-500 to-indigo-500",
+    },
+    {
+      title: "1st Check",
+      value: "89",
+      change: "+6.7%",
+      icon: CheckCircle,
+      color: "from-green-500 to-teal-500",
+    },
+    {
+      title: "2nd/3rd",
+      value: "34",
+      change: "+4.1%",
+      icon: Target,
+      color: "from-purple-500 to-pink-500",
+    },
+    {
+      title: "Paycheck",
+      value: "234",
+      change: "+11.8%",
+      icon: DollarSign,
+      color: "from-yellow-500 to-orange-500",
+    },
+    {
+      title: "Records",
+      value: "198",
+      change: "+7.5%",
+      icon: Activity,
+      color: "from-cyan-500 to-blue-500",
+    },
+    {
+      title: "Offline",
+      value: "12",
+      change: "-3.2%",
+      icon: XCircle,
+      color: "from-red-500 to-pink-500",
+    },
+  ];
+
+  const withdrawalMetrics = [
+    {
+      title: "Passed",
+      value: "2.34K",
+      change: "+18.5%",
+      icon: CheckCircle,
+      color: "from-green-500 to-emerald-500",
+    },
+    {
+      title: "Amount",
+      value: "$15.4M",
+      change: "+22.3%",
+      icon: DollarSign,
+      color: "from-purple-500 to-pink-500",
+    },
+    {
+      title: "Rejected",
+      value: "87",
+      change: "-4.8%",
+      icon: XCircle,
+      color: "from-red-500 to-orange-500",
+    },
+    {
+      title: "Rej. Amount",
+      value: "$234K",
+      change: "-6.2%",
+      icon: TrendingDown,
+      color: "from-orange-500 to-red-500",
+    },
+    {
+      title: "Processing",
+      value: "156",
+      change: "+5.3%",
+      icon: Clock,
+      color: "from-blue-500 to-cyan-500",
+    },
+    {
+      title: "Proc. Amt",
+      value: "$987K",
+      change: "+8.7%",
+      icon: Activity,
+      color: "from-indigo-500 to-purple-500",
+    },
+  ];
+
   const teamLeaderData = React.useMemo(
     () => [
       {
@@ -596,122 +793,153 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
   return (
     <div className="text-white mt-6 bg-[#00010B]">
-      <div className="px-2">
-        {/* Charts Section */}
-        <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-xl font-bold">Department Performance Charts</h2>
-          <div className="flex items-center gap-4">
-            <label htmlFor="monthFilter" className="text-sm text-gray-300">
-              Filter by Month:
-            </label>
-            <select
-              id="monthFilter"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-[#282e3c38] border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none"
-              disabled={loading}
-            >
-              {availableMonths.map((month) => (
-                <option key={month} value={month}>
-                  {month.charAt(0).toUpperCase() + month.slice(1).toLowerCase()}
-                </option>
-              ))}
-            </select>
+      <div className="mt-5">
+        {/* Collapsible Department Metrics */}
+        <CollapsibleDepartment
+          title="CSR Department"
+          data={data}
+          subtitle="Customer Service & Support"
+          metrics={csrMetrics}
+          deptKey="csr"
+          expandedDept={expandedDept}
+          setExpandedDept={setExpandedDept}
+          staffPerShift={staffPerShift}
+        />
+        <CollapsibleDepartment
+          title="Deposit Department"
+          data={data}
+          subtitle="Verification & Processing"
+          metrics={depositMetrics}
+          deptKey="deposit"
+          expandedDept={expandedDept}
+          setExpandedDept={setExpandedDept}
+          staffPerShift={staffPerShift}
+        />
+        <CollapsibleDepartment
+          title="Withdrawal Department"
+          data={data}
+          subtitle="Transaction Processing"
+          metrics={withdrawalMetrics}
+          deptKey="withdrawal"
+          expandedDept={expandedDept}
+          setExpandedDept={setExpandedDept}
+          staffPerShift={staffPerShift}
+        />
+      </div>
+      {/* Charts Section */}
+      <div className="mb-6 flex justify-between items-center">
+        <h2 className="text-xl font-bold">Department Performance Charts</h2>
+        <div className="flex items-center gap-4">
+          <label htmlFor="monthFilter" className="text-sm text-gray-300">
+            Filter by Month:
+          </label>
+          <select
+            id="monthFilter"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="bg-[#282e3c38] border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none"
+            disabled={loading}
+          >
+            {availableMonths.map((month) => (
+              <option key={month} value={month}>
+                {month.charAt(0).toUpperCase() + month.slice(1).toLowerCase()}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {/* Charts Grid */}
+      <div className="flex  gap-4 h-full">
+        <div className="p-4 flex-1 bg-[#282e3c38] rounded-2xl border border-white/10">
+          <div className="h-72 w-72 mx-auto relative">
+            <Doughnut
+              data={createChartData(
+                csrResult.abovePercent,
+                csrResult.belowPercent,
+                "rgba(59, 130, 246, 0.8)"
+              )}
+              options={{
+                ...chartOptions,
+                plugins: {
+                  ...chartOptions.plugins,
+                  title: {
+                    ...chartOptions.plugins.title,
+                    text: "CSR Department Quota",
+                  },
+                },
+              }}
+              plugins={[centerTextPlugin]}
+            />
+            <div className="text-center mt-3 text-sm text-gray-400">
+              {csrResult.abovePercent}% Met • {csrResult.belowPercent}% Not Met
+            </div>
+            <div className="text-center mt-2 text-xs text-blue-300">
+              Completed: {formatNumber(csrCurrentMonth)}
+            </div>
           </div>
         </div>
 
-        {/* Charts Grid */}
-        <div className="flex  gap-4 h-full ">
-          <div className="p-4 bg-[#282e3c38] rounded-2xl border border-white/10">
-            <div className="h-72 w-72 mx-auto relative">
-              <Doughnut
-                data={createChartData(
-                  csrResult.abovePercent,
-                  csrResult.belowPercent,
-                  "rgba(59, 130, 246, 0.8)"
-                )}
-                options={{
-                  ...chartOptions,
-                  plugins: {
-                    ...chartOptions.plugins,
-                    title: {
-                      ...chartOptions.plugins.title,
-                      text: "CSR Department Quota",
-                    },
+        <div className="p-4 flex-1 bg-[#282e3c38] rounded-2xl border border-white/10">
+          <div className="h-72 w-72 mx-auto relative">
+            <Doughnut
+              data={createChartData(
+                depositResult.abovePercent,
+                depositResult.belowPercent,
+                "rgba(16, 185, 129, 0.8"
+              )}
+              options={{
+                ...chartOptions,
+                plugins: {
+                  ...chartOptions.plugins,
+                  title: {
+                    ...chartOptions.plugins.title,
+                    text: "Deposit Department Quota",
                   },
-                }}
-                plugins={[centerTextPlugin]}
-              />
-              <div className="text-center mt-3 text-sm text-gray-400">
-                {csrResult.abovePercent}% Met • {csrResult.belowPercent}% Not
-                Met
-              </div>
-              <div className="text-center mt-2 text-xs text-blue-300">
-                Completed: {formatNumber(csrCurrentMonth)}
-              </div>
+                },
+              }}
+              plugins={[centerTextPlugin]}
+            />
+            <div className="text-center mt-3 text-sm text-gray-400">
+              {depositResult.abovePercent}% Met • {depositResult.belowPercent}%
+              Not Met
+            </div>
+            <div className="text-center mt-2 text-xs text-green-300">
+              Completed: {formatNumber(depositCurrentMonth)}
             </div>
           </div>
+        </div>
 
-          <div className="p-4 bg-[#282e3c38] rounded-2xl border border-white/10">
-            <div className="h-72 w-72 mx-auto relative">
-              <Doughnut
-                data={createChartData(
-                  depositResult.abovePercent,
-                  depositResult.belowPercent,
-                  "rgba(16, 185, 129, 0.8"
-                )}
-                options={{
-                  ...chartOptions,
-                  plugins: {
-                    ...chartOptions.plugins,
-                    title: {
-                      ...chartOptions.plugins.title,
-                      text: "Deposit Department Quota",
-                    },
+        <div className="p-4 flex-1 bg-[#282e3c38] rounded-2xl border border-white/10">
+          <div className="h-72 w-72 mx-auto relative">
+            <Doughnut
+              data={createChartData(
+                withdrawResult.abovePercent,
+                withdrawResult.belowPercent,
+                "rgba(168, 85, 247, 1)"
+              )}
+              options={{
+                ...chartOptions,
+                plugins: {
+                  ...chartOptions.plugins,
+                  title: {
+                    ...chartOptions.plugins.title,
+                    text: "Withdraw Department Quota",
                   },
-                }}
-                plugins={[centerTextPlugin]}
-              />
-              <div className="text-center mt-3 text-sm text-gray-400">
-                {depositResult.abovePercent}% Met • {depositResult.belowPercent}
-                % Not Met
-              </div>
-              <div className="text-center mt-2 text-xs text-green-300">
-                Completed: {formatNumber(depositCurrentMonth)}
-              </div>
+                },
+              }}
+              plugins={[centerTextPlugin]}
+            />
+            <div className="text-center mt-3 text-sm text-gray-400">
+              {withdrawResult.abovePercent}% Met • {withdrawResult.belowPercent}
+              % Not Met
+            </div>
+            <div className="text-center mt-2 text-xs text-purple-300">
+              Completed: {formatNumber(withdrawCurrentMonth)}
             </div>
           </div>
+        </div>
 
-          <div className="p-4 bg-[#282e3c38] rounded-2xl border border-white/10">
-            <div className="h-72 w-72 mx-auto relative">
-              <Doughnut
-                data={createChartData(
-                  withdrawResult.abovePercent,
-                  withdrawResult.belowPercent,
-                  "rgba(168, 85, 247, 1)"
-                )}
-                options={{
-                  ...chartOptions,
-                  plugins: {
-                    ...chartOptions.plugins,
-                    title: {
-                      ...chartOptions.plugins.title,
-                      text: "Withdraw Department Quota",
-                    },
-                  },
-                }}
-                plugins={[centerTextPlugin]}
-              />
-              <div className="text-center mt-3 text-sm text-gray-400">
-                {withdrawResult.abovePercent}% Met •{" "}
-                {withdrawResult.belowPercent}% Not Met
-              </div>
-              <div className="text-center mt-2 text-xs text-purple-300">
-                Completed: {formatNumber(withdrawCurrentMonth)}
-              </div>
-            </div>
-          </div>
-
+        <div className="flex-2">
           <WeeklyPerformanceChart
             csrData={csrResult}
             depositData={depositResult}
@@ -719,16 +947,15 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
             selectedMonth={selectedMonth}
           />
         </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          Last updated:{" "}
-          {lastUpdated
-            ? new Date(lastUpdated).toLocaleTimeString()
-            : new Date().toLocaleTimeString()}{" "}
-          • Showing data for: {selectedMonth}
-          {loading && " • Updating..."}
-        </div>
+      </div>
+      {/* Footer */}
+      <div className="text-center mt-8 text-gray-500 text-sm">
+        Last updated:{" "}
+        {lastUpdated
+          ? new Date(lastUpdated).toLocaleTimeString()
+          : new Date().toLocaleTimeString()}{" "}
+        • Showing data for: {selectedMonth}
+        {loading && " • Updating..."}
       </div>
     </div>
   );

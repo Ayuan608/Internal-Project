@@ -32,16 +32,22 @@ import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-white
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
+import { useTranslation } from "react-i18next";
 
 function App() {
   useEffect(() => {
     requestForToken();
-
     onMessageListener().then((payload) => {
       console.log("🎯 Notification Received in Foreground:", payload);
       alert(`${payload.notification.title}\n${payload.notification.body}`);
     });
   }, []);
+  const { i18n: i18nextInstance } = useTranslation();
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("language") || "en";
+    i18nextInstance.changeLanguage(savedLang);
+  }, [i18nextInstance]);
 
   return (
     <Routes>

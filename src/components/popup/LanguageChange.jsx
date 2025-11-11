@@ -8,33 +8,30 @@ function LanguageChange() {
   const menuRef = useRef(null);
 
   const languages = [
-    { code: "zh", name: "中文" },
     { code: "en", name: "English" },
+    { code: "zh", name: "中文" },
     { code: "vi", name: "Tiếng Việt" },
-    { code: "km", name: "ភាសាខ្មែរ" }
+    { code: "km", name: "ភាសាខ្មែរ" },
   ];
 
-  // Get current language name
-  const getCurrentLanguageName = () => {
-    const current = languages.find(lang => lang.code === i18n.language);
-    return current ? current.name : "English";
-  };
-
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setOpen(false);
       }
     };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (langCode, langName) => {
-    i18n.changeLanguage(langCode);
-    localStorage.setItem('language', langCode);
+  const handleSelect = (lang) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem("language", lang);
     setOpen(false);
   };
+
+  const current = languages.find((l) => i18n.language.startsWith(l.code)) || languages[0];
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
@@ -42,21 +39,21 @@ function LanguageChange() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1 bg-[#282e3c61] text-white px-3 py-2 rounded-full hover:bg-[#282e3c93] transition"
       >
-        <span>{getCurrentLanguageName()}</span>
-        <ChevronDown 
-          size={16} 
-          className={`${open ? "rotate-180" : "rotate-0"} transition-transform`} 
+        <span>{current.name}</span>
+        <ChevronDown
+          size={16}
+          className={`${open ? "rotate-180" : "rotate-0"} transition-transform`}
         />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-40 bg-slate-900 text-white rounded-lg shadow-lg border border-slate-700 z-50 animate-fadeIn">
+        <div className="absolute right-0 mt-2 w-40 bg-slate-900 text-white rounded-lg shadow-lg border border-slate-700 z-50">
           {languages.map((lang) => (
             <div
               key={lang.code}
-              onClick={() => handleSelect(lang.code, lang.name)}
-              className={`px-4 py-2 cursor-pointer hover:bg-slate-700 first:rounded-t-lg last:rounded-b-lg ${
-                i18n.language === lang.code ? "bg-slate-700/60" : ""
+              onClick={() => handleSelect(lang.code)}
+              className={`px-4 py-2 cursor-pointer hover:bg-slate-700 ${
+                i18n.language.startsWith(lang.code) ? "bg-slate-700/60" : ""
               }`}
             >
               {lang.name}

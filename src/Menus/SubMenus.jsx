@@ -99,7 +99,7 @@ const Menus = ({ toggle, onTitleChange }) => {
   return (
     <>
       {toggle ? (
-        <div className="flex flex-col justify-between h-screen px-2.5 overflow-hidden">
+        <div className="flex flex-col justify-between h-screen px-4 overflow-hidden border-r border-white/10">
           <div className="absolute inset-0 -z-10">
             <div className="absolute -top-[0%] left-[20%] w-36 h-36 rounded-full bg-[#3B82F6] opacity-60 blur-[70px]" />
             <div className="absolute top-1/2 right-[30%] w-72 h-72 rounded-full bg-[#3B82F6] opacity-40 blur-[90px] -translate-y-1/2" />
@@ -112,11 +112,13 @@ const Menus = ({ toggle, onTitleChange }) => {
                 size={20}
               />
               <h1 className="text-white text-[14px] font-semibold">
-                {role} Dashboard
+                {t(`${role} Dashboard`)}
+
               </h1>
+
             </Link>
 
-            <div className="text-white text-base mt-1 space-y-[10px]">
+            <div className="text-white text-base mt-1 space-y-4">
               {navItems.map(({ to, label, icon }) => {
                 const isActive = location.pathname === to;
                 return (
@@ -137,8 +139,8 @@ const Menus = ({ toggle, onTitleChange }) => {
               })}
 
               {role === "Super-Admin" && (
-                <div className="mt-4 space-y-2">
-                  {superAdminButtons.map(({ to, label, icon: Icon }) => {
+                <div className="mt-4 space-y-4">
+                  {superAdminButtons(t)?.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
@@ -160,14 +162,14 @@ const Menus = ({ toggle, onTitleChange }) => {
               )}
 
               {role === "Admin" && (
-                <div className="mt-4 space-y-2">
-                  {AdminRoutes.map(({ to, label, icon: Icon }) => {
+                <div className="mt-4 space-y-4">
+                  {AdminRoutes(t).map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(label)}
+                        onClick={() => onTitleChange(t(label))}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -175,7 +177,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{label}</span>
+                        <span className="text-[16px] ml-2">{t(label)}</span>
                       </Link>
                     );
                   })}
@@ -183,14 +185,14 @@ const Menus = ({ toggle, onTitleChange }) => {
               )}
 
               {role === "Checker" && (
-                <div className="mt-4 space-y-2">
-                  {CheckerButtons.map(({ to, label, icon: Icon }) => {
+                <div className="mt-4 space-y-4">
+                  {CheckerButtons(t).map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(label)}
+                        onClick={() => onTitleChange(t(label))}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -198,7 +200,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{label}</span>
+                        <span className="text-[16px] ml-2">{t(label)}</span>
                       </Link>
                     );
                   })}
@@ -206,14 +208,14 @@ const Menus = ({ toggle, onTitleChange }) => {
               )}
 
               {role === "Team-Leader" && (
-                <div className="mt-4 space-y-2">
-                  {TeamButtons.map(({ to, label, icon: Icon }) => {
+                <div className="mt-4 space-y-4">
+                  {TeamButtons(t).map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(label)}
+                        onClick={() => onTitleChange(t(label))}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -221,7 +223,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{label}</span>
+                        <span className="text-[16px] ml-2">{t(label)}</span>
                       </Link>
                     );
                   })}
@@ -230,12 +232,12 @@ const Menus = ({ toggle, onTitleChange }) => {
             </div>
             {role === "Super-Admin" && (
 
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-4">
                 <button
                   onClick={toggleContent}
                   className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm transition-all duration-200 hover:bg-[#3b83f620]"
                 >
-                  <Plus size={18} /> Announcement
+                  <Plus size={18} /> {t("Announcements")}
                 </button>
 
                 <div ref={contentRef} className="hidden-content">
@@ -244,9 +246,9 @@ const Menus = ({ toggle, onTitleChange }) => {
                       className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm hover:bg-[#3b83f620]"
                       onClick={() => setShowDraftPopup(true)}
                     >
-                      <ClipboardPlus size={18} /> Draft Template
+                      <ClipboardPlus size={18} /> {t("draftTemplate")}
                     </button>
-
+                    ``
                     <DraftTemplate
                       showDraftPopup={showDraftPopup}
                       setShowDraftPopup={setShowDraftPopup}
@@ -274,7 +276,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                 </p>
                 <UserMenu openUser={openUser} userData={userData} />
                 <span className="text-xs capitalize text-white bg-[#198477] rounded-md px-2 py-[1px] w-fit">
-                  {role}
+                  {t(`${role}`)}
                 </span>
               </div>
             </div>
@@ -298,7 +300,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
                 <Settings className="w-5 h-5" />
-                <span className="text-sm">Settings</span>
+                <span className="text-sm">{t("Settings")}</span>
               </Link>
             )}
           </div>

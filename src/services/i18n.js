@@ -1,35 +1,44 @@
-import i18n from 'i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-import { initReactI18next } from 'react-i18next';
+// src/i18n.js
+import i18n from "i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { initReactI18next } from "react-i18next";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    debug: false, // Set to false to remove console warnings
-    fallbackLng: 'en',
-    lng: localStorage.getItem('language') || 'en',
-    
-    // This is important - add interpolation config
-    interpolation: {
-      escapeValue: false
+    debug: false,
+    fallbackLng: "en",
+
+    // ✅ Detect language from localStorage or browser automatically
+    detection: {
+      order: ["localStorage", "navigator", "htmlTag"],
+      caches: ["localStorage"],
     },
-    
+
+    interpolation: {
+      escapeValue: false,
+    },
+
+    react: {
+      useSuspense: false,
+      bindI18n: "languageChanged loaded", // re-render on change
+      bindI18nStore: "added removed",
+    },
+
     resources: {
       en: {
         translation: {
-          // Navigation & Common
           greeting: "Hello, Welcome",
           dashboard: "Dashboard",
           home: "Home",
           users: "Users",
-          settings: "Settings",
+          Settings: "Settings",
           logout: "Logout",
           profile: "Profile",
-          
-          // Super Admin Menu Items (exactly matching Helper.js labels)
+
           "Dashboard": "Dashboard",
-          "Department": "Department", 
+          "Department": "Department",
           "Quota Settings": "Quota Settings",
           "Directory": "Directory",
           "Announcements": "Announcements",
@@ -40,14 +49,17 @@ i18n
           "Emp of Month": "Employee of the Month",
           "Activity Logs": "Activity Logs",
           "IP-Whitelist": "IP Whitelist",
-          
-          // User Menu
+          "User Dashboard": "User Dashboard",
+          "Admin Dashboard": "Admin Dashboard",
+          "Super-Admin Dashboard": "Super Admin Dashboard",
+          "Team-Leader Dashboard": "Team Leader Dashboard",
+          "Checker Dashboard": "Checker Dashboard",
+
           attendance: "Attendance",
           dailyTimeRecord: "Daily Time Record",
           announcement: "Announcement",
           report: "Report",
-          
-          // Actions
+
           search: "Search",
           notifications: "Notifications",
           save: "Save",
@@ -57,21 +69,19 @@ i18n
           view: "View All",
           bindGoogle: "Bind Google",
           draftTemplate: "Draft Template",
-        }
+        },
       },
-      
+
       zh: {
         translation: {
-          // Navigation & Common
           greeting: "你好，欢迎",
           dashboard: "仪表板",
           home: "主页",
           users: "用户",
-          settings: "设置",
+          Settings: "设置",
           logout: "登出",
           profile: "个人资料",
-          
-          // Super Admin Menu Items (exactly matching Helper.js labels)
+
           "Dashboard": "仪表板",
           "Department": "部门",
           "Quota Settings": "配额设置",
@@ -84,14 +94,18 @@ i18n
           "Emp of Month": "本月员工",
           "Activity Logs": "活动日志",
           "IP-Whitelist": "IP白名单",
-          
-          // User Menu
+
+          "User Dashboard": "用户仪表板",
+          "Admin Dashboard": "管理员仪表板",
+          "Super-Admin Dashboard": "超级管理员仪表板",
+          "Team-Leader Dashboard": "团队领导仪表板",
+          "Checker Dashboard": "检查员仪表板",
+
           attendance: "考勤",
           dailyTimeRecord: "每日时间记录",
           announcement: "公告",
           report: "报告",
-          
-          // Actions
+
           search: "搜索",
           notifications: "通知",
           save: "保存",
@@ -101,21 +115,19 @@ i18n
           view: "查看全部",
           bindGoogle: "绑定谷歌",
           draftTemplate: "草稿模板",
-        }
+        },
       },
-      
+
       vi: {
         translation: {
-          // Navigation & Common
           greeting: "Xin chào, Chào mừng",
           dashboard: "Bảng điều khiển",
           home: "Trang chủ",
           users: "Người dùng",
-          settings: "Cài đặt",
+          Settings: "Cài đặt",
           logout: "Đăng xuất",
           profile: "Hồ sơ",
-          
-          // Super Admin Menu Items (exactly matching Helper.js labels)
+
           "Dashboard": "Bảng điều khiển",
           "Department": "Phòng ban",
           "Quota Settings": "Cài đặt hạn ngạch",
@@ -128,14 +140,17 @@ i18n
           "Emp of Month": "Nhân viên của tháng",
           "Activity Logs": "Nhật ký hoạt động",
           "IP-Whitelist": "Danh sách trắng IP",
-          
-          // User Menu
+          "User Dashboard": "Bảng điều khiển người dùng",
+          "Admin Dashboard": "Bảng điều khiển quản trị",
+          "Super-Admin Dashboard": "Bảng điều khiển quản trị viên",
+          "Team-Leader Dashboard": "Bảng điều khiển trưởng nhóm",
+          "Checker Dashboard": "Bảng điều khiển kiểm tra",
+
           attendance: "Điểm danh",
           dailyTimeRecord: "Bản ghi thời gian hàng ngày",
           announcement: "Thông báo",
           report: "Báo cáo",
-          
-          // Actions
+
           search: "Tìm kiếm",
           notifications: "Thông báo",
           save: "Lưu",
@@ -145,21 +160,19 @@ i18n
           view: "Xem tất cả",
           bindGoogle: "Liên kết Google",
           draftTemplate: "Mẫu nháp",
-        }
+        },
       },
-      
+
       km: {
         translation: {
-          // Navigation & Common
           greeting: "សួស្តី, សូមស្វាគមន៍",
           dashboard: "ផ្ទាំងគ្រប់គ្រង",
           home: "ទំព័រដើម",
           users: "អ្នកប្រើប្រាស់",
-          settings: "ការកំណត់",
+          Settings: "ការកំណត់",
           logout: "ចាកចេញ",
           profile: "ប្រវត្តិរូប",
-          
-          // Super Admin Menu Items (exactly matching Helper.js labels)
+
           "Dashboard": "ផ្ទាំងគ្រប់គ្រង",
           "Department": "នាយកដ្ឋាន",
           "Quota Settings": "ការកំណត់កូតា",
@@ -172,14 +185,18 @@ i18n
           "Emp of Month": "បុគ្គលិកនៃខែ",
           "Activity Logs": "កំណត់ហេតុសកម្មភាព",
           "IP-Whitelist": "បញ្ជីសIP",
-          
-          // User Menu
+
+          "User Dashboard": "ផ្ទាំងគ្រប់គ្រងអ្នកប្រើប្រាស់",
+          "Admin Dashboard": "ផ្ទាំងគ្រប់គ្រងអ្នកគ្រប់គ្រង",
+          "Super-Admin Dashboard": "ផ្ទាំងគ្រប់គ្រងអ្នកគ្រប់គ្រងកំពូល",
+          "Team-Leader Dashboard": "ផ្ទាំងគ្រប់គ្រងប្រធានក្រុម",
+          "Checker Dashboard": "ផ្ទាំងគ្រប់គ្រងអ្នកពិនិត្យ",
+
           attendance: "វត្តមាន",
           dailyTimeRecord: "កំណត់ត្រាពេលវេលាប្រចាំថ្ងៃ",
           announcement: "ប្រកាស",
           report: "របាយការណ៍",
-          
-          // Actions
+
           search: "ស្វែងរក",
           notifications: "ការជូនដំណឹង",
           save: "រក្សាទុក",
@@ -189,10 +206,9 @@ i18n
           view: "មើលទាំងអស់",
           bindGoogle: "ភ្ជាប់ Google",
           draftTemplate: "គំរូព្រាង",
-        }
-      }
-    }
+        },
+      },
+    },
   });
 
 export default i18n;
-

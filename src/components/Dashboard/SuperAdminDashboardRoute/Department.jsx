@@ -6,10 +6,12 @@ import ExampleIosSwitch from "./ui/Switch";
 import NonQuota from './NonQuota';
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCombinedDepartmentsData } from "../../../redux/combinedQuotaSlice";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const Department = () => {
+  const {t}=useTranslation();
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [departmentStats, setDepartmentStats] = useState({

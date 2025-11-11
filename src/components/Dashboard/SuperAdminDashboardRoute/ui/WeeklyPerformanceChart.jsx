@@ -157,7 +157,7 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
   };
 
   return (
-    <div className="rounded-xl p-2 shadow-lg border border-white/10 bg-[#282e3c38] w-full">
+    <div className="rounded-xl p-2 shadow-lg border border-white/10 bg-[#282e3c38] max-w-dvw">
       <div className="h-80">
         <Bar data={chartData} options={chartOptions} />
       </div>

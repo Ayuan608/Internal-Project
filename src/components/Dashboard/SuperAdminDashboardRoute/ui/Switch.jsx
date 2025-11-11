@@ -10,12 +10,12 @@ export default function ExampleIosSwitch() {
       <Typography
         sx={{
           fontSize: "14px",
-          fontWeight: checked ? "normal" : "bold",
-          color: checked ? "white/70" : "white",
+          fontWeight: "bold",
+          color: "white",
           transition: "all 0.2s",
         }}
       >
-        Morning Shift
+        {checked ? "Night Shift" : "Morning Shift"}
       </Typography>
 
       <Switch
@@ -44,17 +44,6 @@ export default function ExampleIosSwitch() {
           },
         })}
       />
-
-      <Typography
-        sx={{
-          fontSize: "14px",
-          fontWeight: checked ? "bold" : "normal",
-          color: checked ? "white" : "white/70",
-          transition: "all 0.2s",
-        }}
-      >
-        Night Shift
-      </Typography>
     </Box>
   );
 }
