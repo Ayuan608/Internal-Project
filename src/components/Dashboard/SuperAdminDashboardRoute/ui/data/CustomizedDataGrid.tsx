@@ -61,12 +61,14 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     (state: any) => state.combinedQuota
   );
 
+  console.log(data, "data here");
+
   const [selectedMonth, setSelectedMonth] = useState<string>("September");
 
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const loading = quotaLoading || combinedQuotaLoading || isRefreshing;
+  const loading = quotaLoading || combinedQuotaLoading;
 
   const parseNumber = useCallback((value: any): number => {
     if (typeof value === "string") return Number(value.replace(/,/g, ""));
@@ -730,7 +732,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const teamLeaderData = React.useMemo(
     () => [
       {
-        title: "CSR Department",
+        title: "CSR -Total Conversation",
         value: `${csrResult.aboveTarget}`,
         interval: `Prev Month: ${prevCSRResult.aboveTarget}`,
         trend: csrCurrentMonth > csrPreviousMonth ? "up" : "down",
@@ -741,7 +743,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         isPositive: isCSRPositive,
       },
       {
-        title: "Deposit Department",
+        title: "Deposit - Total Transaction",
         value: `${depositResult.aboveTarget}`,
         interval: `Prev Month: ${prevDepositResult.aboveTarget}`,
         trend: depositCurrentMonth > depositPreviousMonth ? "up" : "down",
@@ -752,7 +754,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         isPositive: isDepositPositive,
       },
       {
-        title: "Withdraw Department",
+        title: "Withdrawal - Total Transaction Process",
         value: `${withdrawResult.aboveTarget}`,
         interval: `Prev Month: ${prevWithdrawResult.aboveTarget}`,
         trend: withdrawCurrentMonth > withdrawPreviousMonth ? "up" : "down",
@@ -786,10 +788,39 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   );
 
   useEffect(() => {
-    if (onStatsUpdate && isInitialized && !loading) {
+    if (onStatsUpdate && isInitialized) {
       onStatsUpdate(teamLeaderData);
     }
-  }, [teamLeaderData, onStatsUpdate, isInitialized, loading]);
+  }, [teamLeaderData, onStatsUpdate, isInitialized]);
+
+
+  const totals: { [key: string]: number } = {};
+
+  data.forEach((item: any) => {
+    const key = item[0]; // "CSR", "Withdraw", "Deposit"
+
+    // Only process rows where the 4th index is "Ave. Completed Convo"
+    if (item[3] === "Ave. Completed Convo") {
+      const num1 = parseFloat(item[4]) || 0;
+      const num2 = parseFloat(item[5]) || 0;
+      const sum = num1 + num2;
+
+      // Safely add to category total
+      totals[key] = (totals[key] || 0) + sum;
+
+      // console.log(`Sum for ${key} => ${sum}\n======================`);
+    }
+  });
+
+  let withdrawSum = 0;
+
+  data.forEach((item: any) => {
+    if (item[0] === "Withdraw" && item[2] !== "" && item[2] !== "TOTAL") {
+      // Remove commas from the value before parsing
+      const value = parseFloat((item[7] || "0").replace(/,/g, "")) || 0;
+      withdrawSum += value;
+    }
+  });
 
   return (
     <div className="text-white mt-6 bg-[#00010B]">

@@ -35,7 +35,6 @@ import { onMessageListener, requestForToken } from "./services/firebase/firebase
 import ModernDashboard from "./components/ModernChart/ModernDashboard";
 
 function App() {
-  console.log("==========app entry point")
   useEffect(() => {
     requestForToken();
 

@@ -105,9 +105,6 @@ export const CollapsibleDepartment = ({
 
   const rejected = deptData.filter((r) => r[4])
 
-
-  console.log(rejected, "reject value")
-
   const avgOnline = (Math.random() * 5 + 4).toFixed(1) + "h";
   const avgNegativeRate = (Math.random() * 10 + 5).toFixed(1);
   const positive = (100 - avgNegativeRate).toFixed(1);

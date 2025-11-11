@@ -31,7 +31,7 @@ export const requestForToken = async () => {
 
 
       if (currentToken) {
-        console.log("✅ Firebase token:", currentToken);
+
         return currentToken;
       } else {
         console.warn("⚠️ No registration token available.");

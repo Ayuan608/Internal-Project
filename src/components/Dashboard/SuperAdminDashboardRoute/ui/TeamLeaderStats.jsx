@@ -15,7 +15,6 @@ export default function TeamLeaderStats({ title, data, SecondaryTitle }) {
           </Typography>
           <div className="text-white/70 mb-2">{SecondaryTitle}</div>
         </div>
-        <ExampleIosSwitch />
       </div>
 
       <Grid
