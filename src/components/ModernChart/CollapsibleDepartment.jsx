@@ -30,15 +30,44 @@ const AnimatedMetricCard = ({ title, value, change, icon: Icon, color }) => (
         <Icon size={24} className="text-white" />
       </div>
     </div>
-    <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
+    <h3 className="text-xl font-bold text-white mb-1">{value}</h3>
     <p className="text-sm text-gray-400">{title}</p>
   </GlassCard>
 );
 
-// 🧩 Updated Staff Pill (Now showing real user total count)
-const StaffPill = ({ staffPerShift, deptKey, deptData }) => {
+const StaffPill = ({ staffPerShift, deptKey, deptData, userLength }) => {
+
+  // Get the correct department key from userLength object
+  const getDepartmentKey = () => {
+    const keys = Object.keys(userLength || {});
+
+    // Map deptKey to possible keys in userLength
+    const keyMap = {
+      'csr': ['CSR'],
+      'deposit': ['Deposit'],
+      'withdrawal': ['Withdraw', 'Withdrawal']
+    };
+
+    const possibleKeys = keyMap[deptKey] || [deptKey];
+
+    // Find the matching key in userLength
+    const matchingKey = possibleKeys.find(key =>
+      keys.some(userKey => userKey.toLowerCase() === key.toLowerCase())
+    );
+
+    if (matchingKey) {
+      // Find the exact key with case sensitivity
+      return keys.find(key => key.toLowerCase() === matchingKey.toLowerCase());
+    }
+
+    return null;
+  };
+
+  const departmentKey = getDepartmentKey();
+  const userArray = departmentKey ? userLength[departmentKey] : [];
+  const totalStaff = Array.isArray(userArray) ? userArray.length : 0;
+
   const s = staffPerShift?.[deptKey] || { morning: 0, night: 0 };
-  const totalStaff = deptData.length || 0; // ✅ real total users from your data
 
   return (
     <div className="relative group">
@@ -56,6 +85,12 @@ const StaffPill = ({ staffPerShift, deptKey, deptData }) => {
           <span className="w-2 h-2 rounded-full bg-purple-400" />
           Night: <span className="font-medium">{s.night}</span>
         </div>
+        <div className="border-t border-white/20 mt-1 pt-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-400" />
+            Total Users: <span className="font-medium">{totalStaff}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -69,18 +104,20 @@ export const CollapsibleDepartment = ({
   expandedDept,
   setExpandedDept,
   data,
+  userLength,
   staffPerShift = {},
 }) => {
-  // 🔍 Filter department data
-  const filterByKeyword = (keyword) =>
-    (data || []).filter((row) =>
-      row.join(" ").toLowerCase().includes(keyword.toLowerCase())
-    );
+  // 🔍 Filter department data based on actual data structure
+  const filterByDepartment = (deptName) => {
+    return (data || []).filter(row => {
+      if (!Array.isArray(row) || row.length === 0) return false;
+      return row[0] === deptName;
+    });
+  };
 
-  const csrData = filterByKeyword("csr");
-  const depositData = filterByKeyword("deposit");
-  const withdrawData = filterByKeyword("withdraw");
-
+  const csrData = filterByDepartment("CSR");
+  const depositData = filterByDepartment("Deposit");
+  const withdrawData = filterByDepartment("Withdraw");
 
   const deptData =
     deptKey === "csr"
@@ -89,78 +126,272 @@ export const CollapsibleDepartment = ({
         ? depositData
         : withdrawData;
 
-  const total = deptData.length;
+  // 🎯 Calculate real metrics from actual data structure
+  const calculateCSRMetrics = () => {
+    if (deptKey !== "csr") return {};
 
-  const completed = deptData.filter((r) =>
-    r[2] <= 530
-  );
+    // Filter out header rows and get only agent data
+    const agentRows = csrData.filter(row =>
+      row.length > 5 && // Has enough data columns
+      typeof row[2] === 'string' &&
+      !row[2].includes('shift') &&
+      !row[2].includes('Trainees') &&
+      row[2] !== '' &&
+      !row[2].includes('Ave. Completed Convo')
+    );
 
-  let final = completed.length
+    const totalAgents = agentRows.length;
 
-  // console.log(completed, 'hiii')
+    let totalCompleted = 0;
 
-  const missed = deptData.filter((r) =>
-    r.join(" ").toLowerCase().includes("missed")
-  ).length;
+    data.forEach((item) => {
+      const key = item[0];
 
-  const rejected = deptData.filter((r) => r[4])
+      // CSR: Process rows where the 4th index is "Ave. Completed Convo"
+      if (key === "CSR" && item[3] === "Ave. Completed Convo") {
+        const morningShift = parseFloat(item[4]) || 0;
+        const nightShift = parseFloat(item[5]) || 0;
+        const sum = morningShift + nightShift;
+        totalCompleted += sum; // ✅ Now adding to number, not object property
+      }
+    });
 
-  console.log(rejected, "reject value")
+    // Calculate effective conversations (index 4)
+    const totalEffective = agentRows.reduce((sum, row) => sum + (parseInt(row[4]) || 0), 0);
 
-  const avgOnline = (Math.random() * 5 + 4).toFixed(1) + "h";
-  const avgNegativeRate = (Math.random() * 10 + 5).toFixed(1);
-  const positive = (100 - avgNegativeRate).toFixed(1);
+    // Calculate total messages (index 5)
+    const totalMessages = agentRows.reduce((sum, row) => sum + (parseInt(row[5]) || 0), 0);
 
-  // 🎯 Metrics per department
+    // Calculate missed chats (index 6)
+    const totalMissed = agentRows.reduce((sum, row) => sum + (parseInt(row[6]) || 0), 0);
+
+    // Calculate average online time
+    const onlineTimes = agentRows
+      .map(row => {
+        const timeStr = row[7]; // Online time at index 7
+        if (!timeStr || timeStr === '0:00:00') return 0;
+        const [h, m, s] = timeStr.split(':').map(Number);
+        return h + (m / 60) + (s / 3600);
+      })
+      .filter(time => time > 0);
+
+    const avgOnlineHours = onlineTimes.length > 0
+      ? (onlineTimes.reduce((a, b) => a + b, 0) / onlineTimes.length).toFixed(1) + "h"
+      : "0h";
+
+    // Calculate positive rates (index 8)
+    const positiveRates = agentRows
+      .map(row => {
+        const rateStr = row[8]; // Positive rate at index 8
+        if (!rateStr || rateStr === '0.00%') return 0;
+        return parseFloat(rateStr) || 0;
+      })
+      .filter(rate => rate > 0);
+
+    const avgPositiveRate = positiveRates.length > 0
+      ? (positiveRates.reduce((a, b) => a + b, 0) / positiveRates.length).toFixed(1) + "%"
+      : "0%";
+
+    // Calculate negative rates (index 9)
+    const negativeRates = agentRows
+      .map(row => {
+        const rateStr = row[9]; // Negative rate at index 9
+        if (!rateStr || rateStr === '0.00%') return 0;
+        return parseFloat(rateStr) || 0;
+      })
+      .filter(rate => rate > 0);
+
+    const avgNegativeRate = negativeRates.length > 0
+      ? (negativeRates.reduce((a, b) => a + b, 0) / negativeRates.length).toFixed(1) + "%"
+      : "0%";
+
+    // Count agents who met quota (530)
+    const agentsMetQuota = agentRows.filter(row => (parseInt(row[3]) || 0) >= 530).length;
+    const quotaMetPercent = totalAgents > 0 ? ((agentsMetQuota / totalAgents) * 100).toFixed(1) + "%" : "0%";
+
+    return {
+      totalAgents,
+      totalCompleted,
+      totalEffective,
+      totalMessages,
+      totalMissed,
+      avgOnlineHours,
+      avgPositiveRate,
+      avgNegativeRate,
+      agentsMetQuota,
+      quotaMetPercent
+    };
+  };
+
+  const calculateWithdrawMetrics = () => {
+    if (deptKey !== "withdrawal") return {};
+
+    // Filter out header rows and get only member data
+    const memberRows = withdrawData.filter(row =>
+      row.length > 5 &&
+      typeof row[2] === 'string' &&
+      row[2] !== 'Member' &&
+      row[2] !== 'TOTAL' &&
+      !row[2].includes('reject') &&
+      !row[2].includes('拒绝提现')
+    );
+
+    // Calculate passed transactions (index 3)
+    const totalPassed = memberRows.reduce((sum, row) => {
+      const passed = parseInt((row[3] || "0").replace(/,/g, "")) || 0;
+      return sum + passed;
+    }, 0);
+
+    // Calculate passed amount (index 4)
+    const totalPassedAmount = memberRows.reduce((sum, row) => {
+      const amount = parseInt((row[4] || "0").replace(/,/g, "")) || 0;
+      return sum + amount;
+    }, 0);
+
+    // Calculate rejected transactions (index 5)
+    const totalRejected = memberRows.reduce((sum, row) => {
+      const rejected = parseInt((row[5] || "0").replace(/,/g, "")) || 0;
+      return sum + rejected;
+    }, 0);
+
+    // Calculate rejected amount (index 6)
+    const totalRejectedAmount = memberRows.reduce((sum, row) => {
+      const amount = parseInt((row[6] || "0").replace(/,/g, "")) || 0;
+      return sum + amount;
+    }, 0);
+
+    // Calculate processing transactions (index 7)
+    const totalProcessing = memberRows.reduce((sum, row) => {
+      const processing = parseInt((row[7] || "0").replace(/,/g, "")) || 0;
+      return sum + processing;
+    }, 0);
+
+    // Calculate processing amount (index 8)
+    const totalProcessingAmount = memberRows.reduce((sum, row) => {
+      const amount = parseInt((row[8] || "0").replace(/,/g, "")) || 0;
+      return sum + amount;
+    }, 0);
+
+    const totalMembers = memberRows.length;
+
+    return {
+      totalMembers,
+      totalPassed,
+      totalPassedAmount,
+      totalRejected,
+      totalRejectedAmount,
+      totalProcessing,
+      totalProcessingAmount
+    };
+  };
+
+  const calculateDepositMetrics = () => {
+    if (deptKey !== "deposit") return {};
+
+    // For deposit data, we'll use similar structure as CSR
+    const agentRows = depositData.filter(row =>
+      row.length > 5 &&
+      typeof row[2] === 'string' &&
+      !row[2].includes('shift') &&
+      row[2] !== ''
+    );
+
+    const totalAgents = agentRows.length;
+
+    // Calculate live checks (assuming similar structure to CSR completed)
+    const totalLiveChecks = agentRows.reduce((sum, row) => sum + (parseInt(row[3]) || 0), 0);
+
+    // Calculate 1st checks (assuming index 4)
+    const totalFirstChecks = agentRows.reduce((sum, row) => sum + (parseInt(row[4]) || 0), 0);
+
+    // Calculate 2nd/3rd checks (assuming index 5)
+    const totalSecondThirdChecks = agentRows.reduce((sum, row) => sum + (parseInt(row[5]) || 0), 0);
+
+    // Calculate paycheck (assuming index 6)
+    const totalPaycheck = agentRows.reduce((sum, row) => sum + (parseInt(row[6]) || 0), 0);
+
+    // Calculate records (assuming index 7)
+    const totalRecords = agentRows.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
+
+    // Calculate offline (assuming index 8)
+    const totalOffline = agentRows.reduce((sum, row) => sum + (parseInt(row[8]) || 0), 0);
+
+    return {
+      totalAgents,
+      totalLiveChecks,
+      totalFirstChecks,
+      totalSecondThirdChecks,
+      totalPaycheck,
+      totalRecords,
+      totalOffline
+    };
+  };
+
+  // Calculate metrics based on department
+  const csrMetricsData = calculateCSRMetrics();
+  const withdrawMetricsData = calculateWithdrawMetrics();
+  const depositMetricsData = calculateDepositMetrics();
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}K`;
+    }
+    return `$${amount}`;
+  };
+
+  // 🎯 Dynamic metrics per department using REAL DATA
   let dynamicMetrics = [];
 
   if (deptKey === "csr") {
     dynamicMetrics = [
       {
         title: "Completed",
-        value: final,
-        change: "+12.5%",
+        value: csrMetricsData.totalCompleted?.toLocaleString() || "0",
+        change: csrMetricsData.quotaMetPercent || "0%",
         icon: CheckCircle,
         color: "from-blue-500 to-cyan-500",
       },
       {
         title: "Effective",
-        value: total - missed,
+        value: csrMetricsData.totalEffective?.toLocaleString() || "0",
         change: "+8.3%",
         icon: Target,
         color: "from-purple-500 to-pink-500",
       },
       {
         title: "Messages",
-        value: total * 3,
+        value: csrMetricsData.totalMessages?.toLocaleString() || "0",
         change: "+15.7%",
         icon: MessageCircle,
         color: "from-green-500 to-emerald-500",
       },
       {
         title: "Missed",
-        value: missed,
+        value: csrMetricsData.totalMissed?.toLocaleString() || "0",
         change: "-5.2%",
         icon: XCircle,
         color: "from-red-500 to-orange-500",
       },
       {
         title: "Avg Online",
-        value: avgOnline,
+        value: csrMetricsData.avgOnlineHours || "0h",
         change: "+3.8%",
         icon: Clock,
         color: "from-yellow-500 to-orange-500",
       },
       {
-        title: "Positive",
-        value: `${positive}%`,
+        title: "Positive Rate",
+        value: csrMetricsData.avgPositiveRate || "0%",
         change: "+2.4%",
         icon: TrendingUp,
         color: "from-teal-500 to-cyan-500",
       },
       {
-        title: "Negative Rate Avg",
-        value: `${avgNegativeRate}%`,
+        title: "Negative Rate",
+        value: csrMetricsData.avgNegativeRate || "0%",
         change: "-4.5%",
         icon: AlertTriangle,
         color: "from-red-600 to-orange-500",
@@ -170,42 +401,42 @@ export const CollapsibleDepartment = ({
     dynamicMetrics = [
       {
         title: "Live Check",
-        value: total,
+        value: depositMetricsData.totalLiveChecks?.toLocaleString() || "0",
         change: "+9.2%",
         icon: Activity,
         color: "from-blue-500 to-indigo-500",
       },
       {
         title: "1st Check",
-        value: Math.round(total * 0.5),
+        value: depositMetricsData.totalFirstChecks?.toLocaleString() || "0",
         change: "+6.7%",
         icon: CheckCircle,
         color: "from-green-500 to-teal-500",
       },
       {
         title: "2nd/3rd",
-        value: Math.round(total * 0.2),
+        value: depositMetricsData.totalSecondThirdChecks?.toLocaleString() || "0",
         change: "+4.1%",
         icon: Target,
         color: "from-purple-500 to-pink-500",
       },
       {
         title: "Paycheck",
-        value: Math.round(total * 1.4),
+        value: depositMetricsData.totalPaycheck?.toLocaleString() || "0",
         change: "+11.8%",
         icon: DollarSign,
         color: "from-yellow-500 to-orange-500",
       },
       {
         title: "Records",
-        value: total * 2,
+        value: depositMetricsData.totalRecords?.toLocaleString() || "0",
         change: "+7.5%",
         icon: Activity,
         color: "from-cyan-500 to-blue-500",
       },
       {
         title: "Offline",
-        value: missed,
+        value: depositMetricsData.totalOffline?.toLocaleString() || "0",
         change: "-3.2%",
         icon: XCircle,
         color: "from-red-500 to-pink-500",
@@ -215,42 +446,42 @@ export const CollapsibleDepartment = ({
     dynamicMetrics = [
       {
         title: "Passed",
-        value: final,
+        value: withdrawMetricsData.totalPassed?.toLocaleString() || "0",
         change: "+18.5%",
         icon: CheckCircle,
         color: "from-green-500 to-emerald-500",
       },
       {
         title: "Amount",
-        value: `$${(total).toLocaleString()}`,
+        value: withdrawMetricsData.totalPassedAmount || "$0",
         change: "+22.3%",
         icon: DollarSign,
         color: "from-purple-500 to-pink-500",
       },
       {
         title: "Rejected",
-        value: missed,
+        value: withdrawMetricsData.totalRejected?.toLocaleString() || "0",
         change: "-4.8%",
         icon: XCircle,
         color: "from-red-500 to-orange-500",
       },
       {
         title: "Rej. Amount",
-        value: `$${(missed * 2000).toLocaleString()}`,
+        value: withdrawMetricsData.totalRejectedAmount || "$0",
         change: "-6.2%",
         icon: TrendingDown,
         color: "from-orange-500 to-red-500",
       },
       {
         title: "Processing",
-        value: Math.round(total / 2),
+        value: withdrawMetricsData.totalProcessing?.toLocaleString() || "0",
         change: "+5.3%",
         icon: Clock,
         color: "from-blue-500 to-cyan-500",
       },
       {
         title: "Proc. Amt",
-        value: `$${(total * 3000).toLocaleString()}`,
+        value: withdrawMetricsData.totalProcessingAmount || "$0",
         change: "+8.7%",
         icon: Activity,
         color: "from-indigo-500 to-purple-500",
@@ -278,6 +509,7 @@ export const CollapsibleDepartment = ({
             staffPerShift={staffPerShift}
             deptKey={deptKey}
             deptData={deptData}
+            userLength={userLength}
           />
           <span className="text-sm text-gray-400">
             {expandedDept?.[deptKey] ? "Hide Details" : "Show Details"}

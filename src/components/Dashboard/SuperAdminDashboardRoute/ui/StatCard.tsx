@@ -119,9 +119,9 @@ export default function StatCard({
 
               <Chip size="large" color={color} label={formattedLabel} />
             </Stack>
-            <Typography fontSize={16} className="text-white/80">
+            {/* <Typography fontSize={16} className="text-white/80">
               {interval}
-            </Typography>
+            </Typography> */}
           </Stack>
 
           <Box sx={{ width: "100%", height: 50 }}>

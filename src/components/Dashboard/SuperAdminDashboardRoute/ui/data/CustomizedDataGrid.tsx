@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useCallback, Activity } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Doughnut } from "react-chartjs-2";
+import { Doughnut, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
   Legend,
   Title,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
   Plugin,
 } from "chart.js";
 import { getDashboardStats } from "../../../../../redux/QuotaSlice";
@@ -15,6 +19,7 @@ import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
 
 import CollapsibleDepartment from "../../../../ModernChart/CollapsibleDepartment";
 import {
+  Activity,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -25,7 +30,18 @@ import {
   TrendingUp,
   XCircle,
 } from "lucide-react";
-ChartJS.register(ArcElement, Tooltip, Legend, Title);
+
+// Register ChartJS components
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement
+);
 
 interface CustomizedDataGridProps {
   onStatsUpdate?: (data: any[]) => void;
@@ -62,309 +78,237 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   );
 
   const [selectedMonth, setSelectedMonth] = useState<string>("September");
-
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const loading = quotaLoading || combinedQuotaLoading || isRefreshing;
+  const loading = quotaLoading || combinedQuotaLoading;
 
   const parseNumber = useCallback((value: any): number => {
     if (typeof value === "string") return Number(value.replace(/,/g, ""));
     return Number(value) || 0;
   }, []);
 
-  const extractAvailableMonths = useCallback((data: any[]): string[] => {
-    if (!data || !Array.isArray(data)) return ["September"];
-    const months: string[] = [];
-    data.forEach((row: any) => {
-      if (Array.isArray(row) && row[0] === "CSR" && row[1] === "" && row[2]) {
-        const month = row[2];
-        if (month && !months.includes(month)) months.push(month);
+  // Calculate real totals from data
+  const calculateRealTotals = useCallback(() => {
+    const csrTotals: { [key: string]: number } = {};
+    const depositTotals: { [key: string]: number } = {};
+    const withdrawTotals: { [key: string]: number } = {};
+
+    data.forEach((item: any) => {
+      const key = item[0];
+
+      // CSR: Process rows where the 4th index is "Ave. Completed Convo"
+      if (key === "CSR" && item[3] === "Ave. Completed Convo") {
+        const morningShift = parseFloat(item[4]) || 0;
+        const nightShift = parseFloat(item[5]) || 0;
+        const sum = morningShift + nightShift;
+        csrTotals[key] = (csrTotals[key] || 0) + sum;
+      }
+
+      // Deposit: Process rows where the 4th index is "Ave. Completed Convo"
+      if (key === "Deposit" && item[3] === "Ave. Completed Convo") {
+        const morningShift = parseFloat(item[4]) || 0;
+        const nightShift = parseFloat(item[5]) || 0;
+        const sum = morningShift + nightShift;
+        depositTotals[key] = (depositTotals[key] || 0) + sum;
       }
     });
-    return months.length > 0 ? months : ["September"];
-  }, []);
 
-  const getRowMonth = useCallback((row: any): string | null => {
-    if (!Array.isArray(row) || row.length === 0) return null;
-    if (row[0] === "CSR" && row[1] === "" && row[2]) return row[2];
-    return null;
-  }, []);
-
-  const filterDataByMonth = useCallback(
-    (data: any[], targetMonth: string): any[] => {
-      if (!data || !Array.isArray(data)) return [];
-      let currentMonth = targetMonth;
-      const filteredData: any[] = [];
-      let includeCurrentData = false;
-
-      data.forEach((row: any) => {
-        const rowMonth = getRowMonth(row);
-        if (rowMonth) {
-          currentMonth = rowMonth;
-          includeCurrentData = currentMonth === targetMonth;
-        } else if (includeCurrentData && Array.isArray(row) && row.length > 0) {
-          filteredData.push(row);
-        }
-      });
-      return filteredData;
-    },
-    [getRowMonth]
-  );
-
-  const calculateDepartmentStatus = useCallback(
-    (
-      departmentData: any[],
-      quotaIndex: number,
-      targetQuota: number
-    ): DepartmentResult => {
-      if (!departmentData?.length) {
-        return {
-          abovePercent: 0,
-          belowPercent: 100,
-          total: 0,
-          values: [],
-          aboveTarget: 0,
-        };
+    // Calculate Withdraw sum from real data
+    let withdrawSum = 0;
+    data.forEach((item: any) => {
+      if (
+        item[0] === "Withdraw" &&
+        item[2] !== "" &&
+        item[2] !== "TOTAL" &&
+        item[2] !== "Member" &&
+        item[2] !== "reject" &&
+        item[2] !== "拒绝提现"
+      ) {
+        const value = parseFloat((item[7] || "0").replace(/,/g, "")) || 0;
+        withdrawSum += value;
       }
+    });
 
-      const values = departmentData
-        .map((row: any) => parseNumber(row[quotaIndex]))
-        .filter((num: number) => !isNaN(num) && num !== 0);
+    withdrawTotals["Withdraw"] = withdrawSum;
 
-      let belowTarget = 0;
-      let aboveTarget = 0;
+    return {
+      csrRealTotal: csrTotals["CSR"] || 0,
+      depositRealTotal: depositTotals["Deposit"] || 0,
+      withdrawRealTotal: withdrawTotals["Withdraw"] || 0,
+    };
+  }, [data]);
 
-      values.forEach((num) => {
-        if (num >= targetQuota) aboveTarget++;
-        else belowTarget++;
-      });
+  const { csrRealTotal, depositRealTotal, withdrawRealTotal } =
+    calculateRealTotals();
 
-      const total = values.length || 1;
-      const abovePercent = Number(((aboveTarget / total) * 100).toFixed(2));
-      const belowPercent = Number(((belowTarget / total) * 100).toFixed(2));
+  // Calculate performance percentages based on real data - FIXED TARGET CALCULATION
+  const calculateRealPerformance = useCallback(() => {
+    const csrTarget = 530;
+    const depositTarget = 530;
+    const withdrawTarget = 1500;
 
-      return {
-        abovePercent,
-        belowPercent,
-        total,
-        values,
-        aboveTarget,
-      };
+    // Fixed calculation: percentage of target achieved (capped at 100%)
+    const csrAchievedPercent = Math.min((csrRealTotal / csrTarget) * 100, 100);
+    const depositAchievedPercent = Math.min(
+      (depositRealTotal / depositTarget) * 100,
+      100
+    );
+    const withdrawAchievedPercent = Math.min(
+      (withdrawRealTotal / withdrawTarget) * 100,
+      100
+    );
+
+    return {
+      csrAbovePercent: csrAchievedPercent,
+      csrBelowPercent: Math.max(100 - csrAchievedPercent, 0),
+      depositAbovePercent: depositAchievedPercent,
+      depositBelowPercent: Math.max(100 - depositAchievedPercent, 0),
+      withdrawAbovePercent: withdrawAchievedPercent,
+      withdrawBelowPercent: Math.max(100 - withdrawAchievedPercent, 0),
+      csrTargetMet: csrRealTotal >= csrTarget,
+      depositTargetMet: depositRealTotal >= depositTarget,
+      withdrawTargetMet: withdrawRealTotal >= withdrawTarget,
+    };
+  }, [csrRealTotal, depositRealTotal, withdrawRealTotal]);
+
+  const performance = calculateRealPerformance();
+
+  // Team Leader Stats with Real Data - FIXED
+  const teamLeaderData = React.useMemo(
+    () => [
+      {
+        title: "CSR - Total Conversation",
+        value: `${formatNumber(csrRealTotal)}`,
+        interval: `Target: 530`,
+        trend: performance.csrTargetMet ? "up" : "down",
+        totalCompleted: csrRealTotal,
+        target: 530,
+        difference: csrRealTotal,
+        isPositive: performance.csrTargetMet,
+        realTotal: csrRealTotal,
+        performance: performance.csrAbovePercent,
+        targetMet: performance.csrTargetMet,
+      },
+      {
+        title: "Deposit - Total Transaction",
+        value: `${formatNumber(depositRealTotal)}`,
+        interval: `Target: 530`,
+        trend: performance.depositTargetMet ? "up" : "down",
+        totalCompleted: depositRealTotal,
+        target: 530,
+        difference: formatNumber(depositRealTotal),
+        isPositive: performance.depositTargetMet,
+        realTotal: depositRealTotal,
+        performance: performance.depositAbovePercent,
+        targetMet: performance.depositTargetMet,
+      },
+      {
+        title: "Withdrawal - Total Transaction Process",
+        value: `${formatNumber(withdrawRealTotal)}`,
+        interval: `Target: 1,500`,
+        trend: performance.withdrawTargetMet ? "up" : "down",
+        totalCompleted: withdrawRealTotal,
+        target: 1500,
+        difference: withdrawRealTotal,
+        isPositive: performance.withdrawTargetMet,
+        realTotal: withdrawRealTotal,
+        performance: performance.withdrawAbovePercent,
+        targetMet: performance.withdrawTargetMet,
+      },
+    ],
+    [csrRealTotal, depositRealTotal, withdrawRealTotal, performance]
+  );
+
+  // Line Chart Data for Team Leader Stats - FIXED
+  const lineChartData = {
+    labels: ["CSR", "Deposit", "Withdrawal"],
+    datasets: [
+      {
+        label: "Actual Performance",
+        data: [csrRealTotal, depositRealTotal, withdrawRealTotal],
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: "rgb(59, 130, 246)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+      },
+      {
+        label: "Target",
+        data: [530, 530, 1500],
+        borderColor: "rgb(16, 185, 129)",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        borderDash: [5, 5],
+        tension: 0.4,
+        fill: false,
+        pointBackgroundColor: "rgb(16, 185, 129)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+      },
+    ],
+  };
+
+  const lineChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+        labels: {
+          color: "#f8fafc",
+          font: {
+            size: 12,
+          },
+          padding: 20,
+        },
+      },
+      title: {
+        display: true,
+        text: "Department Performance vs Targets",
+        color: "#f8fafc",
+        font: {
+          size: 16,
+          weight: "bold",
+        },
+      },
+      tooltip: {
+        backgroundColor: "rgba(30, 41, 59, 0.9)",
+        titleColor: "#f8fafc",
+        bodyColor: "#e5e7eb",
+        borderColor: "#475569",
+        borderWidth: 1,
+      },
     },
-    [parseNumber]
-  );
-
-  const getPreviousMonth = useCallback((monthName: string): string => {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const index = months.indexOf(monthName);
-    if (index <= 0) return months[11];
-    return months[index - 1];
-  }, []);
-
-  // Memoized data calculations
-  const availableMonths = React.useMemo(
-    () => extractAvailableMonths(data),
-    [data, extractAvailableMonths]
-  );
-
-  // Auto-select first available month if current selection not available
-  useEffect(() => {
-    if (
-      availableMonths.length > 0 &&
-      !availableMonths.includes(selectedMonth)
-    ) {
-      setSelectedMonth(availableMonths[0]);
-    }
-  }, [availableMonths, selectedMonth]);
-
-  const monthlyData = React.useMemo(
-    () => filterDataByMonth(data, selectedMonth),
-    [data, selectedMonth, filterDataByMonth]
-  );
-
-  const previousMonth = React.useMemo(
-    () => getPreviousMonth(selectedMonth),
-    [selectedMonth, getPreviousMonth]
-  );
-
-  const prevMonthData = React.useMemo(
-    () => filterDataByMonth(data, previousMonth),
-    [data, previousMonth, filterDataByMonth]
-  );
-
-  // Filter departments data
-  const filteredCSR = React.useMemo(
-    () =>
-      monthlyData.filter((row: any) => row[0]?.toLowerCase().includes("csr")),
-    [monthlyData]
-  );
-
-  const filteredDeposit = React.useMemo(
-    () =>
-      monthlyData.filter((row: any) =>
-        row[0]?.toLowerCase().includes("deposit")
-      ),
-    [monthlyData]
-  );
-
-  const filteredWithdraw = React.useMemo(
-    () =>
-      monthlyData.filter((row: any) =>
-        row[0]?.toLowerCase().includes("withdraw")
-      ),
-    [monthlyData]
-  );
-
-  const filteredPrevCSR = React.useMemo(
-    () =>
-      prevMonthData.filter((row: any) => row[0]?.toLowerCase().includes("csr")),
-    [prevMonthData]
-  );
-
-  const filteredPrevDeposit = React.useMemo(
-    () =>
-      prevMonthData.filter((row: any) =>
-        row[0]?.toLowerCase().includes("deposit")
-      ),
-    [prevMonthData]
-  );
-
-  const filteredPrevWithdraw = React.useMemo(
-    () =>
-      prevMonthData.filter((row: any) =>
-        row[0]?.toLowerCase().includes("withdraw")
-      ),
-    [prevMonthData]
-  );
-
-  // Calculate department results
-  const csrResult = React.useMemo(
-    () => calculateDepartmentStatus(filteredCSR, 2, 530),
-    [filteredCSR, calculateDepartmentStatus]
-  );
-
-  const depositResult = React.useMemo(
-    () => calculateDepartmentStatus(filteredDeposit, 9, 530),
-    [filteredDeposit, calculateDepartmentStatus]
-  );
-
-  const withdrawResult = React.useMemo(
-    () => calculateDepartmentStatus(filteredWithdraw, 7, 1500),
-    [filteredWithdraw, calculateDepartmentStatus]
-  );
-
-  const prevCSRResult = React.useMemo(
-    () => calculateDepartmentStatus(filteredPrevCSR, 2, 530),
-    [filteredPrevCSR, calculateDepartmentStatus]
-  );
-
-  const prevDepositResult = React.useMemo(
-    () => calculateDepartmentStatus(filteredPrevDeposit, 9, 530),
-    [filteredPrevDeposit, calculateDepartmentStatus]
-  );
-
-  const prevWithdrawResult = React.useMemo(
-    () => calculateDepartmentStatus(filteredPrevWithdraw, 7, 1500),
-    [filteredPrevWithdraw, calculateDepartmentStatus]
-  );
-
-  // Calculate totals and differences
-  const csrCurrentMonth = React.useMemo(
-    () =>
-      csrResult.values.reduce(
-        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-        0
-      ),
-    [csrResult.values]
-  );
-
-  const csrPreviousMonth = React.useMemo(
-    () =>
-      prevCSRResult.values.reduce(
-        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-        0
-      ),
-    [prevCSRResult.values]
-  );
-
-  const csrDifference = csrCurrentMonth - csrPreviousMonth;
-  const isCSRPositive = csrDifference >= 0;
-
-  const depositCurrentMonth = React.useMemo(
-    () =>
-      depositResult.values.reduce(
-        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-        0
-      ),
-    [depositResult.values]
-  );
-
-  const depositPreviousMonth = React.useMemo(
-    () =>
-      prevDepositResult.values.reduce(
-        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-        0
-      ),
-    [prevDepositResult.values]
-  );
-
-  const depositDifference = depositCurrentMonth - depositPreviousMonth;
-  const isDepositPositive = depositDifference >= 0;
-
-  const withdrawCurrentMonth = React.useMemo(
-    () =>
-      withdrawResult.values.reduce(
-        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-        0
-      ),
-    [withdrawResult.values]
-  );
-
-  const withdrawPreviousMonth = React.useMemo(
-    () =>
-      prevWithdrawResult.values.reduce(
-        (accu, curr) => accu + (isNaN(curr) ? 0 : curr),
-        0
-      ),
-    [prevWithdrawResult.values]
-  );
-
-  const withdrawDifference = withdrawCurrentMonth - withdrawPreviousMonth;
-  const isWithdrawPositive = withdrawDifference >= 0;
-
-  const currentMonthTotalCompleted =
-    csrCurrentMonth + depositCurrentMonth + withdrawCurrentMonth;
-  const previousMonthTotalCompleted =
-    csrPreviousMonth + depositPreviousMonth + withdrawPreviousMonth;
-  const totalDifference =
-    currentMonthTotalCompleted - previousMonthTotalCompleted;
-  const isTotalPositive = totalDifference >= 0;
-
-  const totalAgents =
-    filteredCSR.length + filteredDeposit.length + filteredWithdraw.length || 1;
-  const avgConversationsPerAgent = Math.round(
-    currentMonthTotalCompleted / totalAgents
-  );
-  const successRate =
-    ((csrResult.aboveTarget +
-      depositResult.aboveTarget +
-      withdrawResult.aboveTarget) /
-      totalAgents) *
-    100;
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+        ticks: {
+          color: "#f8fafc",
+          callback: function (value: any) {
+            return formatNumber(value);
+          },
+        },
+      },
+      x: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+        ticks: {
+          color: "#f8fafc",
+        },
+      },
+    },
+    interaction: {
+      intersect: false,
+      mode: "index" as const,
+    },
+  };
 
   // Initialize data
   const initializeData = useCallback(async () => {
@@ -388,19 +332,11 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     initializeData();
   }, [initializeData]);
 
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([
-        dispatch(fetchCombinedDepartmentsData()),
-        dispatch(getDashboardStats()),
-      ]);
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    } finally {
-      setIsRefreshing(false);
+  useEffect(() => {
+    if (onStatsUpdate && isInitialized) {
+      onStatsUpdate(teamLeaderData);
     }
-  }, [dispatch]);
+  }, [teamLeaderData, onStatsUpdate, isInitialized]);
 
   const chartOptions = React.useMemo(
     () => ({
@@ -412,6 +348,15 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           display: true,
           color: "#f8fafc",
           font: { size: 16, weight: "bold" } as any,
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context: any) {
+              const label = context.label || "";
+              const value = context.parsed || 0;
+              return `${label}: ${value.toFixed(1)}%`;
+            },
+          },
         },
       },
       cutout: "70%",
@@ -429,13 +374,13 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       ctx.font = `${fontSize}em sans-serif`;
       ctx.fillStyle = "#fff";
       ctx.textBaseline = "middle";
-      const text = `${value}%`;
+      const text = `${Math.round(value)}%`;
       const textX = Math.round((width - ctx.measureText(text).width) / 2);
       const textY = height / 1.8 - 5;
       ctx.fillText(text, textX, textY);
       ctx.font = `${(Number(fontSize) * 0.4).toFixed(2)}em sans-serif`;
       ctx.fillStyle = "#9ca3af";
-      const subText = "Quota Met";
+      const subText = performance.csrTargetMet ? "Quota Met" : "Quota Not Met";
       const subX = Math.round((width - ctx.measureText(subText).width) / 2);
       ctx.fillText(subText, subX, textY + 28);
       ctx.restore();
@@ -443,360 +388,145 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   };
 
   const createChartData = React.useCallback(
-    (met: number, nonMet: number, color: string) => ({
+    (met: number, nonMet: number, color: string, targetMet: boolean) => ({
       labels: ["Quota Met", "Not Met"],
       datasets: [
         {
-          data: [met, nonMet],
+          data: targetMet ? [100, 0] : [met, nonMet],
           backgroundColor: [color, "#1f2937"],
           borderColor: "#0f172a",
           borderWidth: 2,
+          hoverBackgroundColor: [color, "#374151"],
         },
       ],
     }),
     []
   );
 
-  const ProgressCard = React.memo(
-    ({
-      title,
-      current,
-      previous,
-      difference,
-      isPositive,
-      color,
-    }: {
-      title: string;
-      current: number;
-      previous: number;
-      difference: number;
-      isPositive: boolean;
-      color: string;
-    }) => (
-      <div className={`p-4 rounded-xl border-l-4 ${color} border-l`}>
-        <div className="flex justify-between items-start mb-3">
-          <h4 className="font-semibold text-white text-sm">{title}</h4>
-          <div
-            className={`px-2 py-1 rounded text-xs font-medium ${
-              isPositive
-                ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                : "bg-red-500/20 text-red-300 border border-red-500/30"
-            }`}
-          >
-            {isPositive ? "↑" : "↓"} {formatNumber(Math.abs(difference))}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-          <div>
-            <div className="text-gray-400 text-xs">Current</div>
-            <div className="text-white font-bold text-lg">
-              {formatNumber(current)}
-            </div>
-          </div>
-          <div>
-            <div className="text-gray-400 text-xs">Previous</div>
-            <div className="text-gray-300 text-lg">
-              {formatNumber(previous)}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  );
-
-  const PerformanceMetric = React.memo(
-    ({
-      icon: Icon,
-      title,
-      value,
-      subtitle,
-      color = "text-blue-400",
-    }: {
-      icon: any;
-      title: string;
-      value: string;
-      subtitle: string;
-      color?: string;
-    }) => {
-      const formattedValue = value.includes("%")
-        ? value
-        : formatNumber(Number(value));
-
-      return (
-        <div className="text-center p-4 bg-gray-800/30 rounded-lg">
-          <Icon className={`w-8 h-8 mx-auto mb-2 ${color}`} />
-          <div className="text-2xl font-bold text-white">{formattedValue}</div>
-          <div className="text-sm text-gray-300 font-medium">{title}</div>
-          <div className="text-xs text-gray-400 mt-1">{subtitle}</div>
-        </div>
-      );
-    }
-  );
-
-  const toSeconds = (t: any) => {
-    const [h, m, s] = t.split(":").map(Number);
-    return h * 3600 + m * 60 + s;
-  };
-
-  const fromSecondsHM = (sec: any) => {
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  };
-
-  // Avg Online Hours
-  const onlineSessionList = [
-    "10:40:41",
-    "10:47:00",
-    "10:35:25",
-    "10:45:59",
-    "10:31:00",
-    "10:49:19",
-    "10:33:37",
-    "10:41:46",
-    "10:51:00",
-    "10:37:57",
-    "00:00:00",
-    "00:00:00",
-    "11:55:45",
-  ];
-  const avgOnlineSeconds = Math.floor(
-    onlineSessionList.reduce((a, t) => a + toSeconds(t), 0) /
-      onlineSessionList.length
-  );
-  const avgOnlineHM = fromSecondsHM(avgOnlineSeconds);
-
-  // Negative Rate Avg
-  const negativeRates = [
-    71.43, 50.0, 0.0, 55.4, 64.44, 0.0, 100.0, 59.15, 55.56, 0.0, 46.67, 0.0,
-    37.5, 52.63,
-  ];
-  const avgNegativeRate = (
-    negativeRates.reduce((a, b) => a + b, 0) / negativeRates.length
-  ).toFixed(2);
+  // Rest of your existing code for metrics, staff data, etc.
   const [expandedDept, setExpandedDept] = useState({
     csr: true,
     deposit: true,
     withdrawal: true,
   });
-  // Staff per shift data
+
   const staffPerShift = {
     csr: { morning: 24, night: 12 },
     deposit: { morning: 10, night: 5 },
     withdrawal: { morning: 12, night: 6 },
   };
+
+  // Update metrics with real data
   const csrMetrics = [
     {
       title: "Completed",
-      value: "850",
-      change: "+12.5%",
+      value: formatNumber(csrRealTotal),
+      change: performance.csrTargetMet ? "+Achieved" : "-Below Target",
       icon: CheckCircle,
       color: "from-blue-500 to-cyan-500",
     },
     {
-      title: "Effective",
-      value: "720",
-      change: "+8.3%",
+      title: "Target",
+      value: "530",
+      change: "Monthly Goal",
       icon: Target,
       color: "from-purple-500 to-pink-500",
     },
     {
-      title: "Messages",
-      value: "3.2K",
-      change: "+15.7%",
-      icon: MessageCircle,
-      color: "from-green-500 to-emerald-500",
-    },
-    {
-      title: "Missed",
-      value: "45",
-      change: "-5.2%",
-      icon: XCircle,
-      color: "from-red-500 to-orange-500",
-    },
-    {
-      title: "Avg Online",
-      value: avgOnlineHM,
-      change: "+3.8%",
-      icon: Clock,
-      color: "from-yellow-500 to-orange-500",
-    },
-    {
-      title: "Positive",
-      value: "94.5%",
-      change: "+2.4%",
+      title: "Performance",
+      value: `${Math.round(performance.csrAbovePercent)}%`,
+      change: performance.csrTargetMet ? "+Excellent" : "+Good",
       icon: TrendingUp,
-      color: "from-teal-500 to-cyan-500",
-    },
-    {
-      title: "Negative Rate Avg",
-      value: `${avgNegativeRate}%`,
-      change: "-4.5%",
-      icon: AlertTriangle,
-      color: "from-red-600 to-orange-500",
+      color: "from-green-500 to-emerald-500",
     },
   ];
 
   const depositMetrics = [
     {
-      title: "Live Check",
-      value: "156",
-      change: "+9.2%",
-      icon: Activity,
-      color: "from-blue-500 to-indigo-500",
-    },
-    {
-      title: "1st Check",
-      value: "89",
-      change: "+6.7%",
+      title: "Completed",
+      value: formatNumber(depositRealTotal),
+      change: performance.depositTargetMet ? "+Achieved" : "-Below Target",
       icon: CheckCircle,
       color: "from-green-500 to-teal-500",
     },
     {
-      title: "2nd/3rd",
-      value: "34",
-      change: "+4.1%",
+      title: "Target",
+      value: "530",
+      change: "Monthly Goal",
       icon: Target,
       color: "from-purple-500 to-pink-500",
     },
     {
-      title: "Paycheck",
-      value: "234",
-      change: "+11.8%",
-      icon: DollarSign,
-      color: "from-yellow-500 to-orange-500",
-    },
-    {
-      title: "Records",
-      value: "198",
-      change: "+7.5%",
-      icon: Activity,
-      color: "from-cyan-500 to-blue-500",
-    },
-    {
-      title: "Offline",
-      value: "12",
-      change: "-3.2%",
-      icon: XCircle,
-      color: "from-red-500 to-pink-500",
+      title: "Performance",
+      value: `${Math.round(performance.depositAbovePercent)}%`,
+      change: performance.depositTargetMet ? "+Excellent" : "+Good",
+      icon: TrendingUp,
+      color: "from-blue-500 to-indigo-500",
     },
   ];
 
   const withdrawalMetrics = [
     {
-      title: "Passed",
-      value: "2.34K",
-      change: "+18.5%",
+      title: "Completed",
+      value: formatNumber(withdrawRealTotal),
+      change: performance.withdrawTargetMet ? "+Achieved" : "-Below Target",
       icon: CheckCircle,
       color: "from-green-500 to-emerald-500",
     },
     {
-      title: "Amount",
-      value: "$15.4M",
-      change: "+22.3%",
-      icon: DollarSign,
+      title: "Target",
+      value: "1,500",
+      change: "Monthly Goal",
+      icon: Target,
       color: "from-purple-500 to-pink-500",
     },
     {
-      title: "Rejected",
-      value: "87",
-      change: "-4.8%",
-      icon: XCircle,
-      color: "from-red-500 to-orange-500",
-    },
-    {
-      title: "Rej. Amount",
-      value: "$234K",
-      change: "-6.2%",
-      icon: TrendingDown,
-      color: "from-orange-500 to-red-500",
-    },
-    {
-      title: "Processing",
-      value: "156",
-      change: "+5.3%",
-      icon: Clock,
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      title: "Proc. Amt",
-      value: "$987K",
-      change: "+8.7%",
-      icon: Activity,
+      title: "Performance",
+      value: `${Math.round(performance.withdrawAbovePercent)}%`,
+      change: performance.withdrawTargetMet ? "+Excellent" : "+Good",
+      icon: TrendingUp,
       color: "from-indigo-500 to-purple-500",
     },
   ];
 
-  const teamLeaderData = React.useMemo(
-    () => [
-      {
-        title: "CSR Department",
-        value: `${csrResult.aboveTarget}`,
-        interval: `Prev Month: ${prevCSRResult.aboveTarget}`,
-        trend: csrCurrentMonth > csrPreviousMonth ? "up" : "down",
-        data: csrResult.values || [],
-        totalCompleted: csrCurrentMonth,
-        prevTotalCompleted: csrPreviousMonth,
-        difference: formatNumber(csrDifference),
-        isPositive: isCSRPositive,
-      },
-      {
-        title: "Deposit Department",
-        value: `${depositResult.aboveTarget}`,
-        interval: `Prev Month: ${prevDepositResult.aboveTarget}`,
-        trend: depositCurrentMonth > depositPreviousMonth ? "up" : "down",
-        data: depositResult.values || [],
-        totalCompleted: depositCurrentMonth,
-        prevTotalCompleted: depositPreviousMonth,
-        difference: formatNumber(depositDifference),
-        isPositive: isDepositPositive,
-      },
-      {
-        title: "Withdraw Department",
-        value: `${withdrawResult.aboveTarget}`,
-        interval: `Prev Month: ${prevWithdrawResult.aboveTarget}`,
-        trend: withdrawCurrentMonth > withdrawPreviousMonth ? "up" : "down",
-        data: withdrawResult.values || [],
-        totalCompleted: withdrawCurrentMonth,
-        prevTotalCompleted: withdrawPreviousMonth,
-        difference: formatNumber(withdrawDifference),
-        isPositive: isWithdrawPositive,
-      },
-    ],
-    [
-      csrResult,
-      prevCSRResult,
-      csrCurrentMonth,
-      csrPreviousMonth,
-      csrDifference,
-      isCSRPositive,
-      depositResult,
-      prevDepositResult,
-      depositCurrentMonth,
-      depositPreviousMonth,
-      depositDifference,
-      isDepositPositive,
-      withdrawResult,
-      prevWithdrawResult,
-      withdrawCurrentMonth,
-      withdrawPreviousMonth,
-      withdrawDifference,
-      isWithdrawPositive,
-    ]
-  );
+  const excludedKeywords = [
+    "shift",
+    "highlights",
+    "half data",
+    "failed",
+    "assigned",
+    "reached",
+    "total",
+    "ave",
+  ];
 
-  useEffect(() => {
-    if (onStatsUpdate && isInitialized && !loading) {
-      onStatsUpdate(teamLeaderData);
+  const groupedUsers: { [key: string]: string[] } = {};
+
+  for (const sublist of data) {
+    if (sublist.length > 2 && sublist[2].trim() !== "") {
+      const key = sublist[0]?.trim();
+      const name = sublist[2].trim();
+      const lowerName = name.toLowerCase();
+
+      // skip non-user rows
+      const isExcluded = excludedKeywords.some((keyword) =>
+        lowerName.includes(keyword)
+      );
+
+      if (!isExcluded) {
+        if (!groupedUsers[key]) groupedUsers[key] = [];
+        groupedUsers[key].push(name);
+      }
     }
-  }, [teamLeaderData, onStatsUpdate, isInitialized, loading]);
-
+  }
+console.log(data,"here")
   return (
     <div className="text-white mt-6 bg-[#00010B]">
       <div className="mt-5">
         {/* Collapsible Department Metrics */}
         <CollapsibleDepartment
           title="CSR Department"
+          userLength={groupedUsers}
           data={data}
           subtitle="Customer Service & Support"
           metrics={csrMetrics}
@@ -808,6 +538,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         <CollapsibleDepartment
           title="Deposit Department"
           data={data}
+          userLength={groupedUsers}
           subtitle="Verification & Processing"
           metrics={depositMetrics}
           deptKey="deposit"
@@ -819,6 +550,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           title="Withdrawal Department"
           data={data}
           subtitle="Transaction Processing"
+          userLength={groupedUsers}
           metrics={withdrawalMetrics}
           deptKey="withdrawal"
           expandedDept={expandedDept}
@@ -826,135 +558,151 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           staffPerShift={staffPerShift}
         />
       </div>
+
       {/* Charts Section */}
-      <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-xl font-bold">Department Performance Charts</h2>
-        <div className="flex items-center gap-4">
-          <label htmlFor="monthFilter" className="text-sm text-gray-300">
-            Filter by Month:
-          </label>
-          <select
-            id="monthFilter"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-[#282e3c38] border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none"
-            disabled={loading}
-          >
-            {availableMonths.map((month) => (
-              <option key={month} value={month}>
-                {month.charAt(0).toUpperCase() + month.slice(1).toLowerCase()}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      {/* Charts Grid */}
-      <div className="flex  gap-4 h-full">
-        <div className="p-4 flex-1 bg-[#282e3c38] rounded-2xl border border-white/10">
-          <div className="h-72 w-72 mx-auto relative">
-            <Doughnut
-              data={createChartData(
-                csrResult.abovePercent,
-                csrResult.belowPercent,
-                "rgba(59, 130, 246, 0.8)"
-              )}
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: {
-                    ...chartOptions.plugins.title,
-                    text: "CSR Department Quota",
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-4">
+          Department Performance Charts
+        </h2>
+
+        {/* Pie Charts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {/* CSR Pie Chart */}
+          <div className="p-6 bg-[#282e3c38] rounded-2xl border border-white/10 h-[400px]">
+            <div className="h-75 w-72 mx-auto relative">
+              <Doughnut
+                data={createChartData(
+                  performance.csrAbovePercent,
+                  performance.csrBelowPercent,
+                  "rgba(59, 130, 246, 0.8)",
+                  performance.csrTargetMet
+                )}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                      ...chartOptions.plugins.title,
+                      text: "CSR Department Quota",
+                    },
                   },
-                },
-              }}
-              plugins={[centerTextPlugin]}
-            />
-            <div className="text-center mt-3 text-sm text-gray-400">
-              {csrResult.abovePercent}% Met • {csrResult.belowPercent}% Not Met
+                }}
+                plugins={[centerTextPlugin]}
+              />
+              <div className="text-center mt-3 text-sm text-gray-400">
+                {performance.csrTargetMet
+                  ? "100% Met"
+                  : `${Math.round(performance.csrAbovePercent)}% Met`}{" "}
+                •{" "}
+                {performance.csrTargetMet
+                  ? "0%"
+                  : `${Math.round(performance.csrBelowPercent)}%`}{" "}
+                Not Met
+              </div>
             </div>
-            <div className="text-center mt-2 text-xs text-blue-300">
-              Completed: {formatNumber(csrCurrentMonth)}
+          </div>
+
+          {/* Deposit Pie Chart */}
+          <div className="p-6 bg-[#282e3c38] rounded-2xl border border-white/10 h-[400px]">
+            <div className="h-72 w-72 mx-auto relative">
+              <Doughnut
+                data={createChartData(
+                  performance.depositAbovePercent,
+                  performance.depositBelowPercent,
+                  "rgba(16, 185, 129, 0.8)",
+                  performance.depositTargetMet
+                )}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                      ...chartOptions.plugins.title,
+                      text: "Deposit Department Quota",
+                    },
+                  },
+                }}
+                plugins={[centerTextPlugin]}
+              />
+              <div className="text-center mt-3 text-sm text-gray-400">
+                {performance.depositTargetMet
+                  ? "100% Met"
+                  : `${Math.round(performance.depositAbovePercent)}% Met`}{" "}
+                •{" "}
+                {performance.depositTargetMet
+                  ? "0%"
+                  : `${Math.round(performance.depositBelowPercent)}%`}{" "}
+                Not Met
+              </div>
+            </div>
+          </div>
+
+          {/* Withdraw Pie Chart */}
+          <div className="p-6 bg-[#282e3c38] rounded-2xl border border-white/10 h-[400px]">
+            <div className="h-72 w-72 mx-auto relative">
+              <Doughnut
+                data={createChartData(
+                  performance.withdrawAbovePercent,
+                  performance.withdrawBelowPercent,
+                  "rgba(168, 85, 247, 1)",
+                  performance.withdrawTargetMet
+                )}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                      ...chartOptions.plugins.title,
+                      text: "Withdraw Department Quota",
+                    },
+                  },
+                }}
+                plugins={[centerTextPlugin]}
+              />
+              <div className="text-center mt-3 text-sm text-gray-400">
+                {performance.withdrawTargetMet
+                  ? "100% Met"
+                  : `${Math.round(performance.withdrawAbovePercent)}% Met`}{" "}
+                •{" "}
+                {performance.withdrawTargetMet
+                  ? "0%"
+                  : `${Math.round(performance.withdrawBelowPercent)}%`}{" "}
+                Not Met
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="p-4 flex-1 bg-[#282e3c38] rounded-2xl border border-white/10">
-          <div className="h-72 w-72 mx-auto relative">
-            <Doughnut
-              data={createChartData(
-                depositResult.abovePercent,
-                depositResult.belowPercent,
-                "rgba(16, 185, 129, 0.8"
-              )}
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: {
-                    ...chartOptions.plugins.title,
-                    text: "Deposit Department Quota",
-                  },
-                },
-              }}
-              plugins={[centerTextPlugin]}
-            />
-            <div className="text-center mt-3 text-sm text-gray-400">
-              {depositResult.abovePercent}% Met • {depositResult.belowPercent}%
-              Not Met
-            </div>
-            <div className="text-center mt-2 text-xs text-green-300">
-              Completed: {formatNumber(depositCurrentMonth)}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 flex-1 bg-[#282e3c38] rounded-2xl border border-white/10">
-          <div className="h-72 w-72 mx-auto relative">
-            <Doughnut
-              data={createChartData(
-                withdrawResult.abovePercent,
-                withdrawResult.belowPercent,
-                "rgba(168, 85, 247, 1)"
-              )}
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  title: {
-                    ...chartOptions.plugins.title,
-                    text: "Withdraw Department Quota",
-                  },
-                },
-              }}
-              plugins={[centerTextPlugin]}
-            />
-            <div className="text-center mt-3 text-sm text-gray-400">
-              {withdrawResult.abovePercent}% Met • {withdrawResult.belowPercent}
-              % Not Met
-            </div>
-            <div className="text-center mt-2 text-xs text-purple-300">
-              Completed: {formatNumber(withdrawCurrentMonth)}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-2">
+        {/* Weekly Performance Chart */}
+        <div className="bg-[#282e3c38] rounded-2xl border border-white/10 p-6 ">
           <WeeklyPerformanceChart
-            csrData={csrResult}
-            depositData={depositResult}
-            withdrawData={withdrawResult}
+            csrData={{
+              realTotal: csrRealTotal,
+              performance: performance.csrAbovePercent,
+              targetMet: performance.csrTargetMet,
+            }}
+            depositData={{
+              realTotal: depositRealTotal,
+              performance: performance.depositAbovePercent,
+              targetMet: performance.depositTargetMet,
+            }}
+            withdrawData={{
+              realTotal: withdrawRealTotal,
+              performance: performance.withdrawAbovePercent,
+              targetMet: performance.withdrawTargetMet,
+            }}
             selectedMonth={selectedMonth}
           />
         </div>
       </div>
+
       {/* Footer */}
       <div className="text-center mt-8 text-gray-500 text-sm">
         Last updated:{" "}
         {lastUpdated
           ? new Date(lastUpdated).toLocaleTimeString()
           : new Date().toLocaleTimeString()}{" "}
-        • Showing data for: {selectedMonth}
+        • Showing real-time data
         {loading && " • Updating..."}
       </div>
     </div>
