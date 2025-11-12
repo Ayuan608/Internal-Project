@@ -34,6 +34,7 @@ import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
+import { Bell } from "lucide-react";
 
 function App() {
   useEffect(() => {
@@ -49,29 +50,27 @@ function App() {
 
         toast.custom((t) => (
           <div
-            className={`${t.visible ? "animate-enter" : "animate-leave"
-              } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 p-4`}
+            className={`${t.visible ? "animate-custom-enter" : "animate-leave"
+              }  max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
           >
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <img
-                  src="https://cdn-icons-png.flaticon.com/512/9068/9068699.png"
-                  alt="Notification"
-                  className="h-8 w-8"
-                />
+            <div className="flex-1 w-0 p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 pt-0.5">
+                  <Bell className="h-10 w-10 rounded-fullv" />
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-semibold text-gray-900">{title}</p>
+                  <p className="mt-1 text-sm text-gray-500">{body}</p>
+                </div>
               </div>
-              <div className="ml-3 w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900">{title}</p>
-                <p className="mt-1 text-sm text-gray-500">{body}</p>
-              </div>
-              <div className="ml-4 flex-shrink-0 flex">
-                <button
-                  onClick={() => toast.dismiss(t.id)}
-                  className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none"
-                >
-                  ✕
-                </button>
-              </div>
+            </div>
+            <div className="flex border-l border-gray-200">
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Close
+              </button>
             </div>
           </div>
         ));

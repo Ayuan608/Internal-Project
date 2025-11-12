@@ -98,7 +98,7 @@ const Layout = () => {
 
                         <div className="flex items-center gap-4 absolute right-0">
                             <span className="whitespace-nowrap">{dateTime}</span>
-                            <NotificationPopup />
+                            <NotificationPopup userId={userData?._id} />
                             <RecentAnnoucement />
                             <LanguageChange />
                             <div className="flex items-center gap-3" ref={menuRef}>
