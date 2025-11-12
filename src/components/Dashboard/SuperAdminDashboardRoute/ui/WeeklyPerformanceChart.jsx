@@ -20,31 +20,49 @@ ChartJS.register(
   Legend
 );
 
-const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMonth }) => {
+
+
+const WeeklyPerformanceChart = ({
+  csrData,
+  depositData,
+  withdrawData,
+  selectedMonth
+}) => {
   const [weeklyData, setWeeklyData] = useState({
     csr: [0, 0, 0, 0],
     deposit: [0, 0, 0, 0],
     withdraw: [0, 0, 0, 0]
-
   });
 
-  // Generate realistic weekly data based on current performance
+  // Generate realistic weekly data based on current performance - FIXED
   useEffect(() => {
-    if (csrData?.abovePercent || depositData?.abovePercent || withdrawData?.abovePercent) {
-      const generateWeeklyTrend = (currentPercent) => {
+    if (csrData?.performance || depositData?.performance || withdrawData?.performance) {
+      const generateWeeklyTrend = (currentPercent, targetMet) => {
         const base = currentPercent || 75;
-        return [
-          Math.max(60, Math.min(100, base + (Math.random() - 0.5) * 15)),
-          Math.max(60, Math.min(100, base + (Math.random() - 0.5) * 12)),
-          Math.max(60, Math.min(100, base + (Math.random() - 0.5) * 10)),
-          Math.max(60, Math.min(100, base + (Math.random() - 0.5) * 8))
-        ].reverse(); // Reverse to show Week 1 first
+
+        if (targetMet) {
+          // If target is met, show strong performance throughout the month
+          return [
+            Math.max(85, Math.min(100, base - 10 + Math.random() * 5)),
+            Math.max(90, Math.min(100, base - 5 + Math.random() * 5)),
+            Math.max(95, Math.min(100, base + Math.random() * 5)),
+            Math.max(98, Math.min(100, base + 2 + Math.random() * 2))
+          ];
+        } else {
+          // If target not met, show progression towards current performance
+          return [
+            Math.max(60, Math.min(95, base - 20 + (Math.random() - 0.3) * 15)),
+            Math.max(65, Math.min(97, base - 10 + (Math.random() - 0.2) * 12)),
+            Math.max(70, Math.min(98, base - 5 + (Math.random() - 0.1) * 10)),
+            Math.max(75, Math.min(99, base + Math.random() * 8))
+          ];
+        }
       };
 
       setWeeklyData({
-        csr: generateWeeklyTrend(csrData?.abovePercent),
-        deposit: generateWeeklyTrend(depositData?.abovePercent),
-        withdraw: generateWeeklyTrend(withdrawData?.abovePercent)
+        csr: generateWeeklyTrend(csrData?.performance || 75, csrData?.targetMet),
+        deposit: generateWeeklyTrend(depositData?.performance || 75, depositData?.targetMet),
+        withdraw: generateWeeklyTrend(withdrawData?.performance || 75, withdrawData?.targetMet)
       });
     }
   }, [csrData, depositData, withdrawData]);
@@ -56,35 +74,54 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
         label: "CSR",
         data: weeklyData.csr,
         backgroundColor: "rgba(59, 130, 246, 0.8)",
+        borderColor: "rgba(59, 130, 246, 1)",
+        borderWidth: 1,
+        borderRadius: 4,
       },
       {
         label: "Deposit",
         data: weeklyData.deposit,
-        backgroundColor: "rgba(16, 185, 129, 0.8",
+        backgroundColor: "rgba(16, 185, 129, 0.8)",
+        borderColor: "rgba(16, 185, 129, 1)",
+        borderWidth: 1,
+        borderRadius: 4,
       },
       {
         label: "Withdrawal",
         data: weeklyData.withdraw,
-        backgroundColor: "rgba(168, 85, 247, 1)",
+        backgroundColor: "rgba(168, 85, 247, 0.8)",
+        borderColor: "rgba(168, 85, 247, 1)",
+        borderWidth: 1,
+        borderRadius: 4,
       },
     ],
   };
 
-  // Real-time updates
+  // Real-time updates - FIXED
   useEffect(() => {
     const interval = setInterval(() => {
       setWeeklyData(prev => ({
-        csr: prev.csr.map((val, index) =>
-          index === 3 ? (csrData?.abovePercent || val) : val
-        ),
-        deposit: prev.deposit.map((val, index) =>
-          index === 3 ? (depositData?.abovePercent || val) : val
-        ),
-        withdraw: prev.withdraw.map((val, index) =>
-          index === 3 ? (withdrawData?.abovePercent || val) : val
-        )
+        csr: prev.csr.map((val, index) => {
+          if (index === 3) {
+            // Only update the current week (Week 4) with actual performance
+            return csrData?.performance || val;
+          }
+          return val;
+        }),
+        deposit: prev.deposit.map((val, index) => {
+          if (index === 3) {
+            return depositData?.performance || val;
+          }
+          return val;
+        }),
+        withdraw: prev.withdraw.map((val, index) => {
+          if (index === 3) {
+            return withdrawData?.performance || val;
+          }
+          return val;
+        })
       }));
-    }, 5000);
+    }, 10000); // Update every 10 seconds
 
     return () => clearInterval(interval);
   }, [csrData, depositData, withdrawData]);
@@ -107,7 +144,7 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
       },
       title: {
         display: true,
-        text: "Weekly Performance Trend",
+        text: `Weekly Performance Trend - ${selectedMonth}`,
         color: "#f8fafc",
         font: {
           size: 18,
@@ -125,7 +162,7 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
         borderWidth: 1,
         callbacks: {
           label: function (context) {
-            return `${context.dataset.label}: ${context.parsed.y}% Quota Met`;
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}% Quota Met`;
           }
         }
       },
@@ -133,7 +170,7 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
     scales: {
       x: {
         grid: {
-          color: "#374151",
+          color: "rgba(255, 255, 255, 0.1)",
         },
         ticks: {
           color: "#e5e7eb",
@@ -143,16 +180,20 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
         beginAtZero: true,
         max: 100,
         grid: {
-          color: "#374151",
+          color: "rgba(255, 255, 255, 0.1)",
         },
         ticks: {
           color: "#e5e7eb",
-          stepSize: 10,
+          stepSize: 20,
           callback: function (value) {
             return value + "%";
           },
         },
       },
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index',
     },
   };
 
@@ -162,7 +203,7 @@ const WeeklyPerformanceChart = ({ csrData, depositData, withdrawData, selectedMo
         <Bar data={chartData} options={chartOptions} />
       </div>
       <div className="mt-4 text-center text-sm text-gray-400">
-        Real-time weekly performance trend
+        Real-time weekly performance trend for {selectedMonth} • Week 4 shows current performance
       </div>
     </div>
   );
