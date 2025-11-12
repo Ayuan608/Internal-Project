@@ -39,111 +39,115 @@ const Login = () => {
   };
 
   // Handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const validationErrors = validate();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
 
-    setIsLoading(true);
-    setErrors({});
+  setIsLoading(true);
+  setErrors({});
 
-    try {
-      if (!requireOtp) {
-        // 🔹 Step 1: Normal Login
-        const res = await dispatch(login(loginData));
-        const payload = res?.payload;
+  try {
+    if (!requireOtp) {
+      // Login step
+      const res = await dispatch(login(loginData));
+      const payload = res?.payload;
 
-        if (!payload) {
-          toast.error("Unexpected error occurred");
-          setIsLoading(false);
-          return;
+      if (!payload) {
+        toast.error("Unexpected error");
+        setIsLoading(false);
+        return;
+      }
+
+      if (payload?.require2FA) {
+        setRequireOtp(true);
+        toast.success("2FA required. Please enter your Authenticator code.");
+      } else if (payload?.token && !payload?.require2FA) {
+        toast.success("Login successful!");
+
+        // Record login
+        try {
+          await dispatch(recordLogin());
+        } catch (err) {
+          console.error("Activity log failed:", err);
         }
 
-        if (payload?.require2FA) {
-          setRequireOtp(true);
-          toast.success("2FA required. Please enter your Authenticator code.");
-        } else if (payload?.token && !payload?.require2FA) {
-          toast.success("Login successful!");
-          try {
-            await dispatch(recordLogin());
-          } catch (err) {
-            console.error("Activity log failed:", err);
-          }
+        // Navigate immediately ✅
+        navigate("/dashboard");
 
-          // 🔹 Step 2: Get FCM Token & send to backend
-          const fcmToken = await requestForToken();
-          if (fcmToken) {
-            console.log("📨 Sending FCM token to backend:", fcmToken);
-            await dispatch(addFcm(fcmToken));
-          } else {
-            console.warn("⚠️ No FCM token available.");
-          }
+        // 🔹 Background FCM handling (non-blocking)
+        requestForToken()
+          .then((fcmToken) => {
+            if (fcmToken) {
+              dispatch(addFcm(fcmToken));
+            } else {
+              console.warn("⚠️ No FCM token available.");
+            }
+          })
+          .catch((err) => console.error("FCM Error:", err));
 
-          // 🔹 Step 3: Navigate to dashboard
-          navigate("/dashboard");
-        } else {
-          toast.error("Invalid response from server");
+      } else {
+        toast.error("Invalid response from server");
+      }
+
+    } else {
+      // 2FA Verification
+      const res = await dispatch(verify2FA({ otp }));
+      const payload = res?.payload;
+
+      if (payload?.token) {
+        toast.success("Login successful!");
+        const role = payload?.user?.role;
+
+        // Navigate immediately ✅
+        switch (role) {
+          case "Admin":
+            navigate("/admin");
+            break;
+          case "Super-Admin":
+            navigate("/dashboard");
+            break;
+          case "Checker":
+            navigate("/checker");
+            break;
+          case "User":
+            navigate("/user");
+            break;
+          case "Team-Leader":
+            navigate("/team");
+            break;
+          default:
+            navigate("/login");
+            toast.error("Invalid role detected");
+            break;
+        }
+
+        // Background FCM call (no delay)
+        requestForToken()
+          .then((fcmToken) => {
+            if (fcmToken) dispatch(addFcm(fcmToken));
+          })
+          .catch((err) => console.error("FCM Error:", err));
+
+        // Log user activity
+        try {
+          await dispatch(recordLogin());
+        } catch (err) {
+          console.error("Activity log failed:", err);
         }
       } else {
-        // 🔹 Step 1: Verify 2FA OTP
-        const res = await dispatch(verify2FA({ otp }));
-        const payload = res?.payload;
-
-        if (payload?.token) {
-          toast.success("Login successful!");
-          const role = payload?.user?.role;
-
-          try {
-            await dispatch(recordLogin());
-          } catch (err) {
-            console.error("Activity log failed:", err);
-          }
-
-          // 🔹 Step 2: Get FCM Token & send to backend
-          const fcmToken = await requestForToken();
-          if (fcmToken) {
-            console.log("📨 Sending FCM token to backend:", fcmToken);
-            await dispatch(addFcm(fcmToken));
-          } else {
-            console.warn("⚠️ No FCM token available.");
-          }
-
-          // 🔹 Step 3: Navigate based on role
-          switch (role) {
-            case "Admin":
-              navigate("/admin");
-              break;
-            case "Super-Admin":
-              navigate("/dashboard");
-              break;
-            case "Checker":
-              navigate("/checker");
-              break;
-            case "User":
-              navigate("/user");
-              break;
-            case "Team-Leader":
-              navigate("/team");
-              break;
-            default:
-              navigate("/login");
-              toast.error("Invalid role detected");
-              break;
-          }
-        } else {
-          toast.error("Invalid OTP");
-        }
+        toast.error("Invalid OTP");
       }
-    } catch (err) {
-      console.error("Error in login process:", err);
-      toast.error("Something went wrong during login.");
     }
+  } catch (err) {
+    toast.error("Something went wrong");
+  }
 
-    setIsLoading(false);
-  };
+  setIsLoading(false);
+};
 
   // Handle back from OTP screen
   const handleBack = () => {

@@ -33,14 +33,50 @@ import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 
 function App() {
   useEffect(() => {
     requestForToken();
-    onMessageListener().then((payload) => {
-      console.log("🎯 Notification Received in Foreground:", payload);
-      alert(`${payload.notification.title}\n${payload.notification.body}`);
-    });
+
+    onMessageListener()
+      .then((payload) => {
+        console.log("🎯 Notification Received in Foreground:", payload);
+
+        const notification = payload?.notification;
+        const title = notification?.title || "New Notification";
+        const body = notification?.body || "You have a new message.";
+
+        toast.custom((t) => (
+          <div
+            className={`${t.visible ? "animate-enter" : "animate-leave"
+              } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 p-4`}
+          >
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/9068/9068699.png"
+                  alt="Notification"
+                  className="h-8 w-8"
+                />
+              </div>
+              <div className="ml-3 w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900">{title}</p>
+                <p className="mt-1 text-sm text-gray-500">{body}</p>
+              </div>
+              <div className="ml-4 flex-shrink-0 flex">
+                <button
+                  onClick={() => toast.dismiss(t.id)}
+                  className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        ));
+      })
+      .catch((err) => console.error("❌ Error receiving notification:", err));
   }, []);
   const { i18n: i18nextInstance } = useTranslation();
 

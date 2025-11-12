@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const Department = () => {
-  const {t}=useTranslation();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [departmentStats, setDepartmentStats] = useState({
@@ -273,13 +273,12 @@ const Department = () => {
       <div className="flex justify-between items-center mt-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            Department Management
+            {t("Department Management")}
           </h1>
           <p className="text-gray-400">
-            Monitor and manage department quotas and performance
+            {t("Monitor and manage department quotas and performance")}
           </p>
         </div>
-      
         <ExampleIosSwitch />
       </div>
 
