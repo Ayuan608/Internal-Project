@@ -2,7 +2,6 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import StatCard from "./StatCard";
-import ExampleIosSwitch from "./Switch";
 
 export default function TeamLeaderStats({ title, data, SecondaryTitle }) {
   return (

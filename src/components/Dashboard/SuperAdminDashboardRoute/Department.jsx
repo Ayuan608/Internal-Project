@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { ChevronDown, Users, Target, TrendingUp, BarChart3 } from "lucide-react";
-import ExampleIosSwitch from "./ui/Switch";
 import NonQuota from './NonQuota';
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCombinedDepartmentsData } from "../../../redux/combinedQuotaSlice";
@@ -277,7 +276,6 @@ const Department = () => {
             Monitor and manage department quotas and performance
           </p>
         </div>
-        <ExampleIosSwitch />
       </div>
 
       {/* Enhanced Department Filter */}

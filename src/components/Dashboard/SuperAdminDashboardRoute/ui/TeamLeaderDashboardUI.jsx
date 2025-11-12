@@ -1,7 +1,6 @@
 import { Search } from "lucide-react";
 import { Doughnut } from "react-chartjs-2";
 import TeamLeaderStats from "./TeamLeaderStats";
-import ExampleIosSwitch from './Switch';
 import ShiftChart from './ShiftChart';
 import QuotaManagement from './QuotaManagement';
 
@@ -131,7 +130,6 @@ export default function TeamLeaderDashboardUI({
                                 🔄 Refreshing data...
                             </div>
                         )}
-                        <ExampleIosSwitch />
                     </div>
                 </div>
 

@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from "react";
-import ExampleIosSwitch from "./ui/Switch";
 import { Download, Search } from "lucide-react";
 import AttendenceData from "../AdminDashboard/AttendenceData";
 import WeeklyAttendanceTrendChart from "../AdminDashboard/WeeklyAttendenceChart";
@@ -193,9 +192,7 @@ const OverallAttendance = () => {
 
   return (
     <div className="mt-5">
-      <div className="flex justify-end items-start">
-        <ExampleIosSwitch />
-      </div>
+    
 
       {/* Loading State */}
       {isLoading && (
