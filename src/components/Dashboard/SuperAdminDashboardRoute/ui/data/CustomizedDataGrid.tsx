@@ -88,6 +88,54 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     return Number(value) || 0;
   }, []);
 
+  const excludedKeywords = [
+    "shift",
+    "highlights",
+    "half data",
+    "failed",
+    "assigned",
+    "reached",
+    "total",
+    "ave",
+    "member",
+    "reject",
+    "拒绝提现",
+    "deposit total",
+    "withdraw total",
+  ];
+
+  const groupedUsers: { [key: string]: any[][] } = {}; // store full rows
+
+  for (const sublist of data) {
+    const department = sublist[0]?.trim();
+    const name = sublist[2]?.trim();
+
+    // Skip if no department or name
+    if (!department || !name) continue;
+
+    const lowerName = name.toLowerCase();
+
+    // Exclude non-user or summary rows
+    const isExcluded = excludedKeywords.some((keyword) =>
+      lowerName.includes(keyword)
+    );
+    if (isExcluded) continue;
+
+    if (["CSR", "Deposit", "Withdraw"].includes(department)) {
+      if (!groupedUsers[department]) groupedUsers[department] = [];
+      groupedUsers[department].push(sublist);
+    }
+  }
+
+  const CsrTotalConvey = groupedUsers?.CSR?.map((item) => Number(item[3]) || 0);
+  const WdTotaltransaction = groupedUsers?.Withdraw?.map((item) =>
+    parseNumber(item[7] || 0)
+  );
+
+  const CsrTotalSum = CsrTotalConvey?.reduce((acc, val) => acc + val, 0);
+  const WdtotalSum = WdTotaltransaction?.reduce((acc, val) => acc + val, 0);
+
+
   // Calculate real totals from data
   const calculateRealTotals = useCallback(() => {
     const csrTotals: { [key: string]: number } = {};
@@ -144,20 +192,32 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
   // Calculate performance percentages based on real data - FIXED TARGET CALCULATION
   const calculateRealPerformance = useCallback(() => {
-    const csrTarget = 530;
-    const depositTarget = 530;
-    const withdrawTarget = 1500;
+    const csrTargetPerPerson = 530;
+    const depositTargetPerPerson = 530;
+    const withdrawTargetPerPerson = 1500;
 
-    // Fixed calculation: percentage of target achieved (capped at 100%)
-    const csrAchievedPercent = Math.min((csrRealTotal / csrTarget) * 100, 100);
-    const depositAchievedPercent = Math.min(
-      (depositRealTotal / depositTarget) * 100,
-      100
-    );
-    const withdrawAchievedPercent = Math.min(
-      (withdrawRealTotal / withdrawTarget) * 100,
-      100
-    );
+    // CSR के लिए total target = प्रति व्यक्ति target × कुल CSR की संख्या
+    const csrTotalTarget = csrTargetPerPerson * (groupedUsers.CSR?.length || 0);
+    const depositTotalTarget =
+      depositTargetPerPerson * (groupedUsers.Deposit?.length || 0);
+    const withdrawTotalTarget =
+      withdrawTargetPerPerson * (groupedUsers.Withdraw?.length || 0);
+
+    // Percentage calculation
+    const csrAchievedPercent =
+      csrTotalTarget > 0
+        ? Math.min((CsrTotalSum / csrTotalTarget) * 100, 100)
+        : 0;
+
+    const depositAchievedPercent =
+      depositTotalTarget > 0
+        ? Math.min((depositRealTotal / depositTotalTarget) * 100, 100)
+        : 0;
+
+    const withdrawAchievedPercent =
+      withdrawTotalTarget > 0
+        ? Math.min((withdrawRealTotal / withdrawTotalTarget) * 100, 100)
+        : 0;
 
     return {
       csrAbovePercent: csrAchievedPercent,
@@ -166,11 +226,11 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       depositBelowPercent: Math.max(100 - depositAchievedPercent, 0),
       withdrawAbovePercent: withdrawAchievedPercent,
       withdrawBelowPercent: Math.max(100 - withdrawAchievedPercent, 0),
-      csrTargetMet: csrRealTotal >= csrTarget,
-      depositTargetMet: depositRealTotal >= depositTarget,
-      withdrawTargetMet: withdrawRealTotal >= withdrawTarget,
+      csrTargetMet: csrAchievedPercent >= 100,
+      depositTargetMet: depositAchievedPercent >= 100,
+      withdrawTargetMet: withdrawAchievedPercent >= 100,
     };
-  }, [csrRealTotal, depositRealTotal, withdrawRealTotal]);
+  }, [csrRealTotal, depositRealTotal, withdrawRealTotal, groupedUsers]);
 
   const performance = calculateRealPerformance();
 
@@ -489,37 +549,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     },
   ];
 
-  const excludedKeywords = [
-    "shift",
-    "highlights",
-    "half data",
-    "failed",
-    "assigned",
-    "reached",
-    "total",
-    "ave",
-  ];
-
-  const groupedUsers: { [key: string]: string[] } = {};
-
-  for (const sublist of data) {
-    if (sublist.length > 2 && sublist[2].trim() !== "") {
-      const key = sublist[0]?.trim();
-      const name = sublist[2].trim();
-      const lowerName = name.toLowerCase();
-
-      // skip non-user rows
-      const isExcluded = excludedKeywords.some((keyword) =>
-        lowerName.includes(keyword)
-      );
-
-      if (!isExcluded) {
-        if (!groupedUsers[key]) groupedUsers[key] = [];
-        groupedUsers[key].push(name);
-      }
-    }
-  }
-console.log(data,"here")
   return (
     <div className="text-white mt-6 bg-[#00010B]">
       <div className="mt-5">
