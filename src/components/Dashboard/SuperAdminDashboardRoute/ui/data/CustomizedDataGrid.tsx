@@ -79,7 +79,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
   console.log(data, "data h bhai hai ==========>>>>>>>>>");
 
-  const [selectedMonth, setSelectedMonth] = useState<string>("September");
+  const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -596,10 +596,10 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         </h2>
 
         {/* Pie Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {/* CSR Pie Chart */}
           <div className="p-6 bg-[#282e3c38] rounded-2xl border border-white/10 h-[400px]">
-            <div className="h-75 w-72 mx-auto relative">
+            <div className="h-75 w-70 mx-auto relative">
               <Doughnut
                 data={createChartData(
                   performance.csrAbovePercent,
@@ -634,7 +634,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
           {/* Deposit Pie Chart */}
           <div className="p-6 bg-[#282e3c38] rounded-2xl border border-white/10 h-[400px]">
-            <div className="h-72 w-72 mx-auto relative">
+            <div className="h-72 w-70 mx-auto relative">
               <Doughnut
                 data={createChartData(
                   performance.depositAbovePercent,
@@ -669,7 +669,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
           {/* Withdraw Pie Chart */}
           <div className="p-6 bg-[#282e3c38] rounded-2xl border border-white/10 h-[400px]">
-            <div className="h-72 w-72 mx-auto relative">
+            <div className="h-72 w-70 mx-auto relative">
               <Doughnut
                 data={createChartData(
                   performance.withdrawAbovePercent,
@@ -701,28 +701,28 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Weekly Performance Chart */}
-        <div className="bg-[#282e3c38] rounded-2xl border border-white/10 p-6 ">
-          <WeeklyPerformanceChart
-            csrData={{
-              realTotal: csrRealTotal,
-              performance: performance.csrAbovePercent,
-              targetMet: performance.csrTargetMet,
-            }}
-            depositData={{
-              realTotal: depositRealTotal,
-              performance: performance.depositAbovePercent,
-              targetMet: performance.depositTargetMet,
-            }}
-            withdrawData={{
-              realTotal: withdrawRealTotal,
-              performance: performance.withdrawAbovePercent,
-              targetMet: performance.withdrawTargetMet,
-            }}
-            selectedMonth={selectedMonth}
-          />
+          {/* Weekly Performance Chart */}
+          <div className="rounded-2xl h-[400px]">
+            <WeeklyPerformanceChart
+              csrData={{
+                realTotal: csrRealTotal,
+                performance: performance.csrAbovePercent,
+                targetMet: performance.csrTargetMet,
+              }}
+              depositData={{
+                realTotal: depositRealTotal,
+                performance: performance.depositAbovePercent,
+                targetMet: performance.depositTargetMet,
+              }}
+              withdrawData={{
+                realTotal: withdrawRealTotal,
+                performance: performance.withdrawAbovePercent,
+                targetMet: performance.withdrawTargetMet,
+              }}
+              selectedMonth={selectedMonth}
+            />
+          </div>
         </div>
       </div>
 
