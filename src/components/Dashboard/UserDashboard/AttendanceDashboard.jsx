@@ -79,7 +79,6 @@ const AttendanceDashboardUI = ({
   useEffect(() => {
     console.log("AttendanceDashboardUI Rendered:", {
       stats,
-
     });
   });
 
@@ -419,7 +418,7 @@ export default function AttendanceDashboard() {
     <>
       <AttendanceDashboardUI {...hookProps} />
       <AttendanceAnnouncementPopup
-        visible={announcementProps.showAnnouncement}
+        visible={false}
         onClose={() => announcementProps.setShowAnnouncement(false)}
         onProceed={() => announcementProps.setShowAnnouncement(false)}
         userHasPunchedInToday={announcementProps.hasPunchedIn}
