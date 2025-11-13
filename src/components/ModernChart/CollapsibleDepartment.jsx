@@ -105,6 +105,7 @@ export const CollapsibleDepartment = ({
   setExpandedDept,
   data,
   userLength,
+  TotalSum,
   staffPerShift = {},
 }) => {
   // 🔍 Filter department data based on actual data structure
@@ -152,7 +153,7 @@ export const CollapsibleDepartment = ({
         const morningShift = parseFloat(item[4]) || 0;
         const nightShift = parseFloat(item[5]) || 0;
         const sum = morningShift + nightShift;
-        totalCompleted += sum; // ✅ Now adding to number, not object property
+        totalCompleted += sum;
       }
     });
 
@@ -348,28 +349,28 @@ export const CollapsibleDepartment = ({
   if (deptKey === "csr") {
     dynamicMetrics = [
       {
-        title: "Completed",
-        value: csrMetricsData.totalCompleted?.toLocaleString() || "0",
+        title: "Completed convo",
+        value: TotalSum?.toLocaleString() || "0",
         change: csrMetricsData.quotaMetPercent || "0%",
         icon: CheckCircle,
         color: "from-blue-500 to-cyan-500",
       },
       {
-        title: "Effective",
+        title: "Total Effective",
         value: csrMetricsData.totalEffective?.toLocaleString() || "0",
         change: "+8.3%",
         icon: Target,
         color: "from-purple-500 to-pink-500",
       },
       {
-        title: "Messages",
+        title: "Total message",
         value: csrMetricsData.totalMessages?.toLocaleString() || "0",
         change: "+15.7%",
         icon: MessageCircle,
         color: "from-green-500 to-emerald-500",
       },
       {
-        title: "Missed",
+        title: "missed chats",
         value: csrMetricsData.totalMissed?.toLocaleString() || "0",
         change: "-5.2%",
         icon: XCircle,
@@ -414,7 +415,7 @@ export const CollapsibleDepartment = ({
         color: "from-green-500 to-teal-500",
       },
       {
-        title: "2nd/3rd",
+        title: "2nd/3rd Check",
         value: depositMetricsData.totalSecondThirdChecks?.toLocaleString() || "0",
         change: "+4.1%",
         icon: Target,
@@ -428,7 +429,7 @@ export const CollapsibleDepartment = ({
         color: "from-yellow-500 to-orange-500",
       },
       {
-        title: "Records",
+        title: "Paycheck Daily records",
         value: depositMetricsData.totalRecords?.toLocaleString() || "0",
         change: "+7.5%",
         icon: Activity,
@@ -453,7 +454,7 @@ export const CollapsibleDepartment = ({
       },
       {
         title: "Total Amount passed",
-        value: withdrawMetricsData.totalPassedAmount?.toLocaleString()  || "$0",
+        value: withdrawMetricsData.totalPassedAmount?.toLocaleString() || "$0",
         change: "+22.3%",
         icon: DollarSign,
         color: "from-purple-500 to-pink-500",
@@ -467,7 +468,7 @@ export const CollapsibleDepartment = ({
       },
       {
         title: "Total Amount Rejected",
-        value: withdrawMetricsData.totalRejectedAmount?.toLocaleString()  || "$0",
+        value: withdrawMetricsData.totalRejectedAmount?.toLocaleString() || "$0",
         change: "-6.2%",
         icon: TrendingDown,
         color: "from-orange-500 to-red-500",
@@ -481,7 +482,7 @@ export const CollapsibleDepartment = ({
       },
       {
         title: "Total Amount process",
-        value: withdrawMetricsData.totalProcessingAmount?.toLocaleString()  || "$0",
+        value: withdrawMetricsData.totalProcessingAmount?.toLocaleString() || "$0",
         change: "+8.7%",
         icon: Activity,
         color: "from-indigo-500 to-purple-500",

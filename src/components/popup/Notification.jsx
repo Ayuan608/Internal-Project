@@ -14,7 +14,7 @@ const NotificationPopup = ({ userId }) => {
   const { notifications, unreadCount, loading, error } = useSelector(
     (state) => state.notifications
   );
-  console.log("notification show karwa do bhai ", notifications);
+
   const popupRef = useRef();
   const hasFetchedRef = useRef(false);
 
@@ -45,9 +45,6 @@ const NotificationPopup = ({ userId }) => {
     }, 30000);
     return () => clearInterval(interval);
   }, [dispatch, userId]);
-
-  if (loading) console.log("⏳ Loading notifications...");
-  if (error) console.log("❌ Error:", error);
 
   return (
     <div className="relative" ref={popupRef}>

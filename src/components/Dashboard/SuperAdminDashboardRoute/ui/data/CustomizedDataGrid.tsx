@@ -76,9 +76,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state: any) => state.combinedQuota
   );
-
-  console.log(data, "data h bhai hai ==========>>>>>>>>>");
-
+console.log(data)
   const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -98,15 +96,18 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     "assigned",
     "reached",
     "total",
-    "ave",
     "member",
     "reject",
     "拒绝提现",
     "deposit total",
     "withdraw total",
+    "senior",
+    "morning",
+    "12 Hours",
+    "9 HOURS",
   ];
 
-  const groupedUsers: { [key: string]: any[][] } = {}; // store full rows
+  const groupedUsers: { [key: string]: any[][] } = {};
 
   for (const sublist of data) {
     const department = sublist[0]?.trim();
@@ -133,10 +134,18 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const WdTotaltransaction = groupedUsers?.Withdraw?.map((item) =>
     parseNumber(item[7] || 0)
   );
+  const DepositTotaltransaction = groupedUsers?.Deposit?.map((item) =>
+    parseNumber(item[9] || 0)
+  );
 
   const CsrTotalSum = CsrTotalConvey?.reduce((acc, val) => acc + val, 0);
   const WdtotalSum = WdTotaltransaction?.reduce((acc, val) => acc + val, 0);
+  const DepositTotalsum = DepositTotaltransaction?.reduce(
+    (acc, val) => acc + val,
+    0
+  );
 
+  console.log(CsrTotalConvey, "let assume ");
   // Calculate real totals from data
   const calculateRealTotals = useCallback(() => {
     const csrTotals: { [key: string]: number } = {};
@@ -193,7 +202,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
   // Calculate performance percentages based on real data - FIXED TARGET CALCULATION
   const calculateRealPerformance = useCallback(() => {
-    const csrTargetPerPerson = 530;
+    const csrTargetPerPerson = 560;
     const depositTargetPerPerson = 530;
     const withdrawTargetPerPerson = 1500;
 
@@ -212,7 +221,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
     const depositAchievedPercent =
       depositTotalTarget > 0
-        ? Math.min((depositRealTotal / depositTotalTarget) * 100, 100)
+        ? Math.min((DepositTotalsum / depositTotalTarget) * 100, 100)
         : 0;
 
     const withdrawAchievedPercent =
@@ -245,7 +254,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         trend: performance.csrTargetMet ? "up" : "down",
         totalCompleted: csrRealTotal,
         target: 530,
-        difference: csrRealTotal,
+        difference: CsrTotalSum.toLocaleString(),
         isPositive: performance.csrTargetMet,
         realTotal: csrRealTotal,
         performance: performance.csrAbovePercent,
@@ -253,12 +262,12 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       },
       {
         title: "Deposit - Total Transaction",
-        value: `${formatNumber(depositRealTotal)}`,
+        value: `${formatNumber(DepositTotalsum)}`,
         interval: `Target: 530`,
         trend: performance.depositTargetMet ? "up" : "down",
-        totalCompleted: depositRealTotal,
+        totalCompleted: DepositTotalsum,
         target: 530,
-        difference: formatNumber(depositRealTotal),
+        difference: DepositTotalsum.toLocaleString(),
         isPositive: performance.depositTargetMet,
         realTotal: depositRealTotal,
         performance: performance.depositAbovePercent,
@@ -271,7 +280,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         trend: performance.withdrawTargetMet ? "up" : "down",
         totalCompleted: withdrawRealTotal,
         target: 1500,
-        difference: withdrawRealTotal,
+        difference: withdrawRealTotal.toLocaleString(),
         isPositive: performance.withdrawTargetMet,
         realTotal: withdrawRealTotal,
         performance: performance.withdrawAbovePercent,
@@ -481,7 +490,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const csrMetrics = [
     {
       title: "Completed",
-      value: formatNumber(csrRealTotal),
+      value: formatNumber(CsrTotalSum),
       change: performance.csrTargetMet ? "+Achieved" : "-Below Target",
       icon: CheckCircle,
       color: "from-blue-500 to-cyan-500",
@@ -555,6 +564,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       <div className="mt-5">
         {/* Collapsible Department Metrics */}
         <CollapsibleDepartment
+          TotalSum={CsrTotalSum}
           title="CSR Department"
           userLength={groupedUsers}
           data={data}
@@ -566,6 +576,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           staffPerShift={staffPerShift}
         />
         <CollapsibleDepartment
+          TotalSum={CsrTotalSum}
           title="Deposit Department"
           data={data}
           userLength={groupedUsers}
@@ -577,6 +588,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           staffPerShift={staffPerShift}
         />
         <CollapsibleDepartment
+          TotalSum={CsrTotalSum}
           title="Withdrawal Department"
           data={data}
           subtitle="Transaction Processing"

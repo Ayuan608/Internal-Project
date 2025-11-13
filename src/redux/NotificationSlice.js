@@ -60,7 +60,6 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("✅ API Response:", action.payload);
         state.notifications = action.payload;
         state.unreadCount = action.payload.filter((n) => !n.isRead).length;
       })
