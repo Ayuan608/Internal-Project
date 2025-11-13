@@ -77,8 +77,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     (state: any) => state.combinedQuota
   );
 
-  console.log(data, "data h bhai hai ==========>>>>>>>>>");
-
   const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);

@@ -46,7 +46,7 @@ const NotificationPopup = ({ userId }) => {
     return () => clearInterval(interval);
   }, [dispatch, userId]);
 
-  if (loading) console.log("⏳ Loading notifications...");
+  if (!loading) console.log("⏳ Loading notifications...");
   if (error) console.log("❌ Error:", error);
 
   return (
