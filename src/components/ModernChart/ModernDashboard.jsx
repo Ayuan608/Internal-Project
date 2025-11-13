@@ -134,12 +134,12 @@ const ModernDashboard = () => {
   ];
 
   const withdrawalMetrics = [
-    { title: 'Passed', value: '2.34K', change: '+18.5%', icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
-    { title: 'Amount', value: '$15.4M', change: '+22.3%', icon: DollarSign, color: 'from-purple-500 to-pink-500' },
-    { title: 'Rejected', value: '87', change: '-4.8%', icon: XCircle, color: 'from-red-500 to-orange-500' },
-    { title: 'Rej. Amount', value: '$234K', change: '-6.2%', icon: TrendingDown, color: 'from-orange-500 to-red-500' },
-    { title: 'Processing', value: '156', change: '+5.3%', icon: Clock, color: 'from-blue-500 to-cyan-500' },
-    { title: 'Proc. Amt', value: '$987K', change: '+8.7%', icon: Activity, color: 'from-indigo-500 to-purple-500' }
+    { title: 'Total Transaction passed', value: '2.34K', change: '+18.5%', icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
+    { title: 'Total amount passed', value: '$15.4M', change: '+22.3%', icon: DollarSign, color: 'from-purple-500 to-pink-500' },
+    { title: 'RTotal Transaction Rejected', value: '87', change: '-4.8%', icon: XCircle, color: 'from-red-500 to-orange-500' },
+    { title: 'Total amount Rejected', value: '$234K', change: '-6.2%', icon: TrendingDown, color: 'from-orange-500 to-red-500' },
+    { title: 'Total Transaction process', value: '156', change: '+5.3%', icon: Clock, color: 'from-blue-500 to-cyan-500' },
+    { title: 'Total Amount process', value: '$987K', change: '+8.7%', icon: Activity, color: 'from-indigo-500 to-purple-500' }
   ];
 
   // Build daily series for KPI sparklines

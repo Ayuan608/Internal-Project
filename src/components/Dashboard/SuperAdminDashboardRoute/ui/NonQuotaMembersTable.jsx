@@ -209,8 +209,6 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
             <tr>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DATE</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">NAME</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">ROLE</th>
-              <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DEPARTMENT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">OUTPUT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">TARGET</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">COMPLETION</th>
