@@ -8,7 +8,6 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
-import ExampleIosSwitch from "../components/Dashboard/SuperAdminDashboardRoute/ui/Switch";
 import EmployeeSchedule from "../components/Dashboard/CheckerDashboard/Schedule";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance } from "../redux/attendenceSlice";
@@ -166,9 +165,7 @@ const OverallAttendance = () => {
   // ✅ JSX
   return (
     <div className="mt-5">
-      <div className="flex justify-end items-start">
-        <ExampleIosSwitch />
-      </div>
+   
 
       <div className=" p-5 font-sans text-white">
         <div className="max-w-full mx-auto">

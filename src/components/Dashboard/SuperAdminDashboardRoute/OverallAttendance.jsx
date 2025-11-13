@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from "react";
-import ExampleIosSwitch from "./ui/Switch";
 import { Download, Search } from "lucide-react";
 import AttendenceData from "../AdminDashboard/AttendenceData";
 import WeeklyAttendanceTrendChart from "../AdminDashboard/WeeklyAttendenceChart";
@@ -193,17 +192,7 @@ const OverallAttendance = () => {
 
   return (
     <div className="mt-5">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            Overall Attendance
-          </h1>
-          <p className="text-gray-400">
-            See All the Attendance of All the Employee 
-          </p>
-        </div>
-        <ExampleIosSwitch />
-      </div>
+    
 
       {/* Loading State */}
       {isLoading && (
