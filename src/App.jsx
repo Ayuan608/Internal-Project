@@ -32,17 +32,57 @@ import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-white
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
-import ModernDashboard from "./components/ModernChart/ModernDashboard";
+import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
+import { Bell } from "lucide-react";
 
 function App() {
   useEffect(() => {
     requestForToken();
 
-    onMessageListener().then((payload) => {
-      console.log("🎯 Notification Received in Foreground:", payload);
-      alert(`${payload.notification.title}\n${payload.notification.body}`);
-    });
+    onMessageListener()
+      .then((payload) => {
+        console.log("🎯 Notification Received in Foreground:", payload);
+
+        const notification = payload?.notification;
+        const title = notification?.title || "New Notification";
+        const body = notification?.body || "You have a new message.";
+
+        toast.custom((t) => (
+          <div
+            className={`${t.visible ? "animate-custom-enter" : "animate-leave"
+              }  max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+          >
+            <div className="flex-1 w-0 p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 pt-0.5">
+                  <Bell className="h-10 w-10 rounded-fullv" />
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-semibold text-gray-900">{title}</p>
+                  <p className="mt-1 text-sm text-gray-500">{body}</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex border-l border-gray-200">
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        ));
+      })
+      .catch((err) => console.error("❌ Error receiving notification:", err));
   }, []);
+  const { i18n: i18nextInstance } = useTranslation();
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("language") || "en";
+    i18nextInstance.changeLanguage(savedLang);
+  }, [i18nextInstance]);
 
   return (
     <Routes>

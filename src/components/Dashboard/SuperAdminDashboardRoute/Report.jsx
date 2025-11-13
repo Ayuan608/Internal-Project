@@ -173,13 +173,15 @@ function Report() {
 
     return (
         <div className='min-h-[92.7vh] pt-2 flex flex-col gap-6 text-white px-4'>
-            <div className="flex justify-between items-start mb-6 w-full">
-
+            <div className="flex justify-between items-start m-2 w-full">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">All Reports</h1>
-                    <p className="text-gray-400">View and manage all reports from team members.</p>
+                    <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                        All Reports
+                    </h1>
+                    <p className="text-gray-400">
+                        View and manage all reports from team members
+                    </p>
                 </div>
-
                 {/* Right Section */}
                 <div className="flex flex-col items-end gap-4 w-full max-w-3xl">
 

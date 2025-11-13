@@ -61,10 +61,10 @@ const StoragePage = () => {
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit' 
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
         });
     };
 
@@ -76,7 +76,7 @@ const StoragePage = () => {
     };
 
     // Convert deleted reports to files data
-    const filesData = deletedReports && deletedReports.length > 0 
+    const filesData = deletedReports && deletedReports.length > 0
         ? deletedReports.map((report) => ({
             id: report._id,
             name: `${report.purpose || 'Report'}_${formatDate(report.date).replace(/\//g, '-')}.zip`,
@@ -142,29 +142,16 @@ const StoragePage = () => {
             }} />
 
             {/* Header Section */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
-                <Box>
-                    <Typography
-                        variant="h4"
-                        gutterBottom
-                        sx={{
-                            fontWeight: 'bold',
-                            background: `linear-gradient(45deg, ${colors.primary}, ${colors.info})`,
-                            backgroundClip: 'text',
-                            WebkitBackgroundClip: 'text',
-                            color: 'transparent',
-                        }}
-                    >
-                        Cloud Storage
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: '#94A3B8', fontWeight: 300 }}>
-                        Manage your deleted reports archive
-                    </Typography>
-                </Box>
-            </Box>
-
+            <div>
+                <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                    Cloud Storage
+                </h1>
+                <p className="text-gray-400">
+                    Manage your deleted reports archive
+                </p>
+            </div>
             {/* Storage Overview Cards */}
-            <Grid container spacing={3} sx={{ mb: 6 }}>
+            <Grid container spacing={3} sx={{ mb: 4,mt:2 }}>
                 {/* Main Storage Card */}
                 <Grid item xs={12} md={4}>
                     <Card sx={{
@@ -332,7 +319,7 @@ const StoragePage = () => {
                                     <MenuItem value="archive">📦 Archives</MenuItem>
                                 </TextField>
                                 <Tooltip title="Refresh Files">
-                                    <IconButton 
+                                    <IconButton
                                         onClick={() => dispatch(getDeletedReports())}
                                         sx={{
                                             color: colors.info,

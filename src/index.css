@@ -207,6 +207,7 @@ button {
   animation: fadeAnimate 0.25s ease-in-out;
 }
 
+
 .MuiDataGrid-row {
   border: 1px solid var(--box-border) !important;
 }

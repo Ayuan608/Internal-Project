@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { login, verify2FA } from "../redux/authSlice";
+import { addFcm, login, verify2FA } from "../redux/authSlice";
 import toast from "react-hot-toast";
 import { recordLogin } from "../redux/activitylogSlice";
+import { requestForToken } from "../services/firebase/firebase";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -38,87 +39,115 @@ const Login = () => {
   };
 
   // Handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const validationErrors = validate();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
 
-    setIsLoading(true);
-    setErrors({});
+  setIsLoading(true);
+  setErrors({});
 
-    try {
-      if (!requireOtp) {
-        // Login step
-        const res = await dispatch(login(loginData));
-        const payload = res?.payload;
+  try {
+    if (!requireOtp) {
+      // Login step
+      const res = await dispatch(login(loginData));
+      const payload = res?.payload;
 
-        if (!payload) {
-          toast.error("Unexpected error");
-          setIsLoading(false);
-          return;
+      if (!payload) {
+        toast.error("Unexpected error");
+        setIsLoading(false);
+        return;
+      }
+
+      if (payload?.require2FA) {
+        setRequireOtp(true);
+        toast.success("2FA required. Please enter your Authenticator code.");
+      } else if (payload?.token && !payload?.require2FA) {
+        toast.success("Login successful!");
+
+        // Record login
+        try {
+          await dispatch(recordLogin());
+        } catch (err) {
+          console.error("Activity log failed:", err);
         }
 
-        if (payload?.require2FA) {
-          setRequireOtp(true);
-          toast.success("2FA required. Please enter your Authenticator code.");
-        } else if (payload?.token && !payload?.require2FA) {
-          toast.success("Login successful!"); try {
-            await dispatch(recordLogin());
-          } catch (err) {
-            console.error("Activity log failed:", err);
-          }
-          navigate("/dashboard");
-        } else {
-          toast.error("Invalid response from server");
+        // Navigate immediately ✅
+        navigate("/dashboard");
+
+        // 🔹 Background FCM handling (non-blocking)
+        requestForToken()
+          .then((fcmToken) => {
+            if (fcmToken) {
+              dispatch(addFcm(fcmToken));
+            } else {
+              console.warn("⚠️ No FCM token available.");
+            }
+          })
+          .catch((err) => console.error("FCM Error:", err));
+
+      } else {
+        toast.error("Invalid response from server");
+      }
+
+    } else {
+      // 2FA Verification
+      const res = await dispatch(verify2FA({ otp }));
+      const payload = res?.payload;
+
+      if (payload?.token) {
+        toast.success("Login successful!");
+        const role = payload?.user?.role;
+
+        // Navigate immediately ✅
+        switch (role) {
+          case "Admin":
+            navigate("/admin");
+            break;
+          case "Super-Admin":
+            navigate("/dashboard");
+            break;
+          case "Checker":
+            navigate("/checker");
+            break;
+          case "User":
+            navigate("/user");
+            break;
+          case "Team-Leader":
+            navigate("/team");
+            break;
+          default:
+            navigate("/login");
+            toast.error("Invalid role detected");
+            break;
+        }
+
+        // Background FCM call (no delay)
+        requestForToken()
+          .then((fcmToken) => {
+            if (fcmToken) dispatch(addFcm(fcmToken));
+          })
+          .catch((err) => console.error("FCM Error:", err));
+
+        // Log user activity
+        try {
+          await dispatch(recordLogin());
+        } catch (err) {
+          console.error("Activity log failed:", err);
         }
       } else {
-        // 2FA Verification
-        const res = await dispatch(verify2FA({ otp }));
-        const payload = res?.payload;
-
-        if (payload?.token) {
-          toast.success("Login successful!");
-          const role = payload?.user?.role;
-
-          switch (role) {
-            case "Admin":
-              navigate("/admin");
-              break;
-            case "Super-Admin":
-              navigate("/dashboard");
-              break;
-            case "Checker":
-              navigate("/checker");
-              break;
-            case "User":
-              navigate("/user");
-              break;
-            case "Team-Leader":
-              navigate("/team");
-              break;
-            default:
-              navigate("/login");
-              toast.error("Invalid role detected");
-              break;
-          }
-          try {
-            await dispatch(recordLogin());
-          } catch (err) {
-            console.error("Activity log failed:", err);
-          }
-        } else {
-          toast.error("Invalid OTP");
-        }
+        toast.error("Invalid OTP");
       }
-    } catch (err) {
-      toast.error("Something went wrong");
     }
+  } catch (err) {
+    toast.error("Something went wrong");
+  }
 
-    setIsLoading(false);
-  };
+  setIsLoading(false);
+};
 
   // Handle back from OTP screen
   const handleBack = () => {
@@ -152,8 +181,9 @@ const Login = () => {
                 type="text"
                 name="username"
                 placeholder="Username"
-                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${errors.username ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${
+                  errors.username ? "border-red-500" : "border-gray-300"
+                }`}
                 value={loginData.username}
                 onChange={handleInputChange}
               />
@@ -170,8 +200,9 @@ const Login = () => {
                 type="password"
                 name="password"
                 placeholder="Password"
-                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`p-3 bg-gray-700 focus:outline-none rounded-lg ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
                 ref={passwordRef}
                 value={loginData.password}
                 onChange={handleInputChange}
@@ -204,8 +235,9 @@ const Login = () => {
               name="otp"
               placeholder="Enter 6-digit code"
               maxLength={6}
-              className={`p-3 bg-gray-700 focus:outline-none rounded-lg text-center text-lg tracking-widest ${errors.otp ? "border-red-500" : "border-gray-300"
-                }`}
+              className={`p-3 bg-gray-700 focus:outline-none rounded-lg text-center text-lg tracking-widest ${
+                errors.otp ? "border-red-500" : "border-gray-300"
+              }`}
               value={otp}
               onChange={handleOtpChange}
             />

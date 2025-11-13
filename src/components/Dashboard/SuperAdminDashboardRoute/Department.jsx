@@ -5,10 +5,12 @@ import { ChevronDown, Users, Target, TrendingUp, BarChart3 } from "lucide-react"
 import NonQuota from './NonQuota';
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCombinedDepartmentsData } from "../../../redux/combinedQuotaSlice";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const Department = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [departmentStats, setDepartmentStats] = useState({
@@ -269,17 +271,17 @@ const Department = () => {
       {/* Title */}
       <div className="flex justify-between items-center mt-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">
-            Department Management
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            {t("Department Management")}
           </h1>
-          <p className="text-gray-500">
-            Monitor and manage department quotas and performance
+          <p className="text-gray-400">
+            {t("Monitor and manage department quotas and performance")}
           </p>
         </div>
       </div>
 
       {/* Enhanced Department Filter */}
-      <div className="mt-6 flex justify-end">
+      <div className="mt-4 flex justify-end">
         <div className="relative inline-block w-64">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}

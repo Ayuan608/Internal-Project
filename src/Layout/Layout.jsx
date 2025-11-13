@@ -8,6 +8,8 @@ import BindGoogleModal from "./BIndGoogle";
 import RecentAnnoucement from "../components/popup/RecentAnnoucement";
 import { logout } from "../redux/authSlice";
 import ProfileModal from "../components/popup/ProfileModal";
+import LanguageChange from "../components/popup/LanguageChange";
+import { useTranslation } from "react-i18next";
 
 const Layout = () => {
     const dispatch = useDispatch();
@@ -19,7 +21,7 @@ const Layout = () => {
     const userData = useSelector((state) => state?.auth?.data);
     const [isBindModalOpen, setBindModalOpen] = useState(false);
     const [open, setOpen] = useState(false);
-
+    const { t } = useTranslation()
     const handleToggle = () => {
         setToggle(!toggle);
     };
@@ -96,8 +98,9 @@ const Layout = () => {
 
                         <div className="flex items-center gap-4 absolute right-0">
                             <span className="whitespace-nowrap">{dateTime}</span>
-                            <NotificationPopup />
+                            {/* <NotificationPopup userId={userData?._id} /> */}
                             <RecentAnnoucement />
+                            <LanguageChange />
                             <div className="flex items-center gap-3" ref={menuRef}>
                                 <button
                                     onClick={() => setIsOpen((o) => !o)}
@@ -114,7 +117,7 @@ const Layout = () => {
                                             tabIndex={0}
                                             className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer"
                                         >
-                                            <User /> Profile
+                                            <User /> {t("Profile")}
                                         </div>
                                         <div
                                             onClick={handleBindGoogleClick}

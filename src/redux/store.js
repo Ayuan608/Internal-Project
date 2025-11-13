@@ -15,11 +15,11 @@ const store = configureStore({
         stat:statSliceReducer,
         auth: authSliceReducer,
         attendance: attendenceSliceReducer,
-        notifications: notificationSliceReducer,
         quota: quotaSliceReducer,
         report: reportSliceReducer,
         activity:activitySliceReducer,
         sheet: sheetSliceReducer,
+        notifications: notificationSliceReducer,
         announcements: announcementSliceReducer,
         combinedQuota: combinedQuotaReducer,
         employeeOfMonth:employeeOfMonthReducer

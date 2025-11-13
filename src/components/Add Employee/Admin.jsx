@@ -24,12 +24,13 @@ import {
 import toast from "react-hot-toast";
 import MetaData from "../../more/MetaData";
 import countries from "../../Helpers/countriles";
+import { useTranslation } from "react-i18next";
 
 function Admin() {
   const dispatch = useDispatch();
   const { users } = useSelector((state) => state?.auth);
   const role = useSelector((state) => state.auth?.role);
-
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
@@ -256,7 +257,6 @@ function Admin() {
         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-              <Users className="w-8 h-8 text-sky-400" />
               User Management
             </h1>
             <p className="text-gray-400">
@@ -291,25 +291,25 @@ function Admin() {
             {Object.entries(statistics.departmentCount).map(([dept, count]) => {
               const isActive = departmentFilter === dept;
               let buttonColor = "bg-slate-800/30 text-gray-300 border-slate-700 hover:bg-slate-800/50";
-              
+
               if (dept === "CSR") {
-                buttonColor = isActive 
-                  ? "bg-blue-600/30 text-blue-300 border-blue-500" 
+                buttonColor = isActive
+                  ? "bg-blue-600/30 text-blue-300 border-blue-500"
                   : "bg-blue-600/10 text-blue-400 border-blue-600/30 hover:bg-blue-600/20";
               } else if (dept === "Deposit") {
-                buttonColor = isActive 
-                  ? "bg-green-600/30 text-green-300 border-green-500" 
+                buttonColor = isActive
+                  ? "bg-green-600/30 text-green-300 border-green-500"
                   : "bg-green-600/10 text-green-400 border-green-600/30 hover:bg-green-600/20";
               } else if (dept === "Withdraw") {
-                buttonColor = isActive 
-                  ? "bg-purple-600/30 text-purple-300 border-purple-500" 
+                buttonColor = isActive
+                  ? "bg-purple-600/30 text-purple-300 border-purple-500"
                   : "bg-purple-600/10 text-purple-400 border-purple-600/30 hover:bg-purple-600/20";
               } else if (dept === "Marketing") {
-                buttonColor = isActive 
-                  ? "bg-orange-600/30 text-orange-300 border-orange-500" 
+                buttonColor = isActive
+                  ? "bg-orange-600/30 text-orange-300 border-orange-500"
                   : "bg-orange-600/10 text-orange-400 border-orange-600/30 hover:bg-orange-600/20";
               }
-              
+
               return (
                 <motion.button
                   key={dept}
@@ -428,7 +428,7 @@ function Admin() {
                 >
                   <td className="px-6 py-4">
                     <img
-                      src={user?.avatar?.url }
+                      src={user?.avatar?.url}
                       alt={user?.FullName}
                       className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/30"
                     />
@@ -460,8 +460,8 @@ function Admin() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${user?.status === "active"
-                        ? "bg-green-500/20 text-green-300"
-                        : "bg-red-500/20 text-red-300"
+                      ? "bg-green-500/20 text-green-300"
+                      : "bg-red-500/20 text-red-300"
                       }`}>
                       {user?.status}
                     </span>

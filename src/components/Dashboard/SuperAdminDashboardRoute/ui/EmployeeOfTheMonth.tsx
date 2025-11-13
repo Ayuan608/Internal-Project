@@ -203,7 +203,7 @@ const EmployeeOfTheMonthAdmin = () => {
         )}
 
         {/* Header */}
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg shadow-amber-500/30">
               <Trophy className="w-8 h-8 text-white" />
@@ -217,7 +217,15 @@ const EmployeeOfTheMonthAdmin = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
+              <div>
+            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                    Employee of the Month
+            </h1>
+            <p className="text-gray-400">
+              Manage your users, employees and their permissions
+            </p>
+          </div>
 
         {/* Tabs */}
         <div className="flex gap-4 mb-8">
