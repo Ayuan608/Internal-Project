@@ -22,6 +22,7 @@ export default function TeamLeaderDashboard() {
     quotaManagementData
   } = useTeamLeaderDashboard();
 
+
   const dispatch = useDispatch();
   const { data } = useSelector((state) => state.combinedQuota);
 
@@ -62,10 +63,6 @@ export default function TeamLeaderDashboard() {
     }, 120000); // 2 minutes
     return () => clearInterval(interval);
   }, [dispatch, isInitialized, department]);
-
-
-
-
 
   return (
     <TeamLeaderDashboardUI

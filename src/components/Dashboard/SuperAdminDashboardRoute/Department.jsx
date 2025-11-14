@@ -406,7 +406,7 @@ const Department = () => {
 
       {/* Dual Charts - Centered */}
       <div className="flex gap-6 my-6 rounded-lg ">
-        <div className="rounded-xl shadow-xl bg-slate-900/40 border-slate-800 border w-1/3">
+        <div className="rounded-xl shadow-xl bg-slate-900/40 border-slate-800 border w-1/3 max-h-[350px]">
           <div className="relative w-80 h-80 mx-auto flex items-center justify-center p-4">
             {/* Donut Chart */}
             <Doughnut data={currentData.chartData} options={chartOptions} />

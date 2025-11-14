@@ -3,45 +3,156 @@ import { RefreshCw, Download, Search, AlertCircle, Database, ChevronLeft, Chevro
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSheetDataByDepartment } from '../../../redux/sheetSlice';
 import * as XLSX from 'xlsx';
-import { fetchCombinedDepartmentsData } from '../../../redux/combinedQuotaSlice';
 
 const Performance = () => {
     const dispatch = useDispatch();
-    const { headers, data, loading, error, department } = useSelector((state) => state.sheet);
-    console.log(data)
+    const { headers, loading, error, department, sections } = useSelector((state) => state.sheet);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [selectedShift, setSelectedShift] = useState('all');
-    const [tableHeaders, setTableHeaders] = useState([]);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [tableData, setTableData] = useState([]);
 
     useEffect(() => {
-        dispatch(fetchCombinedDepartmentsData());
+        console.log("🚀 Dispatching fetchSheetDataByDepartment...");
+        dispatch(fetchSheetDataByDepartment())
+            .unwrap()
+            .then((result) => {
+                console.log("✅ API Response:", result);
+                if (result.sections && result.sections[0] && result.sections[0].data) {
+                    const rawData = result.sections[0].data;
+                    console.log("📊 Raw data from API:", rawData);
+
+                    // Process and filter valid data
+                    const processedData = processAndFilterData(rawData);
+                    setTableData(processedData);
+                    console.log("✅ Processed valid data:", processedData);
+                }
+            })
+            .catch((error) => {
+                console.error("❌ fetchSheetDataByDepartment failed:", error);
+            });
     }, [dispatch]);
 
-    // Reset to first page when filters change
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, startDate, endDate, selectedShift]);
+    // Department-wise headers
+    const getCustomHeaders = () => {
+        const dept = department?.toLowerCase() || 'csr';
 
+        if (dept.includes('deposit')) {
+            return [
+                'NAME',
+                'livechecking',
+                '1st checkback',
+                '2nd /3rd checkback',
+                'Paycheck',
+                'Daily records',
+                'offline',
+                'Total',
+            ];
+        } else if (dept.includes('withdraw') || dept.includes('wd')) {
+            return [
+                'NAME',
+                'Total Transaction passed',
+                'Total amount passed',
+                'Total Transaction Rejected',
+                'Total amount Rejected',
+                'Total Transaction process',
+                'Total Amount process'
+            ];
+        } else {
+            // Default CSR headers
+            return [
+                'NAME',
+                'Completed convo',
+                'Total Effective',
+                'Total message',
+                'missed chats',
+                'Online Time',
+                'Positive rates',
+                'Negative rates',
+                'Offline',
+            ];
+        }
+    };
 
-    const customHeaders = [
-        'NAME',
-        'TG NAME',
-        'TOTAL WORKING HOURS',
-        'TIME START',
-        'TIME END',
-        'TOTAL TIME',
-        'TASK',
-        'TIME RANGE',
-        'DEPOSIT',
-        'CALLBACK/AGENT'
-    ];
+    const customHeaders = getCustomHeaders();
+
+    // Function to check if a row has valid data
+    const isValidDataRow = (row) => {
+        if (!row || !Array.isArray(row) || row.length === 0) {
+            return false;
+        }
+
+        // Check if first cell (NAME) is valid
+        const nameCell = row[0];
+        if (!nameCell ||
+            typeof nameCell !== 'string' ||
+            nameCell.trim() === '' ||
+            nameCell.toLowerCase().includes('total') ||
+            nameCell.toLowerCase().includes('shift') ||
+            nameCell.toLowerCase().includes('member') ||
+            nameCell.toLowerCase().includes('name') && row.length < 3) {
+            return false;
+        }
+
+        // Check if row has at least some meaningful data
+        const meaningfulCells = row.filter(cell => {
+            if (!cell) return false;
+            const strCell = String(cell).trim();
+            return strCell !== '' &&
+                !strCell.toLowerCase().includes('total') &&
+                !strCell.toLowerCase().includes('shift');
+        });
+
+        return meaningfulCells.length >= 3; // At least 3 meaningful cells
+    };
+
+    // Function to process and filter data
+    const processAndFilterData = (rawData) => {
+        if (!rawData || !Array.isArray(rawData)) {
+            return [];
+        }
+
+        console.log("🔄 Processing raw data, total rows:", rawData.length);
+
+        // Find the header row index
+        let dataStartIndex = 0;
+        for (let i = 0; i < Math.min(10, rawData.length); i++) {
+            const row = rawData[i];
+            if (row && row.length > 0) {
+                const firstCell = String(row[0] || '').toLowerCase();
+                // Look for actual data rows (not headers)
+                if (firstCell &&
+                    !firstCell.includes('member') &&
+                    !firstCell.includes('name') &&
+                    !firstCell.includes('shift') &&
+                    !firstCell.includes('total') &&
+                    firstCell.trim() !== '') {
+                    dataStartIndex = i;
+                    break;
+                }
+            }
+        }
+
+        console.log("📍 Data starts from index:", dataStartIndex);
+
+        // Extract data rows and filter valid ones
+        const validData = [];
+        for (let i = dataStartIndex; i < rawData.length; i++) {
+            const row = rawData[i];
+            if (isValidDataRow(row)) {
+                validData.push(row);
+            }
+        }
+
+        console.log("✅ Valid data rows found:", validData.length);
+        return validData;
+    };
 
     // Function to calculate time difference
     const calculateTimeDifference = (startTime, endTime) => {
@@ -49,19 +160,14 @@ const Performance = () => {
 
         try {
             const parseTime = (timeStr) => {
-                // Handle different time formats
-                let time = timeStr.toString().trim();
-
-                // Remove any AM/PM and extra spaces
+                let time = String(timeStr).trim();
                 time = time.replace(/[AP]M/gi, '').trim();
 
-                // Handle 24-hour format
                 if (time.includes(':')) {
                     const [hours, minutes] = time.split(':').map(part => parseInt(part) || 0);
                     return hours * 60 + minutes;
                 }
 
-                // Handle decimal format (like 6.5 hours)
                 if (time.includes('.')) {
                     return Math.floor(parseFloat(time) * 60);
                 }
@@ -73,211 +179,48 @@ const Performance = () => {
             const endMinutes = parseTime(endTime);
 
             let diffMinutes = endMinutes - startMinutes;
-
-            // Handle overnight shifts (end time is next day)
-            if (diffMinutes < 0) {
-                diffMinutes += 24 * 60; // Add 24 hours
-            }
+            if (diffMinutes < 0) diffMinutes += 24 * 60;
 
             const hours = Math.floor(diffMinutes / 60);
             const minutes = diffMinutes % 60;
 
             return `${hours}:${minutes.toString().padStart(2, '0')}`;
         } catch (error) {
-            console.error('Error calculating time difference:', error);
             return '0:00';
         }
     };
 
-    // Function to format date to MM/DD/YYYY
-    const formatDate = (dateString) => {
-        if (!dateString) return dateString;
-
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const year = date.getFullYear();
-
-            return `${month}/${day}/${year}`;
-        } catch (error) {
-            return dateString;
-        }
-    };
-
-    // Function to process data and group by shifts
-    const processShiftData = () => {
-        if (!data || data.length === 0) return { morning: [], night: [] };
-
-        const morningShift = [];
-        const nightShift = [];
-        let currentShift = null;
-
-        data.forEach((row) => {
-            // Skip empty rows
-            if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
-                return;
-            }
-
-            // Check if this row indicates a shift header
-            if (typeof row[0] === 'string') {
-                const firstCell = row[0].toLowerCase();
-
-                if (firstCell.includes('morning shift')) {
-                    currentShift = 'morning';
-                    return;
-                } else if (firstCell.includes('night shift')) {
-                    currentShift = 'night';
-                    return;
-                }
-            }
-
-            // Skip header rows
-            if (row.some(cell =>
-                typeof cell === 'string' &&
-                (cell.toUpperCase().includes('NAME') && cell.toUpperCase().includes('TG NAME'))
-            )) {
-                return;
-            }
-
-            // Add to appropriate shift based on currentShift
-            if (currentShift === 'morning') {
-                morningShift.push(row);
-            } else if (currentShift === 'night') {
-                nightShift.push(row);
-            }
-        });
-
-        return { morning: morningShift, night: nightShift };
-    };
-
-    // Function to process and enhance rows with calculated time
+    // Function to process rows with time calculation
     const processRowsWithTimeCalculation = (rows) => {
         return rows.map(row => {
-            // Your data structure analysis:
-            // Index 3: Start Time (e.g., '13:30')
-            // Index 4: End Time (e.g., '19:30') 
-            // Index 5: Total Time (e.g., '6:00:00')
-
-            const startTime = row[3]; // Start Time
-            const endTime = row[4];   // End Time
-
-            // Calculate total time
-            const calculatedTotalTime = calculateTimeDifference(startTime, endTime);
-
-            // Create enhanced row with calculated time
+            // Ensure row has enough columns for the current headers
             const enhancedRow = [...row];
-
-            // Replace or add calculated total time at index 5
-            if (enhancedRow.length > 5) {
-                enhancedRow[5] = calculatedTotalTime;
-            } else {
-                // If row doesn't have enough columns, add the calculated time
-                while (enhancedRow.length < 6) {
-                    enhancedRow.push('');
-                }
-                enhancedRow[5] = calculatedTotalTime;
+            while (enhancedRow.length < customHeaders.length) {
+                enhancedRow.push('');
             }
 
             return enhancedRow;
         });
     };
 
-    // Function to filter rows with names and process data
+    // Get filtered rows based on search
     const getFilteredRows = () => {
-        const { morning, night } = processShiftData();
-        let shiftData = [];
+        let filtered = tableData;
 
-        if (selectedShift === 'morning') {
-            shiftData = morning;
-        } else if (selectedShift === 'night') {
-            shiftData = night;
-        } else {
-            shiftData = [...morning, ...night];
+        // Apply search filter
+        if (searchTerm) {
+            filtered = filtered.filter(row =>
+                row.some(cell =>
+                    String(cell).toLowerCase().includes(searchTerm.toLowerCase())
+                )
+            );
         }
 
-        // Filter rows that have NAME value and process time calculation
-        const filtered = shiftData.filter((row) => {
-            const nameIndex = 0;
-            const nameCell = row[nameIndex];
-
-            // Check if this row has a valid name
-            if (!nameCell ||
-                typeof nameCell !== 'string' ||
-                nameCell.trim() === '' ||
-                nameCell.toLowerCase().includes('total') ||
-                nameCell.toLowerCase().includes('workload')) {
-                return false;
-            }
-
-            // Additional search filter
-            const matchesSearch = !searchTerm ||
-                row.some((cell) =>
-                    String(cell).toLowerCase().includes(searchTerm.toLowerCase())
-                );
-
-            return matchesSearch;
-        });
-
-        // Process rows with time calculation
-        return processRowsWithTimeCalculation(filtered)
-            .map(row =>
-                row.map(cell => {
-                    // Format date cells (check if it looks like a date)
-                    if (typeof cell === 'string' &&
-                        (cell.includes('-') || cell.includes('/')) &&
-                        cell.match(/\d{4}/)) {
-                        return formatDate(cell);
-                    }
-                    return cell;
-                })
-            );
-    };
-
-    // Function to extract total workload for each person
-    const getTotalWorkloadData = () => {
-        const { morning, night } = processShiftData();
-        const allData = selectedShift === 'all' ? [...morning, ...night] :
-            selectedShift === 'morning' ? morning : night;
-
-        const workloadData = [];
-
-        allData.forEach((row, index) => {
-            const nameCell = row[0];
-
-            // Check if this is a name row
-            if (nameCell && typeof nameCell === 'string' &&
-                nameCell.trim() !== '' &&
-                !nameCell.toLowerCase().includes('total') &&
-                !nameCell.toLowerCase().includes('workload')) {
-
-                // Look for TOTAL WORKLOAD in subsequent rows
-                for (let i = index + 1; i < Math.min(index + 10, allData.length); i++) {
-                    const nextRow = allData[i];
-                    if (nextRow && nextRow.length > 0) {
-                        const firstCell = String(nextRow[0] || '').toLowerCase();
-                        const lastCell = nextRow[nextRow.length - 1];
-
-                        if (firstCell.includes('total workload') && lastCell) {
-                            workloadData.push({
-                                name: nameCell.trim(),
-                                workload: lastCell,
-                                shift: morning.includes(row) ? 'Morning' : 'Night'
-                            });
-                            break;
-                        }
-                    }
-                }
-            }
-        });
-
-        return workloadData;
+        // Process rows
+        return processRowsWithTimeCalculation(filtered);
     };
 
     const filteredRows = getFilteredRows();
-    const workloadData = getTotalWorkloadData();
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
@@ -291,7 +234,16 @@ const Performance = () => {
     const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
     const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
-    const handleRefresh = () => dispatch(fetchSheetDataByDepartment());
+    const handleRefresh = () => {
+        dispatch(fetchSheetDataByDepartment())
+            .unwrap()
+            .then((result) => {
+                if (result.sections && result.sections[0] && result.sections[0].data) {
+                    const processedData = processAndFilterData(result.sections[0].data);
+                    setTableData(processedData);
+                }
+            });
+    };
 
     const handleExport = () => {
         if (filteredRows.length === 0) return alert('No data to export');
@@ -310,30 +262,138 @@ const Performance = () => {
         setCurrentPage(1);
     };
 
-    // Function to get cell color based on column header and value
+    // Function to get cell color based on column header and value - DEPARTMENT SPECIFIC
     const getCellColor = (header, value) => {
-        if (!header) return 'text-white';
+        if (!header || value === undefined || value === null || value === '') {
+            return 'text-white';
+        }
 
         const headerLower = header.toLowerCase();
+        const numValue = parseFloat(value);
+        const dept = department?.toLowerCase() || 'csr';
 
-        // For deposit column
-        if (headerLower.includes('deposit')) {
-            const numValue = parseFloat(value);
-            if (!isNaN(numValue)) {
-                if (numValue >= 500) return 'text-green-400';
-                if (numValue >= 300) return 'text-yellow-400';
-                return 'text-red-400';
+        // For CSR Department
+        if (dept.includes('csr') || !dept.includes('deposit') && !dept.includes('withdraw')) {
+            // For Completed Conversations
+            if (headerLower.includes('completed convo') || headerLower.includes('completed')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 20) return 'text-green-400';
+                    if (numValue >= 10) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Total Effective
+            if (headerLower.includes('total effective') || headerLower.includes('effective')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 15) return 'text-green-400';
+                    if (numValue >= 8) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Positive Rates (Percentage)
+            if (headerLower.includes('positive rates') || headerLower.includes('positive')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 80) return 'text-green-400';
+                    if (numValue >= 60) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Negative Rates (Percentage) - Lower is better
+            if (headerLower.includes('negative rates') || headerLower.includes('negative')) {
+                if (!isNaN(numValue)) {
+                    if (numValue <= 5) return 'text-green-400';
+                    if (numValue <= 15) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Missed Chats - Lower is better
+            if (headerLower.includes('missed chats') || headerLower.includes('missed')) {
+                if (!isNaN(numValue)) {
+                    if (numValue <= 2) return 'text-green-400';
+                    if (numValue <= 5) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Online Time (hours)
+            if (headerLower.includes('online time') || headerLower.includes('online')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 7) return 'text-green-400';
+                    if (numValue >= 5) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+                // Handle time format like "7:30"
+                if (typeof value === 'string' && value.includes(':')) {
+                    const [hours] = value.split(':');
+                    const totalHours = parseInt(hours);
+                    if (!isNaN(totalHours)) {
+                        if (totalHours >= 7) return 'text-green-400';
+                        if (totalHours >= 5) return 'text-yellow-400';
+                        return 'text-red-400';
+                    }
+                }
             }
         }
 
-        // For total time column
-        if (headerLower.includes('total time')) {
-            if (typeof value === 'string' && value.includes(':')) {
-                const [hours] = value.split(':');
-                const totalHours = parseInt(hours);
-                if (!isNaN(totalHours)) {
-                    if (totalHours >= 8) return 'text-green-400';
-                    if (totalHours >= 6) return 'text-yellow-400';
+        // For Deposit Department
+        if (dept.includes('deposit')) {
+            // For Deposit Amounts
+            if (headerLower.includes('deposit') && !headerLower.includes('rejected')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 10000) return 'text-green-400';
+                    if (numValue >= 5000) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Success Rate
+            if (headerLower.includes('success rate')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 90) return 'text-green-400';
+                    if (numValue >= 75) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Rejection Rate - Lower is better
+            if (headerLower.includes('rejection rate')) {
+                if (!isNaN(numValue)) {
+                    if (numValue <= 5) return 'text-green-400';
+                    if (numValue <= 15) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+        }
+
+        // For Withdraw Department
+        if (dept.includes('withdraw') || dept.includes('wd')) {
+            // For Withdraw Amounts
+            if (headerLower.includes('withdraw') && !headerLower.includes('rejected')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 8000) return 'text-green-400';
+                    if (numValue >= 4000) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Success Rate
+            if (headerLower.includes('success rate')) {
+                if (!isNaN(numValue)) {
+                    if (numValue >= 90) return 'text-green-400';
+                    if (numValue >= 75) return 'text-yellow-400';
+                    return 'text-red-400';
+                }
+            }
+
+            // For Rejection Rate - Lower is better
+            if (headerLower.includes('rejection rate')) {
+                if (!isNaN(numValue)) {
+                    if (numValue <= 5) return 'text-green-400';
+                    if (numValue <= 15) return 'text-yellow-400';
                     return 'text-red-400';
                 }
             }
@@ -343,29 +403,18 @@ const Performance = () => {
     };
 
 
-
     return (
         <div className="p-4">
+
             {/* Filters & Actions */}
             <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
                 <div className="flex items-center gap-3 flex-1">
-                    {/* Shift Filter */}
-                    <select
-                        value={selectedShift}
-                        onChange={(e) => setSelectedShift(e.target.value)}
-                        className="px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                    >
-                        <option value="all">All Shifts</option>
-                        <option value="morning">Morning Shift</option>
-                        <option value="night">Night Shift</option>
-                    </select>
-
                     {/* Search */}
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search..."
+                            placeholder={`Search ${department?.toLowerCase().includes('deposit') ? 'deposit transactions...' : department?.toLowerCase().includes('withdraw') ? 'withdraw transactions...' : 'conversations...'}`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
@@ -394,7 +443,7 @@ const Performance = () => {
                             onClick={handleClearFilters}
                             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all duration-200"
                         >
-                            Clear
+                            Clear Filters
                         </button>
                     )}
                 </div>
@@ -404,7 +453,7 @@ const Performance = () => {
                     <button
                         onClick={handleExport}
                         disabled={filteredRows.length === 0}
-                        className="bg-emerald-600/15 border border-emerald-500/30 rounded-lg pl-4 pr-10 py-3.5 text-emerald-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none flex gap-1 items-center"
+                        className="bg-emerald-600/15 border border-emerald-500/30 rounded-lg px-4 py-2 text-emerald-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none flex gap-1 items-center disabled:opacity-50"
                     >
                         <Download className="w-4 h-4" />
                         Export
@@ -412,36 +461,13 @@ const Performance = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={loading}
-                        className="bg-purple-600/15 border border-purple-500/30 rounded-lg pl-4 pr-10 py-3.5 text-purple-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none flex gap-1 items-center"
+                        className="bg-purple-600/15 border border-purple-500/30 rounded-lg px-4 py-2 text-purple-400 font-medium text-sm backdrop-blur-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none flex gap-1 items-center disabled:opacity-50"
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </button>
                 </div>
             </div>
-
-            {/* Total Workload Summary */}
-            {workloadData.length > 0 && (
-                <div className="mb-6 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                    <h3 className="text-lg font-semibold text-white mb-3">Total Workload Summary</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {workloadData.map((item, index) => (
-                            <div key={index} className="bg-gray-700/30 rounded p-3 border border-gray-600">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-white font-medium">{item.name}</span>
-                                    <span className={`px-2 py-1 rounded text-xs ${item.shift === 'Morning' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'
-                                        }`}>
-                                        {item.shift}
-                                    </span>
-                                </div>
-                                <div className="text-2xl font-bold text-green-400 mt-2">
-                                    {item.workload}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             {/* Error Message */}
             {error && (
@@ -458,13 +484,13 @@ const Performance = () => {
             <div className="w-full bg-[rgba(59,130,246,0.03)] rounded-xl border border-gray-700 shadow-xl overflow-hidden">
                 <div className="bg-[rgba(59,130,246,0.03)] px-6 py-4 border-b border-gray-700 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-white">
-                        {selectedShift === 'all' ? 'All Shifts' :
-                            selectedShift === 'morning' ? 'Morning Shift' : 'Night Shift'}
+                        {department?.toLowerCase().includes('deposit') ? 'Deposit Department' :
+                            department?.toLowerCase().includes('withdraw') ? 'Withdraw Department' : 'CSR Department'} - Performance Data
                     </h2>
                     <span className="text-sm text-gray-400">
                         {filteredRows.length > 0
                             ? `Showing ${indexOfFirstRow + 1}-${Math.min(indexOfLastRow, filteredRows.length)} of ${filteredRows.length} records`
-                            : 'No data'}
+                            : 'No data available'}
                     </span>
                 </div>
 
@@ -473,7 +499,7 @@ const Performance = () => {
                         <thead className="bg-[rgba(59,130,246,0.05)] whitespace-nowrap border-b border-gray-700">
                             <tr>
                                 {customHeaders.map((header, index) => (
-                                    <th key={index} className="px-6 py-4 font-semibold uppercase text-white text-start">
+                                    <th key={index} className="px-4 py-3 font-semibold uppercase text-white text-start text-xs">
                                         {header}
                                     </th>
                                 ))}
@@ -491,7 +517,7 @@ const Performance = () => {
                                 <tr>
                                     <td colSpan={customHeaders.length} className="text-center py-8 text-gray-400">
                                         <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                        No records found.
+                                        {tableData.length > 0 ? 'No records match your filters' : 'No data available'}
                                     </td>
                                 </tr>
                             ) : (
@@ -503,7 +529,7 @@ const Performance = () => {
                                         {customHeaders.map((header, j) => (
                                             <td
                                                 key={j}
-                                                className={`px-6 py-4 whitespace-nowrap text-start ${getCellColor(header, row[j] || '')}`}
+                                                className={`px-4 py-3 whitespace-nowrap text-start text-xs ${getCellColor(header, row[j] || '')}`}
                                             >
                                                 {row[j] || '-'}
                                             </td>
@@ -538,7 +564,6 @@ const Performance = () => {
                                     <option value={10}>10</option>
                                     <option value={20}>20</option>
                                     <option value={50}>50</option>
-                                    <option value={100}>100</option>
                                 </select>
                             </div>
                         </div>
@@ -580,47 +605,9 @@ const Performance = () => {
                                     <ChevronsRight className="w-4 h-4 text-gray-300" />
                                 </button>
                             </div>
-
-                            {/* Page number input */}
-                            <div className="flex items-center gap-2 ml-4">
-                                <span className="text-gray-400 text-sm">Go to:</span>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={totalPages}
-                                    value={currentPage}
-                                    onChange={(e) => {
-                                        const page = Number(e.target.value);
-                                        if (page >= 1 && page <= totalPages) {
-                                            setCurrentPage(page);
-                                        }
-                                    }}
-                                    className="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm"
-                                />
-                            </div>
                         </div>
                     </div>
                 )}
-
-                <div className="bg-[#f5f6fa13] px-6 py-3 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
-                    <div className="flex flex-wrap gap-3 items-center">
-                        <span className="text-gray-400 font-semibold">Color Legend:</span>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-green-500 rounded"></div>
-                            <span className="text-green-400">Deposit ≥ 500 / Time ≥ 8h</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                            <span className="text-yellow-400">Deposit 300-499 / Time 6-7h</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-red-500 rounded"></div>
-                            <span className="text-red-400">Deposit &lt; 300 / Time &lt; 6h</span>
-                        </div>
-                    </div>
-
-                    {department && <span className="text-blue-400">{department} Department</span>}
-                </div>
             </div>
         </div>
     );

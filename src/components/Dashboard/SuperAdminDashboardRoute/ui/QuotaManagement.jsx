@@ -15,9 +15,6 @@ const QuotaManagement = ({ timeFilter, data, title }) => {
   const itemsPerPage = 10;
   const inputRef = useRef(null);
 
-  // Fallback data
-
-
   const quotaData = (data && Array.isArray(data) && data.length > 0) ? data : data;
 
   // Pagination Logic
