@@ -37,13 +37,9 @@ const NotificationPopup = ({ userId }) => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
       if (userId) {
-        console.log("Auto-refreshing notifications...");
         dispatch(fetchNotifications(userId));
       }
-    }, 30000);
-    return () => clearInterval(interval);
   }, [dispatch, userId]);
 
   return (

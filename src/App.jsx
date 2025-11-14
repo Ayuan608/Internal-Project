@@ -96,7 +96,6 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="department" element={<Department />} />
           <Route path="nonQuta" element={<NonQuota />} />
-          <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="add" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="EmployeeOfTheMonthAdmin" element={<EmployeeOfTheMonthAdmin />} />
