@@ -113,12 +113,10 @@ console.log(data)
     const department = sublist[0]?.trim();
     const name = sublist[2]?.trim();
 
-    // Skip if no department or name
     if (!department || !name) continue;
 
     const lowerName = name.toLowerCase();
 
-    // Exclude non-user or summary rows
     const isExcluded = excludedKeywords.some((keyword) =>
       lowerName.includes(keyword)
     );
@@ -146,7 +144,6 @@ console.log(data)
   );
 
   console.log(CsrTotalConvey, "let assume ");
-  // Calculate real totals from data
   const calculateRealTotals = useCallback(() => {
     const csrTotals: { [key: string]: number } = {};
     const depositTotals: { [key: string]: number } = {};
@@ -206,7 +203,6 @@ console.log(data)
     const depositTargetPerPerson = 530;
     const withdrawTargetPerPerson = 1500;
 
-    // CSR के लिए total target = प्रति व्यक्ति target × कुल CSR की संख्या
     const csrTotalTarget = csrTargetPerPerson * (groupedUsers.CSR?.length || 0);
     const depositTotalTarget =
       depositTargetPerPerson * (groupedUsers.Deposit?.length || 0);

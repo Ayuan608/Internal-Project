@@ -10,66 +10,48 @@ const NonQuota = ({ department = "CSR" }) => {
 
   const { data: reduxData } = useSelector((state) => state.combinedQuota);
 
-  // Calculate non-quota statistics
+  // Calculate non-quota statistics - UPDATED FOR REAL DATA
   useEffect(() => {
     if (reduxData && reduxData.length > 0) {
-      let currentDepartment = "";
-      let currentMonth = "";
       let totalAgents = 0;
       let nonQuotaCount = 0;
 
       reduxData.forEach((row) => {
-        // Detect department
-        if (row[0] && typeof row[0] === 'string') {
-          const firstItem = row[0].toLowerCase();
-          if (firstItem.includes('csr')) currentDepartment = "CSR";
-          else if (firstItem.includes('deposit')) currentDepartment = "Deposit";
-          else if (firstItem.includes('withdraw')) currentDepartment = "Withdrawal";
+        if (!Array.isArray(row) || row.length < 3) return;
+
+        const dept = row[0]?.toString()?.trim();
+        const memberName = row[2]?.toString()?.trim();
+
+        // Skip if not current department or invalid data
+        if (dept !== department || !memberName ||
+          memberName.toLowerCase().includes('member') ||
+          memberName.toLowerCase().includes('total') ||
+          memberName.toLowerCase().includes('shift') ||
+          memberName === '') {
+          return;
         }
 
-        // Detect month
-        if (row[2] && typeof row[2] === 'string') {
-          const monthName = row[2].toLowerCase();
-          if (monthName.includes('october')) currentMonth = "October";
+        totalAgents += 1;
+
+        // Extract performance data based on department
+        let output = 0;
+        let quota = 0;
+
+        if (department === "CSR") {
+          output = parseFloat(row[3]) || 0;
+          quota = 530;
+        } else if (department === "Deposit") {
+          output = parseFloat(row[9]?.toString()?.replace(/,/g, '')) || 0;
+          quota = 530;
+        } else if (department === "Withdrawal") {
+          output = parseFloat(row[7]?.toString()?.replace(/,/g, '')) || 0;
+          quota = 1500;
         }
 
-        // Process data for current department
-        if (currentMonth === "October" && currentDepartment === department && row.length > 5) {
-          const isHeaderRow =
-            row[1] === 'Member' ||
-            row[1] === '' ||
-            row[0]?.toLowerCase().includes('shift') ||
-            row[0]?.toLowerCase().includes('trainee') ||
-            row[1]?.toLowerCase().includes('shift') ||
-            row[1]?.toLowerCase().includes('trainee') ||
-            !row[1] ||
-            row[1] === 'HIGHLIGHTS' ||
-            row[1] === 'TOTAL';
+        const quotaPercentage = quota > 0 ? (output / quota) * 100 : 0;
 
-          if (!isHeaderRow && row[1] && row[1] !== '') {
-            totalAgents += 1;
-
-            // Extract performance data
-            let output = 0;
-            let quota = 0;
-
-            if (department === "CSR") {
-              output = parseInt(row[2]) || 0;
-              quota = 100;
-            } else if (department === "Deposit") {
-              output = parseInt(row[8]) || 0;
-              quota = 530;
-            } else if (department === "Withdrawal") {
-              output = parseInt(row[8]) || 0;
-              quota = 1500;
-            }
-
-            const quotaPercentage = quota > 0 ? (output / quota) * 100 : 0;
-
-            if (quotaPercentage < 70 && output > 0) {
-              nonQuotaCount += 1;
-            }
-          }
+        if (quotaPercentage < 70 && output > 0) {
+          nonQuotaCount += 1;
         }
       });
 

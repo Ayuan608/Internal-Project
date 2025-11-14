@@ -39,113 +39,109 @@ const Department = () => {
     dispatch(fetchCombinedDepartmentsData())
   }, [])
 
-  // Calculate real-time department statistics - IMPROVED VERSION
+  // Calculate real-time department statistics - UPDATED FOR REAL DATA
   const calculateDepartmentStats = () => {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      console.log("❌ No data available");
+      return;
+    }
+
 
     const stats = {
-      CSR: { transactions: 0, quota: 530, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
-      Deposit: { transactions: 0, quota: 530, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
+      CSR: { transactions: 0, quota: 560, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
+      Deposit: { transactions: 0, quota: 560, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 },
       Withdrawal: { transactions: 0, quota: 1500, agents: 0, completion: 0, quotaMet: 0, nonQuota: 0, totalAgents: 0, quotaMetCount: 0, nonQuotaCount: 0 }
     };
 
-    let currentDepartment = "";
-    let currentMonth = "";
+    // Process each row in the data
+    data.forEach((row, index) => {
+      if (!Array.isArray(row) || row.length < 3) return;
 
+      const department = row[0]?.toString()?.trim();
+      const memberName = row[2]?.toString()?.trim();
 
-    data.forEach((row) => {
-      // Detect department
-      if (row[0] && typeof row[0] === 'string') {
-        const firstItem = row[0].toLowerCase();
-        if (firstItem.includes('csr')) currentDepartment = "CSR";
-        else if (firstItem.includes('deposit')) currentDepartment = "Deposit";
-        else if (firstItem.includes('withdraw')) currentDepartment = "Withdrawal";
+      // Skip header rows and invalid data
+      if (!department || !memberName ||
+        memberName.toLowerCase().includes('member') ||
+        memberName.toLowerCase().includes('total') ||
+        memberName.toLowerCase().includes('shift') ||
+        memberName === '') {
+        return;
       }
 
-      // Detect month
-      if (row[2] && typeof row[2] === 'string') {
-        const monthName = row[2].toLowerCase();
-        if (monthName.includes('october')) currentMonth = "October";
-        else if (monthName.includes('november')) currentMonth = "November";
-      }
+      // Determine department and process data
+      if (department === 'CSR') {
+        const conversations = parseFloat(row[3]) || 0;
+        stats.CSR.transactions += conversations;
+        stats.CSR.totalAgents += 1;
 
-      // Process data rows for October
-      if (currentMonth === "October" && currentDepartment && row.length > 5) {
-        const isHeaderRow =
-          row[1] === 'Member' ||
-          row[1] === '' ||
-          row[0]?.toLowerCase().includes('shift') ||
-          row[0]?.toLowerCase().includes('trainee') ||
-          row[1]?.toLowerCase().includes('shift') ||
-          row[1]?.toLowerCase().includes('trainee') ||
-          !row[1] ||
-          row[1] === 'HIGHLIGHTS' ||
-          row[1] === 'TOTAL';
+        const quotaPercentage = (conversations / stats.CSR.quota) * 100;
+        if (quotaPercentage >= 70) {
+          stats.CSR.quotaMetCount += 1;
+        } else {
+          stats.CSR.nonQuotaCount += 1;
+        }
 
-        if (!isHeaderRow && row[1] && row[1] !== '') {
-          // Extract transaction data based on department
-          let transactions = 0;
+      } else if (department === 'Deposit') {
+        const depositAmount = parseFloat(row[9]?.toString()?.replace(/,/g, '')) || 0;
+        stats.Deposit.transactions += depositAmount;
+        stats.Deposit.totalAgents += 1;
 
-          if (currentDepartment === "CSR") {
-            transactions = parseInt(row[2]) || 0;
-          } else if (currentDepartment === "Deposit") {
-            // Deposit: Use Total (row[8])
-            transactions = parseInt(row[8]) || 0;
-          } else if (currentDepartment === "Withdrawal") {
-            // Withdrawal: Use Total (row[8])
-            transactions = parseInt(row[5]) || 0;
-          }
+        const quotaPercentage = (depositAmount / stats.Deposit.quota) * 100;
+        if (quotaPercentage >= 70) {
+          stats.Deposit.quotaMetCount += 1;
+        } else {
+          stats.Deposit.nonQuotaCount += 1;
+        }
 
-          if (transactions > 0) {
-            stats[currentDepartment].transactions += transactions;
-            stats[currentDepartment].totalAgents += 1;
+      } else if (department === 'Withdraw') {
+        const withdrawAmount = parseFloat(row[7]?.toString()?.replace(/,/g, '')) || 0;
+        stats.Withdrawal.transactions += withdrawAmount;
+        stats.Withdrawal.totalAgents += 1;
 
-            // Calculate quota percentage
-            const quotaPercentage = (transactions / stats[currentDepartment].quota) * 100;
-
-            if (quotaPercentage >= 70) {
-              stats[currentDepartment].quotaMetCount += 1;
-            } else {
-              stats[currentDepartment].nonQuotaCount += 1;
-            }
-          }
+        const quotaPercentage = (withdrawAmount / stats.Withdrawal.quota) * 100;
+        if (quotaPercentage >= 70) {
+          stats.Withdrawal.quotaMetCount += 1;
+        } else {
+          stats.Withdrawal.nonQuotaCount += 1;
         }
       }
     });
 
-    // Calculate percentages
+    // Calculate percentages for each department
     Object.keys(stats).forEach(dept => {
       const deptStats = stats[dept];
 
-      // Calculate completion percentage
+      // Completion percentage (transactions vs quota)
       deptStats.completion = deptStats.quota > 0 ?
-        Math.round((deptStats.transactions / deptStats.quota) * 100) : 0;
+        Math.min(Math.round((deptStats.transactions / deptStats.quota) * 100), 100) : 0;
 
-      // Calculate quota met percentage
+      // Quota met percentage (agents meeting quota)
       deptStats.quotaMet = deptStats.totalAgents > 0 ?
         Math.round((deptStats.quotaMetCount / deptStats.totalAgents) * 100) : 0;
 
       deptStats.nonQuota = 100 - deptStats.quotaMet;
       deptStats.agents = deptStats.totalAgents;
 
-      console.log(`📊 ${dept} Stats:`, {
+      console.log(`📊 ${dept} Final Stats:`, {
         transactions: deptStats.transactions,
         quota: deptStats.quota,
         totalAgents: deptStats.totalAgents,
         quotaMetCount: deptStats.quotaMetCount,
         nonQuotaCount: deptStats.nonQuotaCount,
         quotaMetPercentage: deptStats.quotaMet,
-        nonQuotaPercentage: deptStats.nonQuota
+        completionPercentage: deptStats.completion
       });
     });
 
-    console.log("🎯 Final Department Stats:", stats);
+    console.log("🎯 All Department Stats:", stats);
     setDepartmentStats(stats);
   };
 
   // Process data when it loads
   useEffect(() => {
     if (data && data.length > 0) {
+      console.log("🔄 Calculating stats with new data");
       calculateDepartmentStats();
     }
   }, [data]);
@@ -215,6 +211,8 @@ const Department = () => {
   };
 
   const currentData = departmentData[activeTab];
+
+
 
   const chartOptions = {
     responsive: true,
@@ -338,7 +336,7 @@ const Department = () => {
                   activeTab === "Deposit" ? "Total Transaction" :
                     "Total Transaction Process"}
               </p>
-              <p className="text-white text-2xl font-bold">{formatNumber(currentData.transactions)}</p>
+              <p className="text-white text-2xl font-bold">{(currentData.transactions).toLocaleString()}</p>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">
               <BarChart3 size={24} className="text-blue-400" />
@@ -355,7 +353,7 @@ const Department = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm font-medium mb-2">Daily Quota</p>
-              <p className="text-white text-2xl font-bold">{formatNumber(currentData.quota)}</p>
+              <p className="text-white text-2xl font-bold">{(currentData.quota).toLocaleString()}</p>
             </div>
             <div className="p-3 bg-green-500/10 rounded-lg">
               <Target size={24} className="text-green-400" />
@@ -407,7 +405,7 @@ const Department = () => {
       </div>
 
       {/* Dual Charts - Centered */}
-      <div className="flex gap-6 mt-6 rounded-lg">
+      <div className="flex gap-6 my-6 rounded-lg ">
         <div className="rounded-xl shadow-xl bg-slate-900/40 border-slate-800 border w-1/3">
           <div className="relative w-80 h-80 mx-auto flex items-center justify-center p-4">
             {/* Donut Chart */}

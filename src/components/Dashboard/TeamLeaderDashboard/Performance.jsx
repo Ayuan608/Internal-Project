@@ -3,10 +3,12 @@ import { RefreshCw, Download, Search, AlertCircle, Database, ChevronLeft, Chevro
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSheetDataByDepartment } from '../../../redux/sheetSlice';
 import * as XLSX from 'xlsx';
+import { fetchCombinedDepartmentsData } from '../../../redux/combinedQuotaSlice';
 
 const Performance = () => {
     const dispatch = useDispatch();
     const { headers, data, loading, error, department } = useSelector((state) => state.sheet);
+    console.log(data)
 
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -19,7 +21,7 @@ const Performance = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
-        dispatch(fetchSheetDataByDepartment());
+        dispatch(fetchCombinedDepartmentsData());
     }, [dispatch]);
 
     // Reset to first page when filters change
@@ -27,7 +29,7 @@ const Performance = () => {
         setCurrentPage(1);
     }, [searchTerm, startDate, endDate, selectedShift]);
 
-    // Custom headers based on your requirements
+
     const customHeaders = [
         'NAME',
         'TG NAME',
@@ -340,8 +342,7 @@ const Performance = () => {
         return 'text-white';
     };
 
-    console.log('Custom Headers:', customHeaders);
-    console.log('Filtered Rows with Time Calculation:', filteredRows);
+
 
     return (
         <div className="p-4">

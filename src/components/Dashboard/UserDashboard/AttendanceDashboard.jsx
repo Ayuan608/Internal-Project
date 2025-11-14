@@ -104,7 +104,7 @@ const AttendanceDashboardUI = ({
       }
     >
       <div className="flex flex-col 2xl:flex-row justify-between items-start gap-6">
-        <div className="w-full 2xl:w-[65%]">
+        <div className="w-full">
           {error && (
             <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg mb-4">
               <p className="text-red-300">{error}</p>
@@ -296,7 +296,7 @@ const AttendanceDashboardUI = ({
         </div>
 
         {/* Sidebar - Personal Metrics */}
-        <div className="2xl:w-[35%] w-full">
+        {/* <div className="2xl:w-[35%] w-full">
           <div className="p-6 bg-black border border-[#4a5568] rounded-xl shadow-2xl">
             <h3 className="text-xl font-bold text-white mb-6">Personal Metrics</h3>
             {stats.daysWorked === 0 && stats.pieData.length === 0 ? (
@@ -393,7 +393,7 @@ const AttendanceDashboardUI = ({
               </>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Day Off Request Modal */}

@@ -7,7 +7,6 @@ export const fetchCombinedDepartmentsData = createAsyncThunk(
     'combinedQuota/fetchCombinedDepartmentsData',
     async (_, { rejectWithValue }) => {
         try {
-
             const response = await axiosInstance.get('/sheet/combined-data');
             return response.data;
         } catch (error) {
@@ -23,9 +22,9 @@ const combinedQuotaSlice = createSlice({
     name: 'combinedQuota',
     initialState: {
         data: [],
-        count: 0, 
+        count: 0,
         departments: [],
-        columns: [], 
+        columns: [],
         loading: false,
         error: null,
         lastUpdated: null

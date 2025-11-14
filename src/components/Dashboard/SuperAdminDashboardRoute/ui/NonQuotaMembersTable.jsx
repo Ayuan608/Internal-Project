@@ -17,96 +17,67 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     priority: "Medium"
   });
 
-  // Function to get non-quota agents from Redux data - FIXED VERSION
+  // Function to get non-quota agents from Redux data - UPDATED FOR REAL DATA
   const getNonQuotaAgents = () => {
     if (!reduxData || reduxData.length === 0) return [];
 
-    const allDepartmentsData = {
-      CSR: [],
-      Deposit: [],
-      Withdrawal: [],
-    };
-
-    let currentDepartment = "";
-    let currentMonth = "";
+    const nonQuotaAgents = [];
 
     reduxData.forEach((row, index) => {
-      if (!Array.isArray(row) || row.length === 0) return;
+      if (!Array.isArray(row) || row.length < 3) return;
 
-      // Detect department
-      if (row[0] && typeof row[0] === "string") {
-        const firstItem = row[0].toLowerCase();
-        if (firstItem.includes("csr")) currentDepartment = "CSR";
-        else if (firstItem.includes("deposit")) currentDepartment = "Deposit";
-        else if (firstItem.includes("withdraw")) currentDepartment = "Withdrawal";
+      const dept = row[0]?.toString()?.trim();
+      const memberName = row[2]?.toString()?.trim();
+
+      // Skip if not current department or invalid data
+      if (dept !== department || !memberName ||
+        memberName.toLowerCase().includes('member') ||
+        memberName.toLowerCase().includes('total') ||
+        memberName.toLowerCase().includes('shift') ||
+        memberName === '') {
+        return;
       }
 
-      // Detect month
-      if (row[2] && typeof row[2] === "string") {
-        const monthName = row[2].toLowerCase();
-        if (monthName.includes("october")) currentMonth = "October";
-        else if (monthName.includes("november")) currentMonth = "November";
+      // Extract performance data based on department
+      let output = 0;
+      let quota = 0;
+
+      if (department === "CSR") {
+        output = parseFloat(row[3]) || 0;
+        quota = 530;
+      } else if (department === "Deposit") {
+        output = parseFloat(row[9]?.toString()?.replace(/,/g, '')) || 0;
+        quota = 530;
+      } else if (department === "Withdrawal") {
+        output = parseFloat(row[7]?.toString()?.replace(/,/g, '')) || 0;
+        quota = 1500;
       }
 
-      if (currentMonth === "October" && currentDepartment && row.length > 5) {
-        const isHeaderRow =
-          row[1] === "Member" ||
-          row[1] === "" ||
-          row[0]?.toLowerCase().includes("shift") ||
-          row[0]?.toLowerCase().includes("trainee") ||
-          row[1]?.toLowerCase().includes("shift") ||
-          row[1]?.toLowerCase().includes("trainee") ||
-          !row[1] ||
-          row[1] === "HIGHLIGHTS" ||
-          row[1] === "TOTAL";
+      const quotaPercentage = quota > 0 ? (output / quota) * 100 : 0;
 
-        if (!isHeaderRow && row[1]) {
-          let output = 0;
-          let quota = 0;
-
-          if (currentDepartment === "CSR") {
-            output = parseInt(row[2]) || 0;
-            quota = 100;
-          } else if (currentDepartment === "Deposit") {
-            output = parseInt(row[8]) || 0;
-            quota = 530;
-          } else if (currentDepartment === "Withdrawal") {
-            output = parseInt(row[8]) || 0;
-            quota = 1500;
-          }
-
-          const quotaPercentage = quota > 0 ? (output / quota) * 100 : 0;
-
-          if (quotaPercentage < 70 && output > 0) {
-            const agentName = row[1] || "Unknown Agent";
-            allDepartmentsData[currentDepartment].push({
-              date: "October 2024",
-              name: agentName,
-              department: currentDepartment,
-              output,
-              target: quota,
-              variance: output - quota,
-              quotaPercentage: Math.round(quotaPercentage),
-              email: `${agentName.toLowerCase().replace(/\s+/g, ".")}@company.com`,
-              originalData: row,
-              index,
-            });
-          }
-        }
+      // Only include agents with output > 0 and quota < 70%
+      if (quotaPercentage < 70 && output > 0) {
+        nonQuotaAgents.push({
+          date: new Date().toLocaleDateString(),
+          name: memberName,
+          department: department,
+          output: output,
+          target: quota,
+          variance: output - quota,
+          quotaPercentage: Math.round(quotaPercentage),
+          email: `${memberName.toLowerCase().replace(/\s+/g, ".")}@company.com`,
+          originalData: row,
+          index,
+        });
       }
     });
 
-    console.log(currentDepartment, 'helo')
-
-    // If you still want to return only the current department’s data
-    return allDepartmentsData[department] || [];
+    return nonQuotaAgents;
   };
-
 
   // Update filtered data when department or reduxData changes
   useEffect(() => {
     if (reduxData && reduxData.length > 0) {
-      console.log(`🔄 Refreshing data for department: ${department}`);
       const nonQuotaAgents = getNonQuotaAgents();
       setFilteredData(nonQuotaAgents);
     } else {
@@ -209,6 +180,7 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
             <tr>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DATE</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">NAME</th>
+              <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">DEPARTMENT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">OUTPUT</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">TARGET</th>
               <th className="px-4 py-2 border-b border-[#9e9fa74d]/40">COMPLETION</th>
@@ -222,19 +194,17 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
           <tbody>
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan={role === "Team-Leader" ? "9" : "8"} className="px-4 py-4 text-center text-white border-b border-[#9e9fa74d]/40">
+                <td colSpan={role === "Team-Leader" ? "8" : "7"} className="px-4 py-4 text-center text-white border-b border-[#9e9fa74d]/40">
                   {reduxData ? `No non-quota agents found for ${department} department` : "Loading data..."}
                 </td>
               </tr>
             ) : (
               filteredData.map((member, index) => (
-                console.log(member, "non met"),
                 <tr key={index} className="hover:bg-[#1a1f3664] transition-colors">
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 text-white-300">{member.date}</td>
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 font-medium text-white">
                     {member.name}
                   </td>
-                  <td className="px-4 py-4 border-b border-[#9e9fa74d]/40 text-white-300">{member.role}</td>
                   <td className="px-4 py-4 border-b border-[#9e9fa74d]/40">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${member.department === "CSR"
                       ? "bg-blue-900/30 text-blue-300"
