@@ -7,7 +7,7 @@ const NonQuotaDepartment = () => {
     const { data } = useSelector((state) => state.combinedQuota);
     const { department } = useSelector((state) => state?.auth?.data)
 
-    console.log(data)
+    console.log("Raw Data:", data)
     useEffect(() => {
         dispatch(fetchCombinedDepartmentsData())
     }, [])
@@ -50,7 +50,8 @@ const NonQuotaDepartment = () => {
         "12 Hours",
         "9 HOURS",
         "completed",
-        "convo"
+        "convo",
+        "x"
     ];
 
     // Filter non-quota data based on department
@@ -60,7 +61,9 @@ const NonQuotaDepartment = () => {
         const config = departmentConfig[department];
         if (!config) return [];
 
-        return data
+        console.log(`Processing ${department} department with config:`, config);
+
+        const filteredData = data
             .filter(row => {
                 // Check if row belongs to current department
                 if (row[0] !== department) return false;
@@ -75,27 +78,51 @@ const NonQuotaDepartment = () => {
                 if (!name.trim() || hasExcludedKeyword) return false;
 
                 // Get the output value from specified index
-                const outputValue = parseInt(row[config.valueIndex]) || 0;
+                const rawValue = row[config.valueIndex];
+                const outputValue = parseInt(rawValue) || 0;
+
+                console.log(`Row: ${name}, Raw Value: ${rawValue}, Parsed: ${outputValue}`);
+
+                // Special condition for Withdraw department - exclude if length is less than or equal to 3
+                if (department === 'Withdraw') {
+                    const stringValue = String(rawValue || '');
+                    if (stringValue.length <= 3) {
+                        console.log(`Excluding ${name} - value length ${stringValue.length} <= 3`);
+                        return false;
+                    }
+                }
 
                 // Return true if output is less than department quota
-                return outputValue < config.quota;
+                const shouldInclude = outputValue < config.quota;
+                if (!shouldInclude) {
+                    console.log(`Excluding ${name} - output ${outputValue} >= quota ${config.quota}`);
+                }
+                return shouldInclude;
             })
             .map(row => {
-                const outputValue = parseInt(row[config.valueIndex]) || 0;
+                const rawValue = row[config.valueIndex];
+                const outputValue = parseInt(rawValue) || 0;
                 const target = config.quota;
                 const completion = Math.round((outputValue / target) * 100);
                 const variance = outputValue - target;
 
-                return {
+                const memberData = {
                     date: row[1],
                     name: row[config.nameIndex],
                     department: row[0],
                     output: outputValue,
+                    rawValue: rawValue,
                     target: target,
                     completion: completion,
                     variance: variance
                 };
+
+                console.log(`Mapped member:`, memberData);
+                return memberData;
             });
+
+        console.log(`Final filtered data for ${department}:`, filteredData);
+        return filteredData;
     }, [data, department]);
 
 
@@ -107,6 +134,13 @@ const NonQuotaDepartment = () => {
         const hasExcludedKeyword = excludedKeywords.some(keyword =>
             name.includes(keyword.toLowerCase())
         );
+
+        // Special condition for Withdraw department - exclude if length is less than or equal to 3
+        if (department === 'Withdraw') {
+            const stringValue = String(row[config.valueIndex] || '');
+            if (stringValue.length <= 3) return false;
+        }
+
         return !hasExcludedKeyword && name.trim();
     }).length : 0;
 
@@ -118,6 +152,8 @@ const NonQuotaDepartment = () => {
 
         return { below50, below80, below100 };
     }, [nonQuotaData]);
+
+    console.log("Final nonQuotaData to display:", nonQuotaData);
 
     return (
         <div className="min-h-screen p-6">
@@ -148,8 +184,6 @@ const NonQuotaDepartment = () => {
                         </span>
                     </div>
                 </div>
-
-
             </div>
 
             {/* Results Count */}
@@ -158,7 +192,21 @@ const NonQuotaDepartment = () => {
                 <span className="ml-2 px-2 py-1 bg-red-900/30 text-red-300 rounded text-xs">
                     Quota Not Met
                 </span>
+                {department === 'Withdraw' && (
+                    <span className="ml-2 px-2 py-1 bg-purple-900/30 text-purple-300 rounded text-xs">
+                        Filtered: Length &gt; 3
+                    </span>
+                )}
             </div>
+
+            {/* Debug Info - Remove this in production */}
+            {nonQuotaData.length > 0 && (
+                <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700/30 rounded">
+                    <div className="text-yellow-300 text-sm">
+                        <strong>Debug Info:</strong> Showing {nonQuotaData.length} records. Check console for detailed filtering.
+                    </div>
+                </div>
+            )}
 
             {/* Table */}
             <div className="rounded-lg overflow-hidden border border-white/10 mb-5">
@@ -204,7 +252,10 @@ const NonQuotaDepartment = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-white font-semibold">
-                                        {member.output}
+                                        {member.rawValue}
+                                        <span className="text-xs text-gray-400 ml-1">
+
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                                         {member.target}
@@ -235,7 +286,7 @@ const NonQuotaDepartment = () => {
             )}
 
             {/* Attractive Legend */}
-            <div className=" rounded-lg p-4 mb-6">
+            <div className="rounded-lg p-4 mb-6">
                 <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Performance Legend</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="flex items-center space-x-2">
@@ -266,6 +317,12 @@ const NonQuotaDepartment = () => {
                         <span className="text-white text-sm">Quota Target: {currentConfig.quota || 'N/A'}</span>
                         <span className="text-gray-400 text-xs">(100% completion required)</span>
                     </div>
+                    {department === 'Withdraw' && (
+                        <div className="flex items-center space-x-2 mt-2">
+                            <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
+                            <span className="text-white text-sm">Withdraw Filter: Output length must be greater than 3</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
