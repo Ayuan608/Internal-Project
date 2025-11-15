@@ -119,14 +119,14 @@ ChartJS.register(
 export const superAdminButtons = (t) => [
   { to: "/dashboard", label: t("Dashboard"), icon: LayoutDashboard },
   { to: "/dashboard/department", label: t("Department"), icon: ClipboardPlus },
-  { to: "/dashboard/quotaSetting", label: t("Quota Settings"), icon: UserCheck },
   { to: "/dashboard/add", label: t("Directory"), icon: Columns3Cog },
   { to: "/dashboard/announcement", label: t("Announcements"), icon: BanknoteArrowUp },
   { to: "/dashboard/report", label: t("Reports"), icon: Proportions },
   { to: "/dashboard/overallAttendance", label: t("Overall Attendance"), icon: Blend },
   { to: "/dashboard/login", label: t("Login Credentials"), icon: KeyRound },
   { to: "/dashboard/storage", label: t("Storage"), icon: DatabaseZap },
-  { to: "/dashboard/EmployeeOfTheMonthAdmin", label: t("Emp of Month"), icon: BanknoteArrowUp },
+  { to: "/dashboard/EmployeeOfTheMonthAdmin", label
+  : t("Emp of Month"), icon: BanknoteArrowUp },
   { to: "/dashboard/activityLogs", label: t("Activity Logs"), icon: Antenna },
   { to: "/dashboard/ip-address", label: t("IP-Whitelist"), icon: Shield },
 ];

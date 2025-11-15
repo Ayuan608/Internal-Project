@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Download, Filter, X, Mail, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, X, Plus } from "lucide-react";
 import { useSelector } from "react-redux";
 
 const NonQuotaMembersTable = ({ department = "CSR" }) => {
@@ -72,16 +72,6 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
       }
     });
 
-    // Log detailed non-quota information to console
-    console.log(`📊 Non-Quota Table Data for ${department}:`);
-    console.log(`Found ${nonQuotaAgents.length} non-quota agents`);
-
-    nonQuotaAgents.forEach((agent, idx) => {
-      console.log(
-        `🔴 ${idx + 1}. ${agent.name} | Output: ${agent.output} | Target: ${agent.target} | Completion: ${agent.quotaPercentage}% | Variance: ${agent.variance}`
-      );
-    });
-
     return nonQuotaAgents;
   };
 
@@ -90,28 +80,12 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
     if (reduxData && reduxData.length > 0) {
       const nonQuotaAgents = getNonQuotaAgents();
       setFilteredData(nonQuotaAgents);
-
-      // Additional console log for debugging
-      if (nonQuotaAgents.length > 0) {
-        console.log("🎯 Non-Quota Agents Summary:");
-        nonQuotaAgents.forEach(agent => {
-          const status = agent.quotaPercentage < 50 ? "CRITICAL" : "WARNING";
-          console.log(
-            `   ${status}: ${agent.name} - ${agent.quotaPercentage}% of quota (${agent.output}/${agent.target})`
-          );
-        });
-      }
     } else {
       setFilteredData([]);
-      console.log("No Redux data available for non-quota calculation");
     }
   }, [reduxData, department]);
 
   const handleCreateCase = (employee) => {
-    console.log(`📧 Creating case for: ${employee.name}`);
-    console.log(`   Email: ${employee.email}`);
-    console.log(`   Performance: ${employee.output}/${employee.target} (${employee.quotaPercentage}%)`);
-
     setSelectedEmployee(employee);
     setFormData({
       to: employee.email,
@@ -123,41 +97,29 @@ const NonQuotaMembersTable = ({ department = "CSR" }) => {
   };
 
   const handleCloseModal = () => {
-    console.log("❌ Case creation modal closed");
     setIsModalOpen(false);
     setSelectedEmployee(null);
   };
 
   const handleSendEmail = () => {
-    console.log(`✉️ Email sent to: ${selectedEmployee.name}`);
-    console.log(`   To: ${formData.to}`);
-    console.log(`   CC: ${formData.cc}`);
-    console.log(`   Priority: ${formData.priority}`);
-
     alert(`Email sent to ${selectedEmployee.name}!`);
     handleCloseModal();
   };
 
   const handleSaveDraft = () => {
-    console.log(`💾 Draft saved for: ${selectedEmployee.name}`);
     alert(`Draft saved for ${selectedEmployee.name}!`);
     handleCloseModal();
   };
 
   const exportToExcel = () => {
-    console.log("📊 Exporting non-quota data to Excel");
-    console.log("Data to export:", filteredData);
     alert("Excel export functionality");
   };
 
   const exportToCSV = () => {
-    console.log("📄 Exporting non-quota data to CSV");
-    console.log("Data to export:", filteredData);
     alert("CSV export functionality");
   };
 
   const exportToPDF = () => {
-    console.log("📑 Exporting non-quota data to PDF");
     alert("PDF export functionality");
   };
 

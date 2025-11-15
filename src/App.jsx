@@ -35,6 +35,7 @@ import { onMessageListener, requestForToken } from "./services/firebase/firebase
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { Bell } from "lucide-react";
+import NonQuotaDepartment from "./components/Dashboard/SuperAdminDashboardRoute/ui/NonQuotaDepartment";
 
 function App() {
   useEffect(() => {
@@ -150,7 +151,7 @@ function App() {
           <Route index element={<TeamLeaderDashboard />} />
           <Route path="employeeDirectory" element={<EmployeeDirectory />} />
           <Route path="restday" element={<RestDay />} />
-          <Route path="non-quotamember" element={<NonQuota />} />
+          <Route path="non-quotamember" element={<NonQuotaDepartment />} />
           <Route path="attendancerecords" element={<AttendanceRecords />} />
           <Route path="Performance" element={<Performance />} />
           <Route path="setting" element={<Setting />} />
