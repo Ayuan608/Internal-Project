@@ -11,16 +11,14 @@ import i18n from './services/i18n.js'
 import AutoTranslateWrapper from './AutoTranslateWrapper.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <I18nextProvider i18n={i18n}>
-      <Provider store={store}>
-        <BrowserRouter>
-          <AutoTranslateWrapper>
-            <App />
-            <Toaster />
-          </AutoTranslateWrapper>
-        </BrowserRouter>
-      </Provider>
-    </I18nextProvider>
-  </StrictMode>,
+  <I18nextProvider i18n={i18n}>
+    <Provider store={store}>
+      <BrowserRouter>
+        <AutoTranslateWrapper>
+          <App />
+          <Toaster />
+        </AutoTranslateWrapper>
+      </BrowserRouter>
+    </Provider>
+  </I18nextProvider>
 )

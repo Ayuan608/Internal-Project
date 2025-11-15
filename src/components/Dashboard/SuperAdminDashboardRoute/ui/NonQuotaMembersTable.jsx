@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Download, Filter, X, Mail, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, X, Plus } from "lucide-react";
 import { useSelector } from "react-redux";
 
 const NonQuotaMembersTable = ({ department = "CSR" }) => {

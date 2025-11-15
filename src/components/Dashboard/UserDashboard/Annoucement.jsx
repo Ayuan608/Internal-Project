@@ -442,7 +442,7 @@ export default function Announcement() {
                   {/* --- View Details Button --- */}
                   <button
                     onClick={() => setSelected(announcement)}
-                    className="mt-auto w-full px-4 py-2.5 bg-[#3b82f6] text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-[#3b82f6]/50 hover:bg-[#3b83f6de] font-medium flex items-center justify-center gap-2"
+                    className="mt-auto w-full px-4 py-2.5 bg-[rgba(59,130,246,0.10)] text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-[#3b82f6]/50 hover:bg-[#3b83f6de] font-medium flex items-center justify-center gap-2"
                   >
                     <Eye size={18} />
                     View Details
