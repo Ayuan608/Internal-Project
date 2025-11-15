@@ -377,21 +377,21 @@ export const CollapsibleDepartment = ({
         color: "from-red-500 to-orange-500",
       },
       {
-        title: "Avg Online",
+        title: "Online Time",
         value: csrMetricsData.avgOnlineHours || "0h",
         change: "+3.8%",
         icon: Clock,
         color: "from-yellow-500 to-orange-500",
       },
       {
-        title: "Positive Rate",
+        title: "Positive Rates",
         value: csrMetricsData.avgPositiveRate || "0%",
         change: "+2.4%",
         icon: TrendingUp,
         color: "from-teal-500 to-cyan-500",
       },
       {
-        title: "Negative Rate",
+        title: "Negative Rates",
         value: csrMetricsData.avgNegativeRate || "0%",
         change: "-4.5%",
         icon: AlertTriangle,
@@ -401,21 +401,21 @@ export const CollapsibleDepartment = ({
   } else if (deptKey === "deposit") {
     dynamicMetrics = [
       {
-        title: "Live Check",
+        title: "Feedback/livechecking",
         value: depositMetricsData.totalLiveChecks?.toLocaleString() || "0",
         change: "+9.2%",
         icon: Activity,
         color: "from-blue-500 to-indigo-500",
       },
       {
-        title: "1st Check",
+        title: "spreadsheet 1st checkback",
         value: depositMetricsData.totalFirstChecks?.toLocaleString() || "0",
         change: "+6.7%",
         icon: CheckCircle,
         color: "from-green-500 to-teal-500",
       },
       {
-        title: "2nd/3rd Check",
+        title: "spreadsheet 2nd /3rd checkback",
         value: depositMetricsData.totalSecondThirdChecks?.toLocaleString() || "0",
         change: "+4.1%",
         icon: Target,
@@ -429,14 +429,14 @@ export const CollapsibleDepartment = ({
         color: "from-yellow-500 to-orange-500",
       },
       {
-        title: "Paycheck Daily records",
+        title: "Paycheck Daily records CB",
         value: depositMetricsData.totalRecords?.toLocaleString() || "0",
         change: "+7.5%",
         icon: Activity,
         color: "from-cyan-500 to-blue-500",
       },
       {
-        title: "Offline",
+        title: "Games and Bugs",
         value: depositMetricsData.totalOffline?.toLocaleString() || "0",
         change: "-3.2%",
         icon: XCircle,
