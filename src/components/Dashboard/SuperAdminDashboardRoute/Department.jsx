@@ -123,15 +123,6 @@ const Department = () => {
       deptStats.nonQuota = 100 - deptStats.quotaMet;
       deptStats.agents = deptStats.totalAgents;
 
-      console.log(`📊 ${dept} Final Stats:`, {
-        transactions: deptStats.transactions,
-        quota: deptStats.quota,
-        totalAgents: deptStats.totalAgents,
-        quotaMetCount: deptStats.quotaMetCount,
-        nonQuotaCount: deptStats.nonQuotaCount,
-        quotaMetPercentage: deptStats.quotaMet,
-        completionPercentage: deptStats.completion
-      });
     });
 
     console.log("🎯 All Department Stats:", stats);
