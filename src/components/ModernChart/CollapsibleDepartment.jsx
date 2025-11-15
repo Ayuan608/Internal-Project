@@ -23,8 +23,61 @@ const GlassCard = ({ children, className = "" }) => (
   </div>
 );
 
-const AnimatedMetricCard = ({ title, value, change, icon: Icon, color }) => (
-  <GlassCard className="p-6 group hover:scale-105 transition-transform duration-300">
+// Comparison Badge Component
+const ComparisonBadge = ({ currentValue, previousValue, formatType = "number" }) => {
+  const getFormattedValue = (value, type) => {
+    if (type === "currency") {
+      return `$${parseInt(value || 0).toLocaleString()}`;
+    } else if (type === "percentage") {
+      return `${value}%`;
+    }
+    return parseInt(value || 0).toLocaleString();
+  };
+
+  const current = parseFloat(currentValue) || 0;
+  const previous = parseFloat(previousValue) || 0;
+
+  const difference = current - previous;
+  const percentage = previous !== 0 ? ((difference / previous) * 100) : (current > 0 ? 100 : 0);
+
+  const isPositive = difference >= 0;
+  const isNeutral = difference === 0;
+
+  return (
+    <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+      <div className={`px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm border ${isNeutral ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+        isPositive ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'
+        }`}>
+        <div className="flex items-center gap-1">
+          {isNeutral ? (
+            <span>→</span>
+          ) : isPositive ? (
+            <TrendingUp size={12} />
+          ) : (
+            <TrendingDown size={12} />
+          )}
+          <span>{isPositive ? '+' : ''}{percentage.toFixed(1)}%</span>
+        </div>
+      </div>
+      <div className="text-xs text-gray-400 text-right">
+        <div>Yesterday: {getFormattedValue(previousValue, formatType)}</div>
+        <div>Today: {getFormattedValue(currentValue, formatType)}</div>
+      </div>
+    </div>
+  );
+};
+
+const AnimatedMetricCard = ({ title, value, change, icon: Icon, color, comparisonData }) => (
+  <GlassCard className="p-6 group hover:scale-105 transition-transform duration-300 relative">
+    {/* Comparison Badge */}
+    {comparisonData && (
+      <ComparisonBadge
+        currentValue={value}
+        previousValue={comparisonData.previousValue}
+        formatType={comparisonData.formatType}
+      />
+    )}
+
     <div className="flex items-start justify-between mb-4">
       <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-lg`}>
         <Icon size={24} className="text-white" />
@@ -36,12 +89,10 @@ const AnimatedMetricCard = ({ title, value, change, icon: Icon, color }) => (
 );
 
 const StaffPill = ({ staffPerShift, deptKey, deptData, userLength }) => {
-
-  // Get the correct department key from userLength object
+  // ... (existing StaffPill code remains the same)
   const getDepartmentKey = () => {
     const keys = Object.keys(userLength || {});
 
-    // Map deptKey to possible keys in userLength
     const keyMap = {
       'csr': ['CSR'],
       'deposit': ['Deposit'],
@@ -49,14 +100,11 @@ const StaffPill = ({ staffPerShift, deptKey, deptData, userLength }) => {
     };
 
     const possibleKeys = keyMap[deptKey] || [deptKey];
-
-    // Find the matching key in userLength
     const matchingKey = possibleKeys.find(key =>
       keys.some(userKey => userKey.toLowerCase() === key.toLowerCase())
     );
 
     if (matchingKey) {
-      // Find the exact key with case sensitivity
       return keys.find(key => key.toLowerCase() === matchingKey.toLowerCase());
     }
 
@@ -108,7 +156,7 @@ export const CollapsibleDepartment = ({
   TotalSum,
   staffPerShift = {},
 }) => {
-  // 🔍 Filter department data based on actual data structure
+  // ... (existing filter and calculation functions remain the same)
   const filterByDepartment = (deptName) => {
     return (data || []).filter(row => {
       if (!Array.isArray(row) || row.length === 0) return false;
@@ -127,13 +175,12 @@ export const CollapsibleDepartment = ({
         ? depositData
         : withdrawData;
 
-  // 🎯 Calculate real metrics from actual data structure
   const calculateCSRMetrics = () => {
+    // ... (existing CSR calculation code remains the same)
     if (deptKey !== "csr") return {};
 
-    // Filter out header rows and get only agent data
     const agentRows = csrData.filter(row =>
-      row.length > 5 && // Has enough data columns
+      row.length > 5 &&
       typeof row[2] === 'string' &&
       !row[2].includes('shift') &&
       !row[2].includes('Trainees') &&
@@ -142,13 +189,10 @@ export const CollapsibleDepartment = ({
     );
 
     const totalAgents = agentRows.length;
-
     let totalCompleted = 0;
 
     data.forEach((item) => {
       const key = item[0];
-
-      // CSR: Process rows where the 4th index is "Ave. Completed Convo"
       if (key === "CSR" && item[3] === "Ave. Completed Convo") {
         const morningShift = parseFloat(item[4]) || 0;
         const nightShift = parseFloat(item[5]) || 0;
@@ -157,19 +201,13 @@ export const CollapsibleDepartment = ({
       }
     });
 
-    // Calculate effective conversations (index 4)
     const totalEffective = agentRows.reduce((sum, row) => sum + (parseInt(row[4]) || 0), 0);
-
-    // Calculate total messages (index 5)
     const totalMessages = agentRows.reduce((sum, row) => sum + (parseInt(row[5]) || 0), 0);
-
-    // Calculate missed chats (index 6)
     const totalMissed = agentRows.reduce((sum, row) => sum + (parseInt(row[6]) || 0), 0);
 
-    // Calculate average online time
     const onlineTimes = agentRows
       .map(row => {
-        const timeStr = row[7]; // Online time at index 7
+        const timeStr = row[7];
         if (!timeStr || timeStr === '0:00:00') return 0;
         const [h, m, s] = timeStr.split(':').map(Number);
         return h + (m / 60) + (s / 3600);
@@ -180,10 +218,9 @@ export const CollapsibleDepartment = ({
       ? (onlineTimes.reduce((a, b) => a + b, 0) / onlineTimes.length).toFixed(1) + "h"
       : "0h";
 
-    // Calculate positive rates (index 8)
     const positiveRates = agentRows
       .map(row => {
-        const rateStr = row[8]; // Positive rate at index 8
+        const rateStr = row[8];
         if (!rateStr || rateStr === '0.00%') return 0;
         return parseFloat(rateStr) || 0;
       })
@@ -193,10 +230,9 @@ export const CollapsibleDepartment = ({
       ? (positiveRates.reduce((a, b) => a + b, 0) / positiveRates.length).toFixed(1) + "%"
       : "0%";
 
-    // Calculate negative rates (index 9)
     const negativeRates = agentRows
       .map(row => {
-        const rateStr = row[9]; // Negative rate at index 9
+        const rateStr = row[9];
         if (!rateStr || rateStr === '0.00%') return 0;
         return parseFloat(rateStr) || 0;
       })
@@ -206,7 +242,6 @@ export const CollapsibleDepartment = ({
       ? (negativeRates.reduce((a, b) => a + b, 0) / negativeRates.length).toFixed(1) + "%"
       : "0%";
 
-    // Count agents who met quota (530)
     const agentsMetQuota = agentRows.filter(row => (parseInt(row[3]) || 0) >= 530).length;
     const quotaMetPercent = totalAgents > 0 ? ((agentsMetQuota / totalAgents) * 100).toFixed(1) + "%" : "0%";
 
@@ -225,9 +260,9 @@ export const CollapsibleDepartment = ({
   };
 
   const calculateWithdrawMetrics = () => {
+    // ... (existing withdrawal calculation code remains the same)
     if (deptKey !== "withdrawal") return {};
 
-    // Filter out header rows and get only member data
     const memberRows = withdrawData.filter(row =>
       row.length > 5 &&
       typeof row[2] === 'string' &&
@@ -237,37 +272,31 @@ export const CollapsibleDepartment = ({
       !row[2].includes('拒绝提现')
     );
 
-    // Calculate passed transactions (index 3)
     const totalPassed = memberRows.reduce((sum, row) => {
       const passed = parseInt((row[3] || "0").replace(/,/g, "")) || 0;
       return sum + passed;
     }, 0);
 
-    // Calculate passed amount (index 4)
     const totalPassedAmount = memberRows.reduce((sum, row) => {
       const amount = parseInt((row[4] || "0").replace(/,/g, "")) || 0;
       return sum + amount;
     }, 0);
 
-    // Calculate rejected transactions (index 5)
     const totalRejected = memberRows.reduce((sum, row) => {
       const rejected = parseInt((row[5] || "0").replace(/,/g, "")) || 0;
       return sum + rejected;
     }, 0);
 
-    // Calculate rejected amount (index 6)
     const totalRejectedAmount = memberRows.reduce((sum, row) => {
       const amount = parseInt((row[6] || "0").replace(/,/g, "")) || 0;
       return sum + amount;
     }, 0);
 
-    // Calculate processing transactions (index 7)
     const totalProcessing = memberRows.reduce((sum, row) => {
       const processing = parseInt((row[7] || "0").replace(/,/g, "")) || 0;
       return sum + processing;
     }, 0);
 
-    // Calculate processing amount (index 8)
     const totalProcessingAmount = memberRows.reduce((sum, row) => {
       const amount = parseInt((row[8] || "0").replace(/,/g, "")) || 0;
       return sum + amount;
@@ -287,9 +316,9 @@ export const CollapsibleDepartment = ({
   };
 
   const calculateDepositMetrics = () => {
+    // ... (existing deposit calculation code remains the same)
     if (deptKey !== "deposit") return {};
 
-    // For deposit data, we'll use similar structure as CSR
     const agentRows = depositData.filter(row =>
       row.length > 5 &&
       typeof row[2] === 'string' &&
@@ -298,23 +327,11 @@ export const CollapsibleDepartment = ({
     );
 
     const totalAgents = agentRows.length;
-
-    // Calculate live checks (assuming similar structure to CSR completed)
     const totalLiveChecks = agentRows.reduce((sum, row) => sum + (parseInt(row[3]) || 0), 0);
-
-    // Calculate 1st checks (assuming index 4)
     const totalFirstChecks = agentRows.reduce((sum, row) => sum + (parseInt(row[4]) || 0), 0);
-
-    // Calculate 2nd/3rd checks (assuming index 5)
     const totalSecondThirdChecks = agentRows.reduce((sum, row) => sum + (parseInt(row[5]) || 0), 0);
-
-    // Calculate paycheck (assuming index 6)
     const totalPaycheck = agentRows.reduce((sum, row) => sum + (parseInt(row[6]) || 0), 0);
-
-    // Calculate records (assuming index 7)
     const totalRecords = agentRows.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
-
-    // Calculate offline (assuming index 8)
     const totalOffline = agentRows.reduce((sum, row) => sum + (parseInt(row[8]) || 0), 0);
 
     return {
@@ -333,17 +350,53 @@ export const CollapsibleDepartment = ({
   const withdrawMetricsData = calculateWithdrawMetrics();
   const depositMetricsData = calculateDepositMetrics();
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
+  // Static comparison data for previous day (you can replace this with actual data)
+  const getComparisonData = (currentValue, metricTitle, dept) => {
+    // Static comparison values - in real app, you would get this from your data
+    const comparisonMap = {
+      csr: {
+        "Completed convo": 10500,
+        "Total Effective": 8600,
+        "Total message": 102000,
+        "missed chats": 15,
+        "Avg Online": "9.8h",
+        "Positive Rate": "22.5%",
+        "Negative Rate": "57.8%"
+      },
+      deposit: {
+        "Live Check": 4800,
+        "1st Check": 680,
+        "2nd/3rd Check": 5900,
+        "Paycheck": 5800,
+        "Paycheck Daily records": 2500,
+        "Offline": 850
+      },
+      withdrawal: {
+        "Total Transaction passed": 7200,
+        "Total Amount passed": 6580000,
+        "Total Transaction Rejected": 1250,
+        "Total Amount Rejected": 980000,
+        "Total Transaction process": 1240,
+        "Total Amount process": 14800000
+      }
+    };
+
+    const previousValue = comparisonMap[dept]?.[metricTitle] || 0;
+
+    let formatType = "number";
+    if (metricTitle.includes("Amount") || metricTitle.includes("Paycheck")) {
+      formatType = "currency";
+    } else if (metricTitle.includes("Rate")) {
+      formatType = "percentage";
     }
-    return `$${amount}`;
+
+    return {
+      previousValue,
+      formatType
+    };
   };
 
-  // 🎯 Dynamic metrics per department using REAL DATA
+  // Dynamic metrics with comparison data
   let dynamicMetrics = [];
 
   if (deptKey === "csr") {
@@ -354,6 +407,7 @@ export const CollapsibleDepartment = ({
         change: csrMetricsData.quotaMetPercent || "0%",
         icon: CheckCircle,
         color: "from-blue-500 to-cyan-500",
+        comparisonData: getComparisonData(TotalSum, "Completed convo", "csr")
       },
       {
         title: "Total Effective",
@@ -361,6 +415,7 @@ export const CollapsibleDepartment = ({
         change: "+8.3%",
         icon: Target,
         color: "from-purple-500 to-pink-500",
+        comparisonData: getComparisonData(csrMetricsData.totalEffective, "Total Effective", "csr")
       },
       {
         title: "Total message",
@@ -368,6 +423,7 @@ export const CollapsibleDepartment = ({
         change: "+15.7%",
         icon: MessageCircle,
         color: "from-green-500 to-emerald-500",
+        comparisonData: getComparisonData(csrMetricsData.totalMessages, "Total message", "csr")
       },
       {
         title: "missed chats",
@@ -375,6 +431,7 @@ export const CollapsibleDepartment = ({
         change: "-5.2%",
         icon: XCircle,
         color: "from-red-500 to-orange-500",
+        comparisonData: getComparisonData(csrMetricsData.totalMissed, "missed chats", "csr")
       },
       {
         title: "Online Time",
@@ -382,6 +439,7 @@ export const CollapsibleDepartment = ({
         change: "+3.8%",
         icon: Clock,
         color: "from-yellow-500 to-orange-500",
+        comparisonData: getComparisonData(csrMetricsData.avgOnlineHours, "Avg Online", "csr")
       },
       {
         title: "Positive Rates",
@@ -389,6 +447,7 @@ export const CollapsibleDepartment = ({
         change: "+2.4%",
         icon: TrendingUp,
         color: "from-teal-500 to-cyan-500",
+        comparisonData: getComparisonData(csrMetricsData.avgPositiveRate, "Positive Rate", "csr")
       },
       {
         title: "Negative Rates",
@@ -396,6 +455,7 @@ export const CollapsibleDepartment = ({
         change: "-4.5%",
         icon: AlertTriangle,
         color: "from-red-600 to-orange-500",
+        comparisonData: getComparisonData(csrMetricsData.avgNegativeRate, "Negative Rate", "csr")
       },
     ];
   } else if (deptKey === "deposit") {
@@ -406,6 +466,7 @@ export const CollapsibleDepartment = ({
         change: "+9.2%",
         icon: Activity,
         color: "from-blue-500 to-indigo-500",
+        comparisonData: getComparisonData(depositMetricsData.totalLiveChecks, "Live Check", "deposit")
       },
       {
         title: "spreadsheet 1st checkback",
@@ -413,6 +474,7 @@ export const CollapsibleDepartment = ({
         change: "+6.7%",
         icon: CheckCircle,
         color: "from-green-500 to-teal-500",
+        comparisonData: getComparisonData(depositMetricsData.totalFirstChecks, "1st Check", "deposit")
       },
       {
         title: "spreadsheet 2nd /3rd checkback",
@@ -420,6 +482,7 @@ export const CollapsibleDepartment = ({
         change: "+4.1%",
         icon: Target,
         color: "from-purple-500 to-pink-500",
+        comparisonData: getComparisonData(depositMetricsData.totalSecondThirdChecks, "2nd/3rd Check", "deposit")
       },
       {
         title: "Paycheck",
@@ -427,6 +490,7 @@ export const CollapsibleDepartment = ({
         change: "+11.8%",
         icon: DollarSign,
         color: "from-yellow-500 to-orange-500",
+        comparisonData: getComparisonData(depositMetricsData.totalPaycheck, "Paycheck", "deposit")
       },
       {
         title: "Paycheck Daily records CB",
@@ -434,6 +498,7 @@ export const CollapsibleDepartment = ({
         change: "+7.5%",
         icon: Activity,
         color: "from-cyan-500 to-blue-500",
+        comparisonData: getComparisonData(depositMetricsData.totalRecords, "Paycheck Daily records", "deposit")
       },
       {
         title: "Games and Bugs",
@@ -441,6 +506,7 @@ export const CollapsibleDepartment = ({
         change: "-3.2%",
         icon: XCircle,
         color: "from-red-500 to-pink-500",
+        comparisonData: getComparisonData(depositMetricsData.totalOffline, "Offline", "deposit")
       },
     ];
   } else if (deptKey === "withdrawal") {
@@ -451,6 +517,7 @@ export const CollapsibleDepartment = ({
         change: "+18.5%",
         icon: CheckCircle,
         color: "from-green-500 to-emerald-500",
+        comparisonData: getComparisonData(withdrawMetricsData.totalPassed, "Total Transaction passed", "withdrawal")
       },
       {
         title: "Total Amount passed",
@@ -458,6 +525,7 @@ export const CollapsibleDepartment = ({
         change: "+22.3%",
         icon: DollarSign,
         color: "from-purple-500 to-pink-500",
+        comparisonData: getComparisonData(withdrawMetricsData.totalPassedAmount, "Total Amount passed", "withdrawal")
       },
       {
         title: "Total Transaction Rejected",
@@ -465,6 +533,7 @@ export const CollapsibleDepartment = ({
         change: "-4.8%",
         icon: XCircle,
         color: "from-red-500 to-orange-500",
+        comparisonData: getComparisonData(withdrawMetricsData.totalRejected, "Total Transaction Rejected", "withdrawal")
       },
       {
         title: "Total Amount Rejected",
@@ -472,6 +541,7 @@ export const CollapsibleDepartment = ({
         change: "-6.2%",
         icon: TrendingDown,
         color: "from-orange-500 to-red-500",
+        comparisonData: getComparisonData(withdrawMetricsData.totalRejectedAmount, "Total Amount Rejected", "withdrawal")
       },
       {
         title: "Total Transaction process",
@@ -479,6 +549,7 @@ export const CollapsibleDepartment = ({
         change: "+5.3%",
         icon: Clock,
         color: "from-blue-500 to-cyan-500",
+        comparisonData: getComparisonData(withdrawMetricsData.totalProcessing, "Total Transaction process", "withdrawal")
       },
       {
         title: "Total Amount process",
@@ -486,6 +557,7 @@ export const CollapsibleDepartment = ({
         change: "+8.7%",
         icon: Activity,
         color: "from-indigo-500 to-purple-500",
+        comparisonData: getComparisonData(withdrawMetricsData.totalProcessingAmount, "Total Amount process", "withdrawal")
       },
     ];
   }
@@ -530,7 +602,7 @@ export const CollapsibleDepartment = ({
           }`}
       >
         <div className="p-8 pt-0">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {dynamicMetrics.map((metric, idx) => (
               <AnimatedMetricCard key={idx} {...metric} />
             ))}

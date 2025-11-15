@@ -76,7 +76,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state: any) => state.combinedQuota
   );
-   
+console.log(data)
   const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -143,6 +143,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     0
   );
 
+  console.log(CsrTotalConvey, "let assume ");
   const calculateRealTotals = useCallback(() => {
     const csrTotals: { [key: string]: number } = {};
     const depositTotals: { [key: string]: number } = {};

@@ -7,7 +7,6 @@ const NonQuotaDepartment = () => {
     const { data } = useSelector((state) => state.combinedQuota);
     const { department } = useSelector((state) => state?.auth?.data)
 
-    console.log("Raw Data:", data)
     useEffect(() => {
         dispatch(fetchCombinedDepartmentsData())
     }, [])
@@ -61,7 +60,7 @@ const NonQuotaDepartment = () => {
         const config = departmentConfig[department];
         if (!config) return [];
 
-        console.log(`Processing ${department} department with config:`, config);
+   
 
         const filteredData = data
             .filter(row => {
@@ -81,13 +80,13 @@ const NonQuotaDepartment = () => {
                 const rawValue = row[config.valueIndex];
                 const outputValue = parseInt(rawValue) || 0;
 
-                console.log(`Row: ${name}, Raw Value: ${rawValue}, Parsed: ${outputValue}`);
+               
 
                 // Special condition for Withdraw department - exclude if length is less than or equal to 3
                 if (department === 'Withdraw') {
                     const stringValue = String(rawValue || '');
                     if (stringValue.length <= 3) {
-                        console.log(`Excluding ${name} - value length ${stringValue.length} <= 3`);
+                        // console.log(`Excluding ${name} - value length ${stringValue.length} <= 3`);
                         return false;
                     }
                 }
@@ -95,7 +94,7 @@ const NonQuotaDepartment = () => {
                 // Return true if output is less than department quota
                 const shouldInclude = outputValue < config.quota;
                 if (!shouldInclude) {
-                    console.log(`Excluding ${name} - output ${outputValue} >= quota ${config.quota}`);
+                    // console.log(`Excluding ${name} - output ${outputValue} >= quota ${config.quota}`);
                 }
                 return shouldInclude;
             })
@@ -117,11 +116,10 @@ const NonQuotaDepartment = () => {
                     variance: variance
                 };
 
-                console.log(`Mapped member:`, memberData);
+                
                 return memberData;
             });
 
-        console.log(`Final filtered data for ${department}:`, filteredData);
         return filteredData;
     }, [data, department]);
 
@@ -153,7 +151,7 @@ const NonQuotaDepartment = () => {
         return { below50, below80, below100 };
     }, [nonQuotaData]);
 
-    console.log("Final nonQuotaData to display:", nonQuotaData);
+  
 
     return (
         <div className="min-h-screen p-6">
@@ -199,21 +197,12 @@ const NonQuotaDepartment = () => {
                 )}
             </div>
 
-            {/* Debug Info - Remove this in production */}
-            {nonQuotaData.length > 0 && (
-                <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700/30 rounded">
-                    <div className="text-yellow-300 text-sm">
-                        <strong>Debug Info:</strong> Showing {nonQuotaData.length} records. Check console for detailed filtering.
-                    </div>
-                </div>
-            )}
-
             {/* Table */}
             <div className="rounded-lg overflow-hidden border border-white/10 mb-5">
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                         <thead>
-                            <tr className="bg-gray-700">
+                            <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider border-b border-gray-600">
                                     DATE
                                 </th>
