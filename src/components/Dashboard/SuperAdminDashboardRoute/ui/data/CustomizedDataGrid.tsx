@@ -16,20 +16,8 @@ import {
 import { getDashboardStats } from "../../../../../redux/QuotaSlice";
 import { fetchCombinedDepartmentsData } from "../../../../../redux/combinedQuotaSlice";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
-
 import CollapsibleDepartment from "../../../../ModernChart/CollapsibleDepartment";
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  MessageCircle,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, Target, TrendingUp } from "lucide-react";
 
 // Register ChartJS components
 ChartJS.register(
@@ -74,8 +62,11 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   );
 
   const { data, loading: combinedQuotaLoading } = useSelector(
-    (state: any) => state.combinedQuota
+    (state: any) => state?.combinedQuota
   );
+
+  console.log(data);
+
   const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -106,106 +97,116 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     "9 HOURS",
   ];
 
-  const groupedUsers: { [key: string]: any[][] } = {};
+  // New function to process nested data structure
+  const processDepartmentData = useCallback(
+    (departmentName: string) => {
+      if (!data || !Array.isArray(data))
+        return { rows: [], total: 0, users: [] };
 
-  for (const sublist of data) {
-    const department = sublist[0]?.trim();
-    const name = sublist[2]?.trim();
+      // Find the department object
+      const deptObj = data.find((item) => item.department === departmentName);
+      if (!deptObj || !deptObj.rows) return { rows: [], total: 0, users: [] };
 
-    if (!department || !name) continue;
+      let total = 0;
+      const users = [];
 
-    const lowerName = name.toLowerCase();
+      for (const row of deptObj.rows) {
+        if (!Array.isArray(row) || row.length === 0) continue;
 
-    const isExcluded = excludedKeywords.some((keyword) =>
-      lowerName.includes(keyword)
-    );
-    if (isExcluded) continue;
+        const name = row[0]?.toString().trim();
+        if (!name) continue;
 
-    if (["CSR", "Deposit", "Withdraw"].includes(department)) {
-      if (!groupedUsers[department]) groupedUsers[department] = [];
-      groupedUsers[department].push(sublist);
-    }
-  }
+        const lowerName = name.toLowerCase();
+        const isExcluded = excludedKeywords.some((keyword) =>
+          lowerName.includes(keyword)
+        );
+        if (isExcluded) continue;
 
-  const CsrTotalConvey = groupedUsers?.CSR?.map((item) => Number(item[3]) || 0);
-  const WdTotaltransaction = groupedUsers?.Withdraw?.map((item) =>
-    parseNumber(item[7] || 0)
+        let value = 0;
+
+        if (departmentName === "CSR") {
+          value = parseNumber(row[1]) || 0;
+        } else if (departmentName === "Deposit") {
+          value = parseNumber(row[7]) || 0;
+        } else if (departmentName === "Withdraw") {
+          value = parseNumber(row[5]) || 0;
+        }
+
+        total += value;
+        users.push({ name, value, row });
+      }
+
+      return { rows: deptObj.rows, total, users };
+    },
+    [data, parseNumber]
   );
-  const DepositTotaltransaction = groupedUsers?.Deposit?.map((item) =>
-    parseNumber(item[9] || 0)
-  );
 
-  const CsrTotalSum = CsrTotalConvey?.reduce((acc, val) => acc + val, 0);
-  const WdtotalSum = WdTotaltransaction?.reduce((acc, val) => acc + val, 0);
-  const DepositTotalsum = DepositTotaltransaction?.reduce(
-    (acc, val) => acc + val,
-    0
-  );
+  // Process all departments
+  const csrData = processDepartmentData("CSR");
+  const depositData = processDepartmentData("Deposit");
+  const withdrawData = processDepartmentData("Withdraw");
 
+  const CsrTotalSum = csrData.total;
+  const DepositTotalsum = depositData.total;
+  const withdrawRealTotal = withdrawData.total;
+
+
+  // Calculate real totals from actual data structure
   const calculateRealTotals = useCallback(() => {
-    const csrTotals: { [key: string]: number } = {};
-    const depositTotals: { [key: string]: number } = {};
-    const withdrawTotals: { [key: string]: number } = {};
+    let csrRealTotal = 0;
+    let depositRealTotal = 0;
+    let withdrawRealTotal = 0;
 
-    data.forEach((item: any) => {
-      const key = item[0];
+    if (data && Array.isArray(data)) {
+      data.forEach((dept) => {
+        if (!dept.rows || !Array.isArray(dept.rows)) return;
 
-      // CSR: Process rows where the 4th index is "Ave. Completed Convo"
-      if (key === "CSR" && item[3] === "Ave. Completed Convo") {
-        const morningShift = parseFloat(item[4]) || 0;
-        const nightShift = parseFloat(item[5]) || 0;
-        const sum = morningShift + nightShift;
-        csrTotals[key] = (csrTotals[key] || 0) + sum;
-      }
-
-      // Deposit: Process rows where the 4th index is "Ave. Completed Convo"
-      if (key === "Deposit" && item[3] === "Ave. Completed Convo") {
-        const morningShift = parseFloat(item[4]) || 0;
-        const nightShift = parseFloat(item[5]) || 0;
-        const sum = morningShift + nightShift;
-        depositTotals[key] = (depositTotals[key] || 0) + sum;
-      }
-    });
-
-    // Calculate Withdraw sum from real data
-    let withdrawSum = 0;
-    data.forEach((item: any) => {
-      if (
-        item[0] === "Withdraw" &&
-        item[2] !== "" &&
-        item[2] !== "TOTAL" &&
-        item[2] !== "Member" &&
-        item[2] !== "reject" &&
-        item[2] !== "拒绝提现"
-      ) {
-        const value = parseFloat((item[7] || "0").replace(/,/g, "")) || 0;
-        withdrawSum += value;
-      }
-    });
-
-    withdrawTotals["Withdraw"] = withdrawSum;
+        if (dept.department === "CSR") {
+          dept.rows.forEach((row: any) => {
+            if (Array.isArray(row) && row.length > 3) {
+              csrRealTotal += parseNumber(row[1]) || 0;
+            }
+          });
+        } else if (dept.department === "Deposit") {
+          dept.rows.forEach((row: any) => {
+            if (Array.isArray(row) && row.length > 9) {
+              depositRealTotal += parseNumber(row[7]) || 0;
+            }
+          });
+        } else if (dept.department === "Withdraw") {
+          dept.rows.forEach((row: any) => {
+            if (Array.isArray(row) && row.length > 7) {
+              withdrawRealTotal += parseNumber(row[5]) || 0;
+            }
+          });
+        }
+      });
+    }
 
     return {
-      csrRealTotal: csrTotals["CSR"] || 0,
-      depositRealTotal: depositTotals["Deposit"] || 0,
-      withdrawRealTotal: withdrawTotals["Withdraw"] || 0,
+      csrRealTotal,
+      depositRealTotal,
+      withdrawRealTotal,
     };
-  }, [data]);
+  }, [data, parseNumber]);
 
-  const { csrRealTotal, depositRealTotal, withdrawRealTotal } =
-    calculateRealTotals();
+  const {
+    csrRealTotal,
+    depositRealTotal,
+    withdrawRealTotal: calculatedWithdrawTotal,
+  } = calculateRealTotals();
 
-  // Calculate performance percentages based on real data - FIXED TARGET CALCULATION
+  // Calculate performance percentages based on real data
   const calculateRealPerformance = useCallback(() => {
     const csrTargetPerPerson = 560;
     const depositTargetPerPerson = 530;
     const withdrawTargetPerPerson = 1500;
 
-    const csrTotalTarget = csrTargetPerPerson * (groupedUsers.CSR?.length || 0);
+    const csrTotalTarget = csrTargetPerPerson * (csrData.users.length || 0);
     const depositTotalTarget =
-      depositTargetPerPerson * (groupedUsers.Deposit?.length || 0);
+      depositTargetPerPerson * (depositData.users.length || 0);
     const withdrawTotalTarget =
-      withdrawTargetPerPerson * (groupedUsers.Withdraw?.length || 0);
+      withdrawTargetPerPerson * (withdrawData.users.length || 0);
 
     // Percentage calculation
     const csrAchievedPercent =
@@ -215,7 +216,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
 
     const depositAchievedPercent =
       depositTotalTarget > 0
-        ? Math.min((DepositTotalsum / depositTotalTarget) * 100, 100)
+        ? Math.min((depositRealTotal / depositTotalTarget) * 100, 100)
         : 0;
 
     const withdrawAchievedPercent =
@@ -234,21 +235,28 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       depositTargetMet: depositAchievedPercent >= 100,
       withdrawTargetMet: withdrawAchievedPercent >= 100,
     };
-  }, [csrRealTotal, depositRealTotal, withdrawRealTotal, groupedUsers]);
+  }, [
+    CsrTotalSum,
+    DepositTotalsum,
+    withdrawRealTotal,
+    csrData.users.length,
+    depositData.users.length,
+    withdrawData.users.length,
+  ]);
 
   const performance = calculateRealPerformance();
 
-  // Team Leader Stats with Real Data - FIXED
+  // Team Leader Stats with Real Data
   const teamLeaderData = React.useMemo(
     () => [
       {
         title: "CSR - Total Conversation",
         value: `${formatNumber(csrRealTotal)}`,
-        interval: `Target: 530`,
+        interval: `Target: 560`,
         trend: performance.csrTargetMet ? "up" : "down",
         totalCompleted: csrRealTotal,
-        target: 530,
-        difference: CsrTotalSum?.toLocaleString(),
+        target: 560,
+        difference: csrRealTotal?.toLocaleString(),
         isPositive: performance.csrTargetMet,
         realTotal: csrRealTotal,
         performance: performance.csrAbovePercent,
@@ -256,10 +264,10 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       },
       {
         title: "Deposit - Total Transaction",
-        value: `${formatNumber(DepositTotalsum)}`,
+        value: `${formatNumber(depositRealTotal)}`,
         interval: `Target: 530`,
         trend: performance.depositTargetMet ? "up" : "down",
-        totalCompleted: DepositTotalsum,
+        totalCompleted: depositRealTotal,
         target: 530,
         difference: DepositTotalsum?.toLocaleString(),
         isPositive: performance.depositTargetMet,
@@ -272,25 +280,32 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         value: `${formatNumber(withdrawRealTotal)}`,
         interval: `Target: 1,500`,
         trend: performance.withdrawTargetMet ? "up" : "down",
-        totalCompleted: withdrawRealTotal,
+        totalCompleted: calculatedWithdrawTotal,
         target: 1500,
         difference: withdrawRealTotal?.toLocaleString(),
         isPositive: performance.withdrawTargetMet,
-        realTotal: withdrawRealTotal,
+        realTotal: calculatedWithdrawTotal,
         performance: performance.withdrawAbovePercent,
         targetMet: performance.withdrawTargetMet,
       },
     ],
-    [csrRealTotal, depositRealTotal, withdrawRealTotal, performance]
+    [
+      csrRealTotal,
+      depositRealTotal,
+      calculatedWithdrawTotal,
+      performance,
+      CsrTotalSum,
+      DepositTotalsum,
+    ]
   );
 
-  // Line Chart Data for Team Leader Stats - FIXED
+  // Line Chart Data for Team Leader Stats
   const lineChartData = {
     labels: ["CSR", "Deposit", "Withdrawal"],
     datasets: [
       {
         label: "Actual Performance",
-        data: [csrRealTotal, depositRealTotal, withdrawRealTotal],
+        data: [csrRealTotal, depositRealTotal, calculatedWithdrawTotal],
         borderColor: "rgb(59, 130, 246)",
         backgroundColor: "rgba(59, 130, 246, 0.1)",
         tension: 0.4,
@@ -302,7 +317,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       },
       {
         label: "Target",
-        data: [530, 530, 1500],
+        data: [560, 530, 1500],
         borderColor: "rgb(16, 185, 129)",
         backgroundColor: "rgba(16, 185, 129, 0.1)",
         borderDash: [5, 5],
@@ -475,23 +490,46 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   });
 
   const staffPerShift = {
-    csr: { morning: 24, night: 12 },
-    deposit: { morning: 10, night: 5 },
-    withdrawal: { morning: 12, night: 6 },
+    csr: {
+      morning:
+        csrData.users.length > 0 ? Math.ceil(csrData.users.length * 0.7) : 24,
+      night:
+        csrData.users.length > 0 ? Math.floor(csrData.users.length * 0.3) : 12,
+    },
+    deposit: {
+      morning:
+        depositData.users.length > 0
+          ? Math.ceil(depositData.users.length * 0.7)
+          : 10,
+      night:
+        depositData.users.length > 0
+          ? Math.floor(depositData.users.length * 0.3)
+          : 5,
+    },
+    withdrawal: {
+      morning:
+        withdrawData.users.length > 0
+          ? Math.ceil(withdrawData.users.length * 0.7)
+          : 12,
+      night:
+        withdrawData.users.length > 0
+          ? Math.floor(withdrawData.users.length * 0.3)
+          : 6,
+    },
   };
 
   // Update metrics with real data
   const csrMetrics = [
     {
       title: "Completed",
-      value: formatNumber(CsrTotalSum),
+      value: formatNumber(csrRealTotal),
       change: performance.csrTargetMet ? "+Achieved" : "-Below Target",
       icon: CheckCircle,
       color: "from-blue-500 to-cyan-500",
     },
     {
       title: "Target",
-      value: "530",
+      value: "560",
       change: "Monthly Goal",
       icon: Target,
       color: "from-purple-500 to-pink-500",
@@ -553,15 +591,26 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     },
   ];
 
+  // Debug info
+  console.log("Processed Data:", {
+    csrData,
+    depositData,
+    withdrawData,
+    csrRealTotal,
+    depositRealTotal,
+    calculatedWithdrawTotal,
+    performance,
+  });
+
   return (
     <div className="text-white mt-6 bg-[#00010B]">
       <div className="mt-5">
         {/* Collapsible Department Metrics */}
         <CollapsibleDepartment
-          TotalSum={CsrTotalSum}
+          TotalSum={csrRealTotal}
           title="CSR Department"
-          userLength={groupedUsers}
-          data={data}
+          userLength={csrData.users.length}
+          data={csrData.rows}
           subtitle="Customer Service & Support"
           metrics={csrMetrics}
           deptKey="csr"
@@ -570,10 +619,10 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           staffPerShift={staffPerShift}
         />
         <CollapsibleDepartment
-          TotalSum={CsrTotalSum}
+          TotalSum={depositRealTotal}
           title="Deposit Department"
-          data={data}
-          userLength={groupedUsers}
+          data={depositData.rows}
+          userLength={depositData.users.length}
           subtitle="Verification & Processing"
           metrics={depositMetrics}
           deptKey="deposit"
@@ -582,11 +631,11 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           staffPerShift={staffPerShift}
         />
         <CollapsibleDepartment
-          TotalSum={CsrTotalSum}
+          TotalSum={withdrawRealTotal}
           title="Withdrawal Department"
-          data={data}
+          data={withdrawData.rows}
           subtitle="Transaction Processing"
-          userLength={groupedUsers}
+          userLength={withdrawData.users.length}
           metrics={withdrawalMetrics}
           deptKey="withdrawal"
           expandedDept={expandedDept}
@@ -722,7 +771,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
                 targetMet: performance.depositTargetMet,
               }}
               withdrawData={{
-                realTotal: withdrawRealTotal,
+                realTotal: calculatedWithdrawTotal,
                 performance: performance.withdrawAbovePercent,
                 targetMet: performance.withdrawTargetMet,
               }}

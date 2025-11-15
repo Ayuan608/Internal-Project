@@ -499,7 +499,7 @@ const Performance = () => {
                         <thead className="bg-[rgba(59,130,246,0.05)] whitespace-nowrap border-b border-gray-700">
                             <tr>
                                 {customHeaders.map((header, index) => (
-                                    <th key={index} className="px-4 py-3 font-semibold uppercase text-white text-start text-xs">
+                                    <th key={index} className="px-4 py-3 font-semibold uppercase text-white text-center text-xs">
                                         {header}
                                     </th>
                                 ))}
@@ -529,7 +529,7 @@ const Performance = () => {
                                         {customHeaders.map((header, j) => (
                                             <td
                                                 key={j}
-                                                className={`px-4 py-3 whitespace-nowrap text-start text-xs ${getCellColor(header, row[j] || '')}`}
+                                                className={`px-4 py-3 whitespace-nowrap text-center text-xs ${getCellColor(header, row[j] || '')}`}
                                             >
                                                 {row[j] || '-'}
                                             </td>

@@ -29,7 +29,7 @@ const ShiftChart = ({ timeFilter, data, title }) => {
     labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'],
     datasets: [
       {
-        label: 'Morning Shift',
+        label: 'Morning Shift (4:00 A.M -  4: 00 P.M)',
         data: [10, 30, 80, 100, 60, 20, 5],
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.2)',
@@ -38,7 +38,7 @@ const ShiftChart = ({ timeFilter, data, title }) => {
       },
 
       {
-        label: 'Night Shift',
+        label: 'Night Shift (4:00 P.M - 4:00 A.M)',
         data: [60, 80, 30, 10, 20, 70, 100],
         borderColor: 'rgb(168, 85, 247)',
         backgroundColor: 'rgba(168, 85, 247, 0.2)',
@@ -180,12 +180,12 @@ const ShiftChart = ({ timeFilter, data, title }) => {
         <div className="grid grid-cols-2 gap-3 text-xs text-gray-400">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span>Morning (6AM-2PM)</span>
+            <span>Morning : 4:00 A.M -  4: 00 P.M</span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-            <span>Night (10PM-6AM)</span>
+            <span>Night : 4:00 P.M - 4:00 A.M</span>
           </div>
         </div>
       </div>

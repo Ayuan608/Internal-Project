@@ -12,7 +12,7 @@ const AttendanceRecords = () => {
     const [selectedRole, setSelectedRole] = useState("All");
     const [selectedPeriod, setSelectedPeriod] = useState('daily');
     const dispatch = useDispatch();
-
+    const [selectedDate, setSelectedDate] = useState("");
     const { allAttendance } = useSelector((state) => state.attendance);
     const { loading: caseLoading } = useSelector((state) => state.stat); // Get loading state
     const attendanceData = allAttendance || [];
@@ -373,21 +373,42 @@ Team Leader`
 
                 {/* Search and Table Section */}
                 <div className="bg-[rgba(59,130,246,0.03)] rounded-2xl overflow-hidden border border-slate-700/50 backdrop-blur-sm">
-                    {/* Header with Search */}
+                    {/* Header with Search & Date Filter */}
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 py-5 border-b border-slate-700/50">
+
                         <h2 className="text-xl font-bold text-white">Detailed Records</h2>
 
-                        <div className="relative">
-                            <Search className="absolute left-4 top-3 text-slate-400 w-5 h-5" />
-                            <input
-                                type="text"
-                                placeholder="Search by name, role or department..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-12 pr-4 py-3 rounded-xl text-white text-sm border border-slate-700 focus:outline-none focus:border-blue-500 bg-slate-900/50 min-w-[320px] transition-all duration-300"
-                            />
+                        <div className="flex flex-col md:flex-row gap-4 items-center">
+
+                            {/* Date Picker */}
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="px-4 py-3 rounded-xl text-white text-sm border border-slate-700 
+                           focus:outline-none focus:border-blue-500 bg-slate-900/50 
+                           min-w-[180px] transition-all duration-300"
+                                />
+                            </div>
+
+                            {/* Search Input */}
+                            <div className="relative">
+                                <Search className="absolute left-4 top-3 text-slate-400 w-5 h-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, role or department..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-12 pr-4 py-3 rounded-xl text-white text-sm border border-slate-700 
+                           focus:outline-none focus:border-blue-500 bg-slate-900/50 
+                           min-w-[320px] transition-all duration-300"
+                                />
+                            </div>
+
                         </div>
                     </div>
+
 
                     {/* Table */}
                     <div className="overflow-x-auto">
@@ -519,8 +540,8 @@ Team Leader`
                                     key={idx}
                                     onClick={() => setSelectedCase(option)}
                                     className={`cursor-pointer px-4 py-3 rounded-lg border transition ${selectedCase === option
-                                            ? "bg-blue-600 text-white border-blue-500"
-                                            : "bg-[rgba(59,130,246,0.03)] border-gray-800 hover:bg-gray-900/80"
+                                        ? "bg-blue-600 text-white border-blue-500"
+                                        : "bg-[rgba(59,130,246,0.03)] border-gray-800 hover:bg-gray-900/80"
                                         }`}
                                 >
                                     <p className="font-medium text-sm">{option}</p>

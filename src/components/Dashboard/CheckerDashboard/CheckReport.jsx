@@ -9,6 +9,8 @@ function CheckReport() {
     const [isReportModal, setIsReportModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [timeFilter, setTimeFilter] = useState('6');
+    const [fromDate, setFromDate] = useState(null);
+    const [toDate, setToDate] = useState(null);
 
     useEffect(() => {
         dispatch(getAllReports());
@@ -126,6 +128,8 @@ function CheckReport() {
 
     const filteredReports = allReports?.filter(report => {
         const reportDate = new Date(report.date || report.createdAt);
+        if (fromDate && reportDate < new Date(fromDate)) return false;
+        if (toDate && reportDate > new Date(toDate)) return false;
         return reportDate >= getFilteredDate();
     }) || [];
 
@@ -139,6 +143,18 @@ function CheckReport() {
                         <p className="text-gray-400">Streamline your workflow by sending and tracking daily reports to ensure consistent team performance.</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <input
+                            type="date"
+                            onChange={(e) => setFromDate(e.target.value)}
+                            className="bg-[rgba(59,130,246,0.03)] border border-gray-700 text-white rounded-lg px-3 py-3"
+                        />
+
+                        {/* TO DATE */}
+                        <input
+                            type="date"
+                            onChange={(e) => setToDate(e.target.value)}
+                            className="bg-[rgba(59,130,246,0.03)] border border-gray-700 text-white rounded-lg px-3 py-3"
+                        />
                         <div className="relative">
                             <select
                                 value={timeFilter}
@@ -179,9 +195,46 @@ function CheckReport() {
                                 <div
                                     key={report._id}
                                     onClick={() => setSelectedReport(report)}
-                                    className="bg-gray-900/60 backdrop-blur-md border border-gray-800 hover:shadow-xl rounded-xl p-6 transition-all duration-300 cursor-pointer"
+                                    className="relative bg-gray-900/60 backdrop-blur-md border border-gray-800 hover:shadow-xl rounded-xl p-6 transition-all duration-300 cursor-pointer"
                                 >
+                                    <div className="absolute top-6 right-24 flex gap-2">
+
+                                        {/* SAVE BUTTON */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                console.log("Save clicked", report._id);
+                                            }}
+                                            className="p-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg border border-blue-500/30"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 text-blue-400"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                                    d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </button>
+
+                                        {/* DELETE BUTTON */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                console.log("Delete clicked", report._id);
+                                            }}
+                                            className="p-2 bg-red-600/20 hover:bg-red-600/40 rounded-lg border border-red-500/30"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 text-red-400"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                                    d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+
+                                    </div>
+
                                     <div className="flex justify-between items-start mb-4">
+
                                         <div className="flex-1">
                                             <h3 className="font-semibold text-white text-base">
                                                 {report.createdBy?.FullName || ""}
@@ -202,7 +255,7 @@ function CheckReport() {
                                             </div>
                                         </div>
                                         <div>
-                                            <span className={`text-xs flex items-center gap-1 px-3 py-1.5 rounded-full ${isSeen
+                                            <span className={`text-xs flex items-center gap-1 px-3 py-2 rounded-lg ${isSeen
                                                 ? 'bg-green-500/10 border border-green-500/20 text-green-400'
                                                 : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
                                                 }`}>
@@ -308,9 +361,9 @@ function CheckReport() {
                             {selectedReport.imageUrl && (
                                 <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
                                     <h3 className="text-sm font-semibold text-gray-400 mb-3">Attachment</h3>
-                                    <img 
-                                        src={selectedReport.imageUrl} 
-                                        alt="Report attachment" 
+                                    <img
+                                        src={selectedReport.imageUrl}
+                                        alt="Report attachment"
                                         className="w-full rounded-lg border border-gray-700"
                                     />
                                 </div>
@@ -413,7 +466,7 @@ function CheckReport() {
                                 <label className='block text-sm font-semibold mb-2.5 text-gray-200'>
                                     Attach Image <span className="text-gray-500">(Optional - Max 5MB)</span>
                                 </label>
-                                
+
                                 {!formData.imagePreview ? (
                                     <div className='relative'>
                                         <input
@@ -426,9 +479,9 @@ function CheckReport() {
                                 ) : (
                                     <div className='bg-gray-800/50 border border-gray-700 rounded-xl p-4'>
                                         <div className='flex items-start gap-3'>
-                                            <img 
-                                                src={formData.imagePreview} 
-                                                alt="Preview" 
+                                            <img
+                                                src={formData.imagePreview}
+                                                alt="Preview"
                                                 className='w-20 h-20 object-cover rounded-lg'
                                             />
                                             <div className='flex-1'>

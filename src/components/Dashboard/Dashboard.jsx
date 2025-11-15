@@ -9,7 +9,8 @@ import PerformanceTrendCard from "../ModernChart/PerformanceTrendCard";
 
 export default function Dashboard() {
   const [teamLeaderData, setTeamLeaderData] = useState([]);
-  const { data: combinedData } = useSelector((state) => state.combinedQuota);
+  const combinedData = useSelector((state) => state?.combinedQuota?.data);
+
 
   const userId = useSelector((state) => state.auth?.data?._id);
 
