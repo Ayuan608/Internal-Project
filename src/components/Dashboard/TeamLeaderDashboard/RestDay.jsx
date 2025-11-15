@@ -242,6 +242,9 @@ export default function AttendanceDashboard() {
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-500/20 border border-red-500/30 text-red-300">
               <span className="w-3 h-3 rounded bg-red-500"></span> Absent
             </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-500/20 border border-orange-500/30 text-orange-300">
+              <span className="w-3 h-3 rounded bg-orange-500"></span> Half Day
+            </span>
           </div>
         </div>
       </div>
