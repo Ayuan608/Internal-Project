@@ -15,6 +15,7 @@ import {
 } from "chart.js";
 import {
   fetchCombinedDepartmentsData,
+  fetchCombinedDepartmentsHistory,
   loadFromCache,
 } from "../../../../../redux/combinedQuotaSlice";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
@@ -54,6 +55,127 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const { data, loading, fromCache } = useSelector(
     (state: any) => state.combinedQuota
   );
+
+  const historyState = useSelector(
+    (alldata: any) => alldata.combinedQuota.history
+  );
+
+  const CSR = historyState?.CSR || [];
+  const Deposit = historyState?.Deposit || [];
+  const Withdraw = historyState?.Withdraw || [];
+
+  let totalCompleted = 0;
+  let totalDeposit = 0;
+  let totalWithdraw = 0;
+
+  // CSR - Total Completed Conversations
+  const calculateTotalCompletedConvo = (csrData: any) => {
+    totalCompleted = 0;
+
+    csrData.forEach((dayData: any) => {
+      const rows = dayData.rows || [];
+
+      rows.forEach((row: any) => {
+        if (
+          row.length >= 2 &&
+          typeof row[0] === "string" &&
+          typeof row[1] === "string" &&
+          !row[0].includes("shift") &&
+          !row[0].includes("HIGHLIGHTS") &&
+          !row[0].includes("Ave.") &&
+          !row[0].includes("TOTAL") &&
+          !row[0].includes("FAILED") &&
+          !row[0].includes("ASSIGNED") &&
+          !row[0].includes("REACHED") &&
+          row[0] !== "" &&
+          row[1] !== "" &&
+          !isNaN(parseInt(row[1].replace(/,/g, "")))
+        ) {
+          const completedConvo = parseInt(row[1].replace(/,/g, "")) || 0;
+          totalCompleted += completedConvo;
+        }
+      });
+    });
+
+    return totalCompleted;
+  };
+
+  // Deposit - Total Amount (column 7 - Total)
+  const calculateTotalDeposit = (depositData: any) => {
+    totalDeposit = 0;
+
+    depositData.forEach((dayData: any) => {
+      const rows = dayData.rows || [];
+
+      rows.forEach((row: any) => {
+        if (
+          row.length >= 8 &&
+          typeof row[0] === "string" &&
+          typeof row[7] === "string" &&
+          !row[0].includes("Morning") &&
+          !row[0].includes("Night") &&
+          !row[0].includes("Total") &&
+          !row[0].includes("12 Hours") &&
+          !row[0].includes("9 HOURS") &&
+          row[0] !== "" &&
+          row[7] !== "" &&
+          !isNaN(parseInt(row[7].replace(/,/g, "")))
+        ) {
+          const depositAmount = parseInt(row[7].replace(/,/g, "")) || 0;
+          totalDeposit += depositAmount;
+        }
+      });
+    });
+
+    return totalDeposit;
+  };
+
+  // Withdraw - Total Amount Passed (column 2 - Total amount passed)
+  const calculateTotalWithdraw = (withdrawData: any) => {
+    totalWithdraw = 0;
+
+    withdrawData.forEach((dayData: any) => {
+      const rows = dayData.rows || [];
+
+      rows.forEach((row: any) => {
+        if (
+          row.length >= 3 &&
+          typeof row[0] === "string" &&
+          typeof row[2] === "string" &&
+          !row[0].includes("AutoDraw") &&
+          !row[0].includes("TOTAL") &&
+          !row[0].includes("reject") &&
+          !row[0].includes("拒绝提现") &&
+          !row[0].includes("Member") &&
+          row[0] !== "" &&
+          row[2] !== "" &&
+          !isNaN(parseInt(row[2].replace(/,/g, "")))
+        ) {
+          const withdrawAmount = parseInt(row[2].replace(/,/g, "")) || 0;
+          totalWithdraw += withdrawAmount;
+        }
+      });
+    });
+
+    return totalWithdraw;
+  };
+
+  // Usage - Calculate all totals
+  const totalCompletedConvo = calculateTotalCompletedConvo(CSR);
+  const totalDepositAmount = calculateTotalDeposit(Deposit);
+  const totalWithdrawAmount = calculateTotalWithdraw(Withdraw);
+
+  console.log("📊 DEPARTMENT TOTALS:");
+  console.log("CSR - Total Completed Conversations:", totalCompletedConvo);
+  console.log("Deposit - Total Amount:", totalDepositAmount);
+  console.log("Withdraw - Total Amount Passed:", totalWithdrawAmount);
+
+  useEffect(() => {
+    dispatch(loadFromCache());
+    setTimeout(() => {
+      dispatch(fetchCombinedDepartmentsHistory());
+    }, 100);
+  }, [dispatch]);
 
   const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [hasLoadedCache, setHasLoadedCache] = useState(false);
@@ -234,7 +356,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         trend: performance.csrTargetMet ? "up" : "down",
         totalCompleted: calculations.csrRealTotal,
         target: 530,
-        difference: calculations.CsrTotalSum?.toLocaleString(),
+        difference: totalCompleted?.toLocaleString(),
         isPositive: performance.csrTargetMet,
         realTotal: calculations.csrRealTotal,
         performance: performance.csrAbovePercent,
@@ -247,7 +369,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         trend: performance.depositTargetMet ? "up" : "down",
         totalCompleted: calculations.DepositTotalsum,
         target: 530,
-        difference: calculations.DepositTotalsum?.toLocaleString(),
+        difference: totalDepositAmount?.toLocaleString(),
         isPositive: performance.depositTargetMet,
         realTotal: calculations.depositRealTotal,
         performance: performance.depositAbovePercent,
@@ -260,7 +382,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         trend: performance.withdrawTargetMet ? "up" : "down",
         totalCompleted: calculations.withdrawRealTotal,
         target: 1500,
-        difference: calculations.withdrawRealTotal?.toLocaleString(),
+        difference: totalWithdrawAmount?.toLocaleString(),
         isPositive: performance.withdrawTargetMet,
         realTotal: calculations.withdrawRealTotal,
         performance: performance.withdrawAbovePercent,

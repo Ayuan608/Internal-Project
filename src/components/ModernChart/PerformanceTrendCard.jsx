@@ -26,10 +26,6 @@ export const PerformanceTrendCard = ({
     const Withdraw = historyState?.Withdraw || [];
     const fromCache = historyState?.fromCache || false;
 
-    console.log(CSR, "csr data")
-    console.log(Deposit, "Deposit data")
-    console.log(Withdraw, "Withdraw data")
-
     useEffect(() => {
         dispatch(loadFromCache());
         setTimeout(() => {
