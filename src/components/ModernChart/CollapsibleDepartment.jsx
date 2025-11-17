@@ -23,49 +23,59 @@ const GlassCard = ({ children, className = "" }) => (
   </div>
 );
 
-// Comparison Badge Component
-const ComparisonBadge = ({ currentValue, previousValue, formatType = "number" }) => {
-  const getFormattedValue = (value, type) => {
-    if (type === "currency") {
-      return `$${parseInt(value || 0).toLocaleString()}`;
-    } else if (type === "percentage") {
-      return `${value}%`;
-    }
-    return parseInt(value || 0).toLocaleString();
-  };
 
+const ComparisonBadge = ({ currentValue, previousValue }) => {
   const current = parseFloat(currentValue) || 0;
   const previous = parseFloat(previousValue) || 0;
 
   const difference = current - previous;
-  const percentage = previous !== 0 ? ((difference / previous) * 100) : (current > 0 ? 100 : 0);
 
-  const isPositive = difference >= 0;
+  const isPositive = difference > 0;
+  const isNegative = difference < 0;
   const isNeutral = difference === 0;
 
   return (
-    <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-      <div className={`px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm border ${isNeutral ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-        isPositive ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'
-        }`}>
-        <div className="flex items-center gap-1">
-          {isNeutral ? (
-            <span>→</span>
-          ) : isPositive ? (
-            <TrendingUp size={12} />
-          ) : (
-            <TrendingDown size={12} />
-          )}
-          <span>{isPositive ? '+' : ''}{percentage.toFixed(1)}%</span>
-        </div>
-      </div>
-      <div className="text-xs text-gray-400 text-right">
-        <div>Yesterday: {getFormattedValue(previousValue, formatType)}</div>
-        <div>Today: {getFormattedValue(currentValue, formatType)}</div>
+    <div className="absolute top-3 right-3 group">
+      <div className="w-8 h-8 flex items-center justify-center">
+
+        {/* Neutral Arrow */}
+        {isNeutral && (
+          <span className="opacity-0  transition duration-200 text-yellow-400 text-xl font-bold">
+            →
+          </span>
+        )}
+
+        {/* TRENDING UP (Lucide) */}
+        {isPositive && (
+          <TrendingUp
+            size={22}
+            className="
+             
+              transition duration-200 
+              text-green-400 
+              drop-shadow-[0_0_6px_rgba(34,197,94,0.6)]
+            "
+          />
+        )}
+
+        {/* TRENDING DOWN (Lucide) */}
+        {isNegative && (
+          <TrendingDown
+            size={22}
+            className="
+              
+              transition duration-200 
+              text-red-400 
+              drop-shadow-[0_0_6px_rgba(239,68,68,0.6)]
+            "
+          />
+        )}
       </div>
     </div>
   );
 };
+
+
 
 const AnimatedMetricCard = ({ title, value, change, icon: Icon, color, comparisonData }) => (
   <GlassCard className="p-6 group hover:scale-105 transition-transform duration-300 relative">

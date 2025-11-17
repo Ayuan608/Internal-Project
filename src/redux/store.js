@@ -2,7 +2,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import authSliceReducer from './authSlice'
 import attendenceSliceReducer from './attendenceSlice'
 import notificationSliceReducer from './NotificationSlice'
-import quotaSliceReducer from './QuotaSlice'
 import reportSliceReducer from './reportSlice'
 import sheetSliceReducer from './sheetSlice'
 import announcementSliceReducer from './announcementSlice'
@@ -15,7 +14,6 @@ const store = configureStore({
         stat:statSliceReducer,
         auth: authSliceReducer,
         attendance: attendenceSliceReducer,
-        quota: quotaSliceReducer,
         report: reportSliceReducer,
         activity:activitySliceReducer,
         sheet: sheetSliceReducer,

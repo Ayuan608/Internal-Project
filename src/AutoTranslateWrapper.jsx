@@ -7,7 +7,7 @@ const AutoTranslateWrapper = ({ children }) => {
       const elements = document.querySelectorAll("body *:not(script):not(style)");
       elements.forEach((el) => {
         if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
-          const text = el.innerText.trim();
+          const text = el.innerText?.trim();
           if (text && !text.startsWith("{") && !text.includes("{{")) {
             const translated = i18n.t(text);
             if (translated !== text) el.innerText = translated;

@@ -12,7 +12,6 @@ import DailyTimeRecord from "./components/Dashboard/UserDashboard/DailyTimeRecor
 import PerformanceDashboard from "./components/Dashboard/UserDashboard/PerformanceDashboard";
 import Department from "./components/Dashboard/SuperAdminDashboardRoute/Department";
 import NonQuota from "./components/Dashboard/SuperAdminDashboardRoute/NonQuota";
-import QuotaSetting from "./components/Dashboard/SuperAdminDashboardRoute/QuotaSetting";
 import OverallAttendance from "./components/Dashboard/SuperAdminDashboardRoute/OverallAttendance";
 import ActivityLogs from "./components/Dashboard/SuperAdminDashboardRoute/ActivityLogs";
 import Admin from "./components/Add Employee/Admin";
@@ -97,7 +96,6 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="department" element={<Department />} />
           <Route path="nonQuta" element={<NonQuota />} />
-          <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="add" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="EmployeeOfTheMonthAdmin" element={<EmployeeOfTheMonthAdmin />} />
@@ -116,7 +114,6 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="login" element={<LoginCredentials />} />
           <Route path="department" element={<Department />} />
-          <Route path="quotaSetting" element={<QuotaSetting />} />
           <Route path="directory" element={<Admin />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />

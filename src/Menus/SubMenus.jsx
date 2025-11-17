@@ -248,7 +248,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                     >
                       <ClipboardPlus size={18} /> {t("draftTemplate")}
                     </button>
-                    ``
+                    
                     <DraftTemplate
                       showDraftPopup={showDraftPopup}
                       setShowDraftPopup={setShowDraftPopup}

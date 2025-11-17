@@ -11,7 +11,7 @@ import {
 const NotificationPopup = ({ userId }) => {
   const [visible, setVisible] = useState(false);
   const dispatch = useDispatch();
-  const { notifications, unreadCount, loading, error } = useSelector(
+  const { notifications, unreadCount, loading,  } = useSelector(
     (state) => state.notifications
   );
 
@@ -20,7 +20,6 @@ const NotificationPopup = ({ userId }) => {
 
   useEffect(() => {
     if (userId && !hasFetchedRef.current) {
-      console.log("Fetching notifications for user:", userId);
       dispatch(fetchNotifications(userId));
       hasFetchedRef.current = true;
     }
