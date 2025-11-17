@@ -13,14 +13,13 @@ import {
   LineElement,
   Plugin,
 } from "chart.js";
-import { fetchCombinedDepartmentsData, loadFromCache } from "../../../../../redux/combinedQuotaSlice";
+import {
+  fetchCombinedDepartmentsData,
+  loadFromCache,
+} from "../../../../../redux/combinedQuotaSlice";
 import WeeklyPerformanceChart from "./../WeeklyPerformanceChart";
 import CollapsibleDepartment from "../../../../ModernChart/CollapsibleDepartment";
-import {
-  CheckCircle,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { CheckCircle, Target, TrendingUp } from "lucide-react";
 
 ChartJS.register(
   ArcElement,
@@ -55,7 +54,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const { data, loading, fromCache } = useSelector(
     (state: any) => state.combinedQuota
   );
-  
+
   const [selectedMonth, setSelectedMonth] = useState<string>("November");
   const [hasLoadedCache, setHasLoadedCache] = useState(false);
 
@@ -64,7 +63,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     if (!hasLoadedCache) {
       dispatch(loadFromCache());
       setHasLoadedCache(true);
-      
+
       // Then fetch in background
       setTimeout(() => {
         dispatch(fetchCombinedDepartmentsData());
@@ -77,12 +76,27 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     return Number(value) || 0;
   }, []);
 
-  const excludedKeywords = useMemo(() => [
-    "shift", "highlights", "half data", "failed", "assigned",
-    "reached", "total", "member", "reject", "拒绝提现",
-    "deposit total", "withdraw total", "senior", "morning",
-    "12 Hours", "9 HOURS",
-  ], []);
+  const excludedKeywords = useMemo(
+    () => [
+      "shift",
+      "highlights",
+      "half data",
+      "failed",
+      "assigned",
+      "reached",
+      "total",
+      "member",
+      "reject",
+      "拒绝提现",
+      "deposit total",
+      "withdraw total",
+      "senior",
+      "morning",
+      "12 Hours",
+      "9 HOURS",
+    ],
+    []
+  );
 
   const groupedUsers = useMemo(() => {
     const groups: { [key: string]: any[][] } = {};
@@ -97,7 +111,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       const isExcluded = excludedKeywords.some((keyword) =>
         lowerName.includes(keyword)
       );
-      
+
       if (isExcluded) continue;
 
       if (["CSR", "Deposit", "Withdraw"].includes(department)) {
@@ -110,17 +124,19 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   }, [data, excludedKeywords]);
 
   const calculations = useMemo(() => {
-    const CsrTotalConvey = groupedUsers?.CSR?.map((item) => Number(item[3]) || 0) || [];
-    const WdTotaltransaction = groupedUsers?.Withdraw?.map((item) =>
-      parseNumber(item[7] || 0)
-    ) || [];
-    const DepositTotaltransaction = groupedUsers?.Deposit?.map((item) =>
-      parseNumber(item[9] || 0)
-    ) || [];
+    const CsrTotalConvey =
+      groupedUsers?.CSR?.map((item) => Number(item[3]) || 0) || [];
+    const WdTotaltransaction =
+      groupedUsers?.Withdraw?.map((item) => parseNumber(item[7] || 0)) || [];
+    const DepositTotaltransaction =
+      groupedUsers?.Deposit?.map((item) => parseNumber(item[9] || 0)) || [];
 
     const CsrTotalSum = CsrTotalConvey.reduce((acc, val) => acc + val, 0);
     const WdtotalSum = WdTotaltransaction.reduce((acc, val) => acc + val, 0);
-    const DepositTotalsum = DepositTotaltransaction.reduce((acc, val) => acc + val, 0);
+    const DepositTotalsum = DepositTotaltransaction.reduce(
+      (acc, val) => acc + val,
+      0
+    );
 
     let csrRealTotal = 0;
     let depositRealTotal = 0;
@@ -170,20 +186,31 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     const withdrawTargetPerPerson = 1500;
 
     const csrTotalTarget = csrTargetPerPerson * (groupedUsers.CSR?.length || 0);
-    const depositTotalTarget = depositTargetPerPerson * (groupedUsers.Deposit?.length || 0);
-    const withdrawTotalTarget = withdrawTargetPerPerson * (groupedUsers.Withdraw?.length || 0);
+    const depositTotalTarget =
+      depositTargetPerPerson * (groupedUsers.Deposit?.length || 0);
+    const withdrawTotalTarget =
+      withdrawTargetPerPerson * (groupedUsers.Withdraw?.length || 0);
 
-    const csrAchievedPercent = csrTotalTarget > 0
-      ? Math.min((calculations.CsrTotalSum / csrTotalTarget) * 100, 100)
-      : 0;
+    const csrAchievedPercent =
+      csrTotalTarget > 0
+        ? Math.min((calculations.CsrTotalSum / csrTotalTarget) * 100, 100)
+        : 0;
 
-    const depositAchievedPercent = depositTotalTarget > 0
-      ? Math.min((calculations.DepositTotalsum / depositTotalTarget) * 100, 100)
-      : 0;
+    const depositAchievedPercent =
+      depositTotalTarget > 0
+        ? Math.min(
+            (calculations.DepositTotalsum / depositTotalTarget) * 100,
+            100
+          )
+        : 0;
 
-    const withdrawAchievedPercent = withdrawTotalTarget > 0
-      ? Math.min((calculations.withdrawRealTotal / withdrawTotalTarget) * 100, 100)
-      : 0;
+    const withdrawAchievedPercent =
+      withdrawTotalTarget > 0
+        ? Math.min(
+            (calculations.withdrawRealTotal / withdrawTotalTarget) * 100,
+            100
+          )
+        : 0;
 
     return {
       csrAbovePercent: csrAchievedPercent,
@@ -275,28 +302,33 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     []
   );
 
-  const centerTextPlugin: Plugin<"doughnut"> = useMemo(() => ({
-    id: "centerText",
-    beforeDraw: (chart) => {
-      const { width, height, ctx } = chart;
-      const value = chart.data.datasets[0].data[0] as number;
-      ctx.save();
-      const fontSize = (height / 120).toFixed(2);
-      ctx.font = `${fontSize}em sans-serif`;
-      ctx.fillStyle = "#fff";
-      ctx.textBaseline = "middle";
-      const text = `${Math.round(value)}%`;
-      const textX = Math.round((width - ctx.measureText(text).width) / 2);
-      const textY = height / 1.8 - 5;
-      ctx.fillText(text, textX, textY);
-      ctx.font = `${(Number(fontSize) * 0.4).toFixed(2)}em sans-serif`;
-      ctx.fillStyle = "#9ca3af";
-      const subText = performance.csrTargetMet ? "Quota Met" : "Quota Not Met";
-      const subX = Math.round((width - ctx.measureText(subText).width) / 2);
-      ctx.fillText(subText, subX, textY + 28);
-      ctx.restore();
-    },
-  }), [performance.csrTargetMet]);
+  const centerTextPlugin: Plugin<"doughnut"> = useMemo(
+    () => ({
+      id: "centerText",
+      beforeDraw: (chart) => {
+        const { width, height, ctx } = chart;
+        const value = chart.data.datasets[0].data[0] as number;
+        ctx.save();
+        const fontSize = (height / 120).toFixed(2);
+        ctx.font = `${fontSize}em sans-serif`;
+        ctx.fillStyle = "#fff";
+        ctx.textBaseline = "middle";
+        const text = `${Math.round(value)}%`;
+        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+        const textY = height / 1.8 - 5;
+        ctx.fillText(text, textX, textY);
+        ctx.font = `${(Number(fontSize) * 0.4).toFixed(2)}em sans-serif`;
+        ctx.fillStyle = "#9ca3af";
+        const subText = performance.csrTargetMet
+          ? "Quota Met"
+          : "Quota Not Met";
+        const subX = Math.round((width - ctx.measureText(subText).width) / 2);
+        ctx.fillText(subText, subX, textY + 28);
+        ctx.restore();
+      },
+    }),
+    [performance.csrTargetMet]
+  );
 
   const createChartData = useCallback(
     (met: number, nonMet: number, color: string, targetMet: boolean) => ({
@@ -320,83 +352,95 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     withdrawal: true,
   });
 
-  const staffPerShift = useMemo(() => ({
-    csr: { morning: 24, night: 12 },
-    deposit: { morning: 10, night: 5 },
-    withdrawal: { morning: 12, night: 6 },
-  }), []);
+  const staffPerShift = useMemo(
+    () => ({
+      csr: { morning: 24, night: 12 },
+      deposit: { morning: 10, night: 5 },
+      withdrawal: { morning: 12, night: 6 },
+    }),
+    []
+  );
 
-  const csrMetrics = useMemo(() => [
-    {
-      title: "Completed",
-      value: formatNumber(calculations.CsrTotalSum),
-      change: performance.csrTargetMet ? "+Achieved" : "-Below Target",
-      icon: CheckCircle,
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      title: "Target",
-      value: "530",
-      change: "Monthly Goal",
-      icon: Target,
-      color: "from-purple-500 to-pink-500",
-    },
-    {
-      title: "Performance",
-      value: `${Math.round(performance.csrAbovePercent)}%`,
-      change: performance.csrTargetMet ? "+Excellent" : "+Good",
-      icon: TrendingUp,
-      color: "from-green-500 to-emerald-500",
-    },
-  ], [calculations.CsrTotalSum, performance]);
+  const csrMetrics = useMemo(
+    () => [
+      {
+        title: "Completed",
+        value: formatNumber(calculations.CsrTotalSum),
+        change: performance.csrTargetMet ? "+Achieved" : "-Below Target",
+        icon: CheckCircle,
+        color: "from-blue-500 to-cyan-500",
+      },
+      {
+        title: "Target",
+        value: "530",
+        change: "Monthly Goal",
+        icon: Target,
+        color: "from-purple-500 to-pink-500",
+      },
+      {
+        title: "Performance",
+        value: `${Math.round(performance.csrAbovePercent)}%`,
+        change: performance.csrTargetMet ? "+Excellent" : "+Good",
+        icon: TrendingUp,
+        color: "from-green-500 to-emerald-500",
+      },
+    ],
+    [calculations.CsrTotalSum, performance]
+  );
 
-  const depositMetrics = useMemo(() => [
-    {
-      title: "Completed",
-      value: formatNumber(calculations.depositRealTotal),
-      change: performance.depositTargetMet ? "+Achieved" : "-Below Target",
-      icon: CheckCircle,
-      color: "from-green-500 to-teal-500",
-    },
-    {
-      title: "Target",
-      value: "530",
-      change: "Monthly Goal",
-      icon: Target,
-      color: "from-purple-500 to-pink-500",
-    },
-    {
-      title: "Performance",
-      value: `${Math.round(performance.depositAbovePercent)}%`,
-      change: performance.depositTargetMet ? "+Excellent" : "+Good",
-      icon: TrendingUp,
-      color: "from-blue-500 to-indigo-500",
-    },
-  ], [calculations.depositRealTotal, performance]);
+  const depositMetrics = useMemo(
+    () => [
+      {
+        title: "Completed",
+        value: formatNumber(calculations.depositRealTotal),
+        change: performance.depositTargetMet ? "+Achieved" : "-Below Target",
+        icon: CheckCircle,
+        color: "from-green-500 to-teal-500",
+      },
+      {
+        title: "Target",
+        value: "530",
+        change: "Monthly Goal",
+        icon: Target,
+        color: "from-purple-500 to-pink-500",
+      },
+      {
+        title: "Performance",
+        value: `${Math.round(performance.depositAbovePercent)}%`,
+        change: performance.depositTargetMet ? "+Excellent" : "+Good",
+        icon: TrendingUp,
+        color: "from-blue-500 to-indigo-500",
+      },
+    ],
+    [calculations.depositRealTotal, performance]
+  );
 
-  const withdrawalMetrics = useMemo(() => [
-    {
-      title: "Completed",
-      value: formatNumber(calculations.withdrawRealTotal),
-      change: performance.withdrawTargetMet ? "+Achieved" : "-Below Target",
-      icon: CheckCircle,
-      color: "from-green-500 to-emerald-500",
-    },
-    {
-      title: "Target",
-      value: "1,500",
-      change: "Monthly Goal",
-      icon: Target,
-      color: "from-purple-500 to-pink-500",
-    },
-    {
-      title: "Performance",
-      value: `${Math.round(performance.withdrawAbovePercent)}%`,
-      change: performance.withdrawTargetMet ? "+Excellent" : "+Good",
-      icon: TrendingUp,
-      color: "from-indigo-500 to-purple-500",
-    },
-  ], [calculations.withdrawRealTotal, performance]);
+  const withdrawalMetrics = useMemo(
+    () => [
+      {
+        title: "Completed",
+        value: formatNumber(calculations.withdrawRealTotal),
+        change: performance.withdrawTargetMet ? "+Achieved" : "-Below Target",
+        icon: CheckCircle,
+        color: "from-green-500 to-emerald-500",
+      },
+      {
+        title: "Target",
+        value: "1,500",
+        change: "Monthly Goal",
+        icon: Target,
+        color: "from-purple-500 to-pink-500",
+      },
+      {
+        title: "Performance",
+        value: `${Math.round(performance.withdrawAbovePercent)}%`,
+        change: performance.withdrawTargetMet ? "+Excellent" : "+Good",
+        icon: TrendingUp,
+        color: "from-indigo-500 to-purple-500",
+      },
+    ],
+    [calculations.withdrawRealTotal, performance]
+  );
 
   // NO LOADING STATE - Data dikho turant!
   return (
