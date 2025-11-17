@@ -8,7 +8,7 @@ export const TrendTooltip = ({ active, payload, label }) => {
     const nameMap = {
         CSR: { label: 'CSR Department', color: '#3B82F6' },
         Deposit: { label: 'Deposit Department', color: '#10B981' },
-        Withdrawal: { label: 'Withdrawal Department', color: '#A855F7' },
+        Withdraw: { label: 'Withdrawal Department', color: '#A855F7' },
     };
 
     // Find the data point
@@ -91,7 +91,7 @@ export const PerformanceTrendChart = ({ data, height = 400 }) => {
                 {/* Stacked areas for better visualization */}
                 <Area
                     type="monotone"
-                    dataKey="Withdrawal"
+                    dataKey="Withdraw"
                     stackId="1"
                     stroke="#A855F7"
                     fill="url(#colorWithdrawal)"

@@ -195,64 +195,62 @@ export const PerformanceTrendCard = ({
 
     return (
         <GlassCard className="p-6 mb-8 w-full">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
+            <div className="flex items-center justify-between w-full mb-6">
+
+                {/* LEFT SIDE */}
+                <div className="flex flex-col">
+                    <span className="text-xl  text-gray-400">{monthName}</span>
+
+                    <h3 className="text-2xl font-bold flex items-center gap-2">
                         <Activity className="text-blue-400" />
-                        {monthName ? `${monthName} ${title}` : title}
+                        Monthly Performance
                     </h3>
-
-                    {fromCache && !historyLoading && (
-                        <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">
-                            Cached
-                        </span>
-                    )}
                 </div>
 
-                {chartData.length > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Calendar size={16} />
-                        <span>{chartData.length} days data</span>
+                {/* RIGHT SIDE → Days + Stats */}
+                <div className="flex items-center gap-4">
+
+
+                    {/* CSR CARD */}
+                    <div className="bg-blue-500/10 rounded-lg px-4 py-3 border border-blue-500/20 w-40">
+                        <div className="text-xs text-blue-400 mb-1">CSR Conversions</div>
+                        <div className="text-xl font-bold text-blue-300">
+                            {stats?.CSR?.avg?.toLocaleString()}
+                        </div>
                     </div>
-                )}
-            </div>
 
-            {/* Enhanced Stats */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-                <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
-                    <div className="text-xs text-blue-400 mb-2">CSR Performance</div>
-                    <div className="text-2xl font-bold text-blue-300">{stats.CSR.avg}</div>
-                    <div className="text-xs text-gray-400 mt-1">Avg: {stats.CSR.avg}</div>
-                    <div className="text-xs text-gray-400">Total: {stats.CSR.total.toLocaleString()}</div>
-                    <div className="text-xs text-gray-400">Range: {stats.CSR.min}-{stats.CSR.max}</div>
-                </div>
+                    {/* DEPOSIT CARD */}
+                    <div className="bg-green-500/10 rounded-lg px-4 py-3 border border-green-500/20 w-40">
+                        <div className="text-xs text-green-400 mb-1">Deposit Performance</div>
+                        <div className="text-xl font-bold text-green-300">
+                            ₹{stats?.Deposit?.avg?.toLocaleString()}
+                        </div>
+                    </div>
 
-                <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                    <div className="text-xs text-green-400 mb-2">Deposit Performance</div>
-                    <div className="text-2xl font-bold text-green-300">₹{stats.Deposit.avg}</div>
-                    <div className="text-xs text-gray-400 mt-1">Avg: ₹{stats.Deposit.avg}</div>
-                    <div className="text-xs text-gray-400">Total: ₹{stats.Deposit.total.toLocaleString()}</div>
-                    <div className="text-xs text-gray-400">Range: ₹{stats.Deposit.min}-{stats.Deposit.max}</div>
-                </div>
+                    {/* WITHDRAW CARD */}
+                    <div className="bg-purple-500/10 rounded-lg px-4 py-3 border border-purple-500/20 w-40">
+                        <div className="text-xs text-purple-400 mb-1">Withdraw Transaction</div>
+                        <div className="text-xl font-bold text-purple-300">
+                            ₹{stats?.Withdraw?.avg?.toLocaleString()}
+                        </div>
+                    </div>
 
-                <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
-                    <div className="text-xs text-purple-400 mb-2">Withdraw Performance</div>
-                    <div className="text-2xl font-bold text-purple-300">₹{stats.Withdraw.avg}</div>
-                    <div className="text-xs text-gray-400 mt-1">Avg: ₹{stats.Withdraw.avg}</div>
-                    <div className="text-xs text-gray-400">Total: ₹{stats.Withdraw.total.toLocaleString()}</div>
-                    <div className="text-xs text-gray-400">Range: ₹{stats.Withdraw.min}-{stats.Withdraw.max}</div>
                 </div>
             </div>
+
 
             {/* Chart */}
             {chartData.length > 0 ? (
                 <div className="relative">
+
+                    {/* CHART */}
                     <PerformanceTrendChart
                         data={chartData}
                         height={height}
                         showFullMonth={showFullMonth}
                     />
+
+                    {/* LEGENDS */}
                     <div className="flex justify-center mt-4 gap-6 text-xs text-gray-400">
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-1 bg-blue-500 rounded"></div>
@@ -267,6 +265,15 @@ export const PerformanceTrendCard = ({
                             <span>Withdraw Amount</span>
                         </div>
                     </div>
+
+                    {/* DAYS BADGE → RIGHT SIDE OVERLAY */}
+                    {chartData.length > 0 && (
+                        <div className="absolute top-0 right-0 flex items-center gap-2 text-sm text-gray-300 bg-white/5 px-3 py-2 rounded-lg border border-white/10 shadow">
+                            <Calendar size={16} className="text-gray-300" />
+                            <span>{chartData.length} days data</span>
+                        </div>
+                    )}
+
                 </div>
             ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-gray-500">
@@ -281,8 +288,9 @@ export const PerformanceTrendCard = ({
                 </div>
             )}
 
+
             {/* Data Summary */}
-            {chartData.length > 0 && (
+            {/* {chartData.length > 0 && (
                 <div className="mt-6 p-4 bg-gray-800/30 rounded-lg">
                     <h4 className="text-sm font-semibold text-gray-300 mb-2">Monthly Summary</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
@@ -304,7 +312,7 @@ export const PerformanceTrendCard = ({
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
         </GlassCard>
     );
 };
