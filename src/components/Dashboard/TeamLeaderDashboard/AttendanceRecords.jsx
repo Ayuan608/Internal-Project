@@ -485,7 +485,7 @@ Team Leader`
                                                     className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold rounded-md px-4 py-1.5 cursor-pointer hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
                                                 >
                                                     <FileText size={18} />
-                                                    <span className="text-sm">File</span>
+                                                    <span className="text-sm">Report</span>
                                                 </button>
                                             </td>
                                         </tr>

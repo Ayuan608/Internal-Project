@@ -33,108 +33,75 @@ export const PerformanceTrendCard = ({
         }, 100);
     }, [dispatch]);
 
-    const chartData = useMemo(() => {
-        if (!CSR.length && !Deposit.length && !Withdraw.length) return [];
 
-        const dateMap = new Map();
 
-        // CSR Data Extraction - "TOTAL EFFECTIVE CONVO" values
-        CSR.forEach((day) => {
-            const date = day.formattedDate || day.date;
-            if (!date) return;
+    const getDailyTotals = useMemo(() => {
+        if (!historyState) return [];
 
-            let csrTotal = 0;
+        const result = [];
 
-            day.rows.forEach((row) => {
-                if (Array.isArray(row) && row.length >= 8) {
-                    if (row[0] === "" && row[1]?.includes("Ave. Completed Convo")) {
-                        const msValue = parseFloat(String(row[1] || '0').replace(/,/g, '')) || 0;
-                        const nsValue = parseFloat(String(row[6] || '0').replace(/,/g, '')) || 0;
-                        csrTotal = msValue + nsValue;
-                    }
+        const totalDays = historyState?.CSR?.length || 0;
+
+        for (let i = 0; i < totalDays; i++) {
+            const csrDay = historyState.CSR[i];
+            const depositDay = historyState.Deposit[i];
+            const withdrawDay = historyState.Withdraw[i];
+
+            let dailyCSR = 0;
+            let dailyDeposit = 0;
+            let dailyWithdraw = 0;
+
+            // CSR total
+            csrDay?.rows?.forEach((row) => {
+                if (
+                    row[0] &&
+                    row[1] &&
+                    !row[0].includes("shift") &&
+                    !row[0].includes("TOTAL") &&
+                    !row[0].includes("FAILED") &&
+                    !isNaN(parseInt(row[1]?.replace(/,/g, "")))
+                ) {
+                    dailyCSR += parseInt(row[1].replace(/,/g, ""));
                 }
             });
 
-            if (!dateMap.has(date)) {
-                dateMap.set(date, {
-                    date,
-                    CSR: 0,
-                    Deposit: 0,
-                    Withdraw: 0,
-                    day: `Day ${date.split('/')[1]}`
-                });
-            }
-            dateMap.get(date).CSR = csrTotal;
-        });
-
-        // Deposit Data Extraction - "Total" row se
-        Deposit.forEach((day) => {
-            const date = day.formattedDate || day.date;
-            if (!date) return;
-
-            let depositTotal = 0;
-
-            // "Total" row mein se data extract karna
-            day.rows.forEach((row) => {
-                if (Array.isArray(row) && row[0] === "Total" && row.length >= 8) {
-                    depositTotal = parseFloat(String(row[7] || '0').replace(/,/g, '')) || 0;
+            // Deposit total (col 7)
+            depositDay?.rows?.forEach((row) => {
+                if (
+                    row[7] &&
+                    !row[0].includes("Total") &&
+                    !isNaN(parseInt(row[7]?.replace(/,/g, "")))
+                ) {
+                    dailyDeposit += parseInt(row[7].replace(/,/g, ""));
                 }
             });
 
-            if (!dateMap.has(date)) {
-                dateMap.set(date, {
-                    date,
-                    CSR: 0,
-                    Deposit: 0,
-                    Withdraw: 0,
-                    day: `Day ${date.split('/')[1]}`
-                });
-            }
-            dateMap.get(date).Deposit = depositTotal;
-        });
-
-        // Withdraw Data Extraction - "TOTAL" rows se "Total amount passed"
-        Withdraw.forEach((day) => {
-            const date = day.formattedDate || day.date;
-            if (!date) return;
-
-            let withdrawTotal = 0;
-
-            // "TOTAL" rows mein se "Total amount passed" extract karna
-            day.rows.forEach((row) => {
-                if (Array.isArray(row) && row[0] === "TOTAL" && row.length >= 6) {
-                    const amountPassed = parseFloat(String(row[5] || '0').replace(/,/g, '')) || 0;
-                    withdrawTotal += amountPassed;
+            // Withdraw total (col 2)
+            withdrawDay?.rows?.forEach((row) => {
+                if (
+                    row[2] &&
+                    !row[0].includes("TOTAL") &&
+                    !row[0].includes("reject") &&
+                    !isNaN(parseInt(row[5]?.replace(/,/g, "")))
+                ) {
+                    dailyWithdraw += parseInt(row[5].replace(/,/g, ""));
                 }
             });
+            result.push({
+                day: i + 1,
+                csr: dailyCSR,
+                deposit: dailyDeposit,
+                withdraw: dailyWithdraw,
+                dateKey: csrDay?.dateKey,
+            });
+        }
 
-            if (!dateMap.has(date)) {
-                dateMap.set(date, {
-                    date,
-                    CSR: 0,
-                    Deposit: 0,
-                    Withdraw: 0,
-                    day: `Day ${date.split('/')[1]}`
-                });
-            }
-            dateMap.get(date).Withdraw = withdrawTotal;
-        });
+        return result;
+    }, [historyState]);
 
-        // Date ke hisaab se sort karna (month/day format)
-        const sortedData = Array.from(dateMap.values()).sort((a, b) => {
-            const getDateValue = (dateStr) => {
-                if (!dateStr) return 0;
-                const parts = dateStr.split('/');
-                if (parts.length === 2) {
-                    return parseInt(parts[0]) * 100 + parseInt(parts[1]);
-                }
-                return 0;
-            };
-            return getDateValue(a.date) - getDateValue(b.date);
-        });
 
-        return sortedData;
-    }, [CSR, Deposit, Withdraw]);
+    const chartData = getDailyTotals
+
 
     const stats = useMemo(() => {
         if (!chartData.length) {
@@ -145,15 +112,15 @@ export const PerformanceTrendCard = ({
             };
         }
 
-        const csrValues = chartData.map(day => day.CSR || 0).filter(val => val > 0);
-        const depositValues = chartData.map(day => day.Deposit || 0).filter(val => val > 0);
-        const withdrawValues = chartData.map(day => day.Withdraw || 0).filter(val => val > 0);
+        const csrValues = chartData.map(day => day.csr || 0).filter(val => val > 0);
+        const depositValues = chartData.map(day => day.deposit || 0).filter(val => val > 0);
+        const withdrawValues = chartData.map(day => day.withdraw || 0).filter(val => val > 0);
 
         const totals = chartData.reduce(
             (acc, day) => ({
-                CSR: acc.CSR + (day.CSR || 0),
-                Deposit: acc.Deposit + (day.Deposit || 0),
-                Withdraw: acc.Withdraw + (day.Withdraw || 0),
+                CSR: acc.CSR + (day.csr || 0),
+                Deposit: acc.Deposit + (day.deposit || 0),
+                Withdraw: acc.Withdraw + (day.withdraw || 0),
             }),
             { CSR: 0, Deposit: 0, Withdraw: 0 }
         );
@@ -180,13 +147,20 @@ export const PerformanceTrendCard = ({
         };
     }, [chartData]);
 
+
+
+    // 2) Fix month name crash
     const monthName = useMemo(() => {
-        if (!chartData.length) return '';
-        const firstDate = chartData[0].date;
-        const [month] = firstDate.split('/');
-        const months = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
-        return months[parseInt(month) - 1] || '';
+        if (!chartData.length) return "";
+
+        const monthIndex = new Date().getMonth();
+
+        const months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        return months[monthIndex];
     }, [chartData]);
 
     return (
@@ -241,9 +215,11 @@ export const PerformanceTrendCard = ({
 
                     {/* CHART */}
                     <PerformanceTrendChart
-                        data={chartData}
+                        data={chartData}          // full data for tooltip
+                        csrData={chartData.map(d => d.csr)}
+                        depositData={chartData.map(d => d.deposit)}
+                        withdrawData={chartData.map(d => d.withdraw)}
                         height={height}
-                        showFullMonth={showFullMonth}
                     />
 
                     {/* LEGENDS */}

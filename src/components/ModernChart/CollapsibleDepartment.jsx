@@ -14,6 +14,7 @@ import {
   DollarSign,
   TrendingDown,
 } from "lucide-react";
+import CustomDatePicker from "../CommonButton/CustomCalendar";
 
 const GlassCard = ({ children, className = "" }) => (
   <div
@@ -575,9 +576,7 @@ export const CollapsibleDepartment = ({
   return (
     <GlassCard className="mb-8">
       <button
-        onClick={() =>
-          setExpandedDept((prev) => ({ ...prev, [deptKey]: !prev[deptKey] }))
-        }
+       
         className="w-full p-8 flex items-center justify-between transition-all"
       >
         <div className="flex items-center gap-3">
@@ -586,15 +585,17 @@ export const CollapsibleDepartment = ({
             <span className="text-sm text-gray-400">{subtitle}</span>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
+        <CustomDatePicker />
           <StaffPill
             staffPerShift={staffPerShift}
             deptKey={deptKey}
             deptData={deptData}
             userLength={userLength}
           />
-          <span className="text-sm text-gray-400">
+          <span  onClick={() =>
+          setExpandedDept((prev) => ({ ...prev, [deptKey]: !prev[deptKey] }))
+        } className="text-sm text-gray-400">
             {expandedDept?.[deptKey] ? "Hide Details" : "Show Details"}
           </span>
           {expandedDept?.[deptKey] ? (

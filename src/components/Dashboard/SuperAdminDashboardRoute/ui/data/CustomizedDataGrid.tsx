@@ -64,6 +64,8 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const Deposit = historyState?.Deposit || [];
   const Withdraw = historyState?.Withdraw || [];
 
+
+
   let totalCompleted = 0;
   let totalDeposit = 0;
   let totalWithdraw = 0;
@@ -135,6 +137,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     totalWithdraw = 0;
 
     withdrawData.forEach((dayData: any) => {
+
       const rows = dayData.rows || [];
 
       rows.forEach((row: any) => {
@@ -149,9 +152,9 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
           !row[0].includes("Member") &&
           row[0] !== "" &&
           row[2] !== "" &&
-          !isNaN(parseInt(row[2].replace(/,/g, "")))
+          !isNaN(parseInt(row[5]))
         ) {
-          const withdrawAmount = parseInt(row[2].replace(/,/g, "")) || 0;
+          const withdrawAmount = parseInt(row[5]) || 0;
           totalWithdraw += withdrawAmount;
         }
       });
@@ -164,11 +167,6 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   const totalCompletedConvo = calculateTotalCompletedConvo(CSR);
   const totalDepositAmount = calculateTotalDeposit(Deposit);
   const totalWithdrawAmount = calculateTotalWithdraw(Withdraw);
-
-  console.log("📊 DEPARTMENT TOTALS:");
-  console.log("CSR - Total Completed Conversations:", totalCompletedConvo);
-  console.log("Deposit - Total Amount:", totalDepositAmount);
-  console.log("Withdraw - Total Amount Passed:", totalWithdrawAmount);
 
   useEffect(() => {
     dispatch(loadFromCache());
@@ -321,17 +319,17 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
     const depositAchievedPercent =
       depositTotalTarget > 0
         ? Math.min(
-            (calculations.DepositTotalsum / depositTotalTarget) * 100,
-            100
-          )
+          (calculations.DepositTotalsum / depositTotalTarget) * 100,
+          100
+        )
         : 0;
 
     const withdrawAchievedPercent =
       withdrawTotalTarget > 0
         ? Math.min(
-            (calculations.withdrawRealTotal / withdrawTotalTarget) * 100,
-            100
-          )
+          (calculations.withdrawRealTotal / withdrawTotalTarget) * 100,
+          100
+        )
         : 0;
 
     return {
@@ -346,27 +344,104 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
       withdrawTargetMet: withdrawAchievedPercent >= 100,
     };
   }, [groupedUsers, calculations]);
+  const { history } = useSelector((state: any) => state.combinedQuota);
+
+  // DAILY HISTORY CALCULATION
+  const getDailyTotals = useMemo(() => {
+    if (!historyState) return [];
+
+    const result: any[] = [];
+
+    const totalDays = historyState?.CSR?.length || 0;
+
+    for (let i = 0; i < totalDays; i++) {
+      const csrDay = historyState.CSR[i];
+      const depositDay = historyState.Deposit[i];
+      const withdrawDay = historyState.Withdraw[i];
+      let dailyCSR = 0;
+      let dailyDeposit = 0;
+      let dailyWithdraw = 0;
+
+      // CSR total
+      csrDay?.rows?.forEach((row: any) => {
+        if (
+          row[0] &&
+          row[1] &&
+          !row[0].includes("shift") &&
+          !row[0].includes("TOTAL") &&
+          !row[0].includes("FAILED") &&
+          !isNaN(parseInt(row[1]?.replace(/,/g, "")))
+        ) {
+          dailyCSR += parseInt(row[1].replace(/,/g, ""));
+        }
+      });
+
+      // Deposit total (col 7)
+      depositDay?.rows?.forEach((row: any) => {
+        if (
+          row[7] &&
+          !row[0].includes("Total") &&
+          !isNaN(parseInt(row[7]?.replace(/,/g, "")))
+        ) {
+          dailyDeposit += parseInt(row[7].replace(/,/g, ""));
+        }
+      });
+
+      // Withdraw total (col 2)
+      withdrawDay?.rows?.forEach((row: any) => {
+        if (
+          row[2] &&
+          !row[0].includes("TOTAL") &&
+          !row[0].includes("reject") &&
+          !isNaN(parseInt(row[5]?.replace(/,/g, "")))
+        ) {
+          dailyWithdraw += parseInt(row[5].replace(/,/g, ""));
+        }
+      });
+
+      result.push({
+        day: i + 1,
+        csr: dailyCSR,
+        deposit: dailyDeposit,
+        withdraw: dailyWithdraw,
+        dateKey: csrDay?.dateKey,
+      });
+    }
+
+    return result;
+  }, [historyState]);
+
+
+  const csrData = getDailyTotals.map((item) => item.csr);
+  const depositData = getDailyTotals.map((item) => item.deposit);
+  const withdrawData = getDailyTotals.map((item) => item.withdraw);
+
+
+  const wdTotal = withdrawData.reduce((acc, curr) => acc + curr, 0)
+  const depTotal = depositData.reduce((acc, curr) => acc + curr, 0)
+  // console.log("dep", depTotal)
 
   const teamLeaderData = useMemo(
     () => [
       {
         title: "CSR - Total Conversation",
         value: `${formatNumber(calculations.csrRealTotal)}`,
-        interval: `Target: 530`,
-        trend: performance.csrTargetMet ? "up" : "down",
+        interval: `Target: 550`,
+        trend: performance.csrTargetMet ? "up" : "up",
         totalCompleted: calculations.csrRealTotal,
-        target: 530,
+        target: 550,
         difference: totalCompleted?.toLocaleString(),
         isPositive: performance.csrTargetMet,
         realTotal: calculations.csrRealTotal,
         performance: performance.csrAbovePercent,
         targetMet: performance.csrTargetMet,
+        getDailyTotals
       },
       {
         title: "Deposit - Total Transaction",
         value: `${formatNumber(calculations.DepositTotalsum)}`,
         interval: `Target: 530`,
-        trend: performance.depositTargetMet ? "up" : "down",
+        trend: performance.depositTargetMet ? "up" : "up",
         totalCompleted: calculations.DepositTotalsum,
         target: 530,
         difference: totalDepositAmount?.toLocaleString(),
@@ -374,19 +449,21 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
         realTotal: calculations.depositRealTotal,
         performance: performance.depositAbovePercent,
         targetMet: performance.depositTargetMet,
+        getDailyTotals
       },
       {
         title: "Withdrawal - Total Transaction Process",
         value: `${formatNumber(calculations.withdrawRealTotal)}`,
         interval: `Target: 1,500`,
-        trend: performance.withdrawTargetMet ? "up" : "down",
+        trend: performance.withdrawTargetMet ? "up" : "up",
         totalCompleted: calculations.withdrawRealTotal,
         target: 1500,
-        difference: totalWithdrawAmount?.toLocaleString(),
+        difference: wdTotal?.toLocaleString(),
         isPositive: performance.withdrawTargetMet,
         realTotal: calculations.withdrawRealTotal,
         performance: performance.withdrawAbovePercent,
         targetMet: performance.withdrawTargetMet,
+        getDailyTotals
       },
     ],
     [calculations, performance]
@@ -567,15 +644,7 @@ const CustomizedDataGrid: React.FC<CustomizedDataGridProps> = ({
   // NO LOADING STATE - Data dikho turant!
   return (
     <div className="text-white mt-6 bg-[#00010B]">
-      {/* Show subtle indicator if updating in background */}
-      {loading && data.length > 0 && (
-        <div className="fixed top-4 right-4 bg-blue-500/20 border border-blue-500/50 rounded-lg px-4 py-2 text-sm z-50">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            Updating data...
-          </div>
-        </div>
-      )}
+
 
       <div className="mt-5">
         <CollapsibleDepartment
