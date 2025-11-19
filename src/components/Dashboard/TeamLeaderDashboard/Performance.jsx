@@ -11,11 +11,10 @@ const Performance = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [selectedShift, setSelectedShift] = useState('all');
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
     const [tableData, setTableData] = useState([]);
 
     useEffect(() => {
@@ -264,6 +263,7 @@ const Performance = () => {
 
     // Function to get row status color based on employee status
     const getRowStatusColor = (row) => {
+        if (!department?.toLowerCase().includes('csr')) return "";
         if (!row || row.length === 0) return '';
 
         // Check first few cells for status keywords
