@@ -118,6 +118,7 @@ ChartJS.register(
 
 export const superAdminButtons = (t) => [
   { to: "/dashboard", label: t("Dashboard"), icon: LayoutDashboard },
+  // { to: "/dashboard/data-storage", label: t("Data-Storage"), icon: LayoutDashboard },
   { to: "/dashboard/department", label: t("Department"), icon: ClipboardPlus },
   { to: "/dashboard/add", label: t("Directory"), icon: Columns3Cog },
   { to: "/dashboard/announcement", label: t("Announcements"), icon: BanknoteArrowUp },

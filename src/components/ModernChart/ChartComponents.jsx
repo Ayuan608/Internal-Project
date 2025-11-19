@@ -7,7 +7,6 @@ export const TrendTooltip = ({ active, payload, label }) => {
     if (!active || !payload || !payload.length) return null;
 
     const point = payload[0].payload;
-    console.log("point", point)
     return (
         <div className="px-3 py-2 rounded-md bg-black/80 text-white text-xs border border-white/10 shadow">
             <div className="font-semibold mb-1">Day {point.day}</div>

@@ -13,8 +13,9 @@ import {
   Activity,
   DollarSign,
   TrendingDown,
+  Database,
 } from "lucide-react";
-import CustomDatePicker from "../CommonButton/CustomCalendar";
+import { useNavigate } from "react-router-dom";
 
 const GlassCard = ({ children, className = "" }) => (
   <div
@@ -23,6 +24,7 @@ const GlassCard = ({ children, className = "" }) => (
     {children}
   </div>
 );
+
 
 
 const ComparisonBadge = ({ currentValue, previousValue }) => {
@@ -174,7 +176,7 @@ export const CollapsibleDepartment = ({
       return row[0] === deptName;
     });
   };
-
+  const navigate = useNavigate()
   const csrData = filterByDepartment("CSR");
   const depositData = filterByDepartment("Deposit");
   const withdrawData = filterByDepartment("Withdraw");
@@ -576,7 +578,7 @@ export const CollapsibleDepartment = ({
   return (
     <GlassCard className="mb-8">
       <button
-       
+
         className="w-full p-8 flex items-center justify-between transition-all"
       >
         <div className="flex items-center gap-3">
@@ -586,16 +588,27 @@ export const CollapsibleDepartment = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
-        <CustomDatePicker />
+          <button
+            onClick={() =>
+              navigate('/dashboard/data-storage', {
+              })
+            }
+            className="flex items-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-lg text-purple-300 transition-all hover:scale-105"
+          >
+            <Database size={18} />
+            <span className="text-sm font-medium">Data Storage</span>
+          </button>
+
+
           <StaffPill
             staffPerShift={staffPerShift}
             deptKey={deptKey}
             deptData={deptData}
             userLength={userLength}
           />
-          <span  onClick={() =>
-          setExpandedDept((prev) => ({ ...prev, [deptKey]: !prev[deptKey] }))
-        } className="text-sm text-gray-400">
+          <span onClick={() =>
+            setExpandedDept((prev) => ({ ...prev, [deptKey]: !prev[deptKey] }))
+          } className="text-sm text-gray-400">
             {expandedDept?.[deptKey] ? "Hide Details" : "Show Details"}
           </span>
           {expandedDept?.[deptKey] ? (

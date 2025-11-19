@@ -35,6 +35,7 @@ import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { Bell } from "lucide-react";
 import NonQuotaDepartment from "./components/Dashboard/SuperAdminDashboardRoute/ui/NonQuotaDepartment";
+import DataStoragePage from "./components/Dashboard/SuperAdminDashboardRoute/DataStorage";
 
 function App() {
   useEffect(() => {
@@ -94,6 +95,7 @@ function App() {
       <Route element={<RequireAuth allowedRoles={["Super-Admin"]} />}>
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="data-storage" element={<DataStoragePage />} />
           <Route path="department" element={<Department />} />
           <Route path="nonQuta" element={<NonQuota />} />
           <Route path="add" element={<Admin />} />

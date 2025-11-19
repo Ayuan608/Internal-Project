@@ -12,7 +12,7 @@ export type StatCardProps = {
   title: string;
   value: string;
   interval: string;
-  trend: "up" | "down" | "neutral";
+  trend: string;
   data: number[];
   difference: any;
   role?: "superAdmin" | "teamLeader" | "user";
@@ -51,20 +51,20 @@ export default function StatCard({
   const chartData = data && data.length > 0
     ? data
     : getDailyTotals.map((d: any) =>
-        title.includes("CSR")
-          ? d.csr
-          : title.includes("Deposit")
+      title.includes("CSR")
+        ? d.csr
+        : title.includes("Deposit")
           ? d.deposit
           : d.withdraw
-      );
+    );
 
-  const trendColors = {
-    up: "orange",
-    down: "#ef4444",
-    neutral: "#6b7280",
-  };
+  // Calculate min and max for better scaling
+  const minValue = Math.min(...chartData);
+  const maxValue = Math.max(...chartData);
 
-  const chartColor = trendColors[trend];
+  const trendColors = ["oklch(74.6% 0.16 232.661)", "oklch(65.6% 0.241 354.308)", "oklch(79.2% 0.209 151.711)"];
+
+  const chartColor = trendColors[index]; 
 
   const borderColorPalette = [
     "rgba(59, 130, 246, 0.8)",
@@ -107,19 +107,23 @@ export default function StatCard({
 
         <Box sx={{ width: "100%", height: 60, mt: 2 }}>
           <SparkLineChart
-            color={chartColor}
+            colors={[chartColor]}
             data={chartData}
             area
             showTooltip
             showHighlight
+            curve="natural"
             onHighlightChange={(e: any) => {
               if (e && e.index !== undefined) {
                 setHoverIndex(e.index);
               }
             }}
             xAxis={{
-              scaleType: "band",
-              data: chartData.map((_, i) => i + 1),
+              scaleType: "point",
+            }}
+            yAxis={{
+              min: minValue * 0.95,
+              max: maxValue * 1.05,
             }}
             tooltip={{
               renderTooltip: (params: any) => {
