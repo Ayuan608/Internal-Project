@@ -416,7 +416,6 @@ const Department = () => {
         </div>
 
         <div className="bg-slate-900/40 border-slate-800 border rounded-xl w-2/3">
-          {/* Pass activeTab as prop to NonQuota component */}
           <NonQuota department={activeTab} />
         </div>
       </div>
