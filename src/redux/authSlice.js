@@ -88,13 +88,13 @@ export const addFcm = createAsyncThunk(
 
       const res = axiosInstance.post("/user/updateFCM", { fcmToken });
 
-   
+
       const response = await res;
       return response.data;
     } catch (error) {
       const errorMessage =
         error?.response?.data?.message || "Failed to update FCM token";
-        return rejectWithValue(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -303,6 +303,32 @@ export const updateUserRole = createAsyncThunk(
   }
 );
 
+export const updateUserShift = createAsyncThunk(
+  "/user/updateShift",
+  async ({ id, Shift, startFrom }, { rejectWithValue }) => {
+    try {
+      const res = axiosInstance.put(`/user/update-shift/${id}`, {
+        Shift,
+        startFrom,
+      });
+
+      toast.promise(res, {
+        loading: "Updating shift...",
+        success: (data) => data?.data?.message || "Shift updated!",
+        error: (err) => err?.response?.data?.message || "Failed to update shift",
+      });
+
+      const response = await res;
+      return response.data;
+
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Shift update failed"
+      );
+    }
+  }
+);
+
 
 const authSlice = createSlice({
   name: "auth",
@@ -403,6 +429,18 @@ const authSlice = createSlice({
           localStorage.setItem("fcmToken", action.payload?.user?.fcmToken);
         }
       })
+      .addCase(updateUserShift.fulfilled, (state, action) => {
+        const updatedUser = action.payload.user;
+
+        // Replace the user in state.users immediately
+        state.users = state.users.map((u) =>
+          u._id === updatedUser._id ? updatedUser : u
+        );
+      })
+      .addCase(updateUserShift.rejected, (state, action) => {
+        toast.error(action.payload || "Shift update failed!");
+      });
+
 
   },
 });
