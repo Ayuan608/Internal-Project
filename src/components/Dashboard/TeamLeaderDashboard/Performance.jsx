@@ -462,7 +462,7 @@ const Performance = () => {
                             placeholder={`Search ${department?.toLowerCase().includes('deposit') ? 'deposit transactions...' : department?.toLowerCase().includes('withdraw') ? 'withdraw transactions...' : 'conversations...'}`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2.5 bg-[rgba(59,130,246,0.03)] border border-slate-800 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -472,14 +472,14 @@ const Performance = () => {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="px-3 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="px-3 py-2.5 bg-[rgba(59,130,246,0.03)] border border-slate-800 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <span className="text-gray-400">to</span>
                         <input
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="px-3 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="px-3 py-2.5 bg-[rgba(59,130,246,0.03)] border border-slate-800 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -544,7 +544,7 @@ const Performance = () => {
                         <thead className=" whitespace-nowrap">
                             <tr>
                                 {customHeaders.map((header, index) => (
-                                    <th key={index} className="px-4 py-3 font-semibold uppercase text-gray-200 text-center text-xs border-b-2 border-slate-600">
+                                    <th key={index} className="px-4 py-3 font-semibold uppercase text-gray-200 text-center text-xs border-b-2 border-slate-800">
                                         {header}
                                     </th>
                                 ))}
@@ -601,7 +601,7 @@ const Performance = () => {
 
                 {/* Pagination Controls */}
                 {filteredRows.length > 0 && (
-                    <div className=" px-6 py-4 border-t border-slate-600 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className=" px-6 py-4 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div className='flex items-center gap-5'>
                             <div className="flex items-center gap-4">
                                 <span className="text-gray-300 text-sm font-medium">
@@ -617,7 +617,7 @@ const Performance = () => {
                                             setRowsPerPage(Number(e.target.value));
                                             setCurrentPage(1);
                                         }}
-                                        className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="bg-slate-800 border border-slate-800 rounded-lg px-3 py-1.5 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value={5}>5</option>
                                         <option value={10}>10</option>
@@ -657,33 +657,33 @@ const Performance = () => {
                                 <button
                                     onClick={goToFirstPage}
                                     disabled={currentPage === 1}
-                                    className="p-2 rounded-lg border border-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
+                                    className="p-2 rounded-lg border border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
                                 >
                                     <ChevronsLeft className="w-4 h-4 text-gray-400" />
                                 </button>
                                 <button
                                     onClick={goToPrevPage}
                                     disabled={currentPage === 1}
-                                    className="p-2 rounded-lg border border-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
+                                    className="p-2 rounded-lg border border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
                                 >
                                     <ChevronLeft className="w-4 h-4 text-gray-400" />
                                 </button>
 
-                                <span className="px-4 py-2 text-sm text-gray-300 font-medium bg-slate-800 border border-slate-600 rounded-lg">
+                                <span className="px-4 py-2 text-sm text-gray-300 font-medium bg-slate-800 border border-slate-800 rounded-lg">
                                     Page {currentPage} of {totalPages}
                                 </span>
 
                                 <button
                                     onClick={goToNextPage}
                                     disabled={currentPage === totalPages}
-                                    className="p-2 rounded-lg border border-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
+                                    className="p-2 rounded-lg border border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
                                 >
                                     <ChevronRight className="w-4 h-4 text-gray-400" />
                                 </button>
                                 <button
                                     onClick={goToLastPage}
                                     disabled={currentPage === totalPages}
-                                    className="p-2 rounded-lg border border-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
+                                    className="p-2 rounded-lg border border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors bg-slate-800"
                                 >
                                     <ChevronsRight className="w-4 h-4 text-gray-400" />
                                 </button>

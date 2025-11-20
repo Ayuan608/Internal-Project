@@ -251,9 +251,29 @@ button {
 }
 
 
-.css-1ff8dc2-MuiGrid-root{
+.css-1ff8dc2-MuiGrid-root {
   display: grid !important;
-  grid-template-columns: repeat(3,1fr) !important;
+  grid-template-columns: repeat(3, 1fr) !important;
 }
 
 
+
+.css-1dc80h3-MuiTableCell-root {
+  border-bottom: 0.5px solid rgba(224, 224, 224, 0.123) !important;
+}
+
+.css-v3pth6-MuiTableCell-root {
+  border-bottom: 0.5px solid rgba(224, 224, 224, 0.278) !important;
+}
+
+.MuiTableRow-root {
+  border: 0.5px solid rgba(224, 224, 224, 0.123) !important;
+}
+
+.css-mjcisc-MuiTableCell-root {
+  border-bottom: none !important;
+}
+
+.css-rsjz6c-MuiTableCell-root {
+  border-bottom: none !important;
+}

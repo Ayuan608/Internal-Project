@@ -526,15 +526,6 @@ const Department = () => {
           </div>
         </div>
       )}
-
-      {/* Loading State */}
-      {combinedQuotaLoading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 rounded-lg">
-          <div className="bg-slate-900 p-6 rounded-lg">
-            <p className="text-white">Loading data...</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

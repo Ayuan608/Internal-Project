@@ -136,7 +136,6 @@ export const superAdminButtons = (t) => [
 export const AdminRoutes = (t) => [
   { to: "/admin", label: t("Dashboard"), icon: LayoutDashboard },
   { to: "/admin/department", label: t("Department"), icon: Building2 },
-  { to: "/admin/quotaSetting", label: t("Quota Settings"), icon: Settings },
   { to: "/admin/directory", label: t("Directory"), icon: Users },
   { to: "/admin/announcement", label: t("Announcements"), icon: Megaphone },
   { to: "/admin/overallAttendance", label: t("Overall Attendance"), icon: CalendarCheck2 },

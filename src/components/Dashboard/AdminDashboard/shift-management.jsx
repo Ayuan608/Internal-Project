@@ -171,13 +171,30 @@ const ShiftManagement = () => {
                     {/* Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {employee.FullName.split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </div>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.agent}`}
+                              alt="avatar"
+                              className="w-12 h-12 rounded-full"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+
+                            <div
+                              className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 
+                     items-center justify-center text-white text-xs font-bold hidden"
+                            >
+                              {employee.FullName.split(" ").map((n) => n[0].toUpperCase()).join("")}
+                            </div>
+
+                            <span className="text-white font-medium">{employee.agent}</span>
+                          </div>
+                        </td>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-white">
+                          <div className="text-sm font-medium capitalize text-white">
                             {employee.FullName}
                           </div>
                           <div className="text-sm text-slate-400">
@@ -260,12 +277,11 @@ const ShiftManagement = () => {
                           !selectedShifts[employee._id] ||
                           !shiftStartDates[employee._id]
                         }
-                        className={`px-6 py-2 rounded-lg font-semibold transition ${
-                          selectedShifts[employee._id] &&
-                          shiftStartDates[employee._id]
+                        className={`px-6 py-2 rounded-lg font-semibold transition ${selectedShifts[employee._id] &&
+                            shiftStartDates[employee._id]
                             ? "bg-blue-600 hover:bg-blue-700 text-white"
                             : "bg-slate-600 text-slate-400 cursor-not-allowed"
-                        }`}
+                          }`}
                       >
                         Shift
                       </button>
