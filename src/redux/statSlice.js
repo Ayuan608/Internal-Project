@@ -43,7 +43,6 @@ export const sendCaseMail = createAsyncThunk(
       return response.data;
     } catch (error) {
       const message = error?.response?.data?.message || "Failed to send case mail";
-      toast.error(message);
       return rejectWithValue(message);
     }
   }
@@ -52,20 +51,12 @@ export const getAllCaseMails = createAsyncThunk(
   "case/getAllMails",
   async (_, { rejectWithValue }) => {
     try {
-      const res = axiosInstance.get("/user/get");
+      const res = await axiosInstance.get("/user/get");
 
-      toast.promise(res, {
-        loading: "Loading case mails...",
-        success: (data) => {
-          return data?.data?.message || "Case mails loaded successfully!";
-        },
-        error: "Failed to load case mails",
-      });
-
-      const response = await res;
-      return response.data;
+      return res.data;
     } catch (error) {
-      const message = error?.response?.data?.message || "Failed to load case mails";
+      const message =
+        error?.response?.data?.message || "Failed to load case mails";
       toast.error(message);
       return rejectWithValue(message);
     }
@@ -99,8 +90,13 @@ const statSlice = createSlice({
       })
       .addCase(getAllCaseMails.fulfilled, (state, action) => {
         state.loading = false;
-        state.caseMails = action?.payload?.mails || [];
+        // handle both TL & Admin
+        state.caseMails =
+          action?.payload?.mails ||
+          action?.payload?.emails ||
+          [];
       })
+
       .addCase(getAllCaseMails.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;

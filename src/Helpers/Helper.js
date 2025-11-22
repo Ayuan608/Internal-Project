@@ -20,6 +20,7 @@ import {
   FileText,
   KeyRound,
   LayoutDashboard,
+  Mail,
   Megaphone,
   Proportions,
   Settings,
@@ -126,8 +127,8 @@ export const superAdminButtons = (t) => [
   { to: "/dashboard/overallAttendance", label: t("Overall Attendance"), icon: Blend },
   { to: "/dashboard/login", label: t("Login Credentials"), icon: KeyRound },
   { to: "/dashboard/storage", label: t("Storage"), icon: DatabaseZap },
-  { to: "/dashboard/EmployeeOfTheMonthAdmin", label
-  : t("Emp of Month"), icon: BanknoteArrowUp },
+  { to: "/dashboard/EmployeeOfTheMonthAdmin", label: t("Emp of Month"), icon: BanknoteArrowUp },
+  { to: "/dashboard/Internal-mailing", label: t("Internal Mailing"), icon: Mail },
   { to: "/dashboard/activityLogs", label: t("Activity Logs"), icon: Antenna },
   { to: "/dashboard/ip-address", label: t("IP-Whitelist"), icon: Shield },
 ];
@@ -139,8 +140,10 @@ export const AdminRoutes = (t) => [
   { to: "/admin/directory", label: t("Directory"), icon: Users },
   { to: "/admin/announcement", label: t("Announcements"), icon: Megaphone },
   { to: "/admin/overallAttendance", label: t("Overall Attendance"), icon: CalendarCheck2 },
+  { to: "/admin/attendancerecords", label: t("Daily Puch Records"), icon: CalendarCheck2 },
   { to: "/admin/login", label: t("Login Credentials"), icon: KeyRound },
   { to: "/admin/report", label: t("Reports"), icon: Proportions },
+  { to: "/admin/Internal-mailing", label: t("Internal Mailing"), icon: Mail },
   { to: "/admin/shift-management", label: t("Shift Management"), icon: SquareChartGantt },
   { to: "/admin/ip-address", label: t("IP-Whitelist"), icon: Shield },
 ];
@@ -161,6 +164,7 @@ export const TeamButtons = (t) => [
   { to: "/team/Performance", label: t("Team Performance"), icon: KeyRound },
   { to: "/team/report", label: t("Reports"), icon: Proportions },
   { to: "/team/shift-management", label: t("Shift Management"), icon: SquareChartGantt },
+  { to: "/team/Internal-mailing", label: t("Internal Mailing"), icon: Mail },
 ];
 
 

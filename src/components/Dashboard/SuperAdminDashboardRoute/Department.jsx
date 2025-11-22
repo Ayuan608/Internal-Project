@@ -15,18 +15,19 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">DATE</th>
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">NAME</th>
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">OUTPUT</th>
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">TARGET</th>
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">COMPLETION</th>
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">VARIANCE</th>
+            <th className="text-center  py-3 px-4 text-gray-300 font-semibold text-xs">DATE</th>
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">NAME</th>
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">OUTPUT</th>
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">TARGET</th>
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">COMPLETION</th>
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">VARIANCE</th>
           </tr>
         </thead>
         <tbody>
           {nonQuotaMembers && nonQuotaMembers.length > 0 ? (
             nonQuotaMembers.map((member, idx) => (
-              <tr key={idx} className="border-b border-gray-800/30 hover:bg-gray-900/40 transition">
+              <tr key={idx} className="border-b text-center
+               border-gray-800/30 hover:bg-gray-900/40 transition">
                 <td className="py-3 px-4 text-gray-400 text-xs">{member.date}</td>
                 <td className="py-3 px-4 text-white font-medium text-sm">{member.name}</td>
                 <td className="py-3 px-4 text-white text-sm">{member.output?.toLocaleString() || 0}</td>

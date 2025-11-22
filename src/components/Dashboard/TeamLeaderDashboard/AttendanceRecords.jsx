@@ -234,7 +234,8 @@ Team Leader`
             await dispatch(sendCaseMail({
                 title: caseFormData.title,
                 nature: caseFormData.nature,
-                content: caseFormData.content
+                content: caseFormData.content,
+                recipientId: selectedRecord?.user?._id
             })).unwrap();
 
             // Close modal and reset form

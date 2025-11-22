@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Ban, ChevronsLeft, ChevronsRight, LogOut, User } from "lucide-react";
+import { Ban, CaseSensitive, ChevronsLeft, ChevronsRight, LogOut, User } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Menus from "../Menus/SubMenus";
 import NotificationPopup from "../components/popup/Notification";
@@ -10,6 +10,7 @@ import { logout } from "../redux/authSlice";
 import ProfileModal from "../components/popup/ProfileModal";
 import LanguageChange from "../components/popup/LanguageChange";
 import { useTranslation } from "react-i18next";
+import { useTextSize } from "../Context/TextContext";
 
 const Layout = () => {
     const dispatch = useDispatch();
@@ -21,6 +22,8 @@ const Layout = () => {
     const userData = useSelector((state) => state?.auth?.data);
     const [isBindModalOpen, setBindModalOpen] = useState(false);
     const [open, setOpen] = useState(false);
+    const { textSize, setTextSize } = useTextSize();
+    const [showTextSizeSlider, setShowTextSizeSlider] = useState(false);
     const { t } = useTranslation()
     const handleToggle = () => {
         setToggle(!toggle);
@@ -120,6 +123,13 @@ const Layout = () => {
                                             <User /> {t("Profile")}
                                         </div>
                                         <div
+                                            onClick={() => setShowTextSizeSlider(!showTextSizeSlider)}
+                                            className="cursor-pointer flex items-center gap-3 px-4 py-3 text-white transition-colors"
+                                        >
+                                            <CaseSensitive size={18} />
+                                            <span className="text-sm font-medium">Text Size</span>
+                                        </div>
+                                        <div
                                             onClick={handleBindGoogleClick}
                                             className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer"
                                         >
@@ -132,6 +142,25 @@ const Layout = () => {
                                             <LogOut size={20} />
                                             Logout
                                         </div>
+
+                                        {showTextSizeSlider && (
+                                            <div className="absolute cursor-pointer -left-5 mt-1 w-44 p-2 bg-[#1f212b] rounded-lg shadow-lg z-50">
+                                                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+                                                    <span>12px</span>
+                                                    <span>{textSize}px</span>
+                                                    <span>48px</span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min="12"
+                                                    max="48"
+                                                    value={textSize}
+                                                    onChange={(e) => setTextSize(parseInt(e.target.value))}
+                                                    className="w-full accent-blue-500 cursor-pointer"
+                                                />
+                                            </div>
+                                        )}
+
                                     </div>
                                 )}
                                 <ProfileModal

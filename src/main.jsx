@@ -8,14 +8,17 @@ import { Provider } from "react-redux"
 import { I18nextProvider } from 'react-i18next'
 import i18n from './services/i18n.js'
 import AutoTranslateWrapper from './AutoTranslateWrapper.jsx'
+import { TextSizeProvider } from './Context/TextContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <I18nextProvider i18n={i18n}>
     <Provider store={store}>
       <BrowserRouter>
         <AutoTranslateWrapper>
-          <App />
-          <Toaster />
+          <TextSizeProvider>
+            <App />
+            <Toaster position="top-right" reverseOrder={false} />
+          </TextSizeProvider>
         </AutoTranslateWrapper>
       </BrowserRouter>
     </Provider>

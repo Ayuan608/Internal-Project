@@ -263,15 +263,7 @@ const QuotaManagement = ({ timeFilter, data, title }) => {
                 <tr key={index} className="border-b border-gray-700/50 hover:bg-gray-800/30 transition-colors">
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.agent}`}
-                        alt="avatar"
-                        className="w-12 h-12 rounded-full"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
-                        }}
-                      />
+                  
 
                       <div
                         className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 

@@ -277,3 +277,21 @@ button {
 .css-rsjz6c-MuiTableCell-root {
   border-bottom: none !important;
 }
+
+
+.MuiBox-root.css-1bmadkr {
+    border: 0px !important;
+    padding: 0px !important;
+    background-color: none !important;
+    background: none !important;
+    border-radius: 0px !important;
+    height: auto !important
+    ;
+}
+
+.ashish td.p-3.text-center.text-slate-200 {
+    width: 150px;
+}
+.ashish-madhu th {
+    width: 150px;
+}

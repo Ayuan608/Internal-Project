@@ -64,7 +64,6 @@ const Login = () => {
 
       if (payload?.require2FA) {
         setRequireOtp(true);
-        toast.success("2FA required. Please enter your Authenticator code.");
       } else if (payload?.token && !payload?.require2FA) {
         toast.success("Login successful!");
 

@@ -36,6 +36,7 @@ import toast from "react-hot-toast";
 import { Bell } from "lucide-react";
 import NonQuotaDepartment from "./components/Dashboard/SuperAdminDashboardRoute/ui/NonQuotaDepartment";
 import DataStoragePage from "./components/Dashboard/SuperAdminDashboardRoute/DataStorage";
+import InternalMailingPage from "./pages/Internal Mailing/InternalMailingPages";
 
 function App() {
   useEffect(() => {
@@ -107,6 +108,7 @@ function App() {
           <Route path="setting" element={<Setting />} />
           <Route path="login" element={<LoginCredentials />} />
           <Route path="storage" element={<Storage />} />
+           <Route path="Internal-mailing" element={<InternalMailingPage/>}/>
           <Route path="ip-address" element={<IPWhitelistDashboard />} />
         </Route>
       </Route>
@@ -120,8 +122,10 @@ function App() {
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
           <Route path="report" element={<CheckReport />} />
+             <Route path="attendancerecords" element={<AttendanceRecords />} />
           <Route path="shift-management" element={<ShiftManagement />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
+           <Route path="Internal-mailing" element={<InternalMailingPage/>}/>
           <Route path="ip-address" element={<IPWhitelistDashboard />} />
         </Route>
       </Route>
@@ -155,6 +159,7 @@ function App() {
           <Route path="Performance" element={<Performance />} />
           <Route path="setting" element={<Setting />} />
           <Route path="report" element={<CheckReport />} />
+          <Route path="Internal-mailing" element={<InternalMailingPage/>}/>
           <Route path="shift-management" element={<ShiftManagement />} />
         </Route>
       </Route>

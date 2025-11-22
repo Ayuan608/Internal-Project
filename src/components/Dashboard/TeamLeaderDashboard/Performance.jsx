@@ -628,27 +628,7 @@ const Performance = () => {
                             </div>
 
 
-                            {/* Legend - Bottom */}
-                            <div>
-                                <div className="flex flex-wrap gap-6">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                        <span className="text-sm text-gray-300">Active/Present</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                        <span className="text-sm text-gray-300">Suspended</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                        <span className="text-sm text-gray-300">Absent</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                        <span className="text-sm text-gray-300">Performance Indicator</span>
-                                    </div>
-                                </div>
-                            </div>
+                            
                         </div>
 
                         <div className="flex items-center gap-2">

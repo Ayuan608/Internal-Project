@@ -176,11 +176,11 @@ export const useTeamLeaderDashboard = () => {
         setQuotaManagementData(quotaData);
         return quotaData;
     };
-
+    let frtStr = "0:00:00";
     // COMPLETELY FIXED CSR DATA PROCESSING FOR REAL DATA
     const processCSRDataForTeamLeader = useCallback(
         (apiData, filter = "daily") => {
-        
+
             if (!apiData || !Array.isArray(apiData)) {
                 console.log("❌ No API data available");
                 return { stats: [], agents: [] };
@@ -188,25 +188,27 @@ export const useTeamLeaderDashboard = () => {
 
             let totalCompleted = 0;
             let totalEffective = 0;
-            let totalFirstRespSec = 0;
             let totalPosRate = 0;
+
+            // ⭐ FRT Final Variables
+            let totalFirstRespSec = 0;
+            let frtCount = 0;
+
             let agentCount = 0;
+
             const activeAgents = [];
             const agentPerformance = [];
 
-            // Process each row in the real data
-            apiData.forEach((row, index) => {
-                if (!Array.isArray(row) || row.length < 9) {
-                    return;
-                }
+            // 🔥 PROCESS ALL CSR ROWS
+            apiData.forEach((row) => {
+                if (!Array.isArray(row) || row.length < 9) return;
 
                 const type = row[0]?.toString().trim();
-                const name = row[2]?.toString().trim(); // Column 2 has agent names in your data
+                const name = row[2]?.toString().trim();
 
-
-
-                // Check if this is a valid CSR agent row
-                if (type === "CSR" && name &&
+                if (
+                    type === "CSR" &&
+                    name &&
                     !name.includes("Morning shift") &&
                     !name.includes("Night shift") &&
                     !name.includes("HIGHLIGHTS") &&
@@ -214,22 +216,31 @@ export const useTeamLeaderDashboard = () => {
                     !name.includes("FAILED") &&
                     !name.includes("ASSIGNED") &&
                     !name.includes("REACHED") &&
+                    !name.includes("SENIOR") &&
                     name !== "11/13" &&
                     name !== "" &&
                     name !== "Ave. Completed Convo" &&
-                    name !== "Ave. Online time") {
+                    name !== "Ave. Online time"
+                ) {
+                    const completed = parseInt(row[3], 10) || 0;
+                    const effective = parseInt(row[4], 10) || 0;
+                    const frtStr = row[7]?.toString().trim() || "00:00:00";
+                    const posStr = row[8]?.toString().trim() || "0%";
 
-                    // Your data structure: [type, date, name, completed, effective, ...]
-                    const completed = parseInt(row[3], 10) || 0; // Column 3
-                    const effective = parseInt(row[4], 10) || 0; // Column 4
-                    const frtStr = row[7]?.toString() || "0:00:00"; // Column 7
-                    const posStr = row[8]?.toString() || "0%"; // Column 8
+                    // ⭐ VALID FRT Filtering (this is why average becomes correct)
+                    if (frtStr.includes(":")) {
+                        const frtSec = parseTimeToSeconds(frtStr);
 
+                        // include only valid online times (not seniors, not invalid)
+                        if (frtSec > 3000 && frtSec < 45000) {
+                            totalFirstRespSec += frtSec;
+                            frtCount++;
+                        }
+                    }
 
                     if (completed > 0) {
                         totalCompleted += completed;
                         totalEffective += effective;
-                        totalFirstRespSec += parseTimeToSeconds(frtStr);
                         totalPosRate += parsePercentage(posStr);
                         agentCount++;
 
@@ -246,102 +257,78 @@ export const useTeamLeaderDashboard = () => {
                 }
             });
 
+            // ⭐ CALCULATE FINAL AVERAGE RESPONSE TIME (HH:MM:SS)
+            const avgFirstRespSec = frtCount > 0 ? totalFirstRespSec / frtCount : 0;
 
-            // If no agents found, check for alternative data structure
-            if (agentCount === 0) {
-                console.log("🔄 Trying alternative data structure...");
+            const avgHours = Math.floor(avgFirstRespSec / 3600);
+            const avgMinutes = Math.floor((avgFirstRespSec % 3600) / 60);
+            const avgSeconds = Math.floor(avgFirstRespSec % 60);
 
-                // Alternative processing for different data structure
-                apiData.forEach((row, index) => {
-                    if (!Array.isArray(row) || row.length < 3) return;
+            const averageOnlineTime =
+                `${String(avgHours).padStart(2, "0")}:` +
+                `${String(avgMinutes).padStart(2, "0")}:` +
+                `${String(avgSeconds).padStart(2, "0")}`;
 
-                    const type = row[0]?.toString().trim();
-                    const name = row[1]?.toString().trim();
+            console.log("💛 FINAL AVERAGE ONLINE TIME =", averageOnlineTime);
 
-                    if (type === "CSR" && name && name.length > 2 && !name.includes("shift") && !name.includes("HIGHLIGHTS")) {
-                        const completed = parseInt(row[2], 10) || 0;
-                        const effective = parseInt(row[3], 10) || 0;
-
-                        if (completed > 0) {
-                            totalCompleted += completed;
-                            totalEffective += effective;
-                            agentCount++;
-                            activeAgents.push(name);
-                        }
-                    }
-                });
-            }
-
-            // Calculate metrics
-            const avgFirstRespSec = safeDivide(totalFirstRespSec, agentCount);
+            // ⭐ Other CSR Metrics
             const avgPosRate = safeDivide(totalPosRate, agentCount);
-            const efficiency = totalCompleted > 0 ? safeDivide(totalEffective, totalCompleted) * 100 : 0;
+            const efficiency = totalCompleted > 0 ? (totalEffective / totalCompleted) * 100 : 0;
 
-            const minutes = Math.floor(avgFirstRespSec / 60);
-            const seconds = Math.round(avgFirstRespSec % 60);
+            const filteredConvo = calculateFilteredValues(totalCompleted, filter);
 
-            // Use actual values with time filter
-            const baseValue = totalCompleted;
-            const filteredConvo = calculateFilteredValues(baseValue, filter);
-            const filteredPos = Math.min(100, avgPosRate);
-            const filteredEff = Math.min(100, efficiency);
-
-            // Generate stats
+            // ⭐ FINAL CARDS/STATS — difference shows AVERAGE ONLINE TIME
             const stats = [
                 {
                     title: "Total Conversations",
                     value: formatCompactNumber(filteredConvo),
                     interval: filter === "daily" ? "Today" : filter === "weekly" ? "This week" : "This month",
                     trend: filteredConvo > 1000 ? "up" : filteredConvo > 500 ? "neutral" : "down",
-                    data: generateFilteredSparkline(filteredConvo / (filter === "daily" ? 24 : filter === "weekly" ? 7 : 30), 0.3, filter),
+                    data: generateFilteredSparkline(filteredConvo, 0.3, filter),
                     difference: formatCompactNumber(filteredConvo),
                     role: "teamLeader",
                 },
                 {
                     title: "Positive Rate",
-                    value: `${filteredPos.toFixed(1)}%`,
+                    value: `${avgPosRate.toFixed(1)}%`,
                     interval: "Team average",
-                    trend: filteredPos > 80 ? "up" : filteredPos > 60 ? "neutral" : "down",
-                    data: generateFilteredSparkline(filteredPos, 0.1, filter),
-                    difference: `${filteredPos.toFixed(1)}%`,
+                    trend: avgPosRate > 80 ? "up" : avgPosRate > 60 ? "neutral" : "down",
+                    data: generateFilteredSparkline(avgPosRate, 0.1, filter),
+                    difference: `${avgPosRate.toFixed(1)}%`,
                     role: "teamLeader",
                 },
                 {
-                    title: "First Response Time",
-                    value: minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,
+                    title: "Average Online Time",
+                    value: averageOnlineTime,           // ⭐ Shows HH:MM:SS
                     interval: "Avg per agent",
-                    trend: avgFirstRespSec < 60 ? "up" : avgFirstRespSec < 120 ? "neutral" : "down",
+                    trend: avgFirstRespSec < 40000 ? "up" : "down",
                     data: generateFilteredSparkline(avgFirstRespSec / 60, 0.2, filter),
-                    difference: minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,
+                    difference: averageOnlineTime,      // ⭐ This is what you asked!
                     role: "teamLeader",
                 },
             ];
 
-
-            // Update dashboard data
+            // ⭐ Update Dashboard Data
             setDashboardData((prev) => ({
                 ...prev,
                 totalCases: filteredConvo,
                 activeAgents: agentCount,
-                avgResponseTime: minutes + seconds / 60,
-                successRate: filteredEff,
-                totalConversations: filteredConvo,
-                positiveRate: filteredPos,
-                firstResponseTime: minutes + seconds / 60,
-                csrQuota: { met: Math.round(filteredEff), nonMet: Math.max(0, 100 - Math.round(filteredEff)) },
+                avgResponseTime: averageOnlineTime,
+                positiveRate: avgPosRate,
+                firstResponseTime: averageOnlineTime,
             }));
 
-            // Generate charts and quota data
-            const quotaData = generateQuotaManagementData(filteredConvo, filter, activeAgents, agentPerformance);
-            setQuotaManagementData(quotaData);
+            setQuotaManagementData(
+                generateQuotaManagementData(filteredConvo, filter, activeAgents, agentPerformance)
+            );
 
-            const shiftData = generateShiftChartData(filteredConvo, filter);
-            setShiftChartData(shiftData);
+            setShiftChartData(generateShiftChartData(filteredConvo, filter));
 
             return { stats, agents: activeAgents };
         },
         []
     );
+
 
     // FIXED DEPOSIT DATA PROCESSING
     const processDepositDataForTeamLeader = useCallback(

@@ -747,14 +747,14 @@ const OverallAttendanceDashboard = () => {
             <table className="w-full">
               <thead className="bg-slate-800/50 border-b border-slate-700/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">ID</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Department</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Date</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Punch In</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Punch Out</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Hours</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">ID</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Name</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Department</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Date</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Punch In</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Punch Out</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Hours</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/30">
@@ -774,7 +774,7 @@ const OverallAttendanceDashboard = () => {
                   </tr>
                 ) : (
                   filteredData.map((row) => (
-                    <tr key={row._id} className="hover:bg-slate-800/30 transition">
+                    <tr key={row._id} className="hover:bg-slate-800/30 text-center transition">
                       <td className="px-6 py-4 text-sm text-white">{row._id?.slice(0, 8)}</td>
                       <td className="px-6 py-4 text-sm text-white font-medium">{row.user?.FullName}</td>
                       <td className="px-6 py-4 text-sm text-gray-300">{row.user?.department}</td>

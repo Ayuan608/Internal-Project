@@ -173,23 +173,6 @@ const ShiftManagement = () => {
                       <div className="flex items-center">
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.agent}`}
-                              alt="avatar"
-                              className="w-12 h-12 rounded-full"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                e.target.nextSibling.style.display = "flex";
-                              }}
-                            />
-
-                            <div
-                              className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 
-                     items-center justify-center text-white text-xs font-bold hidden"
-                            >
-                              {employee.FullName.split(" ").map((n) => n[0].toUpperCase()).join("")}
-                            </div>
-
                             <span className="text-white font-medium">{employee.agent}</span>
                           </div>
                         </td>
