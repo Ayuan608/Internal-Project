@@ -76,7 +76,7 @@ function App() {
           </div>
         ));
       })
-      .catch((err) => console.error("❌ Error receiving notification:", err));
+      .catch((err) => console.error("Error receiving notification:", err));
   }, []);
 
 
