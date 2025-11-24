@@ -47,7 +47,7 @@ const Menus = ({ toggle, onTitleChange }) => {
   }, [dispatch]);
 
   const navItems = [
-    // user
+    
     ...(role === "User"
       ? [{ to: "/user", label: "Attendence", icon: <FileText /> }]
       : []),
