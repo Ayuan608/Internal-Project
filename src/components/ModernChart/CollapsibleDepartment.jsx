@@ -577,7 +577,7 @@ export const CollapsibleDepartment = ({
 
   return (
     <GlassCard className="mb-8">
-      <button
+      <span
 
         className="w-full p-8 flex items-center justify-between transition-all"
       >
@@ -618,7 +618,7 @@ export const CollapsibleDepartment = ({
             <ChevronDown className="text-gray-400 w-6 h-6" />
           )}
         </div>
-      </button>
+      </span>
 
       <div
         className={`overflow-hidden transition-all duration-500 ${expandedDept?.[deptKey]
