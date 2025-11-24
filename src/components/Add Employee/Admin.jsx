@@ -452,10 +452,21 @@ function Admin() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      {user?.salary ? `${parseInt(user.salary).toLocaleString()}` : 'N/A'}
+                      {/* Peso Symbol */}
+                      <span className="text-lg font-bold">₱</span>
+
+                      {user?.salary
+                        ? new Intl.NumberFormat('en-PH', {
+                          style: 'currency',
+                          currency: 'PHP',
+                        })
+                          .format(user.salary)
+                          .replace("₱", "") 
+                        : 'N/A'}
                     </span>
                   </td>
+
+
                   <td className="px-6 py-4">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${user?.status === "active"
                       ? "bg-green-500/20 text-green-300"
