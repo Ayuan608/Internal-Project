@@ -21,7 +21,6 @@ function DraftTemplate({ showDraftPopup, setShowDraftPopup }) {
     { id: 4, name: 'LEADER 3', department: 'CSR', color: '#8b5cf6' }
   ];
 
-  // Load drafts from localStorage on mount
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('draftTemplates') || '[]');
     setSavedDrafts(stored);
