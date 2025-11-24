@@ -17,7 +17,7 @@ import {
   createEmployeeOfMonth,
   deleteEmployeeOfMonth,
   fetchAllEmployeesOfMonth,
-  updateEmployeeOfMonth
+  updateEmployeeOfMonth,
 } from "../../../../redux/employeeOfMonthSlice";
 
 const EmployeeOfTheMonthAdmin = () => {
@@ -25,18 +25,20 @@ const EmployeeOfTheMonthAdmin = () => {
 
   // Redux state
   const { announcements, loading, error, success } = useSelector(
-    (state) => state.employeeOfMonth || {
-      announcements: [],
-      loading: false,
-      error: null,
-      success: false
-    }
+    (state) =>
+      state.employeeOfMonth || {
+        announcements: [],
+        loading: false,
+        error: null,
+        success: false,
+      }
   );
 
   const [activeTab, setActiveTab] = useState("create");
   const [showModal, setShowModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [modalType, setModalType] = useState(""); // "create", "edit", "delete"
 
   const departments = [
     {
@@ -121,7 +123,6 @@ const EmployeeOfTheMonthAdmin = () => {
       return;
     }
 
-
     const employeeData = {
       employeeName: formData.employeeName,
       department: formData.department,
@@ -136,9 +137,13 @@ const EmployeeOfTheMonthAdmin = () => {
 
     try {
       if (editMode && editId) {
-        await dispatch(updateEmployeeOfMonth({ id: editId, updatedData: employeeData })).unwrap();
+        await dispatch(
+          updateEmployeeOfMonth({ id: editId, updatedData: employeeData })
+        ).unwrap();
+        setModalType("edit");
       } else {
         await dispatch(createEmployeeOfMonth(employeeData)).unwrap();
+        setModalType("create");
       }
     } catch (err) {
       console.error("Failed to save:", err);
@@ -146,7 +151,8 @@ const EmployeeOfTheMonthAdmin = () => {
   };
 
   const handleEdit = (employee) => {
-    const deptId = departments.find((d) => d.name === employee.department)?.id || "";
+    const deptId =
+      departments.find((d) => d.name === employee.department)?.id || "";
 
     setFormData({
       employeeName: employee.name || employee.employeeName,
@@ -166,10 +172,11 @@ const EmployeeOfTheMonthAdmin = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: any) => {
     if (window.confirm("Are you sure you want to delete this announcement?")) {
       try {
         await dispatch(deleteEmployeeOfMonth(id)).unwrap();
+        setModalType("delete");
       } catch (err) {
         console.error("Failed to delete:", err);
       }
@@ -182,12 +189,47 @@ const EmployeeOfTheMonthAdmin = () => {
     resetForm();
   };
 
-  const getDepartmentColor = (deptName) => {
+  const getDepartmentColor = (deptName: any) => {
     if (deptName?.includes("Customer Service")) return "blue";
     if (deptName?.includes("Deposit")) return "emerald";
     if (deptName?.includes("Withdrawal")) return "purple";
     return "slate";
   };
+
+  // Get modal content based on operation type
+  const getModalContent = () => {
+    switch (modalType) {
+      case "create":
+        return {
+          title: "Announcement Created!",
+          message:
+            "The employee of the month announcement has been successfully created.",
+          buttonText: "View Announcements",
+        };
+      case "edit":
+        return {
+          title: "Announcement Updated!",
+          message:
+            "The employee of the month announcement has been successfully updated.",
+          buttonText: "View Announcements",
+        };
+      case "delete":
+        return {
+          title: "Announcement Deleted!",
+          message:
+            "The employee of the month announcement has been successfully deleted.",
+          buttonText: "Close",
+        };
+      default:
+        return {
+          title: "Success!",
+          message: "Operation completed successfully.",
+          buttonText: "Close",
+        };
+    }
+  };
+
+  const modalContent = getModalContent();
 
   return (
     <div className="min-h-screen bg-[rgba(59,130,246,0.03)] p-2">
@@ -202,49 +244,35 @@ const EmployeeOfTheMonthAdmin = () => {
           </div>
         )}
 
-        {/* Header */}
-        {/* <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg shadow-amber-500/30">
-              <Trophy className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">
-                Employee of the Month
-              </h1>
-              <p className="text-slate-400 text-lg">
-                Recognize outstanding performance across departments
-              </p>
-            </div>
-          </div>
-        </div> */}
-              <div>
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                    Employee of the Month
-            </h1>
-            <p className="text-gray-400">
-              Manage your users, employees and their permissions
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            Employee of the Month
+          </h1>
+          <p className="text-gray-400">
+            Manage your users, employees and their permissions
+          </p>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-4 mb-8">
           <button
             onClick={() => setActiveTab("create")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${activeTab === "create"
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              activeTab === "create"
                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30"
                 : "bg-[rgba(59,130,246,0.03)] text-slate-300 border border-slate-700 hover:bg-slate-800"
-              }`}
+            }`}
           >
             <Plus className="w-5 h-5" />
             Create Announcement
           </button>
           <button
             onClick={() => setActiveTab("view")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${activeTab === "view"
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              activeTab === "view"
                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30"
                 : "bg-[rgba(59,130,246,0.03)] text-slate-300 border border-slate-700 hover:bg-slate-800"
-              }`}
+            }`}
           >
             <Award className="w-5 h-5" />
             View All Announcements
@@ -282,29 +310,32 @@ const EmployeeOfTheMonthAdmin = () => {
                   key={dept.id}
                   className="bg-[rgba(59,130,246,0.03)] cursor-pointer backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:shadow-lg transition-all duration-300"
                   style={{
-                    borderColor: activeTab === "create" ? undefined : undefined
+                    borderColor: activeTab === "create" ? undefined : undefined,
                   }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <Users
-                      className={`w-6 h-6 ${dept.color === "blue"
+                      className={`w-6 h-6 ${
+                        dept.color === "blue"
                           ? "text-blue-400"
                           : dept.color === "emerald"
-                            ? "text-emerald-400"
-                            : "text-purple-400"
-                        }`}
+                          ? "text-emerald-400"
+                          : "text-purple-400"
+                      }`}
                     />
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${dept.color === "blue"
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        dept.color === "blue"
                           ? "bg-blue-500/10 text-blue-400"
                           : dept.color === "emerald"
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-purple-500/10 text-purple-400"
-                        }`}
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : "bg-purple-500/10 text-purple-400"
+                      }`}
                     >
                       {
-                        announcements.filter((e) => e.department === dept.name)
-                          .length
+                        announcements.filter(
+                          (e: any) => e.department === dept.name
+                        ).length
                       }{" "}
                       Awarded
                     </span>
@@ -323,7 +354,9 @@ const EmployeeOfTheMonthAdmin = () => {
             <div className="bg-black backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8">
               <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                 <Award className="w-7 h-7 text-amber-400" />
-                {editMode ? "Edit Employee of the Month" : "Nominate Employee of the Month"}
+                {editMode
+                  ? "Edit Employee of the Month"
+                  : "Nominate Employee of the Month"}
               </h2>
 
               <div className="space-y-6">
@@ -476,13 +509,13 @@ const EmployeeOfTheMonthAdmin = () => {
                   {(!formData.hasGoodPerformance ||
                     !formData.hasNoLate ||
                     !formData.hasNoMissingPunches) && (
-                      <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                        <p className="text-amber-400 text-sm font-medium">
-                          ⚠️ All criteria must be checked to proceed with
-                          nomination
-                        </p>
-                      </div>
-                    )}
+                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                      <p className="text-amber-400 text-sm font-medium">
+                        ⚠️ All criteria must be checked to proceed with
+                        nomination
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -553,7 +586,7 @@ const EmployeeOfTheMonthAdmin = () => {
                 <p className="text-slate-400 text-lg">No announcements yet</p>
               </div>
             ) : (
-              announcements.map((employee) => {
+              announcements.map((employee: any) => {
                 const color = getDepartmentColor(employee.department);
                 return (
                   <div
@@ -563,12 +596,13 @@ const EmployeeOfTheMonthAdmin = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex gap-6 flex-1">
                         <div
-                          className={`p-3 rounded-2xl shadow-lg h-full ${color === "blue"
+                          className={`p-3 rounded-2xl shadow-lg h-full ${
+                            color === "blue"
                               ? "bg-gradient-to-br from-blue-500 to-blue-600"
                               : color === "emerald"
-                                ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
-                                : "bg-gradient-to-br from-purple-500 to-purple-600"
-                            }`}
+                              ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
+                              : "bg-gradient-to-br from-purple-500 to-purple-600"
+                          }`}
                         >
                           <Trophy className="w-8 h-8 text-white" />
                         </div>
@@ -579,12 +613,13 @@ const EmployeeOfTheMonthAdmin = () => {
                               {employee.name || employee.employeeName}
                             </h3>
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold border ${color === "blue"
+                              className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                color === "blue"
                                   ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
                                   : color === "emerald"
-                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                    : "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                                }`}
+                                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                  : "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                              }`}
                             >
                               {employee.month} {employee.year}
                             </span>
@@ -640,10 +675,14 @@ const EmployeeOfTheMonthAdmin = () => {
                             <Calendar className="w-4 h-4" />
                             Posted on{" "}
                             {employee.datePosted
-                              ? new Date(employee.datePosted).toLocaleDateString()
+                              ? new Date(
+                                  employee.datePosted
+                                ).toLocaleDateString()
                               : employee.createdAt
-                                ? new Date(employee.createdAt).toLocaleDateString()
-                                : "N/A"}
+                              ? new Date(
+                                  employee.createdAt
+                                ).toLocaleDateString()
+                              : "N/A"}
                           </div>
                         </div>
                       </div>
@@ -657,7 +696,9 @@ const EmployeeOfTheMonthAdmin = () => {
                           <Edit2 className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(employee._id || employee.id)}
+                          onClick={() =>
+                            handleDelete(employee._id || employee.id)
+                          }
                           disabled={loading}
                           className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all border border-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -681,21 +722,20 @@ const EmployeeOfTheMonthAdmin = () => {
                   <CheckCircle className="w-16 h-16 text-emerald-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">
-                  {editMode ? "Announcement Updated!" : "Announcement Posted!"}
+                  {modalContent.title}
                 </h3>
-                <p className="text-slate-400 mb-6">
-                  {editMode
-                    ? "The employee of the month announcement has been successfully updated."
-                    : "The employee of the month has been successfully announced."}
-                </p>
+                <p className="text-slate-400 mb-6">{modalContent.message}</p>
                 <button
                   onClick={() => {
                     setShowModal(false);
-                    setActiveTab("view");
+                    setModalType("");
+                    if (modalType !== "delete") {
+                      setActiveTab("view");
+                    }
                   }}
                   className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl font-bold transition-all duration-300"
                 >
-                  Close
+                  {modalContent.buttonText}
                 </button>
               </div>
             </div>

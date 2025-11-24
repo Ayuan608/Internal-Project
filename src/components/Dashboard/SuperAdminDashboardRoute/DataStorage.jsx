@@ -103,19 +103,20 @@ const DataStoragePage = () => {
     };
 
     const calculateMetrics = (periodArray, department) => {
-        // periodArray is an array of items for one date (each item maybe object with rows or an array row)
-        if (!Array.isArray(periodArray) || periodArray.length === 0) return null;
-        const allRows = extractRows(periodArray);
 
-        // Helper to filter out headers/shift/total rows
-        const isAgentRowCSR = (r) => {
-            if (!Array.isArray(r) || r.length < 2) return false;
-            const name = String(r[0] || "").toLowerCase();
-            if (!name.trim()) return false;
-            const bad = ["member", "shift", "total", "ave.", "ave", "highlights", "failed", "assigned", "reached", "half data"];
-            return !bad.some(b => name.includes(b));
-        };
+        console.log("🔍 Incoming periodArray:", periodArray);
+        console.log("🔍 Department:", department);
+
+        if (!Array.isArray(periodArray) || periodArray.length === 0) return null;
+
+        const allRows = extractRows(periodArray);
+        console.log("📌 Extracted Rows:", allRows);
+
+        const safeInt = (v) => parseInt(v, 10) || 0;
+        const safeFloat = (v) => parseFloat(v) || 0;
+
         if (department === "CSR") {
+
             const clean = allRows.filter(r => {
                 if (!Array.isArray(r) || r.length < 9) return false;
                 const name = String(r[0] || "").toLowerCase();
@@ -123,15 +124,22 @@ const DataStoragePage = () => {
                 return name.trim() !== "" && !bad.some(b => name.includes(b));
             });
 
+            console.log("🧹 Clean CSR rows:", clean);
+
             const count = clean.length;
+            console.log("👥 CSR Agent Count:", count);
 
             const completed = clean.reduce((s, r) => s + safeInt(r[1]), 0);
             const effective = clean.reduce((s, r) => s + safeInt(r[2]), 0);
             const message = clean.reduce((s, r) => s + safeInt(r[3]), 0);
             const missed = clean.reduce((s, r) => s + safeInt(r[4]), 0);
 
-            // Online Time → stored like "78.47" → convert to float hours
-            const online = clean.reduce((s, r) => s + safeFloat(r[5]), 0).toFixed(2);
+            // ONLINE TIME DEBUG
+            const onlineArray = clean.map(r => safeFloat(r[5]));
+            console.log("⏱ Online time values (raw floats):", onlineArray);
+
+            const online = clean.reduce((s, r) => s + safeFloat(r[5]), 0);
+            console.log("⏱ Total Online:", online);
 
             const positiveAvg =
                 count > 0
@@ -145,12 +153,23 @@ const DataStoragePage = () => {
 
             const offline = clean.reduce((s, r) => s + safeInt(r[8]), 0);
 
+            console.log("📊 Final CSR Metrics:", {
+                completed,
+                effective,
+                message,
+                missed,
+                online,
+                positiveAvg,
+                negativeAvg,
+                offline
+            });
+
             return {
                 completed,
                 effective,
                 messages: message,
                 missed,
-                online,
+                online: online.toFixed(2),
                 positive: positiveAvg,
                 negative: negativeAvg,
                 offline
@@ -158,9 +177,13 @@ const DataStoragePage = () => {
         }
 
 
+        // ------------------------------------------
+        // Deposit
+        // ------------------------------------------
         if (department === "Deposit") {
-            // filter rows where we expect at least 7 columns (Member, live, 1st, 2nd/3rd, paycheck, records, offline)
             const clean = allRows.filter((r) => Array.isArray(r) && r.length >= 7);
+            console.log("🧹 Clean Deposit Rows:", clean);
+
             return {
                 live: clean.reduce((s, r) => s + safeInt(r[1]), 0),
                 first: clean.reduce((s, r) => s + safeInt(r[2]), 0),
@@ -171,18 +194,25 @@ const DataStoragePage = () => {
             };
         }
 
+
+        // ------------------------------------------
+        // Withdraw
+        // ------------------------------------------
         if (department === "Withdraw") {
             const clean = allRows.filter((r) => Array.isArray(r) && r.length >= 7);
+            console.log("🧹 Clean Withdraw Rows:", clean);
+
             return {
                 passed: clean.reduce((s, r) => s + safeInt(r[1]), 0),
                 passedAmt: clean.reduce((s, r) => s + safeInt(String(r[2] || "").replace(/,/g, "")), 0),
                 rejected: clean.reduce((s, r) => s + safeInt(r[3]), 0),
                 rejectedAmt: clean.reduce((s, r) => s + safeInt(String(r[4] || "").replace(/,/g, "")), 0),
                 processing: clean.reduce((s, r) => s + safeInt(r[5]), 0),
-                processingAmt: clean.reduce((s, r) => s + safeInt(String(r[6] || "").replace(/,/g, "")), 0)
+                processingAmt: clean.reduce((s, r) => s + safeInt(String(r[5] || "").replace(/,/g, "")), 0)
             };
         }
 
+        console.log("⚠ Unknown Department");
         return null;
     };
 
@@ -307,7 +337,7 @@ const DataStoragePage = () => {
                 </div>
             </motion.div>
 
-     
+
             <div className="bg-slate-900/40 p-6 rounded-xl border border-slate-800 shadow-xl mt-6">
                 <div className="overflow-x-auto mb-4">
                     <table className="min-w-full border-collapse">

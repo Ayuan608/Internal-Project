@@ -43,7 +43,7 @@ function App() {
 
     onMessageListener()
       .then((payload) => {
-        console.log("🎯 Notification Received in Foreground:", payload);
+      
 
         const notification = payload?.notification;
         const title = notification?.title || "New Notification";
