@@ -38,6 +38,7 @@ const AttendanceRecords = () => {
         "Late Arrival",
         "Early Leave",
         "System Error",
+        " Work-error",
         "Other",
     ];
 
@@ -178,6 +179,17 @@ Team Leader`,
             "System Error": `Dear ${role} - ${name},
 
 We are writing to inform you that there appears to be a system error in your attendance record for ${date}. We are investigating this matter and will resolve it shortly.
+
+In the meantime, please provide any documentation or details about this discrepancy so we can correct it promptly.
+
+We apologize for any inconvenience this may cause.
+
+Regards,
+Team Leader`,
+
+            "Work Error": `Dear ${role} - ${name},
+
+We are writing to inform you that there appears to be a work error in your record for ${date}. We are investigating this matter and will resolve it shortly.
 
 In the meantime, please provide any documentation or details about this discrepancy so we can correct it promptly.
 
