@@ -8,8 +8,6 @@ import BindGoogleModal from "./BIndGoogle";
 import RecentAnnoucement from "../components/popup/RecentAnnoucement";
 import { logout } from "../redux/authSlice";
 import ProfileModal from "../components/popup/ProfileModal";
-import LanguageChange from "../components/popup/LanguageChange";
-import { useTranslation } from "react-i18next";
 import { useTextSize } from "../Context/TextContext";
 
 const Layout = () => {
@@ -24,7 +22,6 @@ const Layout = () => {
     const [open, setOpen] = useState(false);
     const { textSize, setTextSize } = useTextSize();
     const [showTextSizeSlider, setShowTextSizeSlider] = useState(false);
-    const { t } = useTranslation()
     const handleToggle = () => {
         setToggle(!toggle);
     };
@@ -103,7 +100,6 @@ const Layout = () => {
                             <span className="whitespace-nowrap">{dateTime}</span>
                             <NotificationPopup userId={userData?._id} />
                             <RecentAnnoucement />
-                            <LanguageChange />
                             <div className="flex items-center gap-3" ref={menuRef}>
                                 <button
                                     onClick={() => setIsOpen((o) => !o)}

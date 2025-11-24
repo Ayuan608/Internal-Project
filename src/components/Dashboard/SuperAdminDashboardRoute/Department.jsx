@@ -4,7 +4,6 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { ChevronDown, Users, Target, TrendingUp, BarChart3, Layout } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCombinedDepartmentsData } from "../../../redux/combinedQuotaSlice";
-import { useTranslation } from "react-i18next";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
@@ -52,7 +51,6 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
 };
 
 const Department = () => {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [layoutMode, setLayoutMode] = useState("side");
@@ -244,8 +242,8 @@ const Department = () => {
     <div className="min-h-screen text-white p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">{t("Department Management")}</h1>
-        <p className="text-gray-400">{t("Monitor and manage department quotas and performance")}</p>
+        <h1 className="text-4xl font-bold mb-2">{"Department Management"}</h1>
+        <p className="text-gray-400">{"Monitor and manage department quotas and performance"}</p>
       </div>
 
       {/* Controls Bar */}

@@ -22,10 +22,8 @@ import {
   superAdminButtons,
   TeamButtons,
 } from "../Helpers/Helper";
-import { useTranslation } from "react-i18next";
 
 const Menus = ({ toggle, onTitleChange }) => {
-  const { t } = useTranslation()
   const contentRef = useRef(null);
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [showDraftPopup, setShowDraftPopup] = useState(false);
@@ -112,7 +110,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                 size={20}
               />
               <h1 className="text-white text-[14px] font-semibold">
-                {t(`${role} Dashboard`)}
+                {`${role} Dashboard`}
 
               </h1>
 
@@ -125,7 +123,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                   <Link
                     key={to}
                     to={to}
-                    onClick={() => onTitleChange(t(label))}
+                    onClick={() => onTitleChange(label)}
                     className={`flex items-center space-x-[12px] cursor-pointer px-[12px] py-[10px] rounded-lg transition-all duration-200
                       ${isActive
                         ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -133,20 +131,20 @@ const Menus = ({ toggle, onTitleChange }) => {
                       }`}
                   >
                     <span className="text-[20px]">{icon}</span>
-                    <span className="text-[16px]">{t(label)}</span>
+                    <span className="text-[16px]">{label}</span>
                   </Link>
                 );
               })}
 
               {role === "Super-Admin" && (
                 <div className="mt-4 space-y-4">
-                  {superAdminButtons(t)?.map(({ to, label, icon: Icon }) => {
+                  {superAdminButtons()?.map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(t(label))}
+                        onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -154,7 +152,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{t(label)}</span>
+                        <span className="text-[16px] ml-2">{label}</span>
                       </Link>
                     );
                   })}
@@ -169,7 +167,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(t(label))}
+                        onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -177,7 +175,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{t(label)}</span>
+                        <span className="text-[16px] ml-2">{label}</span>
                       </Link>
                     );
                   })}
@@ -200,7 +198,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{t(label)}</span>
+                        <span className="text-[16px] ml-2">{label}</span>
                       </Link>
                     );
                   })}
@@ -215,7 +213,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                       <Link
                         key={to}
                         to={to}
-                        onClick={() => onTitleChange(t(label))}
+                        onClick={() => onTitleChange(label)}
                         className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200
                           ${isActive
                             ? "border-l-2 border-blue-500 bg-[#3b83f60e] font-medium"
@@ -223,7 +221,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                           }`}
                       >
                         <Icon className="text-[20px]" />
-                        <span className="text-[16px] ml-2">{t(label)}</span>
+                        <span className="text-[16px] ml-2">{label}</span>
                       </Link>
                     );
                   })}
@@ -237,7 +235,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                   onClick={toggleContent}
                   className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm transition-all duration-200 hover:bg-[#3b83f620]"
                 >
-                  <Plus size={18} /> {t("Announcements")}
+                  <Plus size={18} /> {"Announcements"}
                 </button>
 
                 <div ref={contentRef} className="hidden-content">
@@ -246,7 +244,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                       className="w-full flex cursor-pointer items-center gap-2 px-4 py-2 rounded-full bg-[#3b83f60a] text-white text-sm hover:bg-[#3b83f620]"
                       onClick={() => setShowDraftPopup(true)}
                     >
-                      <ClipboardPlus size={18} /> {t("draftTemplate")}
+                      <ClipboardPlus size={18} /> {"draftTemplate"}
                     </button>
                     
                     <DraftTemplate
@@ -276,7 +274,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                 </p>
                 <UserMenu openUser={openUser} userData={userData} />
                 <span className="text-xs capitalize text-white bg-[#198477] rounded-md px-2 py-[1px] w-fit">
-                  {t(`${role}`)}
+                  {`${role}`}
                 </span>
               </div>
             </div>
@@ -300,7 +298,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
                 <Settings className="w-5 h-5" />
-                <span className="text-sm">{t("Settings")}</span>
+                <span className="text-sm">{"Settings"}</span>
               </Link>
             )}
           </div>

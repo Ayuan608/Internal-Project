@@ -31,7 +31,6 @@ import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-white
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
-import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { Bell } from "lucide-react";
 import NonQuotaDepartment from "./components/Dashboard/SuperAdminDashboardRoute/ui/NonQuotaDepartment";
@@ -79,12 +78,7 @@ function App() {
       })
       .catch((err) => console.error("❌ Error receiving notification:", err));
   }, []);
-  const { i18n: i18nextInstance } = useTranslation();
 
-  useEffect(() => {
-    const savedLang = localStorage.getItem("language") || "en";
-    i18nextInstance.changeLanguage(savedLang);
-  }, [i18nextInstance]);
 
   return (
     <Routes>

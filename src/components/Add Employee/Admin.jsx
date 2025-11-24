@@ -24,13 +24,11 @@ import {
 import toast from "react-hot-toast";
 import MetaData from "../../more/MetaData";
 import countries from "../../Helpers/countriles";
-import { useTranslation } from "react-i18next";
 
 function Admin() {
   const dispatch = useDispatch();
   const { users } = useSelector((state) => state?.auth);
   const role = useSelector((state) => state.auth?.role);
-  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
