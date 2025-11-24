@@ -16,7 +16,7 @@ export default function Dashboard() {
           className=" top-0 rounded-lg p-2 z-auto backdrop-blur-3xl "
           style={{ zIndex: 9 }}
         >
-          <div className="p-4 bg-red-500 rounded-xl mb-4 w-full">
+          <div className="p-4 bg-[#282e3c38] rounded-xl mb-4 w-full">
             <TeamLeaderStats
               title="Dashboard Overview"
               SecondaryTitle="Monitor real-time metrics and performance across all departments"
