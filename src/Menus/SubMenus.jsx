@@ -5,7 +5,6 @@ import {
   ClipboardPlus,
   Plus,
   Settings,
-  ChartLine,
   Megaphone,
   ChartColumnIncreasing,
   FileText,
@@ -161,7 +160,7 @@ const Menus = ({ toggle, onTitleChange }) => {
 
               {role === "Admin" && (
                 <div className="mt-4 space-y-4">
-                  {AdminRoutes(t).map(({ to, label, icon: Icon }) => {
+                  {AdminRoutes().map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
@@ -184,7 +183,7 @@ const Menus = ({ toggle, onTitleChange }) => {
 
               {role === "Checker" && (
                 <div className="mt-4 space-y-4">
-                  {CheckerButtons(t).map(({ to, label, icon: Icon }) => {
+                  {CheckerButtons().map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link
@@ -207,7 +206,7 @@ const Menus = ({ toggle, onTitleChange }) => {
 
               {role === "Team-Leader" && (
                 <div className="mt-4 space-y-4">
-                  {TeamButtons(t).map(({ to, label, icon: Icon }) => {
+                  {TeamButtons().map(({ to, label, icon: Icon }) => {
                     const isActive = location.pathname === to;
                     return (
                       <Link

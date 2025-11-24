@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Line,
   Area,
@@ -14,6 +14,7 @@ import {
   ReferenceLine,
   ComposedChart,
 } from "recharts";
+import { useSelector } from "react-redux";
 
 export type StatCardProps = {
   title: string;
@@ -31,10 +32,31 @@ export type StatCardProps = {
   goalValue?: number;
 };
 
+
+
+function getDaysInMonth(month: number, year: number) {
+  const date = new Date(year, month, 0);
+  const monthName = date.toLocaleDateString("en-US", {
+    month: "short",
+  });
+  const daysInMonth = date.getDate();
+  const days = [];
+  let i = 1;
+  while (days.length < daysInMonth) {
+    days.push(`${i}`);
+    i += 1;
+  }
+  return days;
+}
+
 // ----------------------------------------------------------------------
 // MINI TOOLTIP
 // ----------------------------------------------------------------------
 const MiniTooltip = ({ active, payload, goalValue, color }) => {
+
+  const role = useSelector((state: any) => state.auth?.role);
+
+
   if (!active || !payload || !payload.length) return null;
 
   const point = payload[0].payload;
@@ -159,17 +181,21 @@ export default function StatCard({
   goalValue = 10000,
 }: StatCardProps) {
   const theme = useTheme();
+  const daysInMonth = getDaysInMonth(
+    new Date().getMonth() + 1,
+    new Date().getFullYear()
+  );
 
   const chartData =
     data && data.length > 0
       ? data
       : getDailyTotals.map((d: any) =>
-          title.includes("CSR")
-            ? d.csr
-            : title.includes("Deposit")
+        title.includes("CSR")
+          ? d.csr
+          : title.includes("Deposit")
             ? d.deposit
             : d.withdraw
-        );
+      );
 
   const trendColors = [
     "oklch(74.6% 0.16 232.661)",
@@ -212,23 +238,70 @@ export default function StatCard({
           {difference}
         </Typography>
 
-        <Box
-          sx={{
-            width: "100%",
-            height: 120,
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "8px",
-            p: 1,
-            bgcolor: "rgba(0,0,0,0.18)",
-          }}
-        >
-          <MiniGoalChart
-            data={chartData}
-            goalValue={goalValue}
-            color={chartColor}
-            index={index}
-          />
-        </Box>
+
+
+
+        {role === "teamLeader" ? (
+          <Box
+            sx={{
+              width: "100%",
+              height: 60,
+              mt: 2,
+            }}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={chartData.map((v, i) => ({ day: i + 1, value: v }))}
+              >
+                <defs>
+                  <linearGradient id={`gradient-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={chartColor} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+
+                <XAxis dataKey="day" hide />
+                <YAxis hide />
+
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={chartColor}
+                  strokeWidth={2}
+                  fill={`url(#gradient-${index})`}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={chartColor}
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              width: "100%",
+              height: 120,
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "8px",
+              p: 1,
+              bgcolor: "rgba(0,0,0,0.18)",
+            }}
+          >
+            <MiniGoalChart
+              data={chartData}
+              goalValue={goalValue}
+              color={chartColor}
+              index={index}
+            />
+          </Box>
+        )}
+
+
       </CardContent>
     </Card>
   );
