@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Download,
   Search,
@@ -39,7 +39,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from 'recharts';
-
+import html2canvas from "html2canvas";
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllAttendance } from '../../../redux/attendenceSlice';
 import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
@@ -52,16 +52,23 @@ const COLORS = {
   halfDay: '#EC4899',
   overbreak: '#06B6D4'
 };
+const departments = [
+  { label: "CSR Department", value: "CSR" },
+  { label: "Deposit Department", value: "Deposit" },
+  { label: "Withdraw Department", value: "Withdraw" },
+  { label: "Marketing Department", value: "Marketing" }
+];
 
 const OverallAttendanceDashboard = () => {
-  const [viewMode, setViewMode] = useState('analytics'); // analytics, table, cards
+  const popupRef = useRef();
+  const [viewMode, setViewMode] = useState('analytics');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showCharts, setShowCharts] = useState(false);
-
+  const [selectedCard, setSelectedCard] = useState(null);
   const dispatch = useDispatch();
   const { allAttendance, isLoading, pagination } = useSelector((state) => state.attendance);
 
@@ -83,11 +90,19 @@ const OverallAttendanceDashboard = () => {
     fetchData();
   }, [dispatch, startDate, endDate, selectedDept]);
 
-  // Get unique departments and statuses
-  const departments = useMemo(() => {
-    const depts = ['All', ...new Set(allAttendance?.map(item => item.user?.department).filter(Boolean))];
-    return depts;
-  }, [allAttendance]);
+
+  const downloadCard = async () => {
+    const card = popupRef.current;
+
+    const canvas = await html2canvas(card, { scale: 3 });
+    const image = canvas.toDataURL("image/png");
+
+    const link = document.createElement("a");
+    link.href = image;
+    link.download = `attendance_${selectedCard.user?.FullName}_${selectedCard._id}.png`;
+    link.click();
+  };
+
 
   const statuses = useMemo(() => {
     const stats = ['All', ...new Set(allAttendance?.map(item => item.alert).filter(Boolean))];
@@ -162,14 +177,7 @@ const OverallAttendanceDashboard = () => {
     };
   }, [allAttendance]);
 
-  // Status distribution
-  const statusDistribution = useMemo(() => {
-    return [
-      { name: 'Present', value: stats.present, color: COLORS.present },
-      { name: 'Absent', value: stats.absent, color: COLORS.absent },
-      { name: 'Late', value: stats.late, color: COLORS.late },
-    ].filter(item => item.value > 0);
-  }, [stats]);
+
 
   // Working hours distribution
   const hoursDistribution = useMemo(() => {
@@ -248,20 +256,7 @@ const OverallAttendanceDashboard = () => {
   }, [allAttendance]);
 
   // Break time analysis
-  const breakAnalysis = useMemo(() => {
-    if (!allAttendance) return [];
-    const breakMap = {};
-    allAttendance.forEach(emp => {
-      if (emp.breaks) {
-        if (!breakMap[emp.breaks]) breakMap[emp.breaks] = 0;
-        breakMap[emp.breaks]++;
-      }
-    });
-    return Object.entries(breakMap).map(([breaks, count]) => ({
-      breakTime: breaks,
-      count
-    })).slice(0, 5);
-  }, [allAttendance]);
+
 
   // Get status color
   const getStatusColor = (status) => {
@@ -340,18 +335,7 @@ const OverallAttendanceDashboard = () => {
       { metric: 'Compliance', value: 93, fullMark: 100 },
     ];
   }, [allAttendance]);
-  const getStatusBadge = (status) => {
-    const colors = {
-      'Present': 'bg-blue-50 text-blue-700 border border-blue-200',
-      'Absent': 'bg-red-50 text-red-700 border border-red-200',
-      'Late': 'bg-yellow-50 text-yellow-700 border border-yellow-200',
-      'Leave': 'bg-purple-50 text-purple-700 border border-purple-200',
-      'Normal': 'bg-green-50 text-green-700 border border-green-200',
-      'Half Day': 'bg-orange-50 text-orange-700 border border-orange-200',
-      'Overtime': 'bg-indigo-50 text-indigo-700 border border-indigo-200',
-    };
-    return colors[status] || 'bg-gray-50 text-gray-700 border border-gray-200';
-  };
+
   const CardRow = ({ label, value }) => (
     <div className="flex justify-between items-center">
       <span className="text-sm text-gray-400">{label}</span>
@@ -487,114 +471,114 @@ const OverallAttendanceDashboard = () => {
               {showCharts ? "Hide Charts" : "Show Charts"}
             </button>
           </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Weekly Trend Chart */}
-              <div className="bg-[#0B1221] border border-[#1B2335] rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/10">
-                      <TrendingUp size={18} className="text-blue-400" />
-                    </div>
-                    Weekly Attendance Trend
-                  </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Weekly Trend Chart */}
+            <div className="bg-[#0B1221] border border-[#1B2335] rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/10">
+                    <TrendingUp size={18} className="text-blue-400" />
+                  </div>
+                  Weekly Attendance Trend
+                </h3>
 
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                      <span className="text-slate-300">Present</span>
-                    </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                    <span className="text-slate-300">Present</span>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <span className="text-slate-300">Absent</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <span className="text-slate-300">Absent</span>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                      <span className="text-slate-300">Late</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <span className="text-slate-300">Late</span>
                   </div>
                 </div>
-
-                <ResponsiveContainer width="100%" height={330}>
-                  <AreaChart data={weeklyTrendData}>
-                    <defs>
-                      <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="10%" stopColor="#10B981" stopOpacity={0.35} />
-                        <stop offset="90%" stopColor="#10B981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" opacity={0.3} />
-
-                    <XAxis
-                      dataKey="day"
-                      stroke="#64748B"
-                      tick={{ fill: "#94A3B8", fontSize: 12 }}
-                    />
-
-                    <YAxis
-                      stroke="#64748B"
-                      tick={{ fill: "#94A3B8", fontSize: 12 }}
-                    />
-
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#0F172A",
-                        border: "1px solid #334155",
-                        borderRadius: "10px",
-                      }}
-                      labelStyle={{ color: "#fff" }}
-                    />
-
-                    {/* main curve */}
-                    <Area
-                      type="monotone"
-                      dataKey="present"
-                      stroke="#10B981"
-                      strokeWidth={3}
-                      fill="url(#colorPresent)"
-                      dot={{ r: 6, fill: "#10B981", stroke: "#0F172A", strokeWidth: 2 }}
-                      activeDot={{ r: 8, strokeWidth: 2, stroke: "#10B981" }}
-                    />
-
-                    {/* late */}
-                    <Line
-                      type="monotone"
-                      dataKey="late"
-                      stroke="#F59E0B"
-                      strokeWidth={3}
-                      dot={{ r: 6, fill: "#F59E0B", stroke: "#0F172A", strokeWidth: 2 }}
-                    />
-
-                    {/* absent */}
-                    <Line
-                      type="monotone"
-                      dataKey="absent"
-                      stroke="#EF4444"
-                      strokeWidth={3}
-                      dot={{ r: 6, fill: "#EF4444", stroke: "#0F172A", strokeWidth: 2 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
               </div>
-              {/* Department Analytics */}
-              <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 backdrop-blur">
-                <h3 className="text-lg font-semibold text-white mb-4">Department Performance</h3>
-                <ResponsiveContainer style={{ background: "transparent" }} width="100%" height={300}>
-                  <BarChart data={deptAnalytics}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
-                    <XAxis dataKey="name" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
-                    <Legend />
-                    <Bar dataKey="present" fill={COLORS.present} />
-                    <Bar dataKey="absent" fill={COLORS.absent} />
-                    <Bar dataKey="late" fill={COLORS.late} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+
+              <ResponsiveContainer width="100%" height={330}>
+                <AreaChart data={weeklyTrendData}>
+                  <defs>
+                    <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="10%" stopColor="#10B981" stopOpacity={0.35} />
+                      <stop offset="90%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" opacity={0.3} />
+
+                  <XAxis
+                    dataKey="day"
+                    stroke="#64748B"
+                    tick={{ fill: "#94A3B8", fontSize: 12 }}
+                  />
+
+                  <YAxis
+                    stroke="#64748B"
+                    tick={{ fill: "#94A3B8", fontSize: 12 }}
+                  />
+
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0F172A",
+                      border: "1px solid #334155",
+                      borderRadius: "10px",
+                    }}
+                    labelStyle={{ color: "#fff" }}
+                  />
+
+                  {/* main curve */}
+                  <Area
+                    type="monotone"
+                    dataKey="present"
+                    stroke="#10B981"
+                    strokeWidth={3}
+                    fill="url(#colorPresent)"
+                    dot={{ r: 6, fill: "#10B981", stroke: "#0F172A", strokeWidth: 2 }}
+                    activeDot={{ r: 8, strokeWidth: 2, stroke: "#10B981" }}
+                  />
+
+                  {/* late */}
+                  <Line
+                    type="monotone"
+                    dataKey="late"
+                    stroke="#F59E0B"
+                    strokeWidth={3}
+                    dot={{ r: 6, fill: "#F59E0B", stroke: "#0F172A", strokeWidth: 2 }}
+                  />
+
+                  {/* absent */}
+                  <Line
+                    type="monotone"
+                    dataKey="absent"
+                    stroke="#EF4444"
+                    strokeWidth={3}
+                    dot={{ r: 6, fill: "#EF4444", stroke: "#0F172A", strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
+            {/* Department Analytics */}
+            <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 backdrop-blur">
+              <h3 className="text-lg font-semibold text-white mb-4">Department Performance</h3>
+              <ResponsiveContainer style={{ background: "transparent" }} width="100%" height={300}>
+                <BarChart data={deptAnalytics}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
+                  <XAxis dataKey="name" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
+                  <Legend />
+                  <Bar dataKey="present" fill={COLORS.present} />
+                  <Bar dataKey="absent" fill={COLORS.absent} />
+                  <Bar dataKey="late" fill={COLORS.late} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
           <div
             className={`transition-all duration-500 overflow-hidden ${showCharts ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
               }`}
@@ -692,23 +676,30 @@ const OverallAttendanceDashboard = () => {
                     placeholder="Name or ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2  border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
+              {/* department */}
+
 
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">Department</label>
-                <select value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)} className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                <select
+                  value={selectedDept}
+                  onChange={(e) => setSelectedDept(e.target.value)}
+                  className="w-full px-4 py-2  border border-slate-600 rounded-lg text-white"
+                >
+                  <option className="bg-[#0d1b2af3] text-gray-300" value="All">All</option>
+
+                  {departments.map((d, idx) => (
+                    <option className="bg-[#0d1b2af3] text-gray-300" key={idx} value={d.value}>{d.label}</option>
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">Status</label>
-                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="w-full px-4 py-2  border  border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
                   {statuses.map(status => (
                     <option key={status} value={status}>{status}</option>
                   ))}
@@ -717,12 +708,12 @@ const OverallAttendanceDashboard = () => {
 
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">From Date</label>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500" />
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-2  border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500" />
               </div>
 
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">To Date</label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500" />
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2  border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500" />
               </div>
             </div>
 
@@ -819,14 +810,16 @@ const OverallAttendanceDashboard = () => {
 
               {/* Department */}
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Department</label>
+                <label className="text-sm text-gray-300 mb-2 block">Department</label>
                 <select
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#111827] border border-slate-700 rounded-lg text-gray-200 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-[#111827] border border-slate-600 rounded-lg text-white"
                 >
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                  <option className="bg-[#111827] text-gray-300" value="All">All</option>
+
+                  {departments.map((d, idx) => (
+                    <option className="bg-[#111827] text-gray-300" key={idx} value={d.value}>{d.label}</option>
                   ))}
                 </select>
               </div>
@@ -874,6 +867,7 @@ const OverallAttendanceDashboard = () => {
               filteredData.map((emp) => (
                 <div
                   key={emp._id}
+                  onClick={() => setSelectedCard(emp)}
                   className="bg-[#0F172A]/60 border border-[#1E293B] rounded-2xl p-6 shadow-xl backdrop-blur hover:border-blue-500/50 hover:shadow-blue-500/20 transition-all duration-300"
                 >
 
@@ -922,6 +916,137 @@ const OverallAttendanceDashboard = () => {
           <AttendanceDashboard />
         )
       }
+      {selectedCard && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+          <div
+            ref={popupRef}
+            id="captureCard"
+            style={{
+              background: "#0F172A",
+              border: "1px solid #1E293B",
+              borderRadius: "16px",
+              padding: "24px",
+              width: "350px"
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: "12px",
+                marginBottom: "16px",
+                borderBottom: "1px solid #2D3748"
+              }}
+            >
+              <div>
+                <h3 className="text-lg font-semibold text-white">
+                  {selectedCard.user?.FullName}
+                </h3>
+                <p className="text-sm" style={{ color: "#60A5FA" }}>
+                  {selectedCard.user?.department}
+                </p>
+              </div>
+
+              <span
+                className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(
+                  selectedCard.alert
+                )}`}
+              >
+                {selectedCard.alert}
+              </span>
+            </div>
+
+            {/* Card Info */}
+            <div className="space-y-3 text-gray-200">
+              <CardRow
+                label="Date"
+                value={new Date(selectedCard.date).toLocaleDateString()}
+              />
+              <CardRow
+                label="Punch In"
+                value={
+                  selectedCard.clockIn
+                    ? new Date(selectedCard.clockIn).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })
+                    : "--"
+                }
+              />
+              <CardRow
+                label="Punch Out"
+                value={
+                  selectedCard.clockOut
+                    ? new Date(selectedCard.clockOut).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })
+                    : "--"
+                }
+              />
+
+              {/* Hours Box */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  background: "rgba(29,78,216,0.2)",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(29,78,216,0.3)"
+                }}
+              >
+                <span className="text-sm">Hours</span>
+                <span className="text-lg font-bold text-blue-400">
+                  {selectedCard.workingHours}h
+                </span>
+              </div>
+
+              <CardRow label="Shift" value={selectedCard.shift || "N/A"} />
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                marginTop: "20px",
+                paddingTop: "16px",
+                borderTop: "1px solid #2D3748",
+                display: "flex",
+                justifyContent: "space-between"
+              }}
+            >
+              <button
+                onClick={() => setSelectedCard(null)}
+                style={{
+                  padding: "8px 16px",
+                  background: "rgba(220,38,38,0.2)",
+                  color: "#F87171",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(220,38,38,0.3)"
+                }}
+              >
+                Close
+              </button>
+
+              <button
+                onClick={downloadCard}
+                style={{
+                  padding: "8px 16px",
+                  background: "#2563EB",
+                  color: "white",
+                  borderRadius: "8px"
+                }}
+              >
+                Download Image
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* Pagination Info */}
       <div className="mt-6 flex justify-between items-center text-sm text-gray-400">
         <div>

@@ -91,7 +91,6 @@ export default function AttendanceDashboard() {
   // KPI calculation for selected month
   const stats = useMemo(() => {
     let present = 0, absent = 0, leave = 0, undertime = 0;
-    const mKey = getMonthKey(selectedMonth);
 
     filteredData.forEach((emp) => {
       // if emp.pattern exists it's monthly pattern - count in that for selected month length
@@ -131,12 +130,7 @@ export default function AttendanceDashboard() {
   }, [filteredData, selectedMonth, daysInSelectedMonth]);
 
   // Prepare pie chart data
-  const pieData = [
-    { name: "Present", value: stats.present },
-    { name: "Absent", value: stats.absent },
-    { name: "Leave", value: stats.leave },
-    { name: "Undertime", value: stats.undertime },
-  ];
+ 
   const PIE_COLORS = ["#10b981", "#ef4444", "#f59e0b", "#ec4899"];
 
   // Create a trivial trend for demo: counts per day for selected month
@@ -222,7 +216,7 @@ export default function AttendanceDashboard() {
 
 
           <div className="col-span-2 bg-slate-900/40 p-4 rounded-lg border border-slate-700/50">
-            <h3 className="text-sm font-semibold mb-2 text-white">Attendance Trend (Demo)</h3>
+            <h3 className="text-sm font-semibold mb-2 text-white">Attendance Trend</h3>
             <div style={{ width: "100%", height: 260 }}>
               <ResponsiveContainer>
                 <LineChart data={trendData}>

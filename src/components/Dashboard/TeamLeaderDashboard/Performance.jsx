@@ -18,14 +18,12 @@ const Performance = () => {
     const [tableData, setTableData] = useState([]);
 
     useEffect(() => {
-        console.log("🚀 Dispatching fetchSheetDataByDepartment...");
+     
         dispatch(fetchSheetDataByDepartment())
             .unwrap()
             .then((result) => {
-                console.log("✅ API Response:", result);
                 if (result.sections && result.sections[0] && result.sections[0].data) {
                     const rawData = result.sections[0].data;
-                    console.log("📊 Raw data from API:", rawData);
 
                     // Process and filter valid data
                     const processedData = processAndFilterData(rawData);
