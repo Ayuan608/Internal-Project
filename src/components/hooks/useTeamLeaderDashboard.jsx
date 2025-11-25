@@ -1,4 +1,4 @@
-// useTeamLeaderDashboard.js - COMPLETELY FIXED FOR REAL DATA
+// useTeamLeaderDashboard.js - FIXED WITH DIFFERENT QUOTA TARGETS
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 
@@ -31,6 +31,12 @@ export const useTeamLeaderDashboard = () => {
         totalTransactions: 0,
         positiveRate: 0,
         firstResponseTime: 0,
+        quotaDetails: {
+            metCount: 0,
+            nonMetCount: 0,
+            totalAgents: 0,
+            quotaTarget: 0 // Add quota target to dashboard data
+        }
     });
 
     const [teamLeaderStats, setTeamLeaderStats] = useState([]);
@@ -42,6 +48,64 @@ export const useTeamLeaderDashboard = () => {
         (state) => state.combinedQuota
     );
     const { department } = useSelector((state) => state.auth?.data || {});
+
+
+    const calculateQuotaStats = (agentPerformance, departmentType = '') => {
+
+
+        let quotaTarget = 1500;
+
+        if (departmentType === 'CSR') {
+            quotaTarget = 500;
+        } else if (departmentType === 'Deposit') {
+            quotaTarget = 500;
+        } else if (departmentType === 'Withdrawal') {
+            quotaTarget = 1500;
+        }
+
+
+        if (!agentPerformance || !Array.isArray(agentPerformance) || agentPerformance.length === 0) {
+
+            return {
+                met: 0,
+                nonMet: 100,
+                metCount: 0,
+                nonMetCount: 0,
+                totalAgents: 0,
+                quotaTarget: quotaTarget
+            };
+        }
+
+        const totalAgents = agentPerformance.length;
+
+        // Detailed analysis of each agent's transaction count
+        const agentAnalysis = agentPerformance.map(agent => {
+            const transactions = agent.transactions || agent.withdrawals || agent.completed || 0;
+            const meetsQuota = transactions >= quotaTarget;
+            return {
+                name: agent.name,
+                transactions: transactions,
+                meetsQuota: meetsQuota
+            };
+        });
+
+        // Count agents meeting quota
+        const metCount = agentAnalysis.filter(agent => agent.meetsQuota).length;
+        const nonMetCount = totalAgents - metCount;
+
+        // Calculate percentages with proper rounding
+        const metPercentage = totalAgents > 0 ? Math.round((metCount / totalAgents) * 100) : 0;
+        const nonMetPercentage = 100 - metPercentage;
+
+        return {
+            met: metPercentage,
+            nonMet: nonMetPercentage,
+            metCount: metCount,
+            nonMetCount: nonMetCount,
+            totalAgents: totalAgents,
+            quotaTarget: quotaTarget
+        };
+    };
 
     const parseTimeToSeconds = (timeStr) => {
         if (!timeStr || typeof timeStr !== "string") return 0;
@@ -66,7 +130,7 @@ export const useTeamLeaderDashboard = () => {
         );
     };
 
-    // FIXED SHIFT CHART DATA
+    // FIXED SHIFT CHART DATA (keep your existing function)
     const generateShiftChartData = (totalValue, filter) => {
         const morning = Math.round(totalValue * 0.4);
         const night = Math.round(totalValue * 0.35);
@@ -77,7 +141,7 @@ export const useTeamLeaderDashboard = () => {
                 labels: ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"],
                 datasets: [
                     {
-                        label: "Morning Shift (6AM-2PM)",
+                        label: "Morning Shift (4AM-4PM)",
                         data: [
                             rand(morning * 0.1),
                             rand(morning * 0.3),
@@ -93,7 +157,7 @@ export const useTeamLeaderDashboard = () => {
                         fill: true,
                     },
                     {
-                        label: "Night Shift (10PM-6AM)",
+                        label: "Night Shift (4PM-4AM)",
                         data: [
                             rand(night * 0.6),
                             rand(night * 0.8),
@@ -144,16 +208,13 @@ export const useTeamLeaderDashboard = () => {
         return data;
     };
 
-    // FIXED QUOTA MANAGEMENT DATA
+    // FIXED QUOTA MANAGEMENT DATA (keep your existing function)
     const generateQuotaManagementData = (totalValue, filter, activeAgents, agentPerformance = []) => {
-
-
         const agents = activeAgents.length > 0 ? activeAgents : ["No agents"];
         const multiplier = { daily: 1, weekly: 7, monthly: 30 }[filter] || 1;
         const baseQuota = agents.length > 0 ? Math.round(totalValue / agents.length / multiplier) : 0;
 
         const quotaData = agents.map((agent, index) => {
-            // Use actual performance data if available
             const agentPerf = agentPerformance.find(ap => ap.name === agent);
             let variance = 0.7 + Math.random() * 0.5;
 
@@ -176,11 +237,10 @@ export const useTeamLeaderDashboard = () => {
         setQuotaManagementData(quotaData);
         return quotaData;
     };
-    let frtStr = "0:00:00";
-    // COMPLETELY FIXED CSR DATA PROCESSING FOR REAL DATA
+
+    // FIXED CSR DATA PROCESSING WITH 500 QUOTA
     const processCSRDataForTeamLeader = useCallback(
         (apiData, filter = "daily") => {
-
             if (!apiData || !Array.isArray(apiData)) {
                 console.log("❌ No API data available");
                 return { stats: [], agents: [] };
@@ -189,17 +249,13 @@ export const useTeamLeaderDashboard = () => {
             let totalCompleted = 0;
             let totalEffective = 0;
             let totalPosRate = 0;
-
-            // ⭐ FRT Final Variables
             let totalFirstRespSec = 0;
             let frtCount = 0;
-
             let agentCount = 0;
 
             const activeAgents = [];
             const agentPerformance = [];
 
-            // 🔥 PROCESS ALL CSR ROWS
             apiData.forEach((row) => {
                 if (!Array.isArray(row) || row.length < 9) return;
 
@@ -227,11 +283,8 @@ export const useTeamLeaderDashboard = () => {
                     const frtStr = row[7]?.toString().trim() || "00:00:00";
                     const posStr = row[8]?.toString().trim() || "0%";
 
-                    // ⭐ VALID FRT Filtering (this is why average becomes correct)
                     if (frtStr.includes(":")) {
                         const frtSec = parseTimeToSeconds(frtStr);
-
-                        // include only valid online times (not seniors, not invalid)
                         if (frtSec > 3000 && frtSec < 45000) {
                             totalFirstRespSec += frtSec;
                             frtCount++;
@@ -247,6 +300,7 @@ export const useTeamLeaderDashboard = () => {
                         activeAgents.push(name);
                         agentPerformance.push({
                             name,
+                            transactions: completed, // Use completed as transaction count for quota
                             completed,
                             effective,
                             firstResponseTime: parseTimeToSeconds(frtStr),
@@ -257,9 +311,7 @@ export const useTeamLeaderDashboard = () => {
                 }
             });
 
-            // ⭐ CALCULATE FINAL AVERAGE RESPONSE TIME (HH:MM:SS)
             const avgFirstRespSec = frtCount > 0 ? totalFirstRespSec / frtCount : 0;
-
             const avgHours = Math.floor(avgFirstRespSec / 3600);
             const avgMinutes = Math.floor((avgFirstRespSec % 3600) / 60);
             const avgSeconds = Math.floor(avgFirstRespSec % 60);
@@ -269,15 +321,15 @@ export const useTeamLeaderDashboard = () => {
                 `${String(avgMinutes).padStart(2, "0")}:` +
                 `${String(avgSeconds).padStart(2, "0")}`;
 
-            console.log("💛 FINAL AVERAGE ONLINE TIME =", averageOnlineTime);
-
-            // ⭐ Other CSR Metrics
             const avgPosRate = safeDivide(totalPosRate, agentCount);
             const efficiency = totalCompleted > 0 ? (totalEffective / totalCompleted) * 100 : 0;
-
             const filteredConvo = calculateFilteredValues(totalCompleted, filter);
 
-            // ⭐ FINAL CARDS/STATS — difference shows AVERAGE ONLINE TIME
+            // CALCULATE QUOTA BASED ON TRANSACTIONS >= 500 (CSR QUOTA)
+            const quotaStats = calculateQuotaStats(agentPerformance, 'CSR');
+
+
+
             const stats = [
                 {
                     title: "Total Conversations",
@@ -299,16 +351,15 @@ export const useTeamLeaderDashboard = () => {
                 },
                 {
                     title: "Average Online Time",
-                    value: averageOnlineTime,           // ⭐ Shows HH:MM:SS
+                    value: averageOnlineTime,
                     interval: "Avg per agent",
                     trend: avgFirstRespSec < 40000 ? "up" : "down",
                     data: generateFilteredSparkline(avgFirstRespSec / 60, 0.2, filter),
-                    difference: averageOnlineTime,      // ⭐ This is what you asked!
+                    difference: averageOnlineTime,
                     role: "teamLeader",
                 },
             ];
 
-            // ⭐ Update Dashboard Data
             setDashboardData((prev) => ({
                 ...prev,
                 totalCases: filteredConvo,
@@ -316,6 +367,16 @@ export const useTeamLeaderDashboard = () => {
                 avgResponseTime: averageOnlineTime,
                 positiveRate: avgPosRate,
                 firstResponseTime: averageOnlineTime,
+                csrQuota: {
+                    met: quotaStats.met,
+                    nonMet: quotaStats.nonMet
+                },
+                quotaDetails: {
+                    metCount: quotaStats.metCount,
+                    nonMetCount: quotaStats.nonMetCount,
+                    totalAgents: quotaStats.totalAgents,
+                    quotaTarget: quotaStats.quotaTarget // Store the target
+                }
             }));
 
             setQuotaManagementData(
@@ -329,11 +390,9 @@ export const useTeamLeaderDashboard = () => {
         []
     );
 
-
-    // FIXED DEPOSIT DATA PROCESSING
+    // FIXED DEPOSIT DATA PROCESSING WITH 500 QUOTA
     const processDepositDataForTeamLeader = useCallback(
         (apiData, filter = "daily") => {
-
             if (!apiData || !Array.isArray(apiData)) return { stats: [], agents: [] };
 
             let totalTx = 0;
@@ -341,18 +400,23 @@ export const useTeamLeaderDashboard = () => {
             const activeAgents = [];
             const agentPerformance = [];
 
+            console.log("🔍 PROCESSING DEPOSIT DATA WITH ROW[9]...");
+
             apiData.forEach((row) => {
-                if (!Array.isArray(row) || row.length < 9) return;
+                if (!Array.isArray(row) || row.length < 10) return; // Changed to 10 for row[9]
 
                 const type = row[0]?.toString().trim();
-                const name = row[2]?.toString().trim(); // Column 2 has agent names
+                const name = row[2]?.toString().trim();
 
                 if (type === "Deposit" && name && name !== "Member" &&
                     !name.includes("Morning") && !name.includes("Night") &&
                     !name.includes("Total") && name !== "9 HOURS" && name !== "12 Hours") {
 
-                    const tx = parseInt(row[8], 10) || 0; // Column 8 has total transactions
-                    const success = parseInt(row[3], 10) || 0; // Column 3 has success count
+                    // Using row[9] for transaction count as requested
+                    const tx = parseInt(row[9], 10) || 0;
+                    const success = parseInt(row[3], 10) || 0;
+
+                    console.log(`📊 Deposit Row - Name: ${name}, Row[9] Transactions: ${tx}, Row[3] Success: ${success}`);
 
                     if (tx > 0) {
                         totalTx += tx;
@@ -361,22 +425,34 @@ export const useTeamLeaderDashboard = () => {
                             activeAgents.push(name);
                             agentPerformance.push({
                                 name,
-                                transactions: tx,
+                                transactions: tx, // Using row[9] data for quota calculation
                                 successful: success,
                                 successRate: tx > 0 ? (success / tx) * 100 : 0
                             });
+
+                            console.log(`👤 Deposit Agent Added: ${name}, Transactions: ${tx}`);
                         }
                     }
                 }
             });
 
+            console.log(`📊 Deposit Final - Total Agents: ${activeAgents.length}, Total Transactions: ${totalTx}`);
+
             const agentCount = activeAgents.length;
             const successRate = totalTx > 0 ? safeDivide(totalSuccess, totalTx) * 100 : 0;
-
             const baseDaily = totalTx;
             const filteredTx = calculateFilteredValues(baseDaily, filter);
             const filteredRate = Math.min(100, successRate);
 
+            // CALCULATE QUOTA BASED ON TRANSACTIONS >= 500 (DEPOSIT QUOTA)
+            const quotaStats = calculateQuotaStats(agentPerformance, 'Deposit');
+
+            console.log("📊 DEPOSIT QUOTA DEBUG (Target: 500, Using Row[9]):");
+            console.log("Total Agents:", quotaStats.totalAgents);
+            console.log("Agents Met Quota (>=500):", quotaStats.metCount);
+            console.log("Quota Met %:", quotaStats.met);
+            console.log("Quota Not Met %:", quotaStats.nonMet);
+            console.log("Agent Performance Data:", agentPerformance);
 
             const stats = [
                 {
@@ -413,7 +489,16 @@ export const useTeamLeaderDashboard = () => {
                 totalTransactions: filteredTx,
                 activeAgents: agentCount,
                 successRate: filteredRate,
-                depositQuota: { met: Math.round(filteredRate), nonMet: Math.max(0, 100 - Math.round(filteredRate)) },
+                depositQuota: {
+                    met: quotaStats.met,
+                    nonMet: quotaStats.nonMet
+                },
+                quotaDetails: {
+                    metCount: quotaStats.metCount,
+                    nonMetCount: quotaStats.nonMetCount,
+                    totalAgents: quotaStats.totalAgents,
+                    quotaTarget: quotaStats.quotaTarget
+                }
             }));
 
             const quotaData = generateQuotaManagementData(filteredTx, filter, activeAgents, agentPerformance);
@@ -426,20 +511,17 @@ export const useTeamLeaderDashboard = () => {
         },
         []
     );
-
-    // FIXED WITHDRAWAL DATA PROCESSING
+    // FIXED WITHDRAWAL DATA PROCESSING WITH 1500 QUOTA
     const processWithdrawalDataForTeamLeader = useCallback(
         (apiData, filter = "daily") => {
-
-
             if (!apiData || !Array.isArray(apiData)) return { stats: [], agents: [] };
 
             let totalWd = 0;
             let totalComp = 0;
             const activeAgents = [];
             const agentPerformance = [];
-            let totalValueOfIndex3 = 0
-            let totalValueOfIndex4 = 0
+            let totalValueOfIndex3 = 0;
+            let totalValueOfIndex4 = 0;
 
             apiData.forEach((row) => {
                 if (!Array.isArray(row) || row.length < 6) return;
@@ -447,23 +529,19 @@ export const useTeamLeaderDashboard = () => {
                 const type = row[0]?.toString().trim();
                 const name = row[2]?.toString().trim();
 
-
                 if ((type === "Withdrawal" || type === "Withdraw") &&
                     name && name !== "Member" &&
                     !name.toLowerCase().includes("shift") &&
                     !name.includes("TOTAL") && !name.includes("AutoDraw")) {
 
                     const total = parseInt(row[7]?.toString().replace(/,/g, ''), 10) || parseInt(row[3], 10) || 0;
-
                     const comp = parseInt(row[2], 10) || 0;
-
 
                     const value = parseInt(row[3]?.toString().replace(/,/g, ''), 10) || 0;
                     totalValueOfIndex3 += value;
 
                     const value4 = parseInt(row[4]?.toString().replace(/,/g, ''), 10) || 0;
                     totalValueOfIndex4 += value4;
-
 
                     if (total > 0) {
                         totalWd += total;
@@ -472,6 +550,7 @@ export const useTeamLeaderDashboard = () => {
                             activeAgents.push(name);
                             agentPerformance.push({
                                 name,
+                                transactions: total, // Use total for quota calculation
                                 withdrawals: total,
                                 completed: comp,
                                 completionRate: total > 0 ? (comp / total) * 100 : 0
@@ -481,18 +560,20 @@ export const useTeamLeaderDashboard = () => {
                 }
             });
 
-
-
-
-
             const agentCount = activeAgents.length;
             const successRate = totalWd > 0 ? safeDivide(totalComp, totalWd) * 100 : 0;
-
             const baseDaily = totalWd;
             const filteredWd = calculateFilteredValues(baseDaily, filter);
             const filteredRate = Math.min(100, successRate);
 
+            // CALCULATE QUOTA BASED ON TRANSACTIONS >= 1500 (WITHDRAWAL QUOTA)
+            const quotaStats = calculateQuotaStats(agentPerformance, 'Withdrawal');
 
+            console.log("📊 WITHDRAWAL QUOTA DEBUG (Target: 1500):");
+            console.log("Total Agents:", quotaStats.totalAgents);
+            console.log("Agents Met Quota (>=1500):", quotaStats.metCount);
+            console.log("Quota Met %:", quotaStats.met);
+            console.log("Quota Not Met %:", quotaStats.nonMet);
 
             const stats = [
                 {
@@ -529,7 +610,16 @@ export const useTeamLeaderDashboard = () => {
                 totalTransactions: filteredWd,
                 activeAgents: agentCount,
                 successRate: filteredRate,
-                withdrawalQuota: { met: Math.round(filteredRate), nonMet: Math.max(0, 100 - Math.round(filteredRate)) },
+                withdrawalQuota: {
+                    met: quotaStats.met,
+                    nonMet: quotaStats.nonMet
+                },
+                quotaDetails: {
+                    metCount: quotaStats.metCount,
+                    nonMetCount: quotaStats.nonMetCount,
+                    totalAgents: quotaStats.totalAgents,
+                    quotaTarget: quotaStats.quotaTarget // Store the target
+                }
             }));
 
             const quotaData = generateQuotaManagementData(filteredWd, filter, activeAgents, agentPerformance);
@@ -543,6 +633,7 @@ export const useTeamLeaderDashboard = () => {
         []
     );
 
+    // Rest of your existing code remains the same...
     const processRealData = useCallback(
         (apiData, userDept, filter = "daily") => {
             if (!apiData || !userDept) {
@@ -560,7 +651,6 @@ export const useTeamLeaderDashboard = () => {
                 result = processWithdrawalDataForTeamLeader(apiData, filter);
             } else {
                 console.log("⚠️ Unknown department:", userDept);
-                // Fallback for unknown departments
                 const base = calculateFilteredValues(100, filter);
                 result.stats = [
                     {
