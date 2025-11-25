@@ -21,6 +21,7 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-700/50">
+
             <th className="text-center  py-3 px-4 text-gray-300 font-semibold text-xs">
               DATE
             </th>
@@ -49,6 +50,7 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
                 className="border-b text-center
                border-gray-800/30 hover:bg-gray-900/40 transition"
               >
+
                 <td className="py-3 px-4 text-gray-400 text-xs">
                   {member.date}
                 </td>
@@ -143,7 +145,6 @@ const Department = () => {
 
   const calculateDepartmentStats = () => {
     if (!data || data.length === 0) {
-      console.log("❌ No data available");
       return;
     }
 
@@ -187,10 +188,12 @@ const Department = () => {
     const today = new Date().toLocaleDateString("en-GB");
 
     data.forEach((row) => {
+
       if (!Array.isArray(row) || row.length < 3) return;
 
       const department = row[0]?.toString()?.trim();
       const memberName = row[2]?.toString()?.trim();
+
 
       if (
         !department ||
@@ -246,7 +249,7 @@ const Department = () => {
             variance: Math.round(depositAmount - quota),
           });
         }
-      } else if (department === "Withdrawal") {
+      } else if (department === "Withdraw") {
         const withdrawAmount =
           parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
         const quota = stats.Withdrawal.quota;
@@ -288,20 +291,17 @@ const Department = () => {
       deptStats.agents = deptStats.totalAgents;
     });
 
-    console.log("🎯 All Department Stats:", stats);
     setDepartmentStats(stats);
     setNonQuotaMembers(nonQuotaList);
   };
 
   useEffect(() => {
     if (data && data.length > 0) {
-      console.log("🔄 Calculating stats with new data");
       calculateDepartmentStats();
     }
   }, [data]);
 
   const currentData = departmentStats[activeTab];
-  console.log(currentData, "hlo")
   const quotaMet = currentData?.quotaMet;
 
   const chartData = {
@@ -397,8 +397,8 @@ const Department = () => {
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border transition ${isDropdownOpen
-                ? "border-blue-500 bg-blue-500/10"
-                : "border-gray-700 bg-slate-900/40 hover:border-gray-600"
+              ? "border-blue-500 bg-blue-500/10"
+              : "border-gray-700 bg-slate-900/40 hover:border-gray-600"
               }`}
           >
             <span className="font-medium text-sm">{activeTab} Department</span>
@@ -418,8 +418,8 @@ const Department = () => {
                     setIsDropdownOpen(false);
                   }}
                   className={`w-full px-4 py-2.5 text-left text-sm transition ${activeTab === dept
-                      ? "bg-blue-500/20 text-blue-300"
-                      : "text-gray-300 hover:bg-slate-700"
+                    ? "bg-blue-500/20 text-blue-300"
+                    : "text-gray-300 hover:bg-slate-700"
                     }`}
                 >
                   {dept}
@@ -650,74 +650,75 @@ const Department = () => {
               <div className="space-y-6">
                 {/* Metric 1 */}
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-gray-300">
-                      Quota Achievement
-                    </span>
-                    <span className="text-xl font-bold text-blue-400">
-                      {quotaMet}%
-                    </span>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-gray-300">
+                        Quota Achievement
+                      </span>
+                      <span className="text-xl font-bold text-blue-400">
+                        {quotaMet}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700/40 rounded-full h-4 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-700 shadow-lg shadow-blue-500/50"
+                        style={{ width: `${quotaMet}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-700/40 rounded-full h-4 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-700 shadow-lg shadow-blue-500/50"
-                      style={{ width: `${quotaMet}%` }}
-                    ></div>
-                  </div>
-                </div>
 
-                {/* Metric 2 */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-gray-300">
-                      Agents Met Quota
-                    </span>
-                    <span className="text-xl font-bold text-green-400">
-                      {currentData?.quotaMetCount}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-700/40 rounded-full h-4 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full transition-all duration-700 shadow-lg shadow-green-500/50"
-                      style={{
-                        width: `${currentData?.agents > 0
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-gray-300">
+                        Agents Met Quota
+                      </span>
+                      <span className="text-xl font-bold text-green-400">
+                        {currentData?.quotaMetCount}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700/40 rounded-full h-4 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full transition-all duration-700 shadow-lg shadow-green-500/50"
+                        style={{
+                          width: `${currentData?.agents > 0
                             ? (currentData?.quotaMetCount /
                               currentData?.agents) *
                             100
                             : 0
-                          }%`,
-                      }}
-                    ></div>
+                            }%`,
+                        }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Metric 3 */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-gray-300">
-                      Below Target
-                    </span>
-                    <span className="text-xl font-bold text-orange-400">
-                      {currentData?.nonQuotaCount}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-700/40 rounded-full h-4 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-orange-500 to-red-500 h-4 rounded-full transition-all duration-700 shadow-lg shadow-orange-500/50"
-                      style={{
-                        width: `${currentData?.agents > 0
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-gray-300">
+                        Below Target
+                      </span>
+                      <span className="text-xl font-bold text-orange-400">
+                        {currentData?.nonQuotaCount}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700/40 rounded-full h-4 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-orange-500 to-red-500 h-4 rounded-full transition-all duration-700 shadow-lg shadow-orange-500/50"
+                        style={{
+                          width: `${currentData?.agents > 0
                             ? (currentData?.nonQuotaCount /
                               currentData?.agents) *
                             100
                             : 0
-                          }%`,
-                      }}
-                    ></div>
+                            }%`,
+                        }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Summary Stats */}
-                <div className="border-t border-gray-700/50 pt-6 mt-6">
+                <div className="border-t border-gray-700/50 pt-6 mt-6 ">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-blue-500/10 border border-blue-600/30 rounded-lg p-4 text-center">
                       <p className="text-gray-400 text-xs mb-1">Total Agents</p>
