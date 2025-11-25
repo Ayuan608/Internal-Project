@@ -151,7 +151,7 @@ const EmployeeDirectory = () => {
                 Add Suspension Form
               </button>
             </div>
-              <SuspensionForm suspensionForm={suspensionForm} setSuspensionForm={setSuspensionForm} />
+            <SuspensionForm suspensionForm={suspensionForm} setSuspensionForm={setSuspensionForm} />
 
 
             {/* Search and Filter Section */}
@@ -191,13 +191,13 @@ const EmployeeDirectory = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-700/50">
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Name</th>
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Date Hired</th>
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Salary</th>
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Phone Number</th>
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Email</th>
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Status</th>
-                      <th className="text-left px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Actions</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Name</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Date Hired</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Salary</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Phone Number</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Email</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Status</th>
+                      <th className="text-center px-6 py-4 text-slate-400 font-semibold text-sm uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/50">
@@ -218,42 +218,48 @@ const EmployeeDirectory = () => {
                       </tr>
                     ) : (
                       filteredEmployees.map((employee) => (
-                        <tr key={employee._id} className="hover:bg-slate-700/30 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                                {employee.FullName?.charAt(0).toUpperCase() || 'U'}
-                              </div>
+                        <tr key={employee._id} className="hover:bg-slate-700/30 items-center transition-colors">
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-3">
+
                               <span className="text-slate-200 font-medium capitalize">{employee.FullName}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-slate-300">{formatDate(employee.dateHired)}</td>
-                          <td className="px-6 py-4 text-slate-300">
+                          <td className="px-6 py-4 text-center text-slate-300">{formatDate(employee.dateHired)}</td>
+                          <td className="px-6 py-4 text-center text-slate-300">
                             {employee.salary ? (
-                              <span className="text-emerald-400 font-semibold">${employee.salary}</span>
+                              <span className="text-emerald-400 font-semibold">
+                                ₱{Number(employee.salary).toLocaleString("en-PH")}
+                              </span>
                             ) : (
                               <span className="text-slate-500">N/A</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-slate-300">
+
+                          <td className="px-6 py-4 text-center text-slate-300">
                             {employee.phone ? `+91 ${employee.phone}` : 'N/A'}
                           </td>
-                          <td className="px-6 py-4 text-slate-300">
+                          <td className="px-6 py-4 text-center text-slate-300">
                             {employee.email || <span className="text-slate-500">-</span>}
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${employee.status === 'active'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                              }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${employee.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
-                                }`}></span>
-                              {employee.status || 'active'}
+                          <td className="px-6 py-4 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${employee.status === "active"
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+                                }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${employee.status === "active" ? "bg-emerald-400" : "bg-red-400"
+                                  }`}
+                              ></span>
+                              {employee.status || "active"}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              {employee.status === 'Active' ? (
+
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              {employee.status === "Active" ? (
                                 <button
                                   onClick={() => handleStatusToggle(employee)}
                                   className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 text-sm"
@@ -268,12 +274,14 @@ const EmployeeDirectory = () => {
                                   <UserCheck className="w-4 h-4" />
                                 </button>
                               )}
+
                               <button
                                 onClick={() => handleRestDay(employee)}
                                 className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-medium transition-all border border-slate-600"
                               >
                                 <Calendar className="w-4 h-4" />
                               </button>
+
                               <button
                                 onClick={() => handleEdit(employee)}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-all"
@@ -282,6 +290,7 @@ const EmployeeDirectory = () => {
                               </button>
                             </div>
                           </td>
+
                         </tr>
                       ))
                     )}
