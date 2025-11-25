@@ -137,7 +137,10 @@ export default function TeamLeaderDashboardUI({
                     <TeamLeaderStats
                         title={`${department} Performance Trends - ${getFilterText()}`}
                         data={teamLeaderStats}
-                        SecondaryTitle={`Real-time ${department} metrics • ${getFilterText()} • ${new Date().toLocaleTimeString()}`}
+                        SecondaryTitle={`Real-time ${department} metrics • ${getFilterText()} • ${new Date().toLocaleTimeString("en-US", {
+                            timeZone: "Asia/Manila",
+                        })}`}
+
                     />
                 </div>
             </div>

@@ -480,7 +480,7 @@ export const useTeamLeaderDashboard = () => {
 
             const stats = [
                 {
-                    title: "Total Withdrawals",
+                    title: "Total Transaction Process",
                     value: formatCompactNumber(filteredWd),
                     interval: filter === "daily" ? "Today" : filter === "weekly" ? "This week" : "This month",
                     trend: successRate > 80 ? "up" : successRate > 65 ? "neutral" : "down",
@@ -489,7 +489,7 @@ export const useTeamLeaderDashboard = () => {
                     role: "teamLeader",
                 },
                 {
-                    title: "Success Rate",
+                    title: "Total Transaction Passed",
                     value: `${filteredRate.toFixed(1)}%`,
                     interval: "Completion rate",
                     trend: filteredRate > 80 ? "up" : filteredRate > 70 ? "neutral" : "down",
@@ -498,7 +498,7 @@ export const useTeamLeaderDashboard = () => {
                     role: "teamLeader",
                 },
                 {
-                    title: "Active Agents",
+                    title: "Total Amount Passed",
                     value: agentCount,
                     interval: "Processing withdrawals",
                     trend: agentCount > 0 ? "up" : "neutral",

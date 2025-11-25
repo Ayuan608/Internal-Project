@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
+import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 import { useMemo } from "react";
 import {
   Line,
@@ -48,7 +49,8 @@ function getDaysInMonth(month: number, year: number) {
   }
   return days;
 }
-
+ // DATA FOR SPARKLINE (CSR/DEPOSIT/WITHDRAW)
+ 
 // ----------------------------------------------------------------------
 // MINI TOOLTIP
 // ----------------------------------------------------------------------
@@ -197,6 +199,10 @@ export default function StatCard({
             : d.withdraw
       );
 
+
+  const minValue = Math.min(...chartData);
+  const maxValue = Math.max(...chartData);
+
   const trendColors = [
     "oklch(74.6% 0.16 232.661)",
     "oklch(65.6% 0.241 354.308)",
@@ -242,45 +248,84 @@ export default function StatCard({
 
 
         {role === "teamLeader" ? (
-          <Box
+         <Box sx={{ width: "100%", height: 60, mt: 2 }}>
+          <SparkLineChart
+            colors={[chartColor]}
+            data={chartData}
+            area
+            showTooltip
+            showHighlight
+            curve="linear"
+            onHighlightChange={(e: any) => {
+              if (e && e.index !== undefined) {
+                setHoverIndex(e.index);
+              }
+            }}
+            xAxis={{
+              scaleType: "point",
+            }}
+            yAxis={{
+              min: minValue * 0.95,
+              max: maxValue * 1.05,
+            }}
+            tooltip={{
+              renderTooltip: (params: any) => {
+                if (!params || params.index == null) return null;
+
+                const idx = params.index;
+                const dayData = getDailyTotals[idx];
+
+                if (!dayData) return null;
+
+                return (
+                  <Box
+                    sx={{
+                      
+                      bgcolor: "#1e293b",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "8px",
+                      color: "white",
+                      p: 1.2,
+                      minWidth: 130,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: "12px", opacity: 0.8 }}>
+                      Day {dayData.day}
+                    </Typography>
+
+                    <Typography sx={{ fontSize: "13px" }}>
+                      CSR: <b>{dayData.csr.toLocaleString()}</b>
+                    </Typography>
+
+                    <Typography sx={{ fontSize: "13px" }}>
+                      Deposit: <b>{dayData.deposit.toLocaleString()}</b>
+                    </Typography>
+
+                    <Typography sx={{ fontSize: "13px" }}>
+                      Withdraw: <b>{dayData.withdraw.toLocaleString()}</b>
+                    </Typography>
+                  </Box>
+                );
+              },
+            }}
             sx={{
-              width: "100%",
-              height: 60,
-              mt: 2,
+              "& .MuiLineElement-root": {
+                stroke: chartColor,
+                strokeWidth: 2,
+              },
+              "& .MuiAreaElement-root": {
+                fill: `url(#gradient-${index})`,
+              },
             }}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={chartData.map((v, i) => ({ day: i + 1, value: v }))}
-              >
-                <defs>
-                  <linearGradient id={`gradient-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chartColor} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-
-                <XAxis dataKey="day" hide />
-                <YAxis hide />
-
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke={chartColor}
-                  strokeWidth={2}
-                  fill={`url(#gradient-${index})`}
-                />
-
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={chartColor}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </Box>
+            <defs>
+              <linearGradient id={`gradient-${index}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={chartColor} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+          </SparkLineChart>
+        </Box>
         ) : (
           <Box
             sx={{
