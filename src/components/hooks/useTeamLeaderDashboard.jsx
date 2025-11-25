@@ -438,20 +438,32 @@ export const useTeamLeaderDashboard = () => {
             let totalComp = 0;
             const activeAgents = [];
             const agentPerformance = [];
+            let totalValueOfIndex3 = 0
+            let totalValueOfIndex4 = 0
 
             apiData.forEach((row) => {
                 if (!Array.isArray(row) || row.length < 6) return;
 
                 const type = row[0]?.toString().trim();
-                const name = row[2]?.toString().trim(); // Column 2 has agent names
+                const name = row[2]?.toString().trim();
+
 
                 if ((type === "Withdrawal" || type === "Withdraw") &&
                     name && name !== "Member" &&
                     !name.toLowerCase().includes("shift") &&
                     !name.includes("TOTAL") && !name.includes("AutoDraw")) {
 
-                    const total = parseInt(row[4]?.toString().replace(/,/g, ''), 10) || parseInt(row[3], 10) || 0;
+                    const total = parseInt(row[7]?.toString().replace(/,/g, ''), 10) || parseInt(row[3], 10) || 0;
+
                     const comp = parseInt(row[2], 10) || 0;
+
+
+                    const value = parseInt(row[3]?.toString().replace(/,/g, ''), 10) || 0;
+                    totalValueOfIndex3 += value;
+
+                    const value4 = parseInt(row[4]?.toString().replace(/,/g, ''), 10) || 0;
+                    totalValueOfIndex4 += value4;
+
 
                     if (total > 0) {
                         totalWd += total;
@@ -469,6 +481,10 @@ export const useTeamLeaderDashboard = () => {
                 }
             });
 
+
+
+
+
             const agentCount = activeAgents.length;
             const successRate = totalWd > 0 ? safeDivide(totalComp, totalWd) * 100 : 0;
 
@@ -480,30 +496,30 @@ export const useTeamLeaderDashboard = () => {
 
             const stats = [
                 {
-                    title: "Total Withdrawals",
+                    title: "Total Transaction Process",
                     value: formatCompactNumber(filteredWd),
                     interval: filter === "daily" ? "Today" : filter === "weekly" ? "This week" : "This month",
                     trend: successRate > 80 ? "up" : successRate > 65 ? "neutral" : "down",
                     data: generateFilteredSparkline(filteredWd / (filter === "daily" ? 24 : filter === "weekly" ? 7 : 30), 0.3, filter),
-                    difference: formatCompactNumber(filteredWd),
+                    difference: filteredWd,
                     role: "teamLeader",
                 },
                 {
-                    title: "Success Rate",
+                    title: "Total Transaction Passed",
                     value: `${filteredRate.toFixed(1)}%`,
                     interval: "Completion rate",
                     trend: filteredRate > 80 ? "up" : filteredRate > 70 ? "neutral" : "down",
-                    data: generateFilteredSparkline(filteredRate, 0.1, filter),
-                    difference: `${filteredRate.toFixed(1)}%`,
+                    data: generateFilteredSparkline(totalValueOfIndex3, 0.4, filter),
+                    difference: totalValueOfIndex3,
                     role: "teamLeader",
                 },
                 {
-                    title: "Active Agents",
+                    title: "Total Amount Passed",
                     value: agentCount,
                     interval: "Processing withdrawals",
                     trend: agentCount > 0 ? "up" : "neutral",
-                    data: generateFilteredSparkline(agentCount, 0.1, filter),
-                    difference: `${agentCount}`,
+                    data: generateFilteredSparkline(totalValueOfIndex4, 2, filter),
+                    difference: totalValueOfIndex4,
                     role: "teamLeader",
                 },
             ];
