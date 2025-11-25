@@ -30,15 +30,19 @@ const Layout = () => {
         const interval = setInterval(() => {
             const now = new Date();
 
-            const date = now.toLocaleDateString("en-GB");
-            const time = now.toLocaleTimeString();
+            const date = now.toLocaleDateString("en-GB", {
+                timeZone: "Asia/Manila",
+            });
+
+            const time = now.toLocaleTimeString("en-US", {
+                timeZone: "Asia/Manila",
+            });
 
             setDateTime(`${date} - ${time}`);
         }, 1000);
 
         return () => clearInterval(interval);
     }, []);
-
 
 
     const handleBindGoogleClick = () => {
@@ -116,7 +120,7 @@ const Layout = () => {
                                             tabIndex={0}
                                             className="flex items-center gap-2 px-4 py-2 hover:bg-[#2e303759] cursor-pointer"
                                         >
-                                            <User /> {t("Profile")}
+                                            <User /> {("Profile")}
                                         </div>
                                         <div
                                             onClick={() => setShowTextSizeSlider(!showTextSizeSlider)}
