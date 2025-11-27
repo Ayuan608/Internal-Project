@@ -15,14 +15,21 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
+const NonQuotaMembersTable = ({nonQuotaMembers }) => {
+  const excludedWords = ["night", "morning", "hours", "backstage"];
+
+  // Filter members by excluding specific words in name
+  const filteredMembers = nonQuotaMembers?.filter((member) => {
+    const name = member.name?.toLowerCase() || "";
+    return !excludedWords.some((word) => name.includes(word));
+  });
+
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-700/50">
-
-            <th className="text-center  py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
               DATE
             </th>
             <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
@@ -42,33 +49,40 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
             </th>
           </tr>
         </thead>
+
         <tbody>
-          {nonQuotaMembers && nonQuotaMembers.length > 0 ? (
-            nonQuotaMembers.map((member, idx) => (
+          {filteredMembers && filteredMembers.length > 0 ? (
+            filteredMembers.map((member, idx) => (
               <tr
                 key={idx}
-                className="border-b text-center
-               border-gray-800/30 hover:bg-gray-900/40 transition"
+                className="border-b text-center border-gray-800/30 hover:bg-gray-900/40 transition"
               >
-
                 <td className="py-3 px-4 text-gray-400 text-xs">
                   {member.date}
                 </td>
+
                 <td className="py-3 px-4 text-white font-medium text-sm">
                   {member.name}
                 </td>
+
                 <td className="py-3 px-4 text-white text-sm">
                   {member.output?.toLocaleString() || 0}
                 </td>
+
                 <td className="py-3 px-4 text-white text-sm">
                   {member.quota?.toLocaleString() || 0}
                 </td>
+
                 <td
-                  className={`py-3 px-4 font-semibold text-sm ${member.completion >= 70 ? "text-green-400" : "text-red-400"
-                    }`}
+                  className={`py-3 px-4 font-semibold text-sm ${
+                    member.completion >= 70
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
                 >
                   {member.completion}%
                 </td>
+
                 <td className="py-3 px-4 text-red-400 font-medium text-sm">
                   {member.variance}
                 </td>
@@ -76,7 +90,10 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="py-8 text-center text-gray-400">
+              <td
+                colSpan="6"
+                className="py-8 text-center text-gray-400"
+              >
                 No non-quota members found
               </td>
             </tr>
@@ -86,7 +103,6 @@ const NonQuotaMembersTable = ({ department, nonQuotaMembers }) => {
     </div>
   );
 };
-
 const Department = () => {
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
