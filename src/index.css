@@ -296,6 +296,9 @@ button {
 .ashish-madhu th {
     width: 150px;
 }
-.MuiGrid-root.MuiGrid-direction-xs-row.css-1n5khr6 {
-    width: 32.8% !important;
+
+
+.MuiGrid-root.MuiGrid-container.MuiGrid-direction-xs-row.MuiGrid-spacing-xs-2.css-10aovlv{
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
 }
