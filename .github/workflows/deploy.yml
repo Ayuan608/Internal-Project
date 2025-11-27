@@ -21,6 +21,9 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
             cd ${{ secrets.PROJECT_PATH }} &&
+            git fetch --all &&
+            git reset --hard origin/main &&
+            git clean -fd &&
             git pull origin main &&
             npm install &&
             npm run build &&
