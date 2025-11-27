@@ -26,7 +26,6 @@ function DraftTemplate({ showDraftPopup, setShowDraftPopup }) {
     setSavedDrafts(stored);
   }, []);
 
-  // Save drafts to localStorage whenever they change
   useEffect(() => {
     if (savedDrafts.length > 0) {
       localStorage.setItem('draftTemplates', JSON.stringify(savedDrafts));
