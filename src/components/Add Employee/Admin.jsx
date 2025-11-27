@@ -34,7 +34,6 @@ function Admin() {
   const [roleModal, setRoleModal] = useState(false);
   const [newRole, setNewRole] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [actionMenuUser, setActionMenuUser] = useState(null);
 
@@ -101,12 +100,11 @@ function Admin() {
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.username?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRole = roleFilter === "" || user.role === roleFilter;
       const matchesDepartment = departmentFilter === "" || user.department === departmentFilter;
 
-      return matchesSearch && matchesRole && matchesDepartment;
+      return matchesSearch  && matchesDepartment;
     });
-  }, [users, searchTerm, roleFilter, departmentFilter]);
+  }, [users, searchTerm, departmentFilter]);
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -138,20 +136,18 @@ function Admin() {
     };
   }, [filteredUsers]);
 
-  // Get unique values for filters
-  const filterOptions = useMemo(() => {
-    if (!users) return { roles: [], departments: [] };
-
-    const roles = [...new Set(users.map(user => user?.role).filter(Boolean))];
-    const departments = [...new Set(users.map(user => user?.department).filter(Boolean))];
-
-    return { roles, departments };
-  }, [users]);
+ 
 
   const handleUserInput = (e) => {
     const { name, value } = e.target;
-    setAddUser({ ...addUser, [name]: value });
+
+    if (name === "role" && value === "Checker") {
+      setAddUser({ ...addUser, role: value, department: "" });
+    } else {
+      setAddUser({ ...addUser, [name]: value });
+    }
   };
+
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -190,7 +186,7 @@ function Admin() {
       !username ||
       !password ||
       !email ||
-      !department ||
+      (!department && addUser.role !== "Checker") ||
       !phone ||
       !dateHired ||
       !role ||
@@ -402,17 +398,17 @@ function Admin() {
           <table className="w-full">
             <thead className="bg-slate-800/30 border-b border-slate-800">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Avatar</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Username</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Phone</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Department</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Shift</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Salary</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Avatar</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Username</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Phone</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Department</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Shift</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Salary</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -422,7 +418,7 @@ function Admin() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-slate-800/30 transition-colors"
+                  className="hover:bg-slate-800/30 text-center transition-colors"
                 >
                   <td className="px-6 py-4">
                     <img
@@ -451,18 +447,20 @@ function Admin() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                      {/* Peso Symbol */}
+                    <span
+                      className={`flex items-center gap-1 font-semibold ${user?.salary > 20000 ? "text-purple-400" : "text-red-400"
+                        }`}
+                    >
                       <span className="text-lg font-bold">₱</span>
 
                       {user?.salary
-                        ? new Intl.NumberFormat('en-PH', {
-                          style: 'currency',
-                          currency: 'PHP',
+                        ? new Intl.NumberFormat("en-PH", {
+                          style: "currency",
+                          currency: "PHP",
                         })
                           .format(user.salary)
-                          .replace("₱", "") 
-                        : 'N/A'}
+                          .replace("₱", "")
+                        : "N/A"}
                     </span>
                   </td>
 
@@ -734,25 +732,25 @@ function Admin() {
                         />
                       </div>
                     </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2 text-sm font-medium">
-                        Department *
-                      </label>
-                      <select
-                        name="department"
-                        value={addUser.department}
-                        onChange={handleUserInput}
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                      >
-                        <option className="bg-slate-800" value="">Select Department</option>
-                        <option className="bg-slate-800" value="CSR">CSR Department</option>
-                        <option className="bg-slate-800" value="Deposit">Deposit Department</option>
-                        <option className="bg-slate-800" value="Withdraw">Withdraw Department</option>
-                        <option className="bg-slate-800" value="Marketing">Marketing Department</option>
-                      </select>
-                    </div>
-
+                    {addUser.role !== "Checker" && (
+                      <div>
+                        <label className="block text-gray-300 mb-2 text-sm font-medium">
+                          Department *
+                        </label>
+                        <select
+                          name="department"
+                          value={addUser.department}
+                          onChange={handleUserInput}
+                          className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        >
+                          <option className="bg-slate-800" value="">Select Department</option>
+                          <option className="bg-slate-800" value="CSR">CSR Department</option>
+                          <option className="bg-slate-800" value="Deposit">Deposit Department</option>
+                          <option className="bg-slate-800" value="Withdraw">Withdraw Department</option>
+                          <option className="bg-slate-800" value="Marketing">Marketing Department</option>
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-gray-300 mb-2 text-sm font-medium">
                         Role *

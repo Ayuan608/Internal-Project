@@ -24,11 +24,9 @@ import {
 
 const Menus = ({ toggle, onTitleChange }) => {
   const contentRef = useRef(null);
-  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [showDraftPopup, setShowDraftPopup] = useState(false);
 
   const toggleContent = () => {
-    setIsAnnouncementOpen((prev) => !prev);
     const content = contentRef.current;
     content.classList.toggle("open");
   };
@@ -47,7 +45,7 @@ const Menus = ({ toggle, onTitleChange }) => {
   }, [dispatch]);
 
   const navItems = [
-    
+
     ...(role === "User"
       ? [{ to: "/user", label: "Attendence", icon: <FileText /> }]
       : []),
@@ -80,6 +78,27 @@ const Menus = ({ toggle, onTitleChange }) => {
         ]
         : []),
   ];
+  const getRoleStyles = (role) => {
+    switch (role) {
+      case "Super-Admin":
+        return "bg-[#FF4D4F]/20 text-[#FF4D4F] border border-[#FF4D4F]/40"; // Red theme
+
+      case "Admin":
+        return "bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/40"; // Blue theme
+
+      case "Checker":
+        return "bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40"; // Yellow theme
+
+      case "Team-Leader":
+        return "bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40"; // Purple theme
+
+      case "User":
+        return "bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40"; // Green theme
+
+      default:
+        return "bg-gray-500/20 text-gray-300 border border-gray-500/40";
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -245,7 +264,7 @@ const Menus = ({ toggle, onTitleChange }) => {
                     >
                       <ClipboardPlus size={18} /> {"draftTemplate"}
                     </button>
-                    
+
                     <DraftTemplate
                       showDraftPopup={showDraftPopup}
                       setShowDraftPopup={setShowDraftPopup}
@@ -272,9 +291,14 @@ const Menus = ({ toggle, onTitleChange }) => {
                   {userData.FullName}
                 </p>
                 <UserMenu openUser={openUser} userData={userData} />
-                <span className="text-xs capitalize text-white bg-[#198477] rounded-md px-2 py-[1px] w-fit">
-                  {`${role}`}
+                <span
+                  className={`text-xs capitalize rounded-md px-2 py-[1px] w-fit font-medium ${getRoleStyles(
+                    role
+                  )}`}
+                >
+                  {role}
                 </span>
+
               </div>
             </div>
 
