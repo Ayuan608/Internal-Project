@@ -1,10 +1,44 @@
 import { X } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
+import { useDispatch } from 'react-redux'
+import { requestDayOff } from '../../redux/attendenceSlice';
+import toast from 'react-hot-toast';
 
-const ShowOffDay = ({handleDayOffSubmit,setDayOffForm,setShowDayOffModal,dayOffForm}) => {
+const ShowOffDay = ({ setShowDayOffModal }) => {
+    const dispatch = useDispatch();
+    const [dayOffForm, setDayOffForm] = useState({
+        date: "",
+        reason: "",
+        attachmentType: "medical",
+    })
+    const handleDayOffSubmit = (e) => {
+        e.preventDefault();
+
+        if (!dayOffForm.date || !dayOffForm.reason) {
+            toast.error("Please fill all required fields");
+            return;
+        }
+
+        dispatch(
+            requestDayOff({
+                date: dayOffForm.date,
+                reason: dayOffForm.reason,
+            })
+        )
+            .unwrap()
+            .then(() => {
+                toast.success("Day off request submitted 🎉");
+                setShowDayOffModal(false);
+                setDayOffForm({ date: "", reason: "", attachmentType: "medical" });
+            })
+            .catch((err) => {
+                toast.error(err?.message || "Failed to submit request");
+            });
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-md border border-[#4a5568] rounded-xl p-6 w-full max-w-md">
+            <div className="bg-[rgba(59,130,246,0.05)] backdrop-blur-md border border-[#4a5568] rounded-xl p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Request Day Off</h3>
                     <button
@@ -14,7 +48,9 @@ const ShowOffDay = ({handleDayOffSubmit,setDayOffForm,setShowDayOffModal,dayOffF
                         <X size={24} />
                     </button>
                 </div>
+
                 <form onSubmit={handleDayOffSubmit} className="space-y-4">
+                    {/* DATE */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Date <span className="text-red-400">*</span>
@@ -22,37 +58,54 @@ const ShowOffDay = ({handleDayOffSubmit,setDayOffForm,setShowDayOffModal,dayOffF
                         <input
                             type="date"
                             value={dayOffForm.date}
-                            onChange={(e) => setDayOffForm({ ...dayOffForm, date: e.target.value })}
+                            onChange={(e) =>
+                                setDayOffForm({ ...dayOffForm, date: e.target.value })
+                            }
                             className="w-full px-4 py-2 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                             required
                             min={new Date().toISOString().split("T")[0]}
                         />
                     </div>
+
+                    {/* REASON */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Reason <span className="text-red-400">*</span>
                         </label>
                         <textarea
                             value={dayOffForm.reason}
-                            onChange={(e) => setDayOffForm({ ...dayOffForm, reason: e.target.value })}
+                            onChange={(e) =>
+                                setDayOffForm({ ...dayOffForm, reason: e.target.value })
+                            }
                             className="w-full px-4 py-2 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                             rows={4}
-                            placeholder="Please provide a reason for your day off request..."
+                            placeholder="Please provide a reason..."
                             required
                         />
                     </div>
+
+                    {/* ATTACHMENT TYPE */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Attachment Type</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Attachment Type
+                        </label>
                         <select
                             value={dayOffForm.attachmentType}
-                            onChange={(e) => setDayOffForm({ ...dayOffForm, attachmentType: e.target.value })}
-                            className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-none"
+                            onChange={(e) =>
+                                setDayOffForm({
+                                    ...dayOffForm,
+                                    attachmentType: e.target.value,
+                                })
+                            }
+                            className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white focus:outline-none"
                         >
                             <option value="medical">Medical Certificate</option>
                             <option value="personal">Personal Leave</option>
                             <option value="emergency">Emergency</option>
                         </select>
                     </div>
+
+                    {/* BUTTONS */}
                     <div className="flex gap-3 mt-6">
                         <button
                             type="button"
@@ -61,6 +114,7 @@ const ShowOffDay = ({handleDayOffSubmit,setDayOffForm,setShowDayOffModal,dayOffF
                         >
                             Cancel
                         </button>
+
                         <button
                             type="submit"
                             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors"

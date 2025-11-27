@@ -59,6 +59,7 @@ const AttendanceDashboardUI = ({
   error,
   currentStatus,
   stats,
+  handleDayOffSubmit,
   isSmokeBreakDisabled,
   isWcBreakDisabled,
   isLunchBreakDisabled,
@@ -68,7 +69,6 @@ const AttendanceDashboardUI = ({
   endBreak,
   setShowDayOffModal,
   setDayOffForm,
-  handleDayOffSubmit,
   formatTime,
   formatDate,
   formatTimeDisplay,
@@ -87,18 +87,14 @@ const AttendanceDashboardUI = ({
     <PageContainer
       title="Attendance Dashboard"
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ">
           <Tooltip title="Request Day Off">
-            <IconButton onClick={() => setShowDayOffModal(true)}>
-              <CalendarX className="text-white" />
-              <p className="text-white text-base ms-2">Request DayOff</p>
+            <IconButton className="bg-white" onClick={() => setShowDayOffModal(true)}>
+              <Calendar className="text-white" />
+              <p className="text-white text-base ms-2 ">Request DayOff</p>
             </IconButton>
           </Tooltip>
-          <Tooltip title="Refresh Data">
-            <IconButton onClick={handleRefresh} disabled={isLoading || !userId}>
-              <RefreshIcon className="text-white" />
-            </IconButton>
-          </Tooltip>
+
           <ButtonGroup />
         </div>
       }
@@ -295,105 +291,7 @@ const AttendanceDashboardUI = ({
           </div>
         </div>
 
-        {/* Sidebar - Personal Metrics */}
-        {/* <div className="2xl:w-[35%] w-full">
-          <div className="p-6 bg-black border border-[#4a5568] rounded-xl shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-6">Personal Metrics</h3>
-            {stats.daysWorked === 0 && stats.pieData.length === 0 ? (
-              <div className="text-center text-gray-400 mb-6">No metrics data available</div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <div className="text-2xl font-bold text-blue-300">{stats.currentStreak}</div>
-                    <div className="text-xs text-gray-400 mt-1">Day Streak</div>
-                  </div>
-                  <div className="text-center p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <div className="text-2xl font-bold text-green-300">{stats.efficiency}</div>
-                    <div className="text-xs text-gray-400 mt-1">Efficiency</div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  <div className="text-center p-3 bg-gray-800/50 rounded-lg border border-gray-800/50">
-                    <div className="text-xl font-bold text-white">{breakCounts.smoke}</div>
-                    <div className="text-xs text-gray-400 mt-1">Smoke Breaks</div>
-                  </div>
-                  <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <div className="text-xl font-bold text-blue-300">{breakCounts.wc}</div>
-                    <div className="text-xs text-gray-400 mt-1">WC Breaks</div>
-                  </div>
-                  <div className="text-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <div className="text-xl font-bold text-purple-300">{breakCounts.lunch}</div>
-                    <div className="text-xs text-gray-400 mt-1">Lunch Breaks</div>
-                  </div>
-                </div>
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
-                    <span className="text-gray-300 font-medium">Total Hours</span>
-                    <span className="text-green-400 font-bold">{stats.totalHoursWorked}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
-                    <span className="text-gray-300 font-medium">WC Breaks</span>
-                    <span className="text-blue-400 font-bold">{stats.totalWcBreak}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
-                    <span className="text-gray-300 font-medium">Smoke Breaks</span>
-                    <span className="text-orange-400 font-bold">{stats.totalSmokeBreak}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
-                    <span className="text-gray-300 font-medium">Lunch Breaks</span>
-                    <span className="text-purple-400 font-bold">{stats.totalLunchBreak}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
-                    <span className="text-gray-300 font-medium">Last Punch In</span>
-                    <span className="text-purple-400 font-bold text-sm">{stats.lastPunchIn}</span>
-                  </div>
-                </div>
-                {stats.pieData.length > 0 ? (
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-white mb-4">Time Breakdown</h4>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={stats.pieData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label
-                        >
-                          {stats.pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-400 mb-6">No time data available for chart</div>
-                )}
-                <div
-                  className={`p-3 rounded-lg flex items-center gap-3 ${stats.hasPendingPunchOut
-                    ? "bg-yellow-500/20 border border-yellow-500/50"
-                    : "bg-green-500/20 border border-green-500/20"
-                    }`}
-                >
-                  <TriangleAlert
-                    size={20}
-                    className={stats.hasPendingPunchOut ? "text-yellow-400" : "text-green-400"}
-                  />
-                  <span
-                    className={stats.hasPendingPunchOut ? "text-yellow-300 font-semibold" : "text-green-300 font-semibold"}
-                  >
-                    {stats.hasPendingPunchOut ? "Please punch out today!" : "All caught up!"}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        </div> */}
+      
       </div>
 
       {/* Day Off Request Modal */}

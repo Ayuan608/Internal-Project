@@ -1,142 +1,84 @@
-import { Mail, Star, Send, FileText, Trash2, ChevronDown, Plus } from "lucide-react";
+import { Mail, Send, FileText, Trash2, ChevronDown, Plus, Archive } from "lucide-react";
 import { useState } from "react";
 
 export default function MailingSidebar({ mailCounts, selectedPage, setSelectedPage }) {
   const [showTeams, setShowTeams] = useState(true);
 
-
   const itemStyle =
     "grid grid-cols-[1fr_auto] items-center px-3 py-2 rounded-md cursor-pointer transition";
 
+  const menuItems = [
+    { key: "Inbox", icon: Mail, count: mailCounts.inbox },
+    { key: "Sent", icon: Send, count: mailCounts.sent },
+    { key: "Drafts", icon: FileText, count: mailCounts.drafts },
+    { key: "Archived", icon: Archive, count: mailCounts.archived },
+    { key: "Trash", icon: Trash2, count: mailCounts.trash },
+  ];
+
   return (
-    <div
-      className="
-        border-r border-slate-700  p-4
-        grid grid-rows-[auto_1fr] gap-4 min-h-screen h-full max-w-[250px]
-      "
-    >
-
+    <div className="border-r border-[#9E9FA74D] p-4 grid grid-rows-[auto_1fr] gap-4 min-h-screen h-full max-w-[250px]">
       <div className="grid gap-2 auto-rows-max">
+        
+        {/* Dynamic Menu Items */}
+        {menuItems.map(({ key, icon: Icon, count }) => (
+          <div
+            key={key}
+            onClick={() => setSelectedPage(key)}
+            className={`
+              ${itemStyle}
+              ${
+                selectedPage === key
+                  ? "bg-blue-500/20 border-l-2 border-blue-500 text-white font-semibold"
+                  : "text-gray-300 hover:bg-gray-800"
+              }
+            `}
+          >
+            <div className="flex items-center gap-3">
+              <Icon
+                size={18}
+                className={selectedPage === key ? "text-blue-400" : "text-gray-400"}
+              />
+              <span className="text-sm">{key}</span>
+            </div>
 
-        {/* INBOX */}
-        <div
-          onClick={() => setSelectedPage("Inbox")}
-          className={`
-            ${itemStyle}
-            ${selectedPage === "Inbox"
-              ? "bg-white/5 border-l-2 border-white text-white shadow-lg font-semibold text-base"
-              : "text-gray-300 hover:bg-white/10 text-sm"}
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            <Mail size={18} className="text-gray-300" />
-            <span className="text-sm">Inbox</span>
+            <span
+              className={`text-[10px] px-2 py-[2px] rounded-full ${
+                selectedPage === key
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-700 text-gray-400"
+              }`}
+            >
+              {count}
+            </span>
           </div>
-          <span className="bg-[#3b82f6] text-[10px] px-2 py-[2px] rounded-full">
-            {mailCounts.inbox}
-          </span>
-        </div>
+        ))}
 
-        <div
-          onClick={() => setSelectedPage("Starred")}
-          className={`
-            ${itemStyle}
-            ${selectedPage === "Starred"
-              ? "bg-[#1f293d] text-white shadow-md"
-              : "text-gray-300 hover:bg-white/10"
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            <Star size={18} className="text-gray-400" />
-            <span className="text-sm">Starred</span>
-          </div>
-          <span className="text-gray-400 text-[10px]">{mailCounts.starred}</span>
-        </div>
+        <hr className="border-gray-700 my-2" />
 
-        <div
-          onClick={() => setSelectedPage("Sent")}
-          className={`
-            ${itemStyle}
-            ${selectedPage === "Sent"
-              ? "bg-[#1f293d] text-white shadow-md"
-              : "text-gray-300 hover:bg-white/10"
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            <Send size={18} className="text-gray-400" />
-            <span className="text-sm">Sent</span>
-          </div>
-          <span className="text-gray-400 text-[10px]">{mailCounts.sent}</span>
-        </div>
-
-        <div
-          onClick={() => setSelectedPage("Drafts")}
-          className={`
-            ${itemStyle}
-            ${selectedPage === "Drafts"
-              ? "bg-[#1f293d] text-white shadow-md"
-              : "text-gray-300 hover:bg-white/10"
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            <FileText size={18} className="text-gray-400" />
-            <span className="text-sm">Drafts</span>
-          </div>
-          <span className="text-gray-400 text-[10px]">{mailCounts.draft}</span>
-        </div>
-
-        <div
-          onClick={() => setSelectedPage("Trash")}
-          className={`
-            ${itemStyle}
-            ${selectedPage === "Trash"
-              ? "bg-[#1f293d] text-white shadow-md"
-              : "text-gray-300 hover:bg-white/10"
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            <Trash2 size={18} className="text-gray-400" />
-            <span className="text-sm">Trash</span>
-          </div>
-          <span className="text-gray-400 text-[10px]">{mailCounts.trash}</span>
-        </div>
-
-        <hr className="border-white/10 my-2" />
-
+        {/* Team Mailboxes */}
         <div className="grid gap-2">
           <div
-            className="flex items-center justify-between cursor-pointer"
+            className="flex items-center justify-between cursor-pointer p-2 hover:bg-gray-800 rounded-md"
             onClick={() => setShowTeams(!showTeams)}
           >
-            <h3 className="text-sm font-medium">Team Mailboxes</h3>
+            <h3 className="text-sm font-medium text-gray-300">Team Mailboxes</h3>
             <ChevronDown
               size={16}
-              className={`text-gray-400 transition-transform ${showTeams ? "rotate-0" : "-rotate-180"
-                }`}
+              className={`text-gray-400 transition-transform ${
+                showTeams ? "rotate-0" : "-rotate-180"
+              }`}
             />
           </div>
 
           {showTeams && (
             <div className="grid gap-2">
-
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full cursor-pointer bg-white/8 hover:bg-white/10 text-gray-300">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer bg-gray-800 hover:bg-gray-750 text-gray-300">
                 <Plus size={16} />
                 <span className="text-sm">New team Mailbox</span>
               </div>
-
-
             </div>
           )}
         </div>
-
-
-        {/* LABELS */}
-
       </div>
     </div>
   );

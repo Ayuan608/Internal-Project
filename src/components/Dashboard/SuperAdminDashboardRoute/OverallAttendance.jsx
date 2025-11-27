@@ -572,9 +572,9 @@ const OverallAttendanceDashboard = () => {
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
                   <Legend />
-                  <Bar dataKey="present" fill={COLORS.present} />
-                  <Bar dataKey="absent" fill={COLORS.absent} />
-                  <Bar dataKey="late" fill={COLORS.late} />
+                  <Bar dataKey="Present" fill={COLORS.present} />
+                  <Bar dataKey="Absent" fill={COLORS.absent} />
+                  <Bar dataKey="Late" fill={COLORS.late} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -1,77 +1,112 @@
-import { MailCheck, X, Paperclip, Clock, Send, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { MailCheck, X, Paperclip, Clock, Send, Loader2, Trash2 } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import { sendCaseMail } from '../../redux/statSlice';
 
-function NewInternalMessage() {
+function NewInternalMessage({ setModalOpen }) {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.stat);
-
-  const currentUserRole = useSelector((state) => state.auth?.role);
+  const fileInputRef = useRef(null);
 
   const [openModal, setOpenModal] = useState(false);
-  const [recipientType, setRecipientType] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [specifyInput, setSpecifyInput] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
     nature: "",
     content: "",
-    priority: "normal",
+    priority: "Normal",
+    recipientType: "",
+    recipientId: "",
+    labels: [],
   });
 
   const [errors, setErrors] = useState({});
 
-  // ROLE-BASED RECIPIENT OPTIONS
-  const getRecipientOptions = () => {
-    switch (currentUserRole) {
-      case "Team-Leader":
-        return [
-          { value: "Super-Admin", label: "Super Admin" },
-          { value: "Admin", label: "Admin" },
-        ];
+  // CONSTANTS
+  const RECIPIENT_OPTIONS = [
+    { value: "Team-Leader", label: "Team Leader" },
+    { value: "CSR-Department", label: "CSR Department" },
+    { value: "Deposit-Department", label: "Deposit Department" },
+    { value: "Withdrawal-Department", label: "Withdrawal Department" },
+    { value: "Checker", label: "Checker" },
+    { value: "Admin", label: "Admin" },
+    { value: "Specify", label: "Specify (Individual)" },
+  ];
 
-      case "Admin":
-        return [
-          { value: "Super-Admin", label: "Super Admin" },
-        ];
+ 
 
-      case "Super-Admin":
-        return [
-          { value: "All-Team-Leaders", label: "All Team Leaders" },
-          { value: "Team-Leaders-Dept", label: "Team Leaders (My Department)" },
-          { value: "Admin", label: "Admin" },
-          { value: "All-Users", label: "All Users" },
-        ];
+  // HANDLERS
+  const handleOpenModal = () => {
+    setOpenModal(true);
+    setModalOpen?.(true);
+  };
 
-      default:
-        return [];
+  const handleCloseModal = () => {
+    if (!loading) {
+      setOpenModal(false);
+      resetForm();
+      setModalOpen?.(false);
     }
   };
 
-  const recipientOptions = getRecipientOptions();
-
-  // INPUT CHANGE HANDLER
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: "" }));
   };
 
-  // VALIDATE FORM
+  const handleRecipientTypeChange = (e) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      recipientType: value,
+      recipientId: "",
+    }));
+    setSpecifyInput("");
+    setErrors(prev => ({ ...prev, recipientType: "", recipientId: "" }));
+  };
+
+
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (attachments.length + files.length > 5) {
+      toast.error("Maximum 5 attachments allowed");
+      return;
+    }
+    setAttachments(prev => [...prev, ...files]);
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.title.trim()) newErrors.title = "Title is required";
-    if (!formData.nature.trim()) newErrors.nature = "Nature is required";
-    if (!formData.content.trim()) newErrors.content = "Content cannot be empty";
-    if (!recipientType) newErrors.recipientType = "Please select a recipient type";
+    if (!formData.recipientType.trim()) {
+      newErrors.recipientType = "Recipient type is required";
+    }
+
+    if (formData.recipientType === "Specify" && !specifyInput.trim()) {
+      newErrors.recipientId = "Please specify recipient email or ID";
+    }
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required";
+    }
+
+    if (!formData.content.trim()) {
+      newErrors.content = "Content cannot be empty";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // SUBMIT
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fill all required fields");
@@ -81,83 +116,93 @@ function NewInternalMessage() {
     try {
       const mailData = {
         title: formData.title,
-        nature: formData.nature,
+        nature: formData.nature || "General Notice",
         content: formData.content,
-        recipientType,   // 🔥 IMPORTANT → sending group mode
+        priority: formData.priority,
+        labels: formData.labels,
+        ...(formData.recipientType === "Specify"
+          ? { recipientId: specifyInput }
+          : { recipientType: formData.recipientType }),
       };
 
       await dispatch(sendCaseMail(mailData)).unwrap();
-
       toast.success("Case notice sent successfully");
-      resetForm();
-      setOpenModal(false);
+      handleCloseModal();
 
     } catch (error) {
-      console.error("Error sending case:", error);
+      toast.error(error?.message || "Failed to send case notice");
     }
   };
 
-  // RESET FORM
   const resetForm = () => {
     setFormData({
       title: "",
       nature: "",
       content: "",
-      priority: "normal",
+      priority: "Normal",
+      recipientType: "",
+      recipientId: "",
+      labels: [],
     });
-    setRecipientType("");
+    setSpecifyInput("");
+    setAttachments([]);
     setErrors({});
   };
 
+ 
+
   return (
     <div>
+      {/* TRIGGER BUTTON */}
       <button
-        onClick={() => setOpenModal(true)}
+        onClick={handleOpenModal}
         className="flex items-center justify-center gap-2 px-4 py-2 rounded-full shadow-lg bg-white/5 hover:bg-[#3b82f6] text-white"
       >
         <span>New Case</span>
         <MailCheck className="w-5 h-5" />
       </button>
 
+
+      {/* MODAL */}
       {openModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50"
-             onClick={() => { if (!loading) setOpenModal(false); }}>
-          
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-[900px] max-h-[85vh] overflow-y-auto bg-[rgba(59,130,246,0.03)] text-white rounded-2xl shadow-xl border border-white/10"
-          >
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 p-4">
+          <div className="bg-[rgba(59,130,246,0.03)] rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+
             {/* HEADER */}
-            <div className="px-8 py-5 border-b border-white/10 flex items-center justify-between">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-[rgba(59,130,246,0.03)]">
               <div>
-                <h2 className="text-xl font-semibold">New Case Notice</h2>
-                <p className="text-xs text-gray-400 mt-1">
-                  Logged in as: <span className="text-blue-400">{currentUserRole}</span>
+                <h2 className="text-xl font-semibold text-white">New Case Notice</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  Send a new case notice to team members
                 </p>
               </div>
               <button
-                onClick={() => setOpenModal(false)}
-                className="p-1.5 rounded-full hover:bg-white/10"
+                onClick={handleCloseModal}
+                disabled={loading}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
 
-            {/* BODY */}
-            <div className="px-8 py-6">
+            {/* FORM CONTENT */}
+            <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 space-y-6">
 
               {/* RECIPIENT TYPE */}
-              <div className="mb-5">
-                <label className="text-sm font-medium text-gray-300">Recipient Type *</label>
-                <select 
-                  value={recipientType}
-                  onChange={(e) => setRecipientType(e.target.value)}
-                  className={`w-full mt-2 rounded-lg px-4 py-2.5 bg-[rgba(59,130,246,0.03)] border 
-                  ${errors.recipientType ? "border-red-500" : "border-white/10"}`}
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Recipient Type <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="recipientType"
+                  value={formData.recipientType}
+                  onChange={handleRecipientTypeChange}
+                  className={`w-full px-3 py-2 bg-gray-900/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white ${errors.recipientType ? 'border-red-500' : 'border-gray-600'
+                    }`}
                 >
-                  <option className='bg-slate-800' value="">Select recipient type</option>
-                  {recipientOptions.map((opt) => (
-                    <option  className='bg-slate-800' key={opt.value} value={opt.value}>
+                  <option value="" className="bg-gray-900/50">Select recipient type</option>
+                  {RECIPIENT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value} className="bg-gray-900/50">
                       {opt.label}
                     </option>
                   ))}
@@ -167,17 +212,42 @@ function NewInternalMessage() {
                 )}
               </div>
 
+              {/* SPECIFY RECIPIENT */}
+              {formData.recipientType === "Specify" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    Recipient Email or ID <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={specifyInput}
+                    onChange={(e) => {
+                      setSpecifyInput(e.target.value);
+                      setErrors(prev => ({ ...prev, recipientId: "" }));
+                    }}
+                    placeholder="user@example.com or user123"
+                    className={`w-full px-3 py-2 bg-gray-900/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white ${errors.recipientId ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                  />
+                  {errors.recipientId && (
+                    <p className="text-red-400 text-xs mt-1">{errors.recipientId}</p>
+                  )}
+                </div>
+              )}
+
               {/* TITLE */}
-              <div className="mb-5">
-                <label className="text-sm font-medium text-gray-300">Title *</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Title <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  placeholder="e.g., Policy Violation"
-                  className={`w-full mt-2 rounded-lg px-4 py-2.5 bg-[rgba(59,130,246,0.03)] border 
-                  ${errors.title ? "border-red-500" : "border-white/10"}`}
+                  placeholder="Enter case title..."
+                  className={`w-full px-3 py-2 bg-gray-900/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white ${errors.title ? 'border-red-500' : 'border-gray-600'
+                    }`}
                 />
                 {errors.title && (
                   <p className="text-red-400 text-xs mt-1">{errors.title}</p>
@@ -185,105 +255,114 @@ function NewInternalMessage() {
               </div>
 
               {/* NATURE */}
-              <div className="mb-5">
-                <label className="text-sm font-medium text-gray-300">Nature *</label>
-                <select
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Nature <span className="text-gray-500 text-xs">(Optional)</span>
+                </label>
+                <input
+                  type="text"
                   name="nature"
                   value={formData.nature}
                   onChange={handleChange}
-                  className={`w-full mt-2 rounded-lg px-4 py-2.5 bg-[rgba(59,130,246,0.03)] border 
-                  ${errors.nature ? "border-red-500" : "border-white/10"}`}
-                >
-                  <option className='bg-slate-800' value="">Select nature</option>
-                  <option className='bg-slate-800' value="Warning">Warning</option>
-                  <option className='bg-slate-800' value="Violation">Violation</option>
-                  <option className='bg-slate-800' value="Inquiry">Inquiry</option>
-                  <option className='bg-slate-800' value="Notice">Notice</option>
-                  <option className='bg-slate-800' value="Disciplinary Action">Disciplinary Action</option>
-                  <option className='bg-slate-800' value="Compliance Issue">Compliance Issue</option>
-                  <option className='bg-slate-800' value="Performance Review">Performance Review</option>
-                  <option className='bg-slate-800' value="Other">Other</option>
-                </select>
-                {errors.nature && (
-                  <p className="text-red-400 text-xs mt-1">{errors.nature}</p>
-                )}
+                  placeholder="e.g., Warning, Leave, Attendance..."
+                  className="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                />
               </div>
 
               {/* CONTENT */}
-              <div className="mb-5">
-                <label className="text-sm font-medium text-gray-300">Content *</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Content <span className="text-red-400">*</span>
+                </label>
                 <textarea
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
-                  placeholder="Provide case details..."
-                  className={`w-full h-40 mt-2 rounded-lg p-4 bg-[rgba(59,130,246,0.03)] backdrop-blur-md border 
-                  ${errors.content ? "border-red-500" : "border-white/10"}`}
-                ></textarea>
+                  placeholder="Provide detailed case information..."
+                  rows={5}
+                  className={`w-full px-3 py-2 bg-gray-900/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white resize-none ${errors.content ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                />
                 {errors.content && (
                   <p className="text-red-400 text-xs mt-1">{errors.content}</p>
                 )}
               </div>
 
-              {/* PRIORITY */}
-              <div className="flex items-center gap-3 mb-6">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      priority: prev.priority === "normal" ? "urgent" : "normal",
-                    }))
-                  }
-                  className={`px-4 py-2 rounded-lg text-sm flex gap-2 border 
-                  ${formData.priority === "urgent"
-                    ? "bg-orange-600/20 border-orange-500/50 text-orange-300"
-                    : "border-white/10 text-gray-300"
-                  }`}
-                >
-                  <Clock className="w-4 h-4" />
-                  {formData.priority === "urgent" ? "Urgent Priority" : "Normal Priority"}
-                </button>
+             
+           
 
+              {/* ATTACHMENTS */}
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Attachments <span className="text-gray-500 text-xs">(Optional)</span>
+                </label>
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-lg text-sm flex gap-2 border border-white/10 text-gray-300"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full p-4 border-2 border-dashed border-gray-600 rounded-lg hover:border-blue-500 transition-colors text-gray-400 hover:text-blue-400"
                 >
-                  <Paperclip className="w-4 h-4" />
-                  Add Attachment
+                  <div className="flex items-center justify-center gap-2">
+                    <Paperclip className="w-4 h-4" />
+                    <span>Click to upload files (Max 5)</span>
+                  </div>
                 </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                {attachments.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {attachments.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700"
+                      >
+                        <span className="text-sm text-gray-300 truncate flex-1">
+                          {file.name}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveAttachment(index)}
+                          className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* SUBMIT */}
-              <div className="flex justify-end items-center gap-3 pt-4 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setOpenModal(false)}
-                  className="px-6 py-2.5 rounded-lg text-sm text-gray-300"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 rounded-lg text-sm font-medium"
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Sending...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Send className="w-4 h-4" />
-                      Send Case Notice
-                    </span>
-                  )}
-                </button>
-              </div>
-
+            {/* FOOTER */}
+            <div className="flex justify-end gap-3 p-6  bg-gray-900/50/50">
+              <button
+                onClick={handleCloseModal}
+                disabled={loading}
+                className="px-6 py-2 text-gray-300 hover:text-white border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex items-center gap-2 px-6 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Send Case
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

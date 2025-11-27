@@ -36,6 +36,7 @@ import { Bell } from "lucide-react";
 import NonQuotaDepartment from "./components/Dashboard/SuperAdminDashboardRoute/ui/NonQuotaDepartment";
 import DataStoragePage from "./components/Dashboard/SuperAdminDashboardRoute/DataStorage";
 import InternalMailingPage from "./pages/Internal Mailing/InternalMailingPages";
+import LeaveRequest from "./pages/LeaveRequest";
 
 function App() {
   useEffect(() => {
@@ -152,6 +153,7 @@ function App() {
           <Route path="attendancerecords" element={<AttendanceRecords />} />
           <Route path="Performance" element={<Performance />} />
           <Route path="setting" element={<Setting />} />
+          <Route path="leave-request" element={<LeaveRequest />} />
           <Route path="report" element={<CheckReport />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
           <Route path="shift-management" element={<ShiftManagement />} />

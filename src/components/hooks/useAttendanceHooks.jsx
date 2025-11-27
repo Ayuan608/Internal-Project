@@ -126,7 +126,7 @@ const fetchBreakRecords = async (userId, date) => {
 export const useAttendanceDashboard = () => {
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.auth.data?._id, (a, b) => a === b);
-
+  console.log(userId)
   // FIXED: Add user change detection
   const [previousUserId, setPreviousUserId] = useState(null);
 

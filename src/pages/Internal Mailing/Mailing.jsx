@@ -1,52 +1,65 @@
-
-
-// File: src/components/mailing/Mailing.jsx
 import { useState, useEffect } from "react";
-import { Star, Mail, Search, Trash2, Reply, Archive } from "lucide-react";
+import { Mail, Search, Trash2, Reply, Archive } from "lucide-react";
 import NewInternalMessage from "./NewMail";
 
-function Mailing({ setMailCounts, selectedPage, allMails, setAllMails, onSelectMail, setSelectedPage }) {
- const iconLabels = ["Reply", "Star", "Archive", "Delete"];
-  const [starredMails, setStarredMails] = useState({});
-  const [active, setActive] = useState("Unread");
-
+function Mailing({
+  setMailCounts,
+  selectedPage,
+  allMails,
+  setAllMails,
+  onSelectMail,
+  onDelete,
+  onArchive,
+  onPermanentDelete,
+  loading
+}) {
+  const iconLabels = ["Reply", "Archive", "Delete"];
+  const [active, setActive] = useState("All");
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-
 
   useEffect(() => {
-    document.body.classList.toggle("overflow-hidden", showModal);
-  }, [showModal]);
-
-
-  // NOTE: Removed defaultMail. Use backend-provided allMails only.
-  useEffect(() => {
-    // if allMails is undefined, ensure it's an array to avoid runtime errors
     if (!Array.isArray(allMails)) setAllMails([]);
   }, [allMails, setAllMails]);
 
   const emails = Array.isArray(allMails) ? allMails : [];
 
+  // Dynamic filtering based on selected page
   const filteredEmails = emails.filter((mail) => {
-    if (selectedPage === "Inbox") return mail.type === "Inbox" && !mail.starred;
-    if (selectedPage === "Starred") return mail.type === "Starred" || mail.starred;
-    if (selectedPage === "Sent") return mail.type === "Sent";
-    if (selectedPage === "Drafts") return mail.type === "Drafts";
-    if (selectedPage === "Trash") return mail.type === "Trash";
-    return true;
+    const searchMatch = mail.subject?.toLowerCase().includes(search.toLowerCase()) ||
+      mail.body?.toLowerCase().includes(search.toLowerCase()) ||
+      mail.from?.toLowerCase().includes(search.toLowerCase()) ||
+      mail.nature?.toLowerCase().includes(search.toLowerCase());
+
+    if (!searchMatch && search) return false;
+
+    switch (selectedPage) {
+      case "Inbox":
+        return mail.type === "Inbox" && !mail.isDeleted;
+      case "Sent":
+        return mail.type === "Sent" && !mail.isDeleted;
+      case "Drafts":
+        return mail.type === "Drafts" && !mail.isDeleted;
+      case "Trash":
+        return mail.isDeleted;
+      case "Archived":
+        return mail.archived && !mail.isDeleted;
+      default:
+        return true;
+    }
   });
 
-  const filters = ["Unread", "With attachments"];
+  const filters = ["All", "Unread", "Important"];
 
+  // Dynamic mail counts
   useEffect(() => {
     const list = Array.isArray(allMails) ? allMails : [];
 
     const counts = {
-      inbox: list.filter((m) => m.type === "Inbox").length,
-      starred: list.filter((m) => !!m.starred).length,
-      sent: list.filter((m) => m.type === "Sent").length,
-      drafts: list.filter((m) => m.type === "Drafts").length,
-      trash: list.filter((m) => m.type === "Trash").length,
+      inbox: list.filter(m => m.type === "Inbox" && !m.isDeleted).length,
+      sent: list.filter(m => m.type === "Sent" && !m.isDeleted).length,
+      drafts: list.filter(m => m.type === "Drafts" && !m.isDeleted).length,
+      trash: list.filter(m => m.isDeleted).length,
+      archived: list.filter(m => m.archived && !m.isDeleted).length,
     };
 
     if (typeof setMailCounts === "function") {
@@ -54,10 +67,51 @@ function Mailing({ setMailCounts, selectedPage, allMails, setAllMails, onSelectM
     }
   }, [allMails, setMailCounts]);
 
+  const handleDeleteClick = (e, mail) => {
+    e.stopPropagation();
+    onDelete(mail.id);
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case "High": return "text-red-400 border-red-400";
+      case "Medium": return "text-yellow-400 border-yellow-400";
+      case "Low": return "text-green-400 border-green-400";
+      default: return "text-blue-400 border-blue-400";
+    }
+  };
+
+  const getNatureBadge = (nature) => {
+    if (!nature) return null;
+
+    const natureColors = {
+      "Warning": "bg-yellow-500/20 text-yellow-300",
+      "Violation": "bg-red-500/20 text-red-300",
+      "Inquiry": "bg-blue-500/20 text-blue-300",
+      "Notice": "bg-green-500/20 text-green-300",
+      "Disciplinary Action": "bg-purple-500/20 text-purple-300",
+      "Compliance Issue": "bg-orange-500/20 text-orange-300",
+      "Performance Review": "bg-indigo-500/20 text-indigo-300",
+      "Other": "bg-gray-500/20 text-gray-300"
+    };
+
+    return (
+      <span className={`px-2 py-1 text-xs rounded-full ${natureColors[nature] || natureColors.Other}`}>
+        {nature}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full h-full p-6 font-sans flex items-center justify-center ">
+        <div className="text-white">Loading mails...</div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="w-full h-full p-6 font-sans grid grid-rows-[auto_auto_1fr] gap-6 border-r bg-[2B323F] text-white border-white/10"
-    >
+    <div className="w-full h-full p-6 font-sans grid grid-rows-[auto_auto_1fr] gap-6 border-r border-[#9E9FA74D] text-white">
       {/* Search + New */}
       <div className="flex items-center gap-4 w-full">
         <div className="relative flex-1">
@@ -66,147 +120,150 @@ function Mailing({ setMailCounts, selectedPage, allMails, setAllMails, onSelectM
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
-            className="w-full rounded-full h-10 pl-10 pr-4 text-sm focus:outline-none bg-white/5 text-white placeholder-gray-400"
+            placeholder="Search emails..."
+            className="w-full rounded-full h-10 pl-10 pr-4 text-sm focus:outline-none bg-white/5 text-white placeholder-gray-400  focus:border-blue-500"
           />
         </div>
         <NewInternalMessage />
-
       </div>
-
 
       {/* Filter Buttons */}
       <div className="flex items-center justify-between w-full">
-        <div className="inline-flex items-center gap-0 rounded-full bg-white/5 p-1">
+        <div className="inline-flex items-center gap-0 rounded-full bg-white/8 p-1">
           {filters.map((item) => (
             <button
               key={item}
               onClick={() => setActive(item)}
-              className={`px-4 py-[6px] text-xs rounded-full transition ${active === item ? "bg-white/8 text-white" : "text-gray-300 "}`}
+              className={`px-4 py-2 text-xs rounded-full transition ${active === item ? "bg-blue-500 text-white" : "text-gray-300 hover:text-white hover:bg-gray-700"
+                }`}
             >
               {item}
             </button>
           ))}
         </div>
 
-        <button className="px-4 py-2 rounded-full text-xs flex items-center gap-2 transition bg-[#131A2A] hover:bg-blue-500">
-          Labels <Star className="w-4 h-4" />
-        </button>
+        <div className="text-xs text-gray-400">
+          {filteredEmails.length} {filteredEmails.length === 1 ? 'mail' : 'mails'}
+        </div>
       </div>
 
       {/* Mail List */}
-      <div className=" h-full overflow-x-visible ">
-        <h1 className="text-lg font-semibold">Inbox</h1>
+      <div className="h-full overflow-x-visible overflow-y-auto">
+        <h1 className="text-lg font-semibold mb-4 capitalize text-white">{selectedPage}</h1>
         {filteredEmails.length === 0 ? (
-          <p className="text-gray-500 text-center mt-20 flex items-center
-           justify-center gap-2"> <span><Mail size={22} /></span>No mails found.</p>
+          <div className="text-gray-500 text-center mt-20 flex items-center justify-center gap-2">
+            <Mail size={22} />
+            <span>No {selectedPage.toLowerCase()} mails found.</span>
+          </div>
         ) : (
           filteredEmails.map((mail) => (
             <div
               key={mail.id}
-              className="p-4 rounded-xl shadow-lg transition cursor-pointer w-full min-h-[100px] mt-2 flex flex-col justify-between relative overflow-visible bg-white/5 hover:bg-white/8"
+              className="p-4 rounded-lg transition cursor-pointer w-full min-h-[200px] mt-2 flex flex-col justify-between relative overflow-visible  hover:bg-gray-750 border border-[#9E9FA74D]"
               onClick={() => onSelectMail?.(mail)}
             >
               <div className="flex items-start justify-between w-full">
-                {/* Checkbox + Subject */}
-                <div className="flex items-start gap-3 max-w-[70%]">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button className="px-2 py-1 rounded-full text-sm border transition flex items-center gap-2 border-white/10 hover:bg-[#25304a]">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 6v6l4 2" />
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                      {mail.priority}
-                    </button>
+                {/* Mail Content */}
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="flex flex-col gap-2 flex-1">
+                    {/* Subject and Nature */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-1 rounded-full text-sm border flex items-center gap-2 ${getPriorityColor(mail.priority)}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 6v6l4 2" />
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                        {mail.priority}
+                      </span>
 
-                    <h2 className="text-lg font-semibold break-words leading-tight">{mail.subject}</h2>
+                      {getNatureBadge(mail.nature)}
+
+                      <h2 className="text-lg font-semibold break-words leading-tight text-white">
+                        {mail.subject}
+                        {mail.replies && mail.replies.length > 0 && (
+                          <span className="ml-2 text-xs text-blue-400">
+                            ({mail.replies.length} {mail.replies.length === 1 ? 'reply' : 'replies'})
+                          </span>
+                        )}
+                      </h2>
+                    </div>
+
+                    {/* Sender and Date */}
+                    <p className="text-sm text-gray-400">
+                      <span className="text-gray-300 font-medium">{mail.from}</span>
+                      {mail.type === "Sent" && " → "}
+                      {mail.type === "Sent" && <span className="text-gray-300">{mail.to}</span>}
+                      {" · "}{mail.date}
+                    </p>
+
+                    {/* Preview */}
+                    <p className="text-sm mt-1 leading-relaxed line-clamp-2 text-gray-300">
+                      {mail.body}
+                    </p>
                   </div>
                 </div>
 
-                {/* Icons */}
-                <div className="flex items-center gap-3 pr-1 shrink-0">
-                  {[Reply, Star, Archive, Trash2].map((Icon, i) => (
+                {/* Action Icons */}
+                <div className="flex items-center gap-1 pl-2 shrink-0">
+                  {[Reply, Archive, Trash2].map((Icon, i) => (
                     <div
                       key={i}
-                      className={`relative group p-1 rounded-md`}
+                      className="relative group p-2 rounded-md hover:bg-gray-700 transition"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (Icon === Star) {
-                          setAllMails((prev) => {
-                            const list = Array.isArray(prev) ? prev : [];
 
-                            return list.map((m) => {
-                              if (m.id === mail.id) {
-                                const newStarValue = !m.starred;
-                                return {
-                                  ...m,
-                                  starred: newStarValue,
-                                  originalType: m.originalType || m.type,
-                                  type: newStarValue ? "Starred" : m.originalType || "Inbox",
-                                };
-                              }
-                              return m;
-                            });
-                          });
-
-                          setStarredMails((prev) => ({
-                            ...prev,
-                            [mail.id]: !prev[mail.id],
-                          }));
-                        }
+                        // DELETE
+                        // DELETE
                         if (Icon === Trash2) {
-                          setAllMails((prev) => {
-                            const list = Array.isArray(prev) ? prev : [];
+                          if (selectedPage === "Trash") {
+                            // permanent delete
+                            onPermanentDelete(mail.id);
+                          } else {
+                            // soft delete (move to trash)
+                            onDelete(mail.id);
+                          }
+                        }
 
-                            return list.map((m) => {
-                              if (m.id === mail.id) {
-                                if (m.type === "Trash") {
-                                  return {
-                                    ...m,
-                                    type: m.originalType || "Inbox",
-                                    starred: false,
-                                  };
-                                }
+                        // REPLY
+                        if (Icon === Reply) {
+                          onSelectMail(mail);       // mail open
+                          // open reply modal? → NewInternalMessage bana sakte ho
+                          // setReplyMode(mail);
+                        }
 
-                                return {
-                                  ...m,
-                                  originalType: m.originalType || m.type,
-                                  type: "Trash",
-                                  starred: false,
-                                };
-                              }
-
-                              return m;
-                            });
-                          });
-
-                          setMailCounts((prev) => ({
-                            ...prev,
-                            inbox: prev.inbox - (mail.type === "Inbox" ? 1 : 0),
-                            starred: prev.starred - (mail.type === "Starred" ? 1 : 0),
-                            sent: prev.sent - (mail.type === "Sent" ? 1 : 0),
-                            draft: prev.draft - (mail.type === "Draft" ? 1 : 0),
-                            trash: prev.trash + 1,
-                          }));
-
-                          if (selectedPage !== "Trash") setSelectedPage("Trash");
+                        // ARCHIVE
+                        if (Icon === Archive) {
+                          if (typeof onArchive === "function") {
+                            onArchive(mail.id);     // backend/Redux call
+                          } else {
+                            console.warn("onArchive function not passed");
+                          }
                         }
                       }}
                     >
-                      <div className={`p-1 rounded-md transition ${Icon === Star && starredMails[mail.id] ? "bg-white/20" : ""}`}>
-                        <Icon className={`w-5 h-5 cursor-pointer transition ${Icon === Star && mail.starred ? "text-yellow-400" : "text-gray-300 hover:text-white"}`} />
-                      </div>
-                      <span className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 text-[10px] rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition bg-black text-white`}>{iconLabels[i]}</span>
+                      <Icon className="w-4 h-4 cursor-pointer transition text-gray-400 hover:text-white" />
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 text-[10px] rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition bg-black text-white z-10">
+                        {iconLabels[i]}
+                      </span>
                     </div>
-
                   ))}
                 </div>
+
               </div>
 
-              <p className="text-[11px] mt-1 truncate text-gray-400 "><span className="
-              capitalize">{mail.from}</span> → {mail.to} · {mail.date}</p>
-
-              <p className="text-xs mt-2 leading-relaxed line-clamp-2 text-gray-300">{mail.body}</p>
+              {/* Labels */}
+              {mail.labels && mail.labels.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {mail.labels.map((label, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))
         )}

@@ -10,6 +10,7 @@ const initialState = {
   pagination: null,
   departmentAttendance: [],
   pagination: null,
+  dayOffRequests: [],
   departmentPagination: null,
 };
 
@@ -161,6 +162,34 @@ export const getDepartmentWiseUsers = createAsyncThunk(
   }
 );
 
+// Request Day Off
+export const requestDayOff = createAsyncThunk(
+  "attendance/requestDayOff",
+  async ({ date, reason }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/attendance/request-day-off", {
+        date,
+        reason,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+// Get Day Off Requests (Team Leader / Admin / Super-Admin)
+export const getDayOffRequests = createAsyncThunk(
+  "attendance/getDayOffRequests",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/attendance/day-off-requests");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const attendanceSlice = createSlice({
   name: "attendance",
   initialState,
@@ -182,6 +211,12 @@ const attendanceSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // ... your existing cases (punchIn, punchOut, getUserAttendance, etc.)
+      .addCase(requestDayOff.fulfilled, (state, action) => {
+        state.dayOffRequests = action.payload.data;
+      })
+      .addCase(getDayOffRequests.fulfilled, (state, action) => {
+        state.dayOffRequests = action.payload.requests; // array of dayoff requests
+      })
 
       // Punch In
       .addCase(punchIn.fulfilled, (state, action) => {
