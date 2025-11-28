@@ -104,27 +104,26 @@ const DataStoragePage = () => {
 
     const calculateMetrics = (periodArray, department) => {
 
-        console.log("🔍 Incoming periodArray:", periodArray);
-        console.log("🔍 Department:", department);
 
         if (!Array.isArray(periodArray) || periodArray.length === 0) return null;
 
         const allRows = extractRows(periodArray);
-        console.log("📌 Extracted Rows:", allRows);
 
         const safeInt = (v) => parseInt(v, 10) || 0;
         const safeFloat = (v) => parseFloat(v) || 0;
-
+        // ------------------------------------------
+        // CSR
+        // ------------------------------------------
+        // ------------------------------------------
+        // CSR
+        // ------------------------------------------
         if (department === "CSR") {
-
             const clean = allRows.filter(r => {
                 if (!Array.isArray(r) || r.length < 9) return false;
                 const name = String(r[0] || "").toLowerCase();
                 const bad = ["member", "shift", "total", "ave", "highlight", "failed", "assigned", "reached"];
                 return name.trim() !== "" && !bad.some(b => name.includes(b));
             });
-
-            console.log("🧹 Clean CSR rows:", clean);
 
             const count = clean.length;
             console.log("👥 CSR Agent Count:", count);
@@ -134,48 +133,44 @@ const DataStoragePage = () => {
             const message = clean.reduce((s, r) => s + safeInt(r[3]), 0);
             const missed = clean.reduce((s, r) => s + safeInt(r[4]), 0);
 
-            // ONLINE TIME DEBUG
-            const onlineArray = clean.map(r => safeFloat(r[5]));
-            console.log("⏱ Online time values (raw floats):", onlineArray);
+            // Calculate total online time and average
+            const totalOnlineHours = clean.reduce((s, r) => s + safeFloat(r[5]), 0);
+            const avgOnlineHours = count > 0 ? totalOnlineHours / count : 0;
 
-            const online = clean.reduce((s, r) => s + safeFloat(r[5]), 0);
-            console.log("⏱ Total Online:", online);
+            // Format average online time
+            const formatTime = (decimalHours) => {
+                const totalSeconds = Math.floor(decimalHours * 3600);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${hours}h ${minutes}m ${seconds}s`;
+            };
 
-            const positiveAvg =
-                count > 0
-                    ? (clean.reduce((s, r) => s + safeFloat(r[6]), 0) / count).toFixed(2) + "%"
-                    : "0%";
+            const positiveAvg = count > 0
+                ? (clean.reduce((s, r) => s + safeFloat(r[6]), 0) / count).toFixed(2)
+                : 0;
 
-            const negativeAvg =
-                count > 0
-                    ? (clean.reduce((s, r) => s + safeFloat(r[7]), 0) / count).toFixed(2) + "%"
-                    : "0%";
+            const negativeAvg = count > 0
+                ? (clean.reduce((s, r) => s + safeFloat(r[7]), 0) / count).toFixed(2)
+                : 0;
 
             const offline = clean.reduce((s, r) => s + safeInt(r[8]), 0);
-
-            console.log("📊 Final CSR Metrics:", {
-                completed,
-                effective,
-                message,
-                missed,
-                online,
-                positiveAvg,
-                negativeAvg,
-                offline
-            });
 
             return {
                 completed,
                 effective,
                 messages: message,
                 missed,
-                online: online.toFixed(2),
+                online: totalOnlineHours.toFixed(2), // Total as decimal
+                onlineFormatted: `${totalOnlineHours.toFixed(2)}h`, // Formatted total for display
+                avgOnline: formatTime(avgOnlineHours), // Formatted average time
                 positive: positiveAvg,
+                positiveFormatted: `${positiveAvg}%`, // Formatted for display
                 negative: negativeAvg,
+                negativeFormatted: `${negativeAvg}%`, // Formatted for display
                 offline
             };
         }
-
 
         // ------------------------------------------
         // Deposit
@@ -256,9 +251,9 @@ const DataStoragePage = () => {
                     metrics.effective,
                     metrics.messages,
                     metrics.missed,
-                    metrics.online,
-                    metrics.positive,
-                    metrics.negative,
+                    metrics.online, // Use decimal value for CSV
+                    metrics.positive, // Use decimal value for CSV
+                    metrics.negative, // Use decimal value for CSV
                     metrics.offline
                 ].join(","));
             } else if (selectedDepartment === "Deposit") {
@@ -292,6 +287,18 @@ const DataStoragePage = () => {
         a.click();
         URL.revokeObjectURL(url);
     };
+
+
+    function formatTime(decimalHours) {
+        const totalSeconds = Math.floor(decimalHours * 3600);
+
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        return `${hours}h ${minutes}m ${seconds}s`;
+    }
+
 
     return (
         <div className="min-h-screen p-6">
@@ -358,6 +365,19 @@ const DataStoragePage = () => {
 
                             {sortedPeriods.map((period) => {
                                 const metrics = calculateMetrics(grouped[period], selectedDepartment);
+
+
+
+                                const days = grouped[period].length;
+
+
+                                const decimalAvg = metrics.online / days;
+                                const avgOnline = formatTime(decimalAvg);
+
+
+
+
+
                                 if (!metrics) return null;
 
                                 // prepare rows safe
@@ -368,12 +388,11 @@ const DataStoragePage = () => {
                                         fmt(metrics.effective),
                                         fmt(metrics.messages),
                                         fmt(metrics.missed),
-                                        `${metrics.online}h`,
+                                        metrics.avgOnline,    // Average online time (already formatted)
                                         metrics.positive,
                                         metrics.negative,
                                         fmt(metrics.offline)
                                     ];
-
                                     return <tr key={period} className="border-b border-slate-800 hover:bg-slate-800/40 ashish">{r.map((c, i) => <td key={i} className="p-3 text-center text-slate-200">{c}</td>)}</tr>;
                                 }
 

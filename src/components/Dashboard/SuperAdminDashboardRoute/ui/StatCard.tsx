@@ -4,7 +4,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Line,
   Area,
@@ -33,8 +33,6 @@ export type StatCardProps = {
   goalValue?: number;
 };
 
-
-
 function getDaysInMonth(month: number, year: number) {
   const date = new Date(year, month, 0);
   const monthName = date.toLocaleDateString("en-US", {
@@ -49,15 +47,12 @@ function getDaysInMonth(month: number, year: number) {
   }
   return days;
 }
- // DATA FOR SPARKLINE (CSR/DEPOSIT/WITHDRAW)
- 
+
 // ----------------------------------------------------------------------
 // MINI TOOLTIP
 // ----------------------------------------------------------------------
 const MiniTooltip = ({ active, payload, goalValue, color }) => {
-
   const role = useSelector((state: any) => state.auth?.role);
-
 
   if (!active || !payload || !payload.length) return null;
 
@@ -93,6 +88,10 @@ const MiniTooltip = ({ active, payload, goalValue, color }) => {
       >
         {isAbove ? "✓ Above Goal" : "✗ Below Goal"}
       </Typography>
+      
+      <Typography sx={{ fontSize: "10px", opacity: 0.7, mt: 0.5 }}>
+        Goal: {goalValue.toLocaleString()}
+      </Typography>
     </Box>
   );
 };
@@ -120,6 +119,10 @@ const MiniGoalChart = ({ data, goalValue, color, index }) => {
           <linearGradient id={`above-${index}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="10%" stopColor={color} stopOpacity={0.45} />
             <stop offset="90%" stopColor={color} stopOpacity={0.05} />
+          </linearGradient>
+          <linearGradient id={`below-${index}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="10%" stopColor="#ef4444" stopOpacity={0.3} />
+            <stop offset="90%" stopColor="#ef4444" stopOpacity={0.05} />
           </linearGradient>
         </defs>
 
@@ -151,7 +154,7 @@ const MiniGoalChart = ({ data, goalValue, color, index }) => {
           type="linear"
           stroke="none"
           fill={`url(#below-${index})`}
-          fillOpacity={1}
+          fillOpacity={0.3}
         />
 
         <Line
@@ -183,10 +186,31 @@ export default function StatCard({
   goalValue = 10000,
 }: StatCardProps) {
   const theme = useTheme();
+  const [hoverIndex, setHoverIndex] = useState(null);
+  
   const daysInMonth = getDaysInMonth(
     new Date().getMonth() + 1,
     new Date().getFullYear()
   );
+
+  // Calculate dynamic goal value based on department
+  const getDynamicGoalValue = () => {
+    // If goalValue is provided, use it
+    if (goalValue && goalValue !== 10000) return goalValue;
+    
+    // If target is provided, use it
+    if (target && target > 0) return target;
+    
+    // Default goals based on department
+    if (title.includes("CSR")) return 10000;
+    if (title.includes("Deposit")) return 50;
+    if (title.includes("Withdraw")) return 30;
+    
+    // Fallback default
+    return 10000;
+  };
+
+  const dynamicGoalValue = getDynamicGoalValue();
 
   const chartData =
     data && data.length > 0
@@ -199,6 +223,13 @@ export default function StatCard({
             : d.withdraw
       );
 
+  // Calculate total value from chart data
+  const totalValue = chartData.reduce((sum, current) => sum + current, 0);
+  
+  // Calculate achievement percentage
+  const achievementPercentage = dynamicGoalValue > 0 
+    ? ((totalValue / (dynamicGoalValue * chartData.length)) * 100).toFixed(1)
+    : 0;
 
   const minValue = Math.min(...chartData);
   const maxValue = Math.max(...chartData);
@@ -240,12 +271,14 @@ export default function StatCard({
       >
         <Typography sx={{ fontWeight: 600, mb: 1 }}>{title}</Typography>
 
-        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
+        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 1 }}>
           {difference}
         </Typography>
 
-
-
+        {/* Goal and Total Information */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+        
+        </Box>
 
         {role === "teamLeader" ? (
          <Box sx={{ width: "100%", height: 60, mt: 2 }}>
@@ -280,7 +313,6 @@ export default function StatCard({
                 return (
                   <Box
                     sx={{
-                      
                       bgcolor: "#1e293b",
                       border: "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "8px",
@@ -339,14 +371,12 @@ export default function StatCard({
           >
             <MiniGoalChart
               data={chartData}
-              goalValue={goalValue}
+              goalValue={dynamicGoalValue}
               color={chartColor}
               index={index}
             />
           </Box>
         )}
-
-
       </CardContent>
     </Card>
   );
