@@ -98,6 +98,28 @@ export const addFcm = createAsyncThunk(
     }
   }
 );
+export const editUserAccount = createAsyncThunk(
+  "/user/editAccount",
+  async ({ id, userData }, { rejectWithValue }) => {
+    try {
+      const res = axiosInstance.put(`/user/edit/${id}`, userData);
+
+      toast.promise(res, {
+        loading: "Updating user account...",
+        success: (data) => data?.data?.message || "User updated successfully!",
+        error: (err) => err?.response?.data?.message || "Failed to update user",
+      });
+
+      const response = await res;
+      return response.data;
+
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || "Failed to update user account";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
 
 export const verify2FA = createAsyncThunk(
   "/auth/verify-2fa",
@@ -345,9 +367,7 @@ const authSlice = createSlice({
         if (token) {
           state.tempToken = token;
           localStorage.setItem('tempAuthToken', token);
-        } else {
         }
-
         state.data = user;
         state.require2FA = require2FA;
 
@@ -390,6 +410,27 @@ const authSlice = createSlice({
         state.require2FA = true;
         state.error = action.payload;
         // Don't clear tempToken so the user can try again
+      })
+      .addCase(editUserAccount.fulfilled, (state, action) => {
+        if (action.payload?.success) {
+          const updatedUser = action.payload.user;
+
+          // Update user in the users array
+          state.users = state.users.map((user) =>
+            user._id === updatedUser._id ? updatedUser : user
+          );
+
+          // If the edited user is the current logged-in user, update their data too
+          if (state.data._id === updatedUser._id) {
+            state.data = updatedUser;
+            state.role = updatedUser.role;
+            localStorage.setItem('data', JSON.stringify(updatedUser));
+            localStorage.setItem('role', updatedUser.role);
+          }
+        }
+      })
+      .addCase(editUserAccount.rejected, (state, action) => {
+        toast.error(action.payload || "Failed to update user!");
       })
       // for user logout
       .addCase(logout.fulfilled, (state) => {

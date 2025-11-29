@@ -12,6 +12,7 @@ import {
   QrCode,
   Trash,
   User,
+  Edit,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,6 +21,7 @@ import {
   deleteUser,
   getAllUsers,
   updateUserRole,
+  editUserAccount, // Add this import
 } from "../../redux/authSlice";
 import toast from "react-hot-toast";
 import MetaData from "../../more/MetaData";
@@ -30,6 +32,7 @@ function Admin() {
   const { users } = useSelector((state) => state?.auth);
   const role = useSelector((state) => state.auth?.role);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // New state for edit modal
   const [selectedUser, setSelectedUser] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
   const [newRole, setNewRole] = useState("");
@@ -41,6 +44,19 @@ function Admin() {
     FullName: "",
     username: "",
     password: "",
+    email: "",
+    phone: "",
+    department: "",
+    dateHired: "",
+    role: "",
+    salary: "",
+    workingHour: "",
+    Shift: "",
+  });
+
+  const [editUser, setEditUser] = useState({ 
+    FullName: "",
+    username: "",
     email: "",
     phone: "",
     department: "",
@@ -102,7 +118,7 @@ function Admin() {
 
       const matchesDepartment = departmentFilter === "" || user.department === departmentFilter;
 
-      return matchesSearch  && matchesDepartment;
+      return matchesSearch && matchesDepartment;
     });
   }, [users, searchTerm, departmentFilter]);
 
@@ -136,8 +152,6 @@ function Admin() {
     };
   }, [filteredUsers]);
 
- 
-
   const handleUserInput = (e) => {
     const { name, value } = e.target;
 
@@ -148,6 +162,81 @@ function Admin() {
     }
   };
 
+  const handleEditUserInput = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "role" && value === "Checker") {
+      setEditUser({ ...editUser, role: value, department: "" });
+    } else {
+      setEditUser({ ...editUser, [name]: value });
+    }
+  };
+
+  // Open edit modal and populate with user data
+  const handleEdit = (user) => {
+    setEditUser({
+      FullName: user.FullName || "",
+      username: user.username || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      department: user.department || "",
+      dateHired: user.dateHired ? new Date(user.dateHired).toISOString().split('T')[0] : "",
+      role: user.role || "",
+      salary: user.salary || "",
+      workingHour: user.workingHour || "",
+      Shift: user.Shift || "",
+    });
+    setSelectedUser(user);
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle update user
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    const {
+      FullName,
+      email,
+      phone,
+      department,
+      dateHired,
+      role,
+      salary,
+      workingHour,
+      Shift,
+    } = editUser;
+
+    if (
+      !FullName ||
+      !email ||
+      (!department && editUser.role !== "Checker") ||
+      !phone ||
+      !dateHired ||
+      !role ||
+      !salary ||
+      !workingHour ||
+      !Shift
+    ) {
+      toast.error("Please fill all the details");
+      return;
+    }
+
+    if (FullName.length < 5) {
+      toast.error("Name should be at least 5 characters");
+      return;
+    }
+
+    const response = await dispatch(editUserAccount({
+      id: selectedUser._id,
+      userData: editUser
+    }));
+
+    if (response?.payload?.success) {
+      toast.success("User updated successfully!");
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+      dispatch(getAllUsers());
+    }
+  };
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -277,7 +366,7 @@ function Admin() {
               placeholder="Search by name, email, username..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
 
@@ -322,6 +411,7 @@ function Admin() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* ... Statistics cards code remains the same ... */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -474,16 +564,28 @@ function Admin() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-center">
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setSelectedUser(user)}
-                        className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-all"
+                        className="p-2 bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-300 rounded-lg transition-all"
                         title="View QR Code"
                       >
                         <QrCode className="w-4 h-4" />
                       </motion.button>
+                      
+                      {/* Edit Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleEdit(user)}
+                        className="p-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-all"
+                        title="Edit User"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </motion.button>
+
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -492,11 +594,12 @@ function Admin() {
                           setNewRole(user.role);
                           setRoleModal(true);
                         }}
-                        className="p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-all"
+                        className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-all"
                         title="Change Role"
                       >
                         <Shield className="w-4 h-4" />
                       </motion.button>
+                      
                       {role !== "Admin" && (
                         <motion.button
                           whileHover={{ scale: 1.1 }}
@@ -519,7 +622,7 @@ function Admin() {
 
       {/* QR Code Modal */}
       <AnimatePresence>
-        {selectedUser && (
+        {selectedUser && !isEditDialogOpen && (
           <motion.div
             className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-50 p-4"
             initial={{ opacity: 0 }}
@@ -845,6 +948,257 @@ function Admin() {
                       className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold transition-all shadow-lg"
                     >
                       Add Employee
+                    </motion.button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit User Modal */}
+      <AnimatePresence>
+        {isEditDialogOpen && selectedUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setIsEditDialogOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-slate-900/30 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] border border-slate-800 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center p-6 border-b border-slate-800/30 bg-slate-900/30">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Edit className="w-6 h-6" />
+                  Edit Employee
+                </h2>
+                <motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="text-gray-400 hover:text-white transition-colors p-2  rounded-lg"
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+
+              {/* Form */}
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                <form onSubmit={handleUpdateUser} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Full Name *
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        name="FullName"
+                        value={editUser.FullName}
+                        onChange={handleEditUserInput}
+                        placeholder="Enter employee name"
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Email *
+                      </label>
+                      <input
+                        required
+                        type="email"
+                        name="email"
+                        value={editUser.email}
+                        onChange={handleEditUserInput}
+                        placeholder="Enter employee email"
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={editUser.username}
+                        disabled
+                        className="w-full bg-slate-800/30 border border-slate-700 rounded-xl px-4 py-3 text-gray-400 cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Username cannot be changed</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Phone Number *
+                      </label>
+                      <div className="flex items-center bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white w-full">
+                        <div className="relative flex items-center mr-2 min-w-[85px]">
+                          <select
+                            value={selectedCountry.dialCode}
+                            onChange={(e) => {
+                              const country = countries.find(
+                                (c) => c.dialCode === e.target.value
+                              );
+                              setSelectedCountry(country);
+                            }}
+                            className="bg-transparent text-white outline-none text-sm cursor-pointer appearance-none w-full"
+                          >
+                            {countries.map((country, index) => (
+                              <option
+                                key={index}
+                                value={country.dialCode}
+                                className="bg-slate-800"
+                              >
+                                {country.flag} {country.dialCode}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="absolute right-6 text-white pointer-events-none text-sm">
+                            ▼
+                          </span>
+                        </div>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={editUser.phone}
+                          onChange={(e) => {
+                            const onlyDigits = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            setEditUser({ ...editUser, phone: onlyDigits });
+                          }}
+                          placeholder="9168636883"
+                          className="bg-transparent outline-none w-full text-white placeholder-gray-500"
+                        />
+                      </div>
+                    </div>
+
+                    {editUser.role !== "Checker" && (
+                      <div>
+                        <label className="block text-gray-300 mb-2 text-sm font-medium">
+                          Department *
+                        </label>
+                        <select
+                          name="department"
+                          value={editUser.department}
+                          onChange={handleEditUserInput}
+                          className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        >
+                          <option className="bg-slate-800" value="">Select Department</option>
+                          <option className="bg-slate-800" value="CSR">CSR Department</option>
+                          <option className="bg-slate-800" value="Deposit">Deposit Department</option>
+                          <option className="bg-slate-800" value="Withdraw">Withdraw Department</option>
+                          <option className="bg-slate-800" value="Marketing">Marketing Department</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Role *
+                      </label>
+                      <select
+                        name="role"
+                        value={editUser.role}
+                        onChange={handleEditUserInput}
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      >
+                        <option className="bg-slate-800" value="">Select Role</option>
+                        {allowedRoles.map((roleOption) => (
+                          <option key={roleOption} value={roleOption} className="bg-slate-800">
+                            {roleOption}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Date Hired *
+                      </label>
+                      <input
+                        type="date"
+                        name="dateHired"
+                        value={editUser.dateHired}
+                        onChange={handleEditUserInput}
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Salary *
+                      </label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={editUser.salary}
+                        onChange={handleEditUserInput}
+                        placeholder="Enter salary"
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Working Hours *
+                      </label>
+                      <input
+                        type="text"
+                        name="workingHour"
+                        value={editUser.workingHour}
+                        onChange={handleEditUserInput}
+                        placeholder="e.g., 9 AM - 5 PM"
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Shift *
+                      </label>
+                      <select
+                        name="Shift"
+                        value={editUser.Shift}
+                        onChange={handleEditUserInput}
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      >
+                        <option className="bg-slate-800" value="">Select Shift</option>
+                        <option className="bg-slate-800" value="Morning">Morning</option>
+                        <option className="bg-slate-800" value="Night">Night</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-6">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsEditDialogOpen(false)}
+                      className="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-all"
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      type="submit"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold transition-all shadow-lg"
+                    >
+                      Update Employee
                     </motion.button>
                   </div>
                 </form>
