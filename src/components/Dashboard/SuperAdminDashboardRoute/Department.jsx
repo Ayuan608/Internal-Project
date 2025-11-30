@@ -15,7 +15,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-const NonQuotaMembersTable = ({nonQuotaMembers }) => {
+const NonQuotaMembersTable = ({ nonQuotaMembers }) => {
   const excludedWords = ["night", "morning", "hours", "backstage"];
 
   // Filter members by excluding specific words in name
@@ -74,11 +74,10 @@ const NonQuotaMembersTable = ({nonQuotaMembers }) => {
                 </td>
 
                 <td
-                  className={`py-3 px-4 font-semibold text-sm ${
-                    member.completion >= 70
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }`}
+                  className={`py-3 px-4 font-semibold text-sm ${member.completion >= 70
+                    ? "text-green-400"
+                    : "text-red-400"
+                    }`}
                 >
                   {member.completion}%
                 </td>
@@ -367,6 +366,22 @@ const Department = () => {
       },
     ];
   };
+  const quotaByDepartment = {
+    CSR: {
+      morning: 500,
+      night: 600,
+    },
+    Deposit: {
+      morning: 530,
+      night: 450,
+    },
+    Withdrawal: {
+      morning12: 1400,
+      morning9: 900,
+      night12: 1500,
+      night9: 1000,
+    },
+  };
 
   const StatCard = ({
     icon: Icon,
@@ -469,29 +484,59 @@ const Department = () => {
           borderColor="border border-blue-600/50"
           textColor="text-blue-400"
         />
-        <StatCard
-          icon={Target}
-          label="Daily Quota"
-          value={formatNumber(currentData?.quota)}
-          sublabel={`Remaining: ${formatNumber(
-            Math.max(0, currentData?.quota - currentData?.transactions)
-          )}`}
-          bgColor={
-            activeTab === "CSR"
-              ? "bg-blue-600/30"
-              : activeTab === "Deposit"
-                ? "bg-green-600/30"
-                : "bg-orange-600/30"
-          }
-          borderColor={
-            activeTab === "CSR"
-              ? "border border-blue-600/50"
-              : activeTab === "Deposit"
-                ? "border border-green-600/50"
-                : "border border-orange-600/50"
-          }
-          textColor="text-white"
-        />
+       <StatCard
+  icon={Target}
+  label="Daily Quota"
+  value={formatNumber(currentData?.quota)}
+  sublabel={
+    <>
+      {activeTab === "CSR" && (
+        <>
+          Morning: {quotaByDepartment.CSR.morning}
+          <br />
+          Night: {quotaByDepartment.CSR.night}
+        </>
+      )}
+
+      {activeTab === "Deposit" && (
+        <>
+          Morning: {quotaByDepartment.Deposit.morning}
+          <br />
+          Night: {quotaByDepartment.Deposit.night}
+        </>
+      )}
+
+      {activeTab === "Withdrawal" && (
+        <>
+          Morning 12h: {quotaByDepartment.Withdrawal.morning12}
+          <br />
+          Morning 9h: {quotaByDepartment.Withdrawal.morning9}
+          <br />
+          Night 12h: {quotaByDepartment.Withdrawal.night12}
+          <br />
+          Night 9h: {quotaByDepartment.Withdrawal.night9}
+        </>
+      )}
+    </>
+  }
+  bgColor={
+    activeTab === "CSR"
+      ? "bg-blue-600/30"
+      : activeTab === "Deposit"
+      ? "bg-green-600/30"
+      : "bg-orange-600/30"
+  }
+  borderColor={
+    activeTab === "CSR"
+      ? "border border-blue-600/50"
+      : activeTab === "Deposit"
+      ? "border border-green-600/50"
+      : "border border-orange-600/50"
+  }
+  textColor="text-white"
+/>
+
+
         <StatCard
           icon={Users}
           label="Active Agents"
