@@ -32,7 +32,7 @@ function Admin() {
   const { users } = useSelector((state) => state?.auth);
   const role = useSelector((state) => state.auth?.role);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // New state for edit modal
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [roleModal, setRoleModal] = useState(false);
   const [newRole, setNewRole] = useState("");
