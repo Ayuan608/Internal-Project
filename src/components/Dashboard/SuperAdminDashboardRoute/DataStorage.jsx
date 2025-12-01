@@ -50,36 +50,51 @@ const DataStoragePage = () => {
         data.forEach((item) => {
             let dateRaw = null;
 
-            if (item && typeof item === "object" && !Array.isArray(item) && item.date) {
-                dateRaw = item.date;
-            } else if (Array.isArray(item) && item.length > 1) {
-                // some of your rows show date at index 1
-                dateRaw = item[1];
-            } else if (item && item.formattedDate) {
-                dateRaw = item.formattedDate;
+            // Case 1: object format → { date: "Nov 30, 2025" }
+            if (item?.date) {
+                dateRaw = item.date.trim();
+            }
+            // Case 2: array format → ["CSR", "Nov 30, 2025", ...]
+            else if (Array.isArray(item) && item[1]) {
+                dateRaw = item[1].trim();
+            }
+            // Case 3: formattedDate
+            else if (item?.formattedDate) {
+                dateRaw = item.formattedDate.trim();
             }
 
             if (!dateRaw) return;
 
-            const currentYear = new Date().getFullYear();
-            // attempts to handle "11/01" or "Nov 1" etc.
+            // --- FIXED ALL DATE PARSING ---
             let parsed;
-            if (typeof dateRaw === "string" && dateRaw.includes("/")) {
-                // e.g. "11/01"
-                const parts = dateRaw.split("/");
-                if (parts.length === 2) {
-                    const [m, d] = parts;
-                    parsed = new Date(`${currentYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`);
-                }
+
+            // CASE A → Excel styles: "1-Dec", "02-Nov", "29-Oct"
+            if (/^\d{1,2}-[A-Za-z]{3}$/i.test(dateRaw)) {
+                parsed = new Date(`${dateRaw}-2025`);   // Force year 2025
             }
-            if (!parsed) {
-                parsed = new Date(`${dateRaw} ${currentYear}`);
+            // CASE B → "Nov 30, 2025"
+            else if (/^[A-Za-z]{3} \d{1,2}, \d{4}$/.test(dateRaw)) {
+                parsed = new Date(dateRaw);
             }
+            // CASE C → "Nov 30"
+            else if (/^[A-Za-z]{3} \d{1,2}$/.test(dateRaw)) {
+                parsed = new Date(`${dateRaw}, 2025`);
+            }
+            // CASE D → "11/30" or "11/05"
+            else if (/^\d{1,2}\/\d{1,2}$/.test(dateRaw)) {
+                const [m, d] = dateRaw.split("/");
+                parsed = new Date(`2025-${m}-${d}`);
+            }
+            else {
+                parsed = new Date(dateRaw);
+            }
+
             if (isNaN(parsed)) return;
 
-            const key = viewType === "month"
-                ? parsed.toLocaleDateString("en-US", { year: "numeric", month: "long" })
-                : parsed.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+            const key =
+                viewType === "month"
+                    ? parsed.toLocaleDateString("en-US", { year: "numeric", month: "long" })
+                    : parsed.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(item);
@@ -153,7 +168,6 @@ const DataStoragePage = () => {
             });
 
             const count = clean.length;
-            console.log("👥 CSR Agent Count (Senior & 00:00:00 excluded):", count);
 
             if (count === 0) {
                 return {
@@ -278,75 +292,136 @@ const DataStoragePage = () => {
         Deposit: ["DATE", "Live Check", "1st Check", "2nd/3rd", "Paycheck", "Records", "Offline"],
         Withdraw: ["DATE", "Passed", "Passed Amount", "Rejected", "Rejected Amount", "Processing", "Processing Amount"]
     };
-
-    const exportData = () => {
-        if (!sortedPeriods.length) {
-            alert("No data to export");
-            return;
-        }
-
-        const csvRows = [];
-        csvRows.push(departmentHeaders[selectedDepartment].join(","));
-
-        for (const dt of sortedPeriods) {
-            const metrics = calculateMetrics(grouped[dt], selectedDepartment);
-            if (!metrics) continue;
-
-            if (selectedDepartment === "CSR") {
-                csvRows.push([
-                    dt,
-                    metrics.completed,
-                    metrics.effective,
-                    metrics.messages,
-                    metrics.missed,
-                    metrics.online, // Use decimal value for CSV
-                    metrics.positive, // Use decimal value for CSV
-                    metrics.negative, // Use decimal value for CSV
-                    metrics.offline
-                ].join(","));
-            } else if (selectedDepartment === "Deposit") {
-                csvRows.push([
-                    dt,
-                    metrics.live,
-                    metrics.first,
-                    metrics.second,
-                    metrics.paycheck,
-                    metrics.records,
-                    metrics.offline
-                ].join(","));
-            } else if (selectedDepartment === "Withdraw") {
-                csvRows.push([
-                    dt,
-                    metrics.passed,
-                    metrics.passedAmt,
-                    metrics.rejected,
-                    metrics.rejectedAmt,
-                    metrics.processing,
-                    metrics.processingAmt
-                ].join(","));
-            }
-        }
-
-        const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${selectedDepartment}_history.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-
-    function formatTime(decimalHours) {
-        const totalSeconds = Math.floor(decimalHours * 3600);
-
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        return `${hours}h ${minutes}m ${seconds}s`;
+  const exportData = () => {
+    // Find the main data table
+    const tables = document.querySelectorAll('table');
+    if (tables.length < 2) {
+        alert("Data table not found");
+        return;
     }
-
+    
+    // The second table contains the data (first table might be for filters/controls)
+    const dataTable = tables[1];
+    const rows = dataTable.querySelectorAll('tr');
+    
+    if (rows.length === 0) {
+        alert("No data in table");
+        return;
+    }
+    
+    const csvRows = [];
+    
+    // 1. HEADERS लो
+    const headerRow = rows[0];
+    const headers = [];
+    
+    // Check if it's a th (header) row
+    const headerCells = headerRow.querySelectorAll('th');
+    
+    if (headerCells.length > 0) {
+        // It has th cells (proper header)
+        headerCells.forEach(th => {
+            let headerText = th.textContent.trim();
+            
+            // Clean header text
+            headerText = headerText
+                .replace(/\n/g, ' ')          // Newlines remove
+                .replace(/\s+/g, ' ')         // Multiple spaces to single
+                .replace(/,/g, '')            // Remove commas
+                .toUpperCase();               // Make uppercase for consistency
+                
+            headers.push(headerText);
+        });
+    } else {
+        // Fallback: Use hardcoded headers for CSR
+        if (selectedDepartment === "CSR") {
+            headers.push("DATE", "COMPLETED CONVO", "TOTAL EFFECTIVE", "TOTAL MESSAGE", 
+                         "MISSED CHATS", "ONLINE TIME", "POSITIVE RATES", "NEGATIVE RATES", "OFFLINE");
+        }
+    }
+    
+    // Add headers to CSV
+    csvRows.push(headers.join(','));
+    console.log("CSV Headers:", headers);
+    
+    // 2. DATA ROWS लो
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.querySelectorAll('td');
+        
+        // Skip empty rows
+        if (cells.length === 0) continue;
+        
+        const rowData = [];
+        
+        cells.forEach((cell, index) => {
+            let cellText = cell.textContent.trim();
+            
+            // Fix common data issues
+            cellText = cellText
+                .replace(/Oh/g, '0h')
+                .replace(/om/g, '0m')
+                .replace(/Os/g, '0s')
+                .replace(/gh/g, '9h')
+                .replace(/\s+/g, ' '); // Multiple spaces to single
+            
+            // Ensure percentages have % symbol
+            if ((index === 6 || index === 7) && !cellText.includes('%') && cellText !== '') {
+                cellText = cellText + '%';
+            }
+            
+            // Ensure time format is complete
+            if (index === 5) { // Online Time column
+                if (!cellText.includes('h') && !cellText.includes('m') && !cellText.includes('s')) {
+                    cellText = '0h 0m 0s';
+                } else if (!cellText.includes('s')) {
+                    cellText = cellText + 's';
+                }
+            }
+            
+            // For CSV - escape commas and quotes
+            if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
+                cellText = `"${cellText.replace(/"/g, '""')}"`;
+            }
+            
+            rowData.push(cellText);
+        });
+        
+        // Add row to CSV if it has data
+        if (rowData.length > 0) {
+            csvRows.push(rowData.join(','));
+        }
+    }
+    
+    console.log("Total CSV Rows:", csvRows.length);
+    
+    if (csvRows.length <= 1) {
+        alert("No data to export");
+        return;
+    }
+    
+    // 3. CREATE AND DOWNLOAD CSV
+    const csvContent = csvRows.join('\n');
+    
+    // Add BOM for UTF-8 support
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { 
+        type: 'text/csv;charset=utf-8;' 
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedDepartment}_Data_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 100);
+};
 
     return (
         <div className="min-h-screen p-6">
