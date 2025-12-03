@@ -300,7 +300,8 @@ function Admin() {
     const response = await dispatch(addAdminAccount(addUser));
 
     if (response?.payload?.success) {
-      toast.success("User/employee added successfully!");
+      
+      dispatch(getAllUsers());
       setAddUser({
         FullName: "",
         username: "",
@@ -315,7 +316,6 @@ function Admin() {
         Shift: "",
       });
       setIsDialogOpen(false);
-      dispatch(getAllUsers());
     }
   };
 
