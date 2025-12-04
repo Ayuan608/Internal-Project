@@ -130,6 +130,8 @@ export const superAdminButtons = () => [
   { to: "/dashboard/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
   { to: "/dashboard/activityLogs", label: ("Activity Logs"), icon: Antenna },
   { to: "/dashboard/ip-address", label: ("IP-Whitelist"), icon: Shield },
+  { to: "/dashboard/file-sharing", label: ("WPS-Office"), icon: FileText },
+
 ];
 
 // ✅ Admin Routes

@@ -37,6 +37,7 @@ import NonQuotaDepartment from "./components/Dashboard/SuperAdminDashboardRoute/
 import DataStoragePage from "./components/Dashboard/SuperAdminDashboardRoute/DataStorage";
 import InternalMailingPage from "./pages/Internal Mailing/InternalMailingPages";
 import LeaveRequest from "./pages/LeaveRequest";
+import FileSharing from "./pages/File Sharing/FileSharing";
 
 function App() {
   useEffect(() => {
@@ -103,6 +104,7 @@ function App() {
           <Route path="setting" element={<Setting />} />
           <Route path="login" element={<LoginCredentials />} />
           <Route path="storage" element={<Storage />} />
+          <Route path="file-sharing" element={<FileSharing />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
           <Route path="ip-address" element={<IPWhitelistDashboard />} />
         </Route>

@@ -23,6 +23,7 @@ const NonQuotaMembersTable = ({ nonQuotaMembers }) => {
     const name = member.name?.toLowerCase() || "";
     return !excludedWords.some((word) => name.includes(word));
   });
+ 
 
   return (
     <div className="w-full overflow-x-auto">
