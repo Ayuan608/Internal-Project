@@ -508,7 +508,7 @@ function Admin() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-slate-800/30 text-center transition-colors"
+                  className="hover:bg-slate-800/30 text-start transition-colors"
                 >
                   <td className="px-6 py-4">
                     <img
@@ -517,7 +517,7 @@ function Admin() {
                       className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/30"
                     />
                   </td>
-                  <td className="px-6 py-4 text-white font-medium capitalize">{user?.FullName}</td>
+                  <td className="px-6 py-4 text-white font-medium capitalize ">{user?.FullName}</td>
                   <td className="px-6 py-4 text-gray-300">{user?.username}</td>
                   <td className="px-6 py-4 text-gray-300">{user?.email || 'N/A'}</td>
                   <td className="px-6 py-4 text-gray-300">+91{user?.phone}</td>

@@ -11,28 +11,28 @@ function Files({ sidebarOpen, setSidebarOpen }) {
     const files = [
         {
             type: "PDF file",
-            icon: <FilePieChart size={34} className="text-red-500" />,
+            icon: <FilePieChart size={24} className="text-red-500" />,
             location: "C:/Users/Admin...",
             modified: "Today 10:27",
             size: "1.8 MB"
         },
         {
             type: "Docs file",
-            icon: <FileText size={34} className="text-blue-400" />,
+            icon: <FileText size={28} className="text-blue-400" />,
             location: "C:/Users/Admin...",
             modified: "Today 10:27",
             size: "1.8 MB"
         },
         {
             type: "Slides file",
-            icon: <Presentation size={34} className="text-orange-400" />,
+            icon: <Presentation size={28} className="text-orange-400" />,
             location: "C:/Users/Admin...",
             modified: "Today 10:27",
             size: "1.8 MB"
         },
         {
             type: "Sheets file",
-            icon: <FileSpreadsheet size={34} className="text-green-500" />,
+            icon: <FileSpreadsheet size={28} className="text-green-500" />,
             location: "C:/Users/Admin...",
             modified: "Today 10:27",
             size: "1.8 MB"

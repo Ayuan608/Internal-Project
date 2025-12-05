@@ -17,7 +17,7 @@ import {
   CartesianGrid,
   RadialBarChart,
   RadialBar,
-} from "recharts"; // Recharts
+} from "recharts";
 import AttendanceTable from "./AtteadanceTable";
 
 // color constants
@@ -90,25 +90,24 @@ export default function AttendanceDashboard() {
 
   // KPI calculation for selected month
   const stats = useMemo(() => {
-    let present = 0, absent = 0, leave = 0, undertime = 0;
+    let present = 0, absent = 0, leave = 0, undertime = 0, halfday = 0;
 
     filteredData.forEach((emp) => {
-      // if emp.pattern exists it's monthly pattern - count in that for selected month length
       if (Array.isArray(emp.pattern) && emp.pattern.length >= 1) {
-        // Only count up to daysInSelectedMonth
         const arr = emp.pattern.slice(0, daysInSelectedMonth);
         arr.forEach((p) => {
           if (p === 0) present++;
-          else if (p === 1) undertime++; // treat 1 as Night in your mapping; adjust if needed
+          else if (p === 1) present++; // Night shift is also present
           else if (p === 2) leave++;
           else if (p === 3) absent++;
+          else if (p === "U") undertime++;
+          else if (p === "H") halfday++;
         });
       } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
-        // attendanceRecords is expected as { "2025-11-01": "Present", ... }
         const records = emp.attendanceRecords;
         for (let d = 1; d <= daysInSelectedMonth; d++) {
           const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
-          const key = dd.toISOString().slice(0, 10); // yyyy-mm-dd
+          const key = dd.toISOString().slice(0, 10);
           const status = records[key];
           if (!status) {
             absent++;
@@ -116,34 +115,57 @@ export default function AttendanceDashboard() {
           else if (status === "Absent") absent++;
           else if (status === "Leave") leave++;
           else if (status === "Undertime") undertime++;
+          else if (status === "Half Day") halfday++;
         }
       } else {
-        // fallback: if emp.status is today's status, we count once (useful for KPIs)
         if (emp.status === "Present") present++;
         else if (emp.status === "Absent") absent++;
         else if (emp.status === "Leave") leave++;
         else if (emp.status === "Undertime") undertime++;
+        else if (emp.status === "Half Day") halfday++;
       }
     });
 
-    return { present, absent, leave, undertime, total: filteredData.length };
+    return { present, absent, leave, undertime, halfday, total: filteredData.length };
   }, [filteredData, selectedMonth, daysInSelectedMonth]);
 
-  // Prepare pie chart data
- 
-  const PIE_COLORS = ["#10b981", "#ef4444", "#f59e0b", "#ec4899"];
-
-  // Create a trivial trend for demo: counts per day for selected month
+  // Real attendance trend data based on actual patterns
   const trendData = useMemo(() => {
     const arr = [];
     for (let d = 1; d <= daysInSelectedMonth; d++) {
+      let dayPresent = 0;
+      let dayAbsent = 0;
+      let dayLeave = 0;
+      let dayUndertime = 0;
+
+      filteredData.forEach((emp) => {
+        if (Array.isArray(emp.pattern) && emp.pattern.length >= d) {
+          const status = emp.pattern[d - 1];
+          if (status === 0 || status === 1) dayPresent++;
+          else if (status === 3) dayAbsent++;
+          else if (status === 2) dayLeave++;
+          else if (status === "U") dayUndertime++;
+        } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
+          const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
+          const key = dd.toISOString().slice(0, 10);
+          const status = emp.attendanceRecords[key];
+          if (status === "Present") dayPresent++;
+          else if (status === "Absent") dayAbsent++;
+          else if (status === "Leave") dayLeave++;
+          else if (status === "Undertime") dayUndertime++;
+        }
+      });
+
       arr.push({
         day: d,
-        present: Math.floor(Math.random() * 10), // demo — replace with real aggregation if you want
+        present: dayPresent,
+        absent: dayAbsent,
+        leave: dayLeave,
+        undertime: dayUndertime,
       });
     }
     return arr;
-  }, [daysInSelectedMonth]);
+  }, [filteredData, daysInSelectedMonth, selectedMonth]);
 
   return (
     <div className="min-h-screen text-slate-100 relative">
@@ -177,10 +199,9 @@ export default function AttendanceDashboard() {
           </div>
         </div>
 
-
         {/* Charts + Table */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ---- Monthly Breakdown (Radial Chart) ---- */}
+          {/* Monthly Breakdown (Radial Chart) */}
           <div className="col-span-1 bg-slate-900/40 p-4 rounded-lg border border-slate-700/50">
             <h3 className="text-sm font-semibold mb-2 text-white">Monthly Breakdown</h3>
 
@@ -214,7 +235,7 @@ export default function AttendanceDashboard() {
             </div>
           </div>
 
-
+          {/* Attendance Trend - Real Data */}
           <div className="col-span-2 bg-slate-900/40 p-4 rounded-lg border border-slate-700/50">
             <h3 className="text-sm font-semibold mb-2 text-white">Attendance Trend</h3>
             <div style={{ width: "100%", height: 260 }}>
@@ -223,8 +244,14 @@ export default function AttendanceDashboard() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.08} />
                   <XAxis dataKey="day" tick={{ fill: "#93C5FD" }} />
                   <YAxis tick={{ fill: "#93C5FD" }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="present" stroke="#60A5FA" strokeWidth={2} dot={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+                    labelStyle={{ color: '#e2e8f0' }}
+                  />
+                  <Line type="monotone" dataKey="present" stroke="#10b981" strokeWidth={2} name="Present" />
+                  <Line type="monotone" dataKey="absent" stroke="#ef4444" strokeWidth={2} name="Absent" />
+                  <Line type="monotone" dataKey="leave" stroke="#f59e0b" strokeWidth={2} name="Leave" />
+                  <Line type="monotone" dataKey="undertime" stroke="#ec4899" strokeWidth={2} name="Undertime" />
                 </LineChart>
               </ResponsiveContainer>
             </div>

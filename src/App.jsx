@@ -27,7 +27,6 @@ import Storage from "./components/Dashboard/SuperAdminDashboardRoute/Storage";
 import EmployeeOfTheMonthAdmin from "./components/Dashboard/SuperAdminDashboardRoute/ui/EmployeeOfTheMonth";
 import Report from "./components/Dashboard/SuperAdminDashboardRoute/Report";
 import ShiftManagement from "./components/Dashboard/AdminDashboard/shift-management";
-import IPWhitelistDashboard from "./components/Dashboard/AdminDashboard/ip-whiteList";
 import UserReport from "./components/Dashboard/UserDashboard/UserReport";
 import { useEffect } from "react";
 import { onMessageListener, requestForToken } from "./services/firebase/firebase";
@@ -38,6 +37,7 @@ import DataStoragePage from "./components/Dashboard/SuperAdminDashboardRoute/Dat
 import InternalMailingPage from "./pages/Internal Mailing/InternalMailingPages";
 import LeaveRequest from "./pages/LeaveRequest";
 import FileSharing from "./pages/File Sharing/FileSharing";
+import Calender from "./pages/Calendar/Calender";
 
 function App() {
   useEffect(() => {
@@ -45,7 +45,7 @@ function App() {
 
     onMessageListener()
       .then((payload) => {
-      
+
 
         const notification = payload?.notification;
         const title = notification?.title || "New Notification";
@@ -104,9 +104,9 @@ function App() {
           <Route path="setting" element={<Setting />} />
           <Route path="login" element={<LoginCredentials />} />
           <Route path="storage" element={<Storage />} />
+          <Route path="calender" element={<Calender />} />
           <Route path="file-sharing" element={<FileSharing />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
-          <Route path="ip-address" element={<IPWhitelistDashboard />} />
         </Route>
       </Route>
       {/* ADMIN ROUTES */}
@@ -119,11 +119,12 @@ function App() {
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
           <Route path="report" element={<CheckReport />} />
+          <Route path="file-sharing" element={<FileSharing />} />
+          <Route path="calender" element={<Calender />} />
           <Route path="attendancerecords" element={<AttendanceRecords />} />
           <Route path="shift-management" element={<ShiftManagement />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
-          <Route path="ip-address" element={<IPWhitelistDashboard />} />
         </Route>
       </Route>
       {/* USER ROUTES */}
@@ -134,6 +135,7 @@ function App() {
           <Route path="performance" element={<PerformanceDashboard />} />
           <Route path="announcement" element={<Announcement />} />
           <Route path="setting" element={<Setting />} />
+          <Route path="calender" element={<Calender />} />
           <Route path="report" element={<UserReport />} />
         </Route>
       </Route>
@@ -157,6 +159,8 @@ function App() {
           <Route path="setting" element={<Setting />} />
           <Route path="leave-request" element={<LeaveRequest />} />
           <Route path="report" element={<CheckReport />} />
+          <Route path="file-sharing" element={<FileSharing />} />
+          <Route path="calender" element={<Calender />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
           <Route path="shift-management" element={<ShiftManagement />} />
         </Route>

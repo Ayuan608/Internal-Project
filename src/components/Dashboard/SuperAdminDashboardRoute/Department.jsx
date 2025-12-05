@@ -15,37 +15,65 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-const NonQuotaMembersTable = ({ nonQuotaMembers }) => {
-  const excludedWords = ["night", "morning", "hours", "backstage"];
+const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab, shiftTargets }) => {
+  const excludedWords = ["hours", "backstage", "senior", "trainee", "highlight", "half", "failed", "assigned", 'reached',"name"];
 
-  // Filter members by excluding specific words in name
+  // Filter out excluded members and seniors/highlights
   const filteredMembers = nonQuotaMembers?.filter((member) => {
     const name = member.name?.toLowerCase() || "";
     return !excludedWords.some((word) => name.includes(word));
   });
- 
+
+  // Function to get target based on shift
+  const getTargetForShift = (shift) => {
+    if (activeTab === "CSR") {
+      if (shift === "morning") return 500;
+      if (shift === "night") return 600;
+      return 560; // default
+    } else if (activeTab === "Deposit") {
+      if (shift === "morning") return 530;
+      if (shift === "night") return 450;
+      return 560; // default
+    } else if (activeTab === "Withdrawal") {
+      if (shift === "morning12") return 1400;
+      if (shift === "morning9") return 900;
+      if (shift === "night12") return 1500;
+      if (shift === "night9") return 1000;
+      return 1500; // default
+    }
+    return 0;
+  };
+
+  // Calculate completion percentage based on shift target
+  const calculateCompletion = (output, shift) => {
+    const target = getTargetForShift(shift);
+    return target > 0 ? Math.round((output / target) * 100) : 0;
+  };
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm table-auto">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
               DATE
             </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">
               NAME
             </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
               OUTPUT
             </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
+              SHIFT
+            </th>
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
               TARGET
             </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
               COMPLETION
             </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs">
+            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
               VARIANCE
             </th>
           </tr>
@@ -53,56 +81,67 @@ const NonQuotaMembersTable = ({ nonQuotaMembers }) => {
 
         <tbody>
           {filteredMembers && filteredMembers.length > 0 ? (
-            filteredMembers.map((member, idx) => (
-              <tr
-                key={idx}
-                className="border-b text-center border-gray-800/30 hover:bg-gray-900/40 transition"
-              >
-                <td className="py-3 px-4 text-gray-400 text-xs">
-                  {member.date}
-                </td>
+            filteredMembers.map((member, idx) => {
+              const target = getTargetForShift(member.shift?.toLowerCase());
+              const completion = calculateCompletion(member.output, member.shift?.toLowerCase());
+              const variance = member.output - target;
 
-                <td className="py-3 px-4 text-white font-medium text-sm">
-                  {member.name}
-                </td>
-
-                <td className="py-3 px-4 text-white text-sm">
-                  {member.output?.toLocaleString() || 0}
-                </td>
-
-                <td className="py-3 px-4 text-white text-sm">
-                  {member.quota?.toLocaleString() || 0}
-                </td>
-
-                <td
-                  className={`py-3 px-4 font-semibold text-sm ${member.completion >= 70
-                    ? "text-green-400"
-                    : "text-red-400"
-                    }`}
+              return (
+                <tr
+                  key={idx}
+                  className="border-b border-gray-800/30 hover:bg-gray-900/40 transition"
                 >
-                  {member.completion}%
-                </td>
+                  <td className="py-3 px-4 text-gray-400 text-xs align-middle text-center">
+                    {member.date}
+                  </td>
 
-                <td className="py-3 px-4 text-red-400 font-medium text-sm">
-                  {member.variance}
-                </td>
-              </tr>
-            ))
+                  {/* NAME SHOULD BE LEFT ALIGNED */}
+                  <td className="py-3 px-4 text-white font-medium text-sm text-left w-[220px]">
+                    {member.name}
+                  </td>
+
+                  <td className="py-3 px-4 text-white text-sm align-middle text-center">
+                    {member.output?.toLocaleString() || 0}
+                  </td>
+
+                  <td className="py-3 px-4 text-gray-300 text-sm align-middle capitalize text-center">
+                    {member.shift || "N/A"}
+                  </td>
+
+                  <td className="py-3 px-4 text-white text-sm align-middle text-center ">
+                    {target?.toLocaleString() || 0}
+                  </td>
+
+                  <td
+                    className={`py-3 px-4 font-semibold text-sm align-middle text-center ${completion >= 70 ? "text-green-400" : "text-red-400"
+                      }`}
+                  >
+                    {completion}%
+                  </td>
+
+                  <td
+                    className={`py-3 px-4 font-medium text-sm align-middle text-center ${variance >= 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                  >
+                    {variance > 0 ? `+${variance}` : variance}
+                  </td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
-              <td
-                colSpan="6"
-                className="py-8 text-center text-gray-400"
-              >
-                No non-quota members found
+              <td colSpan="7" className="py-8 text-center text-gray-400">
+                All agents have met their quota targets
               </td>
             </tr>
           )}
         </tbody>
+
       </table>
     </div>
   );
 };
+
 const Department = () => {
   const [activeTab, setActiveTab] = useState("CSR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -110,7 +149,9 @@ const Department = () => {
   const [departmentStats, setDepartmentStats] = useState({
     CSR: {
       transactions: 0,
-      quota: 560,
+      totalQuota: 560,
+      morningQuota: 500,
+      nightQuota: 600,
       agents: 0,
       completion: 0,
       quotaMet: 0,
@@ -118,10 +159,14 @@ const Department = () => {
       totalAgents: 0,
       quotaMetCount: 0,
       nonQuotaCount: 0,
+      morningAgents: 0,
+      nightAgents: 0,
     },
     Deposit: {
       transactions: 0,
-      quota: 560,
+      totalQuota: 560,
+      morningQuota: 530,
+      nightQuota: 450,
       agents: 0,
       completion: 0,
       quotaMet: 0,
@@ -129,10 +174,16 @@ const Department = () => {
       totalAgents: 0,
       quotaMetCount: 0,
       nonQuotaCount: 0,
+      morningAgents: 0,
+      nightAgents: 0,
     },
     Withdrawal: {
       transactions: 0,
-      quota: 1500,
+      totalQuota: 1500,
+      morning12Quota: 1400,
+      morning9Quota: 900,
+      night12Quota: 1500,
+      night9Quota: 1000,
       agents: 0,
       completion: 0,
       quotaMet: 0,
@@ -148,6 +199,7 @@ const Department = () => {
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state) => state.combinedQuota
   );
+  console.log("data of departent",data)
 
   const formatNumber = (num) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
@@ -159,6 +211,36 @@ const Department = () => {
     dispatch(fetchCombinedDepartmentsData());
   }, [dispatch]);
 
+  // Function to extract shift from agent name
+  const getShiftFromName = (name) => {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes("morning")) return "morning";
+    if (lowerName.includes("night")) return "night";
+    if (lowerName.includes("12h")) return "morning12";
+    if (lowerName.includes("9h")) return "morning9";
+    return "morning"; // default
+  };
+
+  // Function to get target based on department and shift
+  const getTargetForAgent = (department, shift) => {
+    if (department === "CSR") {
+      if (shift === "morning") return 500;
+      if (shift === "night") return 600;
+      return 560;
+    } else if (department === "Deposit") {
+      if (shift === "morning") return 530;
+      if (shift === "night") return 450;
+      return 560;
+    } else if (department === "Withdrawal") {
+      if (shift === "morning12") return 1400;
+      if (shift === "morning9") return 900;
+      if (shift === "night12") return 1500;
+      if (shift === "night9") return 1000;
+      return 1500;
+    }
+    return 0;
+  };
+
   const calculateDepartmentStats = () => {
     if (!data || data.length === 0) {
       return;
@@ -167,7 +249,6 @@ const Department = () => {
     const stats = {
       CSR: {
         transactions: 0,
-        quota: 560,
         agents: 0,
         completion: 0,
         quotaMet: 0,
@@ -175,10 +256,11 @@ const Department = () => {
         totalAgents: 0,
         quotaMetCount: 0,
         nonQuotaCount: 0,
+        morningAgents: 0,
+        nightAgents: 0,
       },
       Deposit: {
         transactions: 0,
-        quota: 560,
         agents: 0,
         completion: 0,
         quotaMet: 0,
@@ -186,10 +268,11 @@ const Department = () => {
         totalAgents: 0,
         quotaMetCount: 0,
         nonQuotaCount: 0,
+        morningAgents: 0,
+        nightAgents: 0,
       },
       Withdrawal: {
         transactions: 0,
-        quota: 1500,
         agents: 0,
         completion: 0,
         quotaMet: 0,
@@ -204,12 +287,10 @@ const Department = () => {
     const today = new Date().toLocaleDateString("en-GB");
 
     data.forEach((row) => {
-
       if (!Array.isArray(row) || row.length < 3) return;
 
       const department = row[0]?.toString()?.trim();
       const memberName = row[2]?.toString()?.trim();
-
 
       if (
         !department ||
@@ -222,13 +303,19 @@ const Department = () => {
         return;
       }
 
+      const shift = getShiftFromName(memberName);
+
       if (department === "CSR") {
         const conversations = parseFloat(row[3]) || 0;
-        const quota = stats.CSR.quota;
+        const target = getTargetForAgent("CSR", shift);
+
         stats.CSR.transactions += conversations;
         stats.CSR.totalAgents += 1;
 
-        const quotaPercentage = quota > 0 ? (conversations / quota) * 100 : 0;
+        if (shift === "morning") stats.CSR.morningAgents += 1;
+        if (shift === "night") stats.CSR.nightAgents += 1;
+
+        const quotaPercentage = target > 0 ? (conversations / target) * 100 : 0;
         if (quotaPercentage >= 70) {
           stats.CSR.quotaMetCount += 1;
         } else {
@@ -238,19 +325,23 @@ const Department = () => {
             date: today,
             name: memberName,
             output: conversations,
-            quota: quota,
+            shift: shift,
+            quota: target,
             completion: Math.round(quotaPercentage),
-            variance: Math.round(conversations - quota),
+            variance: Math.round(conversations - target),
           });
         }
       } else if (department === "Deposit") {
-        const depositAmount =
-          parseFloat(row[9]?.toString()?.replace(/,/g, "")) || 0;
-        const quota = stats.Deposit.quota;
+        const depositAmount = parseFloat(row[9]?.toString()?.replace(/,/g, "")) || 0;
+        const target = getTargetForAgent("Deposit", shift);
+
         stats.Deposit.transactions += depositAmount;
         stats.Deposit.totalAgents += 1;
 
-        const quotaPercentage = quota > 0 ? (depositAmount / quota) * 100 : 0;
+        if (shift === "morning") stats.Deposit.morningAgents += 1;
+        if (shift === "night") stats.Deposit.nightAgents += 1;
+
+        const quotaPercentage = target > 0 ? (depositAmount / target) * 100 : 0;
         if (quotaPercentage >= 70) {
           stats.Deposit.quotaMetCount += 1;
         } else {
@@ -260,19 +351,20 @@ const Department = () => {
             date: today,
             name: memberName,
             output: depositAmount,
-            quota: quota,
+            shift: shift,
+            quota: target,
             completion: Math.round(quotaPercentage),
-            variance: Math.round(depositAmount - quota),
+            variance: Math.round(depositAmount - target),
           });
         }
       } else if (department === "Withdraw") {
-        const withdrawAmount =
-          parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
-        const quota = stats.Withdrawal.quota;
-        stats.Withdrawal.transactions += withdrawAmount;
+        const transactionsProcessed  = parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
+        const target = getTargetForAgent("Withdrawal", shift);
+
+        stats.Withdrawal.transactions += transactionsProcessed ;
         stats.Withdrawal.totalAgents += 1;
 
-        const quotaPercentage = quota > 0 ? (withdrawAmount / quota) * 100 : 0;
+        const quotaPercentage = target > 0 ? (transactionsProcessed  / target) * 100 : 0;
         if (quotaPercentage >= 70) {
           stats.Withdrawal.quotaMetCount += 1;
         } else {
@@ -281,33 +373,49 @@ const Department = () => {
             department: "Withdrawal",
             date: today,
             name: memberName,
-            output: withdrawAmount,
-            quota: quota,
+            output: transactionsProcessed,
+            shift: shift,
+            quota: target,
             completion: Math.round(quotaPercentage),
-            variance: Math.round(withdrawAmount - quota),
+            variance: Math.round(transactionsProcessed  - target),
           });
         }
       }
     });
 
+    // Calculate percentages
     Object.keys(stats).forEach((dept) => {
       const deptStats = stats[dept];
-      deptStats.completion =
-        deptStats.quota > 0
-          ? Math.min(
-            Math.round((deptStats.transactions / deptStats.quota) * 100),
-            100
-          )
-          : 0;
-      deptStats.quotaMet =
-        deptStats.totalAgents > 0
-          ? Math.round((deptStats.quotaMetCount / deptStats.totalAgents) * 100)
-          : 0;
+      const baseStats = departmentStats[dept];
+
+      // Calculate completion based on total transactions vs weighted quota
+      const weightedQuota = dept === "CSR"
+        ? (baseStats.morningQuota * (deptStats.morningAgents || 1) +
+          baseStats.nightQuota * (deptStats.nightAgents || 1)) /
+        (deptStats.morningAgents + deptStats.nightAgents || 1)
+        : dept === "Deposit"
+          ? (baseStats.morningQuota * (deptStats.morningAgents || 1) +
+            baseStats.nightQuota * (deptStats.nightAgents || 1)) /
+          (deptStats.morningAgents + deptStats.nightAgents || 1)
+          : baseStats.totalQuota;
+
+      deptStats.completion = weightedQuota > 0
+        ? Math.min(Math.round((deptStats.transactions / weightedQuota) * 100), 100)
+        : 0;
+
+      deptStats.quotaMet = deptStats.totalAgents > 0
+        ? Math.round((deptStats.quotaMetCount / deptStats.totalAgents) * 100)
+        : 0;
+
       deptStats.nonQuota = 100 - deptStats.quotaMet;
       deptStats.agents = deptStats.totalAgents;
     });
 
-    setDepartmentStats(stats);
+    setDepartmentStats(prev => ({
+      CSR: { ...prev.CSR, ...stats.CSR },
+      Deposit: { ...prev.Deposit, ...stats.Deposit },
+      Withdrawal: { ...prev.Withdrawal, ...stats.Withdrawal },
+    }));
     setNonQuotaMembers(nonQuotaList);
   };
 
@@ -318,7 +426,7 @@ const Department = () => {
   }, [data]);
 
   const currentData = departmentStats[activeTab];
-  const quotaMet = currentData?.quotaMet;
+  const quotaMet = currentData?.quotaMet || 0;
 
   const chartData = {
     labels: ["Quota Met", "Non-Quota"],
@@ -347,41 +455,25 @@ const Department = () => {
     return [
       {
         name: "Quota Met",
-        value: currentData?.quotaMetCount,
+        value: currentData?.quotaMetCount || 0,
         color: "#3b82f6",
       },
       {
         name: "Below Target",
-        value: currentData?.nonQuotaCount,
+        value: currentData?.nonQuotaCount || 0,
         color: "#f97316",
       },
       {
         name: "On Track",
         value: Math.max(
           0,
-          currentData?.agents -
-          currentData?.quotaMetCount -
-          currentData?.nonQuotaCount
+          (currentData?.agents || 0) -
+          (currentData?.quotaMetCount || 0) -
+          (currentData?.nonQuotaCount || 0)
         ),
         color: "#06b6d4",
       },
     ];
-  };
-  const quotaByDepartment = {
-    CSR: {
-      morning: 500,
-      night: 600,
-    },
-    Deposit: {
-      morning: 530,
-      night: 450,
-    },
-    Withdrawal: {
-      morning12: 1400,
-      morning9: 900,
-      night12: 1500,
-      night9: 1000,
-    },
   };
 
   const StatCard = ({
@@ -399,8 +491,15 @@ const Department = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-400 text-xs font-medium mb-1">{label}</p>
-          <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
-          <p className="text-gray-500 text-xs mt-2">{sublabel}</p>
+          {label !== "Shift-Based Quota" && (
+            <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
+          )}
+
+          {sublabel && (
+            <p className="text-sm text-white mt-2 whitespace-pre-line">
+              {sublabel}
+            </p>
+          )}
         </div>
         <div className={`p-3 rounded-lg ${bgColor}`}>
           <Icon size={24} className="text-white" />
@@ -417,9 +516,9 @@ const Department = () => {
     <div className="min-h-screen text-white p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">{"Department Management"}</h1>
+        <h1 className="text-4xl font-bold mb-2">Department Management</h1>
         <p className="text-gray-400">
-          {"Monitor and manage department quotas and performance"}
+          Monitor and manage department quotas and performance
         </p>
       </div>
 
@@ -485,58 +584,57 @@ const Department = () => {
           borderColor="border border-blue-600/50"
           textColor="text-blue-400"
         />
-       <StatCard
-  icon={Target}
-  label="Daily Quota"
-  value={formatNumber(currentData?.quota)}
-  sublabel={
-    <>
-      {activeTab === "CSR" && (
-        <>
-          Morning: {quotaByDepartment.CSR.morning}
-          <br />
-          Night: {quotaByDepartment.CSR.night}
-        </>
-      )}
+        <StatCard
+          icon={Target}
+          label="Shift-Based Quota"
+          value={formatNumber(currentData?.totalQuota)}
+          sublabel={
+            <>
+              {activeTab === "CSR" && (
+                <>
+                  Morning Shift: {currentData?.morningQuota}
+                  <br />
+                  Night Shift: {currentData?.nightQuota}
+                </>
+              )}
 
-      {activeTab === "Deposit" && (
-        <>
-          Morning: {quotaByDepartment.Deposit.morning}
-          <br />
-          Night: {quotaByDepartment.Deposit.night}
-        </>
-      )}
+              {activeTab === "Deposit" && (
+                <>
+                  Morning Shift: {currentData?.morningQuota}
+                  <br />
+                  Night Shift: {currentData?.nightQuota}
+                </>
+              )}
 
-      {activeTab === "Withdrawal" && (
-        <>
-          Morning 12h: {quotaByDepartment.Withdrawal.morning12}
-          <br />
-          Morning 9h: {quotaByDepartment.Withdrawal.morning9}
-          <br />
-          Night 12h: {quotaByDepartment.Withdrawal.night12}
-          <br />
-          Night 9h: {quotaByDepartment.Withdrawal.night9}
-        </>
-      )}
-    </>
-  }
-  bgColor={
-    activeTab === "CSR"
-      ? "bg-blue-600/30"
-      : activeTab === "Deposit"
-      ? "bg-green-600/30"
-      : "bg-orange-600/30"
-  }
-  borderColor={
-    activeTab === "CSR"
-      ? "border border-blue-600/50"
-      : activeTab === "Deposit"
-      ? "border border-green-600/50"
-      : "border border-orange-600/50"
-  }
-  textColor="text-white"
-/>
-
+              {activeTab === "Withdrawal" && (
+                <>
+                  Morning 12h: {currentData?.morning12Quota}
+                  <br />
+                  Morning 9h: {currentData?.morning9Quota}
+                  <br />
+                  Night 12h: {currentData?.night12Quota}
+                  <br />
+                  Night 9h: {currentData?.night9Quota}
+                </>
+              )}
+            </>
+          }
+          bgColor={
+            activeTab === "CSR"
+              ? "bg-blue-600/30"
+              : activeTab === "Deposit"
+                ? "bg-green-600/30"
+                : "bg-orange-600/30"
+          }
+          borderColor={
+            activeTab === "CSR"
+              ? "border border-blue-600/50"
+              : activeTab === "Deposit"
+                ? "border border-green-600/50"
+                : "border border-orange-600/50"
+          }
+          textColor="text-white"
+        />
 
         <StatCard
           icon={Users}
@@ -678,7 +776,7 @@ const Department = () => {
                   Non-Quota Dashboard - {activeTab} Department
                 </h2>
                 <p className="text-gray-400 text-sm mt-2">
-                  Track members who haven't met their quota targets
+                  Track members who haven't met their shift-based quota targets
                 </p>
               </div>
               <div className="flex gap-3">
@@ -695,7 +793,7 @@ const Department = () => {
               </div>
             </div>
             <NonQuotaMembersTable
-              department={activeTab}
+              activeTab={activeTab}
               nonQuotaMembers={filteredNonQuotaMembers}
             />
           </div>
@@ -752,7 +850,6 @@ const Department = () => {
                       ></div>
                     </div>
                   </div>
-
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
@@ -879,7 +976,7 @@ const Department = () => {
                   Non-Quota Dashboard - {activeTab} Department
                 </h2>
                 <p className="text-gray-400 text-xs mt-1">
-                  Track members who haven't met their quota targets
+                  Track members who haven't met their shift-based quota targets
                 </p>
               </div>
               <div className="flex gap-2">
@@ -896,7 +993,7 @@ const Department = () => {
               </div>
             </div>
             <NonQuotaMembersTable
-              department={activeTab}
+              activeTab={activeTab}
               nonQuotaMembers={filteredNonQuotaMembers}
             />
           </div>

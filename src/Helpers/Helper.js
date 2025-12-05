@@ -13,6 +13,7 @@ import {
   BanknoteArrowUp,
   Blend,
   Building2,
+  Calendar,
   CalendarCheck2,
   ClipboardPlus,
   Columns3Cog,
@@ -129,9 +130,8 @@ export const superAdminButtons = () => [
   { to: "/dashboard/EmployeeOfTheMonthAdmin", label: ("Emp of Month"), icon: BanknoteArrowUp },
   { to: "/dashboard/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
   { to: "/dashboard/activityLogs", label: ("Activity Logs"), icon: Antenna },
-  { to: "/dashboard/ip-address", label: ("IP-Whitelist"), icon: Shield },
   { to: "/dashboard/file-sharing", label: ("WPS-Office"), icon: FileText },
-
+  { to: "/dashboard/calender", label: ("Calendar"), icon: Calendar },
 ];
 
 // ✅ Admin Routes
@@ -144,15 +144,9 @@ export const AdminRoutes = () => [
   { to: "/admin/attendancerecords", label: ("Daily Puch Records"), icon: CalendarCheck2 },
   { to: "/admin/login", label: ("Login Credentials"), icon: KeyRound },
   { to: "/admin/report", label: ("Reports"), icon: Proportions },
+  { to: "/admin/calender", label: ("Calendar"), icon: Proportions },
   { to: "/admin/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
   { to: "/admin/shift-management", label: ("Shift Management"), icon: SquareChartGantt },
-  { to: "/admin/ip-address", label: ("IP-Whitelist"), icon: Shield },
-];
-
-// ✅ Checker Buttons
-export const CheckerButtons = () => [
-  { to: "/checker", label: ("Overall Attendance"), icon: UserCheck },
-  { to: "/checker/report", label: ("Reports"), icon: ReportIcon },
 ];
 
 // ✅ Team Buttons
@@ -164,11 +158,15 @@ export const TeamButtons = () => [
   { to: "/team/attendancerecords", label: ("Daily Punch Record"), icon: CalendarCheck2 },
   { to: "/team/Performance", label: ("Team Performance"), icon: KeyRound },
   { to: "/team/report", label: ("Reports"), icon: Proportions },
+  { to: "/team/calender", label: ("Calender"), icon: Proportions },
   { to: "/team/shift-management", label: ("Shift Management"), icon: SquareChartGantt },
   { to: "/team/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
 ];
-
-
+// ✅ Checker Buttons
+export const CheckerButtons = () => [
+  { to: "/checker", label: ("Overall Attendance"), icon: UserCheck },
+  { to: "/checker/report", label: ("Reports"), icon: ReportIcon },
+];
 
 export const userData = {
   labels: ["QUOTA", "NON-QUOTA"],

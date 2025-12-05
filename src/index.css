@@ -302,3 +302,76 @@ button {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
 }
+
+
+/*calender */
+.rbc-header {
+  background-color: #1e293b3a !important;
+  color: #93c5fd !important;
+  padding: 10px 0 !important;
+}
+
+.rbc-today {
+  background-color: rgba(59,130,246,0.03) !important;
+}
+
+.rbc-month-view {
+    border: 1px solid #2e3135 !important; 
+}
+.rbc-header + .rbc-header {
+    border-left: 1px solid #2e3135 !important;
+}
+
+.react-calendar {
+  background: #00010B !important;
+}
+.rbc-off-range-bg {
+    background: #00010B !important;
+}
+.react-calendar{
+      border: 1px solid #2e3135 !important;
+}
+.rbc-day-bg + .rbc-day-bg {
+    border-left: 1px solid #2e3135 !important;
+}
+.rbc-month-row + .rbc-month-row {
+    border-top: 1px solid #2e3135 !important;
+}
+
+.rbc-header{
+  border-bottom: 1px solid #2e3135 !important;
+}
+.react-calendar__tile--active{
+  background: #3b82f6 !important;
+}
+.react-calendar__tile--now {
+    background: #3b82f6 !important;
+}
+.react-calendar__tile:enabled:hover, .react-calendar__tile:enabled:focus {
+    background-color: #2e3135 !important;
+}
+.react-calendar__navigation button:enabled:hover, .react-calendar__navigation button:enabled:focus {
+    background-color: #2e3135 !important;
+}
+.rbc-time-view {
+    border: 1px solid #2e3135 !important;
+}
+.rbc-time-content > * + * > * {
+    border-left: 1px solid #2e3135 !important;
+}
+.rbc-timeslot-group{
+  border-bottom: 1px solid #2e3135 !important;
+}
+.rbc-time-content{
+  border-top: 2px solid #2e3135 !important;
+}
+
+.rbc-day-slot .rbc-time-slot{
+border-top: 1px solid #2e3135 !important;
+}
+.rbc-time-header-content {
+    border-left: 1px solid #2e3135 !important;
+}
+.rbc-time-header.rbc-overflowing {
+    border-right: 1px solid #2e3135 !important;
+}

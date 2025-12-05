@@ -66,7 +66,7 @@ function Filehome() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white" />
                         </div>
 
-                        <button className="bg-blue-600 hover:bg-blue-700 rounded-full px-6 py-3 text-[16px] transition">
+                        <button className="bg-[#3b82f6] hover:bg-[#2764ba] rounded-full px-6 py-3 text-[16px] transition">
                             Search
                         </button>
                     </div>
