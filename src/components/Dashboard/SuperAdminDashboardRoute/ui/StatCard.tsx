@@ -3,7 +3,6 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 import { useMemo, useState } from "react";
 import {
   Line,
@@ -280,85 +279,6 @@ export default function StatCard({
         
         </Box>
 
-        {role === "teamLeader" ? (
-         <Box sx={{ width: "100%", height: 60, mt: 2 }}>
-          <SparkLineChart
-            colors={[chartColor]}
-            data={chartData}
-            area
-            showTooltip
-            showHighlight
-            curve="linear"
-            onHighlightChange={(e: any) => {
-              if (e && e.index !== undefined) {
-                setHoverIndex(e.index);
-              }
-            }}
-            xAxis={{
-              scaleType: "point",
-            }}
-            yAxis={{
-              min: minValue * 0.95,
-              max: maxValue * 1.05,
-            }}
-            tooltip={{
-              renderTooltip: (params: any) => {
-                if (!params || params.index == null) return null;
-
-                const idx = params.index;
-                const dayData = getDailyTotals[idx];
-
-                if (!dayData) return null;
-
-                return (
-                  <Box
-                    sx={{
-                      bgcolor: "#1e293b",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      color: "white",
-                      p: 1.2,
-                      minWidth: 130,
-                    }}
-                  >
-                    <Typography sx={{ fontSize: "12px", opacity: 0.8 }}>
-                      Day {dayData.day}
-                    </Typography>
-
-                    <Typography sx={{ fontSize: "13px" }}>
-                      CSR: <b>{dayData.csr.toLocaleString()}</b>
-                    </Typography>
-
-                    <Typography sx={{ fontSize: "13px" }}>
-                      Deposit: <b>{dayData.deposit.toLocaleString()}</b>
-                    </Typography>
-
-                    <Typography sx={{ fontSize: "13px" }}>
-                      Withdraw: <b>{dayData.withdraw.toLocaleString()}</b>
-                    </Typography>
-                  </Box>
-                );
-              },
-            }}
-            sx={{
-              "& .MuiLineElement-root": {
-                stroke: chartColor,
-                strokeWidth: 2,
-              },
-              "& .MuiAreaElement-root": {
-                fill: `url(#gradient-${index})`,
-              },
-            }}
-          >
-            <defs>
-              <linearGradient id={`gradient-${index}`} x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor={chartColor} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-          </SparkLineChart>
-        </Box>
-        ) : (
           <Box
             sx={{
               width: "100%",
@@ -376,7 +296,7 @@ export default function StatCard({
               index={index}
             />
           </Box>
-        )}
+      
       </CardContent>
     </Card>
   );

@@ -43,6 +43,7 @@ import html2canvas from "html2canvas";
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllAttendance } from '../../../redux/attendenceSlice';
 import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
+import ManpowerStatusSection from './ManpowerStatusSection';
 
 const COLORS = {
   present: '#10B981',
@@ -360,6 +361,15 @@ const OverallAttendanceDashboard = () => {
               <BarChart3 size={18} />
               Analytics
             </button>
+            <button
+              onClick={() => setViewMode('manpower')}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'manpower' ? 'bg-blue-600 text-white' : 'bg-[rgba(59,130,246,0.03)] border border-slate-800/30 text-gray-300 hover:bg-slate-700'}`}
+            >
+              <Users size={18} />
+              ManPower
+            </button>
+
+
             <button
               onClick={() => setViewMode('table')}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'bg-[rgba(59,130,246,0.03)] border border-slate-800/30 text-gray-300 hover:bg-slate-700'}`}
@@ -916,6 +926,9 @@ const OverallAttendanceDashboard = () => {
           <AttendanceDashboard />
         )
       }
+      {viewMode === 'manpower' && (
+        <ManpowerStatusSection />
+      )}
       {selectedCard && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 

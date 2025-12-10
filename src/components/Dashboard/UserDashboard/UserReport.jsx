@@ -377,7 +377,7 @@ function UserReport() {
                     <div className='bg-[rgba(59,130,246,0.03)] backdrop-blur-md text-white rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-800 max-h-[90vh] overflow-y-auto'>
                         <div className='sticky top-0 bg-[rgba(59,130,246,0.03)] backdrop-brightness-0 border-b border-gray-800 px-8 py-5 flex justify-between items-center z-10'>
                             <div>
-                                <h2 className='text-2xl font-bold text-white'>Daily Report to Super Admin</h2>
+                                <h2 className='text-2xl font-bold text-white'>Daily Report to Team-Leader</h2>
                                 <p className="text-sm text-gray-400 mt-1">Submit your daily performance report</p>
                             </div>
                             <button

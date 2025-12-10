@@ -120,7 +120,26 @@ export const editUserAccount = createAsyncThunk(
     }
   }
 );
+// Add this with other async thunks
+export const updateUserStatus = createAsyncThunk(
+  'user/updateStatus',
+  async ({ id, status }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put(`/user/${id}/status`, { status });
 
+      toast.success(response.data.message || `User ${status} successfully!`);
+
+      return response.data;
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || `Failed to update user status!`
+      );
+      return rejectWithValue(error?.response?.data || "Failed to update status");
+    }
+  }
+);
+
+// Aur yeh backend route bhi add karna hoga controllers mein
 export const verify2FA = createAsyncThunk(
   "/auth/verify-2fa",
   async ({ otp }, { rejectWithValue }) => {

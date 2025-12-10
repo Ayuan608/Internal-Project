@@ -127,6 +127,7 @@ export const superAdminButtons = () => [
   { to: "/dashboard/overallAttendance", label: ("Overall Attendance"), icon: Blend },
   { to: "/dashboard/login", label: ("Login Credentials"), icon: KeyRound },
   { to: "/dashboard/storage", label: ("Storage"), icon: DatabaseZap },
+  { to: "/dashboard/attendancerecords", label: ("Daily Puch Records"), icon: CalendarCheck2 },
   { to: "/dashboard/EmployeeOfTheMonthAdmin", label: ("Emp of Month"), icon: BanknoteArrowUp },
   { to: "/dashboard/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
   { to: "/dashboard/activityLogs", label: ("Activity Logs"), icon: Antenna },
@@ -140,13 +141,17 @@ export const AdminRoutes = () => [
   { to: "/admin/department", label: ("Department"), icon: Building2 },
   { to: "/admin/directory", label: ("Directory"), icon: Users },
   { to: "/admin/announcement", label: ("Announcements"), icon: Megaphone },
+  { to: "/admin/attendance", label: ("Attendance"), icon: FileText },
   { to: "/admin/overallAttendance", label: ("Overall Attendance"), icon: CalendarCheck2 },
   { to: "/admin/attendancerecords", label: ("Daily Puch Records"), icon: CalendarCheck2 },
   { to: "/admin/login", label: ("Login Credentials"), icon: KeyRound },
   { to: "/admin/report", label: ("Reports"), icon: Proportions },
-  { to: "/admin/calender", label: ("Calendar"), icon: Proportions },
+  { to: "/admin/storage", label: ("Storage"), icon: DatabaseZap },
   { to: "/admin/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
   { to: "/admin/shift-management", label: ("Shift Management"), icon: SquareChartGantt },
+  { to: "/admin/calender", label: ("Calendar"), icon: Proportions },
+  { to: "/admin/audit-trial", label: ("Audit Logs"), icon: Proportions },
+
 ];
 
 // ✅ Team Buttons
@@ -155,6 +160,7 @@ export const TeamButtons = () => [
   { to: "/team/employeeDirectory", label: ("Directory"), icon: Users },
   { to: "/team/restday", label: ("Schedule & Rest day"), icon: User2 },
   { to: "/team/non-quotamember", label: ("Non-Quota Members"), icon: FileText },
+  { to: "/team/attandance", label: ("Attendance"), icon: FileText },
   { to: "/team/attendancerecords", label: ("Daily Punch Record"), icon: CalendarCheck2 },
   { to: "/team/Performance", label: ("Team Performance"), icon: KeyRound },
   { to: "/team/report", label: ("Reports"), icon: Proportions },
@@ -167,6 +173,7 @@ export const CheckerButtons = () => [
   { to: "/checker", label: ("Overall Attendance"), icon: UserCheck },
   { to: "/checker/report", label: ("Reports"), icon: ReportIcon },
 ];
+
 
 export const userData = {
   labels: ["QUOTA", "NON-QUOTA"],

@@ -302,35 +302,22 @@ const Menus = ({ toggle, onTitleChange }) => {
               </div>
             </div>
 
-            {toggle && (
+            {toggle && role === "Super-Admin" && (
               <Link
-                to={
-                  role === "User"
-                    ? "/user/setting"
-                    : role === "Admin"
-                      ? "/admin/setting"
-                      : role === "Super-Admin"
-                        ? "/dashboard/setting"
-                        : role === "Team-Leader"
-                          ? "/team/setting"
-                          : role === "Checker"
-                            ? "/checker/setting"
-                            : "/default/setting"
-                }
-                onClick={() => { }}
+                to="/dashboard/setting"
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
                 <Settings className="w-5 h-5" />
-                <span className="text-sm">{"Settings"}</span>
+                <span className="text-sm">Settings</span>
               </Link>
             )}
+
           </div>
         </div>
       ) : (
         <div className="py-2">
           <div className="absolute inset-0 -z-10"></div>
           <Link
-            to={"/"}
             className="flex justify-center items-center mt-10 z-10"
           >
             <img
@@ -354,9 +341,7 @@ const Menus = ({ toggle, onTitleChange }) => {
 
           <div className="absolute bottom-4 left-6 flex justify-center items-center z-10">
             <div className="flex flex-col gap-4 relative">
-              <Link to={"setting"}>
-                <Settings className="cursor-pointer rounded-full text-white hover:bg-[#1c1c27a9]" />
-              </Link>
+          
               <div ref={wrapperRef} className="relative">
                 <img
                   src={

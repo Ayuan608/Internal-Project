@@ -375,3 +375,85 @@ border-top: 1px solid #2e3135 !important;
 .rbc-time-header.rbc-overflowing {
     border-right: 1px solid #2e3135 !important;
 }
+td.px-4.py-3.whitespace-nowrap.text-center.sfsdf.text-sm.font-medium.text-gray-100 {
+    text-align: left;
+    display: block;
+    width: 100px;
+    padding-left: 51px;
+}
+tr.border-t-2.border-blue-500.font-semibold {
+    text-align: center;
+}
+
+
+td.px-6.py-4.text-white.font-medium.capitalize.sdas, td.px-6.py-4.text-gray-300.sdas {
+    text-align: left;
+    width: 192px;
+    padding-left: 40px;
+}
+td.px-6.py-4.text-gray-300.sdasemail {
+    text-align: left;
+    width: 142px;
+    padding-left: 27px;
+}
+th.px-6.py-4.text-center.text-xs.font-semibold.text-gray-300.uppercase.tracking-wider.emailwidth {
+    text-align: left;
+    padding-left: 79px;
+}
+.phonewidth {
+    text-align: left;
+    padding-left: 60px;
+    display: block;
+}
+td.px-6.py-4.sdsadepart {
+    padding-left: 74px;
+}
+.rolewidth {
+    text-align: left;
+    padding-left: 50px;
+}
+.shiftwidth {
+    text-align: left;
+    padding-left: 35px;
+}
+.salerywith {
+    width: auto;
+    padding-left: 0px;
+}
+.statuswidth {
+    text-align: left;
+    padding-left: 27px;
+}
+td.px-6.py-4.dsb {
+    padding-right: 0px;
+    padding-left: 32px;
+}
+/* ✅ Saare TH center */
+.custom-employee-table th {
+  text-align: center !important;
+}
+
+/* ✅ Saare TD ka COLUMN center me rahe */
+.custom-employee-table td {
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+/* ✅ NAME column ka TEXT left ho, COLUMN center rahe */
+.custom-employee-table td:nth-child(1) > * {
+  text-align: left !important;
+  display: inline-block;
+  width: 100%;
+}
+
+/* ✅ EMAIL column ka TEXT left ho, COLUMN center rahe */
+.custom-employee-table td:nth-child(5) > * {
+  text-align: left !important;
+  display: inline-block;
+  width: 100%;
+}
+
+/* ✅ Actions hamesha center */
+.custom-employee-table td:last-child {
+  text-align: center !important;
+}

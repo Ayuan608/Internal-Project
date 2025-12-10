@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getUserAttendance } from "../../redux/attendenceSlice";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-
+const loadedRef = useRef(false);
 // Constants
 const INITIAL_PAGE_SIZE = 10;
 const SMOKE_WC_DURATION = 300; // seconds
@@ -60,16 +60,15 @@ const getStoredActiveTimer = (userId) => {
   try {
     const timer = JSON.parse(stored);
     const now = new Date();
-    const startTime = new Date(timer.startTime); // Parse string to Date
+    const startTime = new Date(timer.startTime);
     const elapsedMinutes = (now - startTime) / (1000 * 60);
 
     if (elapsedMinutes > MAX_STALE_TIMER_MINUTES) {
-      console.log("Discarding stale timer:", timer);
       localStorage.removeItem(key);
       return null;
     }
 
-    return { ...timer, startTime }; // Return Date object
+    return { ...timer, startTime };
   } catch (error) {
     console.error("Error parsing active timer:", error);
     localStorage.removeItem(key);
@@ -83,12 +82,13 @@ const setStoredActiveTimer = (timer, userId) => {
   if (timer) {
     localStorage.setItem(key, JSON.stringify({
       ...timer,
-      startTime: timer.startTime.toISOString() // Store as ISO string
+      startTime: timer.startTime.toISOString()
     }));
   } else {
     localStorage.removeItem(key);
   }
 };
+
 // FIXED: User-specific storage clearing
 const clearBreakStorage = (userId) => {
   if (!userId) return;
@@ -113,10 +113,23 @@ const saveBreakRecord = async (breakRecord) => {
   }
 };
 
+// FIXED: API response handling
 const fetchBreakRecords = async (userId, date) => {
   try {
     const response = await api.get(`/attendance/breaks/${userId}?date=${date}`);
-    return response.data || [];
+    const data = response.data;
+    
+    // Handle different response formats
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data && typeof data === 'object') {
+      // Check for common response structures
+      if (Array.isArray(data.data)) return data.data;
+      if (Array.isArray(data.breaks)) return data.breaks;
+      if (Array.isArray(data.records)) return data.records;
+      return [];
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching break records:", error);
     return [];
@@ -125,15 +138,14 @@ const fetchBreakRecords = async (userId, date) => {
 
 export const useAttendanceDashboard = () => {
   const dispatch = useDispatch();
-  const userId = useSelector((state) => state.auth.data?._id, (a, b) => a === b);
-  console.log(userId)
-  // FIXED: Add user change detection
-  const [previousUserId, setPreviousUserId] = useState(null);
+  const userId = useSelector((state) => state.auth.data?._id);
+  
+  // FIXED: Optimized selector to prevent unnecessary re-renders
+  const attendanceList = useSelector((state) => state.attendance.attendanceList);
+  const isLoading = useSelector((state) => state.attendance.isLoading);
 
-  const { attendanceList, isLoading } = useSelector(
-    (state) => state.attendance,
-    (a, b) => a.attendanceList === b.attendanceList && a.isLoading === b.isLoading
-  );
+  // FIXED: Add user change detection with useRef to prevent loops
+  const previousUserIdRef = useRef(null);
 
   // States - FIXED: Initialize with userId
   const [activeTimer, setActiveTimer] = useState(() => getStoredActiveTimer(userId));
@@ -150,7 +162,7 @@ export const useAttendanceDashboard = () => {
   const [warningShown, setWarningShown] = useState(false);
   const timerIntervalRef = useRef(null);
 
-  // FIXED: Check punch status - MOVE THIS BEFORE startBreak function
+  // FIXED: Check punch status
   const hasPunchedOutToday = useMemo(() => {
     if (!Array.isArray(attendanceList) || attendanceList.length === 0) return false;
     const today = new Date().toISOString().split("T")[0];
@@ -171,14 +183,14 @@ export const useAttendanceDashboard = () => {
     return todayRecord?.clockIn && todayRecord.clockIn !== "";
   }, [attendanceList]);
 
-  // FIXED: Detect user change and reset data
+  // FIXED: Detect user change and reset data - ONCE ONLY
   useEffect(() => {
-    if (userId && userId !== previousUserId) {
-      console.log("User changed from", previousUserId, "to", userId, "- Resetting break data");
+    if (userId && userId !== previousUserIdRef.current) {
+      console.log("User changed from", previousUserIdRef.current, "to", userId, "- Resetting break data");
 
       // Clear previous user's timer
-      if (previousUserId) {
-        setStoredActiveTimer(null, previousUserId);
+      if (previousUserIdRef.current) {
+        setStoredActiveTimer(null, previousUserIdRef.current);
       }
 
       // Reset states for new user
@@ -188,11 +200,11 @@ export const useAttendanceDashboard = () => {
       setTimeLeft(300);
       setWarningShown(false);
 
-      setPreviousUserId(userId);
+      previousUserIdRef.current = userId;
     }
-  }, [userId, previousUserId]);
+  }, [userId]);
 
-  // FIXED: Update timeLeft based on activeTimer with userId
+  // FIXED: Update timeLeft based on activeTimer
   useEffect(() => {
     if (!activeTimer) {
       setTimeLeft(300);
@@ -206,13 +218,12 @@ export const useAttendanceDashboard = () => {
     const remaining = duration - elapsedSeconds;
 
     setTimeLeft(remaining);
-    setWarningShown(remaining <= 0);
-
+    
     if (remaining <= 0 && !warningShown) {
       toast.error(`Your ${activeTimer.type} break time has already exceeded! Please end the break immediately.`);
       setWarningShown(true);
     }
-  }, [activeTimer, warningShown]);
+  }, [activeTimer]);
 
   // FIXED: loadBreakData with userId
   const loadBreakData = useCallback(async () => {
@@ -220,6 +231,10 @@ export const useAttendanceDashboard = () => {
     const today = new Date().toISOString().split("T")[0];
     try {
       const breaks = await fetchBreakRecords(userId, today);
+      
+      // FIXED: Ensure breaks is an array
+      const breaksArray = Array.isArray(breaks) ? breaks : [];
+      
       const counts = {
         smoke: 0,
         wc: 0,
@@ -228,7 +243,7 @@ export const useAttendanceDashboard = () => {
         userId: userId
       };
 
-      breaks.forEach((record) => {
+      breaksArray.forEach((record) => {
         if (record.type === "smoke" && record.endTime) counts.smoke++;
         else if (record.type === "wc" && record.endTime) counts.wc++;
         else if (record.type === "lunch" && record.endTime) counts.lunch++;
@@ -248,12 +263,12 @@ export const useAttendanceDashboard = () => {
       });
 
       setBreakHistory((prev) => {
-        if (JSON.stringify(prev) === JSON.stringify(breaks)) return prev;
-        return breaks;
+        if (JSON.stringify(prev) === JSON.stringify(breaksArray)) return prev;
+        return breaksArray;
       });
 
-      if (breaks.length > 0) {
-        addToBreakHistory(breaks[0], userId);
+      if (breaksArray.length > 0) {
+        addToBreakHistory(breaksArray[0], userId);
       }
     } catch (err) {
       console.error("Failed to load break data, using localStorage", err);
@@ -270,12 +285,14 @@ export const useAttendanceDashboard = () => {
     }
   }, [userId]);
 
-  // FIXED: Check and reset break counts daily with userId
+  // FIXED: Check and reset break counts daily with userId - ONLY ONCE
   useEffect(() => {
     if (!userId) return;
 
     const today = new Date().toDateString();
-    if (breakCounts.lastReset !== today) {
+    const storedCounts = getStoredBreakCounts(userId);
+    
+    if (storedCounts.lastReset !== today) {
       console.log("Resetting break counts for new day for user:", userId);
       const resetCounts = {
         smoke: 0,
@@ -289,7 +306,7 @@ export const useAttendanceDashboard = () => {
       setBreakHistory([]);
       clearBreakStorage(userId);
     }
-  }, [breakCounts.lastReset, userId]);
+  }, [userId]); // Only depend on userId
 
   // FIXED: endBreak with userId
   const endBreak = useCallback(async () => {
@@ -335,7 +352,7 @@ export const useAttendanceDashboard = () => {
     setWarningShown(false);
   }, [activeTimer, userId]);
 
-  // FIXED: startBreak with userId - NOW hasPunchedOutToday is defined
+  // FIXED: startBreak with userId
   const startBreak = useCallback(
     async (type) => {
       if (!userId) {
@@ -391,7 +408,7 @@ export const useAttendanceDashboard = () => {
     [hasPunchedOutToday, hasPunchedInToday, breakCounts, activeTimer, userId]
   );
 
-  // Timer countdown effect - UPDATED to allow negative and show warning
+  // Timer countdown effect
   useEffect(() => {
     if (!activeTimer) {
       if (timerIntervalRef.current) {
@@ -401,7 +418,6 @@ export const useAttendanceDashboard = () => {
       return;
     }
 
-    // Clear any existing interval
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
     }
@@ -409,12 +425,11 @@ export const useAttendanceDashboard = () => {
     timerIntervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         const newTime = prev - 1;
-        // Show warning only once when it first hits 0 or below
         if (newTime <= 0 && prev > 0 && !warningShown) {
           toast.error(`Your ${activeTimer.type} break time has exceeded! Please end the break immediately.`);
           setWarningShown(true);
         }
-        return newTime; // Allow negative
+        return newTime;
       });
     }, 1000);
 
@@ -426,7 +441,7 @@ export const useAttendanceDashboard = () => {
     };
   }, [activeTimer, warningShown]);
 
-  // Load attendance and break data on mount
+  // Load attendance and break data on mount - ONLY ONCE
   useEffect(() => {
     const loadData = async () => {
       setError(null);
@@ -444,8 +459,12 @@ export const useAttendanceDashboard = () => {
         setError(err instanceof Error ? err.message : "Failed to load data");
       }
     };
-    loadData();
-  }, [dispatch, userId, loadBreakData]);
+    
+    // Only load if we have userId and haven't loaded yet
+    if (userId && !attendanceList.length) {
+      loadData();
+    }
+  }, [dispatch, userId]); // Removed loadBreakData from dependencies
 
   const currentStatus = useMemo(() => {
     if (hasPunchedOutToday) return "Punched Out";
@@ -526,7 +545,6 @@ export const useAttendanceDashboard = () => {
   const calculateTotalBreakTime = useCallback((row) => {
     let totalBreakMinutes = 0;
 
-    // Calculate WC break time
     if (row.wcStart && row.wcEnd) {
       try {
         const start = new Date(row.wcStart);
@@ -539,7 +557,6 @@ export const useAttendanceDashboard = () => {
       }
     }
 
-    // Calculate Smoke break time
     if (row.smokeStart && row.smokeEnd) {
       try {
         const start = new Date(row.smokeStart);
@@ -552,7 +569,6 @@ export const useAttendanceDashboard = () => {
       }
     }
 
-    // Calculate Lunch break time
     if (row.lunchStart && row.lunchEnd) {
       try {
         const start = new Date(row.lunchStart);
@@ -565,7 +581,6 @@ export const useAttendanceDashboard = () => {
       }
     }
 
-    // Also check break history for additional breaks
     if (row.date) {
       const dateBreaks = breakHistory.filter(record => record.date === row.date);
       dateBreaks.forEach(record => {
@@ -583,12 +598,10 @@ export const useAttendanceDashboard = () => {
     const breaks = [];
     let totalBreakMinutes = calculateTotalBreakTime(row);
 
-    // Check which breaks were taken
     if (row.wcStart && row.wcEnd) breaks.push("WC");
     if (row.smokeStart && row.smokeEnd) breaks.push("Smoke");
     if (row.lunchStart && row.lunchEnd) breaks.push("Lunch");
 
-    // Also check break history
     if (row.date) {
       const dateBreaks = breakHistory.filter(record => record.date === row.date);
       dateBreaks.forEach(record => {
@@ -604,7 +617,6 @@ export const useAttendanceDashboard = () => {
 
     const breakTypes = breaks.join(", ");
 
-    // Format total time
     let totalTimeDisplay = "";
     if (totalBreakMinutes > 0) {
       if (totalBreakMinutes >= 60) {
@@ -697,7 +709,6 @@ export const useAttendanceDashboard = () => {
         }
       }
 
-      // Calculate break times from attendance records
       if (row.smokeStart && row.smokeEnd) {
         try {
           const diff = Math.floor(
@@ -730,7 +741,6 @@ export const useAttendanceDashboard = () => {
       last7Days.add(rowDate);
     });
 
-    // Add break times from break history
     breakHistory.forEach((record) => {
       if (record.endTime) {
         const minutes = Math.floor((record.duration || 0) / 60);
@@ -919,11 +929,10 @@ export const useAttendanceDashboard = () => {
   };
 };
 
-
-
-// FIXED: Updated useAttendanceAnnouncement hook
+// FIXED: Updated useAttendanceAnnouncement hook - SHOW ONLY ONCE PER SESSION
 export const useAttendanceAnnouncement = () => {
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [hasSeenAnnouncement, setHasSeenAnnouncement] = useState(false);
   const attendanceList = useSelector((state) => state.attendance.attendanceList);
   const userId = useSelector((state) => state.auth.data?._id);
 
@@ -971,22 +980,51 @@ export const useAttendanceAnnouncement = () => {
   const excessiveBreaks = totalTodayBreakMinutes > 60;
   const latePunchOut = isAfter630PM && !hasPunchedOutToday;
 
-  const shouldShow = forgotPunchIn || forgotPunchOut || excessiveBreaks || latePunchOut;
+  const shouldShow = (forgotPunchIn || forgotPunchOut || excessiveBreaks || latePunchOut);
 
   useEffect(() => {
-    // FIXED: User-specific hide preference
-    const hide = localStorage.getItem(`hideAttendanceAnnouncement_${userId}`) === "true";
-    if (hide) {
+    // Check if user has already seen announcement in this session
+    const sessionKey = `announcementSeen_${userId}_${today}_session`;
+    const sessionSeen = sessionStorage.getItem(sessionKey) === "true";
+    
+    if (sessionSeen || hasSeenAnnouncement) {
       setShowAnnouncement(false);
       return;
     }
 
-    setShowAnnouncement(shouldShow);
-  }, [forgotPunchIn, forgotPunchOut, excessiveBreaks, latePunchOut, shouldShow, userId]);
+    // Check permanent hide preference
+    const permanentHide = localStorage.getItem(`hideAttendanceAnnouncement_${userId}`) === "true";
+    if (permanentHide) {
+      setShowAnnouncement(false);
+      return;
+    }
+
+    // Only show if conditions are met
+    if (shouldShow) {
+      setShowAnnouncement(true);
+    } else {
+      setShowAnnouncement(false);
+    }
+  }, [forgotPunchIn, forgotPunchOut, excessiveBreaks, latePunchOut, shouldShow, userId, today, hasSeenAnnouncement]);
+
+  // Handle announcement close
+  const handleCloseAnnouncement = useCallback((dontShowAgain = false) => {
+    setShowAnnouncement(false);
+    setHasSeenAnnouncement(true);
+    
+    // Mark as seen for this session
+    const sessionKey = `announcementSeen_${userId}_${today}_session`;
+    sessionStorage.setItem(sessionKey, "true");
+    
+    // If user selects "Don't show again", save permanent preference
+    if (dontShowAgain && userId) {
+      localStorage.setItem(`hideAttendanceAnnouncement_${userId}`, "true");
+    }
+  }, [userId, today]);
 
   return {
     showAnnouncement,
-    setShowAnnouncement,
+    setShowAnnouncement: handleCloseAnnouncement, // Export the close handler
     hasPunchedIn: hasPunchedInToday,
     hasPunchedOut: hasPunchedOutToday,
     forgotPunchIn,
@@ -994,5 +1032,7 @@ export const useAttendanceAnnouncement = () => {
     excessiveBreaks,
     latePunchOut,
     totalBreakMinutes: totalTodayBreakMinutes,
+    // Add new function for closing with option
+    closeAnnouncement: handleCloseAnnouncement,
   };
 };

@@ -1,110 +1,164 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../Helpers/axiosInstance";
+import { toast } from "react-hot-toast";
 
 const initialState = {
   attendance: null,
   attendanceList: [],
   allAttendance: [],
   todayAttendance: null,
+  todayBreaks: null,
   stats: null,
   pagination: null,
   departmentAttendance: [],
-  pagination: null,
   dayOffRequests: [],
   departmentPagination: null,
+  isLoading: false,
+  error: null,
+  success: false,
+  breaksLoading: false,
 };
 
-// Punch In
+// Common error handler
+const handleError = (error, defaultMessage = "Operation failed") => {
+  const message = error.response?.data?.message || error.message || defaultMessage;
+  console.error("Error:", message);
+  toast.error(message);
+  return message;
+};
+
+// 1. PUNCH IN/OUT
 export const punchIn = createAsyncThunk(
   "attendance/punchIn",
   async ({ userId, shift }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post(
-        `/attendance/punch-in/${userId}`,
-        { shift }
-      );
-      return response.data;
+      const { data } = await axiosInstance.post(`/attendance/punch-in/${userId}`, { shift });
+      if (data.success) toast.success(data.message || "Punched in!");
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Punch in failed"));
     }
   }
 );
 
-// Punch Out
 export const punchOut = createAsyncThunk(
   "attendance/punchOut",
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post(
-        `/attendance/punch-out/${userId}`
-      );
-      return response.data;
+      const { data } = await axiosInstance.post(`/attendance/punch-out/${userId}`);
+      if (data.success) toast.success(data.message || "Punched out!");
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Punch out failed"));
     }
   }
 );
 
-// Get User Attendance
-export const getUserAttendance = createAsyncThunk(
-  "attendance/getUserAttendance",
-  async ({ userId, startDate, endDate, page, limit }, { rejectWithValue }) => {
+// 2. BREAK MANAGEMENT (NEW FUNCTIONS)
+export const startBreak = createAsyncThunk(
+  "attendance/startBreak",
+  async ({ userId, breakType }, { rejectWithValue }) => {
     try {
-      const params = new URLSearchParams();
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-      if (page) params.append("page", page);
-      if (limit) params.append("limit", limit);
-
-      const response = await axiosInstance.get(
-        `/attendance/user/${userId}?${params.toString()}`
-      );
-      return response.data;
+      const { data } = await axiosInstance.post(`/attendance/start-break/${userId}`, { breakType });
+      if (data.success) {
+        toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break started`);
+      }
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Failed to start break"));
     }
   }
 );
-// admin and super admin
-// Get Today's Attendance
+
+export const endBreak = createAsyncThunk(
+  "attendance/endBreak",
+  async ({ userId, breakType }, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.post(`/attendance/end-break/${userId}`, { breakType });
+      if (data.success) {
+        toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break ended`);
+      }
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to end break"));
+    }
+  }
+);
+
+export const getTodayBreaks = createAsyncThunk(
+  "attendance/getTodayBreaks",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.get(`/attendance/today-breaks/${userId}`);
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to get breaks"));
+    }
+  }
+);
+
+// 3. ATTENDANCE DATA FETCHING
 export const getTodayAttendance = createAsyncThunk(
   "attendance/getTodayAttendance",
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get(`/attendance/today/${userId}`);
-      return response.data;
+      const { data } = await axiosInstance.get(`/attendance/today/${userId}`);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Failed to get today's attendance"));
     }
   }
 );
 
-// Get All Attendance (Admin)
+export const getUserAttendance = createAsyncThunk(
+  "attendance/getUserAttendance",
+  async ({ userId, startDate, endDate, page = 1, limit = 10 }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      params.append("page", page);
+      params.append("limit", limit);
+
+      const { data } = await axiosInstance.get(`/attendance/user/${userId}?${params}`);
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to get attendance"));
+    }
+  }
+);
+
+// src/redux/attendenceSlice.js
+
 export const getAllAttendance = createAsyncThunk(
   "attendance/getAllAttendance",
-  async (
-    { startDate, endDate, department, page, limit },
-    { rejectWithValue }
-  ) => {
+  async ({ startDate, endDate, department, page = 1, limit = 50 }, { rejectWithValue }) => {
     try {
       const params = new URLSearchParams();
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
       if (department) params.append("department", department);
-      if (page) params.append("page", page);
-      if (limit) params.append("limit", limit);
+      params.append("page", page);
+      params.append("limit", limit);
 
-      const response = await axiosInstance.get(
-        `/attendance/all?${params.toString()}`
-      );
+      console.log("🚀 Making API call to /attendance/all with params:", params.toString());
+
+      const response = await axiosInstance.get(`/attendance/all?${params}`);
+
+      console.log("✅ API Response:", response);
+      console.log("📊 Response data:", response.data);
+      console.log("👥 Attendance data received:", response.data?.attendance?.length || 0);
+
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      console.error("❌ Error in getAllAttendance:", error);
+      console.error("❌ Error response:", error.response);
+      return rejectWithValue(handleError(error, "Failed to get all attendance"));
     }
   }
 );
 
-// Get Attendance Stats
+// 4. STATS & DEPARTMENT
 export const getAttendanceStats = createAsyncThunk(
   "attendance/getAttendanceStats",
   async ({ userId, startDate, endDate }, { rejectWithValue }) => {
@@ -114,157 +168,316 @@ export const getAttendanceStats = createAsyncThunk(
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
 
-      const response = await axiosInstance.get(
-        `/attendance/stats?${params.toString()}`
-      );
-      return response.data;
+      const { data } = await axiosInstance.get(`/attendance/stats?${params}`);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Failed to get stats"));
     }
   }
 );
 
-// Get Attendance by Department
-export const getAttendanceByDepartment = createAsyncThunk(
-  "attendance/getAttendanceByDepartment",
-  async (
-    { department, startDate, endDate, page, limit },
-    { rejectWithValue }
-  ) => {
-    try {
-      const params = new URLSearchParams();
-      if (department) params.append("department", department);
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-      if (page) params.append("page", page);
-      if (limit) params.append("limit", limit);
-
-      const response = await axiosInstance.get(
-        `/attendance/department?${params.toString()}`
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-// Get Department Wise Users (for department head/manager)
 export const getDepartmentWiseUsers = createAsyncThunk(
   "attendance/getDepartmentWiseUsers",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get("/attendance/get-department-wise");
-      return response.data;
+      const { data } = await axiosInstance.get("/attendance/get-department-wise");
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Failed to get department users"));
     }
   }
 );
 
-// Request Day Off
+// 5. DAY OFF REQUESTS
 export const requestDayOff = createAsyncThunk(
   "attendance/requestDayOff",
-  async ({ date, reason }, { rejectWithValue }) => {
+  async ({ date, reason, type = "Rest Day" }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post("/attendance/request-day-off", {
+      const { data } = await axiosInstance.post("/attendance/request-day-off", {
         date,
         reason,
+        type
       });
-      return response.data;
+      if (data.success) toast.success(data.message || "Day off request submitted!");
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Day off request failed"));
     }
   }
 );
-// Get Day Off Requests (Team Leader / Admin / Super-Admin)
+
 export const getDayOffRequests = createAsyncThunk(
   "attendance/getDayOffRequests",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get("/attendance/day-off-requests");
-      return response.data;
+      const { data } = await axiosInstance.get("/attendance/day-off-requests");
+      return data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(handleError(error, "Failed to get day off requests"));
     }
   }
 );
+export const getCheckerStats = createAsyncThunk(
+  "attendance/getCheckerStats",
+  async ({ startDate, endDate, department }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      if (department && department !== 'all') params.append("department", department);
 
+      console.log("📡 Fetching checker stats with params:", params.toString());
+
+      const { data } = await axiosInstance.get(`/attendance/checker-stats?${params}`);
+
+      console.log("✅ Checker stats response:", data);
+
+      return data;
+    } catch (error) {
+      console.error("❌ Error fetching checker stats:", error);
+      return rejectWithValue(handleError(error, "Failed to get checker stats"));
+    }
+  }
+);
+// SLICE
 const attendanceSlice = createSlice({
   name: "attendance",
   initialState,
   reducers: {
     clearAttendance: (state) => {
       state.attendance = null;
+      state.success = false;
+      state.error = null;
     },
     clearTodayAttendance: (state) => {
       state.todayAttendance = null;
+      state.todayBreaks = null;
     },
-    clearStats: (state) => {
-      state.stats = null;
+    clearBreaks: (state) => {
+      state.todayBreaks = null;
     },
-    clearDepartmentAttendance: (state) => {
-      state.departmentAttendance = [];
-      state.departmentPagination = null;
+    resetAttendanceState: () => initialState,
+    setAttendanceLoading: (state, action) => {
+      state.isLoading = action.payload;
     },
+    clearAttendanceError: (state) => {
+      state.error = null;
+      state.success = false;
+    }
   },
   extraReducers: (builder) => {
     builder
-      // ... your existing cases (punchIn, punchOut, getUserAttendance, etc.)
-      .addCase(requestDayOff.fulfilled, (state, action) => {
-        state.dayOffRequests = action.payload.data;
+      // PUNCH IN/OUT
+      .addCase(punchIn.fulfilled, (state, action) => {
+        const newRecord = action.payload.attendance;
+        if (newRecord) {
+          const existingIndex = state.attendanceList.findIndex(row => row.date === newRecord.date);
+          if (existingIndex !== -1) {
+            state.attendanceList[existingIndex] = newRecord;
+          } else {
+            state.attendanceList.unshift(newRecord);
+          }
+        }
+        state.todayAttendance = newRecord;
+        state.attendance = newRecord;
+        state.success = true;
+        state.isLoading = false;
       })
-      .addCase(getDayOffRequests.fulfilled, (state, action) => {
-        state.dayOffRequests = action.payload.requests; // array of dayoff requests
+      .addCase(punchOut.fulfilled, (state, action) => {
+        const newRecord = action.payload.attendance;
+        if (newRecord) {
+          const existingIndex = state.attendanceList.findIndex(row => row.date === newRecord.date);
+          if (existingIndex !== -1) {
+            state.attendanceList[existingIndex] = newRecord;
+          } else {
+            state.attendanceList.unshift(newRecord);
+          }
+        }
+        state.todayAttendance = newRecord;
+        state.attendance = newRecord;
+        state.success = true;
+        state.isLoading = false;
       })
 
-      // Punch In
-      .addCase(punchIn.fulfilled, (state, action) => {
-        state.attendance = action.payload.attendance;
-        state.todayAttendance = action.payload.attendance;
+      // BREAKS MANAGEMENT
+      .addCase(startBreak.pending, (state) => {
+        state.breaksLoading = true;
       })
-      // Punch Out
-      .addCase(punchOut.fulfilled, (state, action) => {
-        state.attendance = action.payload.attendance;
-        state.todayAttendance = action.payload.attendance;
+      .addCase(startBreak.fulfilled, (state, action) => {
+        state.breaksLoading = false;
+        state.success = true;
+        // Update today's attendance if exists
+        if (state.todayAttendance) {
+          const breakType = action.meta.arg.breakType;
+          const now = new Date().toISOString();
+
+          if (breakType === "smoke") {
+            if (!state.todayAttendance.smokeBreaks) state.todayAttendance.smokeBreaks = [];
+            state.todayAttendance.smokeBreaks.push({ start: now });
+          }
+
+          if (breakType === "wc") {
+            if (!state.todayAttendance.wcBreaks) state.todayAttendance.wcBreaks = [];
+            state.todayAttendance.wcBreaks.push({ start: now });
+          }
+
+          if (breakType === "lunch") {
+            if (!state.todayAttendance.lunchBreaks) state.todayAttendance.lunchBreaks = [];
+            state.todayAttendance.lunchBreaks.push({ start: now });
+          }
+
+        }
       })
-      // Get User Attendance
+      .addCase(startBreak.rejected, (state, action) => {
+        state.breaksLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(endBreak.pending, (state) => {
+        state.breaksLoading = true;
+      })
+      .addCase(endBreak.fulfilled, (state, action) => {
+        state.breaksLoading = false;
+        state.success = true;
+        // Update today's attendance
+        if (state.todayAttendance) {
+          const breakType = action.meta.arg.breakType;
+          const now = new Date().toISOString();
+
+          if (breakType === "smoke") {
+            let last = state.todayAttendance.smokeBreaks?.[state.todayAttendance.smokeBreaks.length - 1];
+            if (last) last.end = now;
+          }
+
+          if (breakType === "wc") {
+            let last = state.todayAttendance.wcBreaks?.[state.todayAttendance.wcBreaks.length - 1];
+            if (last) last.end = now;
+          }
+
+          if (breakType === "lunch") {
+            let last = state.todayAttendance.lunchBreaks?.[state.todayAttendance.lunchBreaks.length - 1];
+            if (last) last.end = now;
+          }
+
+        }
+      })
+      .addCase(endBreak.rejected, (state, action) => {
+        state.breaksLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(getTodayBreaks.fulfilled, (state, action) => {
+        state.todayBreaks = action.payload.breaks;
+        state.success = true;
+      })
+
+
       .addCase(getUserAttendance.fulfilled, (state, action) => {
-        state.attendanceList = action.payload.attendance;
-        state.pagination = action.payload.pagination;
+        console.log("✅ getUserAttendance fulfilled:", action.payload);
+
+        // IMPORTANT: isLoading को false करें
+        state.isLoading = false;
+
+        // Data set करें
+        if (action.payload && action.payload.attendance) {
+          state.attendanceList = Array.isArray(action.payload.attendance)
+            ? action.payload.attendance
+            : [];
+        } else {
+          state.attendanceList = [];
+        }
+
+        state.pagination = action.payload.pagination || null;
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(getCheckerStats.fulfilled, (state, action) => {
+        console.log("🎯 getCheckerStats.fulfilled:", action.payload);
+        state.stats = action.payload.stats || {};
+        state.success = true;
+        state.isLoading = false;
       })
       // Get Today's Attendance
       .addCase(getTodayAttendance.fulfilled, (state, action) => {
-        state.todayAttendance = action.payload.attendance;
+        console.log("✅ getTodayAttendance fulfilled:", action.payload); // Debug log
+
+        // Fix: Check if attendance exists in response
+        if (action.payload && action.payload.attendance) {
+          state.todayAttendance = action.payload.attendance;
+        } else {
+          state.todayAttendance = null;
+        }
+
+        state.success = true;
+        state.isLoading = false;
+        state.error = null;
       })
-      // Get All Attendance
+      // ALL ATTENDANCE (ADMIN)
+      // ALL ATTENDANCE (ADMIN)
       .addCase(getAllAttendance.fulfilled, (state, action) => {
-        state.allAttendance = action.payload.attendance;
-        state.pagination = action.payload.pagination;
+        console.log("🎯 getAllAttendance.fulfilled - Action payload:", action.payload);
+        console.log("📈 Attendance array:", action.payload?.attendance);
+        console.log("🔢 Number of records:", action.payload?.attendance?.length || 0);
+
+        // Fix: Properly extract attendance array from response
+        state.allAttendance = action.payload?.attendance || [];
+        state.pagination = action.payload?.pagination || null;
+        state.success = true;
+        state.isLoading = false;
       })
-      // Get Attendance Stats
+
+      // STATS
       .addCase(getAttendanceStats.fulfilled, (state, action) => {
-        state.stats = action.payload.stats;
+        state.stats = action.payload.stats || {};
+        state.success = true;
+        state.isLoading = false;
       })
-      // Get Attendance by Department
-      .addCase(getAttendanceByDepartment.fulfilled, (state, action) => {
-        state.departmentAttendance = action.payload.attendance;
-        state.departmentPagination = action.payload.pagination;
-      })
-      // In your attendanceSlice.js, update the extraReducers for getDepartmentWiseUsers
+
+      // DEPARTMENT USERS
       .addCase(getDepartmentWiseUsers.fulfilled, (state, action) => {
-        state.departmentAttendance = action.payload.users;
+        state.departmentAttendance = action.payload.users || [];
         state.department = action.payload.department;
         state.departmentCount = action.payload.count;
+        state.success = true;
+        state.isLoading = false;
       })
+
+      // DAY OFF REQUESTS
+      .addCase(requestDayOff.fulfilled, (state, action) => {
+        state.dayOffRequests = action.payload.data || [];
+        state.success = true;
+        state.isLoading = false;
+      })
+      .addCase(getDayOffRequests.fulfilled, (state, action) => {
+        state.dayOffRequests = action.payload.requests || [];
+        state.success = true;
+        state.isLoading = false;
+      })
+
+      // PENDING STATES FOR ALL
+      .addMatcher(
+        (action) => action.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload;
+          state.success = false;
+        }
+      );
   },
 });
 
 export const {
   clearAttendance,
   clearTodayAttendance,
-  clearStats,
-  clearDepartmentAttendance
+  clearBreaks,
+  resetAttendanceState,
+  setAttendanceLoading,
+  clearAttendanceError
 } = attendanceSlice.actions;
 
 export default attendanceSlice.reducer;

@@ -1,4 +1,3 @@
-// components/CustomDatePicker.jsx
 
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
@@ -34,17 +33,13 @@ function ButtonField(props) {
       startIcon={<CalendarTodayRoundedIcon fontSize="small" />}
       onClick={() => pickerContext.setOpen((prev) => !prev)}
       sx={{
-        backgroundColor: '#10101B',
         color: 'white',
-        borderRadius: '36px',
         textTransform: 'none',
-        padding: '6px 16px',
+        padding: '5px 10px',
         fontSize: '0.875rem',
         minWidth: 'fit-content',
         border: 'none',
-        '&:hover': {
-          backgroundColor: '#1a1a2e',
-        },
+     
       }}
     >
       {pickerContext.label ?? valueStr}

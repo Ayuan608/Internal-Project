@@ -1,332 +1,1163 @@
 // src/components/AttendanceDashboard.jsx
-import React, { useEffect } from "react";
-import PageContainer from "./PageContainer";
-import { ButtonGroup } from "../../CommonButton/Button";
+import React, { useState, useEffect, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
-  TriangleAlert,
+  Coffee,
+  Droplets,
+  Utensils,
+  AlertTriangle,
+  CalendarPlus,
+  Clock4,
+  Home as HomeIcon,
+  RefreshCw,
   Clock,
-  Calendar,
-  TrendingUp,
-  Zap,
-  Play,
-  Square,
-  X,
-  CalendarX,
+  User,
+  LogOut,
+  LogIn,
 } from "lucide-react";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
-import { useAttendanceAnnouncement, useAttendanceDashboard } from "./../../hooks/useAttendanceHooks";
+import {
+  punchIn,
+  punchOut,
+  getUserAttendance,
+  getTodayAttendance,
+  startBreak,
+  endBreak,
+  getTodayBreaks,
+} from "../../../redux/attendenceSlice";
 import ShowOffDay from "../../popup/ShowOffDay";
 import AttendanceAnnouncementPopup from "../../popup/AttendanceAnnouncementPopup";
-
-// Constants
-const COLORS = ["#10b981", "#60a5fa", "#f59e0b", "#a855f7"];
+import CustomDatePicker from "../../CommonButton/CustomCalendar";
+import { toast } from "react-hot-toast";
 
 // Stats card component
 const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => {
   const colorClasses = {
-    blue: "bg-[rgba(59,130,246,0.03)] border-l-2",
-    green: "bg-[rgba(16,185,129,0.03)] border-l-2",
-    orange: "bg-[rgba(245,158,11,0.03)] border-l-2",
-    purple: "bg-[rgba(168,85,247,0.03)] border-l-2",
+    blue: "bg-slate-900/70 border border-slate-700/60",
+    green: "bg-slate-900/70 border border-emerald-500/30",
+    orange: "bg-slate-900/70 border border-amber-500/30",
+    purple: "bg-slate-900/70 border border-purple-500/30",
   };
   const selectedColor = colorClasses[color] || colorClasses.blue;
 
   return (
-    <div className={`p-4 rounded-xl ${selectedColor} backdrop-blur-sm`}>
-      <div className="flex items-center gap-3 mb-2">
-        <Icon size={20} className="opacity-80" />
-        <span className="text-sm font-medium text-gray-300">{title}</span>
-      </div>
-      <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    <div className={`rounded-2xl backdrop-blur-xl p-4 shadow-[0_18px_45px_rgba(15,23,42,0.9)] ${selectedColor}`}>
+      {Icon && <Icon className="mb-2 text-slate-400" size={20} />}
+      <p className="text-xs text-slate-400 uppercase tracking-wide">{title}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-50">{value}</p>
+      {subtitle && <p className="mt-3 text-xs text-slate-400">{subtitle}</p>}
     </div>
   );
 };
 
-const AttendanceDashboardUI = ({
-  userId,
-  attendanceList,
-  isLoading,
-  activeTimer,
-  timeLeft,
-  breakCounts,
-  breakHistory,
-  showDayOffModal,
-  dayOffForm,
-  error,
-  currentStatus,
-  stats,
-  handleDayOffSubmit,
-  isSmokeBreakDisabled,
-  isWcBreakDisabled,
-  isLunchBreakDisabled,
-  hasPunchedInToday,
-  handleRefresh,
-  startBreak,
-  endBreak,
-  setShowDayOffModal,
-  setDayOffForm,
-  formatTime,
-  formatDate,
-  formatTimeDisplay,
-  calculateBreakTime,
-  calculateWcBreakTime,
-  calculateLunchBreakTime,
-}) => {
-  useEffect(() => {
-    console.log("AttendanceDashboardUI Rendered:", {
-      stats,
-    });
-  });
+const AttendanceDashboard = () => {
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state?.auth?.data);
+  const userId = user?._id;
 
+  // Redux state
+  const reduxAttendanceList = useSelector((state) => state.attendance?.attendanceList) || [];
+  const todayAttendance = useSelector((state) => state.attendance?.todayAttendance);
+  const todayBreaks = useSelector((state) => state.attendance?.todayBreaks);
+  const isLoading = useSelector((state) => state.attendance?.isLoading);
+  const breaksLoading = useSelector((state) => state.attendance?.breaksLoading);
+
+  // Local state
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showPunchOutModal, setShowPunchOutModal] = useState(false);
+  const [showWFHModal, setShowWFHModal] = useState(false);
+  const [showBreakModal, setShowBreakModal] = useState(false);
+  const [showDayOffModal, setShowDayOffModal] = useState(false);
+  const [dayOffForm, setDayOffForm] = useState({
+    date: "",
+    reason: "",
+    type: "Rest Day"
+  });
+  const [activeTimer, setActiveTimer] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [breakCounts, setBreakCounts] = useState({
+    smoke: 0,
+    wc: 0,
+    lunch: 0
+  });
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [tableData, setTableData] = useState([]);
+  const [breakModal, setBreakModal] = useState({
+    open: false,
+    type: "",
+    start: null,
+    end: null,
+    date: null
+  });
+  const openBreakDetails = (type, start, end, date) => {
+    setBreakModal({
+      open: true,
+      type,
+      start,
+      end,
+      date
+    });
+  };
+
+  // Update live clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Check if user is online (has punched in but not out)
+  const isOnline = todayAttendance?.clockIn && !todayAttendance?.clockOut;
+
+  // Format time for display
+  const formatTime = (timeString) => {
+    if (!timeString) return "-";
+    try {
+      const date = new Date(timeString);
+      if (isNaN(date.getTime())) return "-";
+      return date.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return "-";
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch {
+      return 'N/A';
+    }
+  };
+
+  // Calculate break duration
+  const calculateBreakDuration = (start, end) => {
+    if (!start || !end) return "0m";
+    try {
+      const startTime = new Date(start);
+      const endTime = new Date(end);
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return "0m";
+      const diffMinutes = Math.round((endTime - startTime) / (1000 * 60));
+      return `${diffMinutes}m`;
+    } catch {
+      return "0m";
+    }
+  };
+
+  // Format break timer
+  const formatBreakTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Load initial data - FIXED: बार-बार नहीं चलेगा
+  useEffect(() => {
+    const loadData = async () => {
+      if (userId && !dataLoaded) {
+        try {
+          console.log("🔄 Loading attendance data for user:", userId);
+
+          // Load today's attendance
+          const todayResult = await dispatch(getTodayAttendance(userId)).unwrap();
+          console.log("✅ Today attendance loaded:", todayResult);
+
+          // Load attendance history
+          const historyResult = await dispatch(getUserAttendance({
+            userId,
+            page: 1,
+            limit: 10
+          })).unwrap();
+
+          console.log("✅ Attendance history loaded:", historyResult?.attendance?.length || 0, "records");
+
+          // Load today's breaks
+          const breaksResult = await dispatch(getTodayBreaks(userId)).unwrap();
+          console.log("✅ Today's breaks loaded:", breaksResult);
+
+          setDataLoaded(true);
+
+        } catch (error) {
+          console.error("❌ Failed to load data:", error);
+          toast.error("Failed to load attendance data");
+        }
+      }
+    };
+
+    loadData();
+  }, [dispatch, userId, dataLoaded]);
+
+  // Update break counts from today's attendance - FIXED
+  useEffect(() => {
+    if (todayAttendance) {
+      const smokeBreaks = todayAttendance.smokeBreaks || [];
+      const wcBreaks = todayAttendance.wcBreaks || [];
+      const lunchBreaks = todayAttendance.lunchBreaks || [];
+
+      const counts = {
+        smoke: smokeBreaks.filter(b => b && b.end).length || 0,
+        wc: wcBreaks.filter(b => b && b.end).length || 0,
+        lunch: lunchBreaks.filter(b => b && b.end).length || 0,
+      };
+
+      console.log("📊 Break counts updated:", counts);
+      setBreakCounts(counts);
+    } else {
+      setBreakCounts({ smoke: 0, wc: 0, lunch: 0 });
+    }
+  }, [todayAttendance]);
+
+  // Check for active breaks and start timer - FIXED
+  useEffect(() => {
+    if (todayAttendance) {
+      let activeBreak = null;
+
+      // Check smoke breaks
+      const smokeBreaks = todayAttendance.smokeBreaks || [];
+      if (smokeBreaks.length > 0) {
+        const lastSmoke = smokeBreaks[smokeBreaks.length - 1];
+        if (lastSmoke && !lastSmoke.end) {
+          activeBreak = { type: "smoke", startTime: new Date(lastSmoke.start) };
+        }
+      }
+
+      // Check WC breaks
+      const wcBreaks = todayAttendance.wcBreaks || [];
+      if (!activeBreak && wcBreaks.length > 0) {
+        const lastWc = wcBreaks[wcBreaks.length - 1];
+        if (lastWc && !lastWc.end) {
+          activeBreak = { type: "wc", startTime: new Date(lastWc.start) };
+        }
+      }
+
+      // Check lunch breaks
+      const lunchBreaks = todayAttendance.lunchBreaks || [];
+      if (!activeBreak && lunchBreaks.length > 0) {
+        const lastLunch = lunchBreaks[lunchBreaks.length - 1];
+        if (lastLunch && !lastLunch.end) {
+          activeBreak = { type: "lunch", startTime: new Date(lastLunch.start) };
+        }
+      }
+
+      if (activeBreak) {
+        console.log("⏰ Active break detected:", activeBreak);
+        setActiveTimer(activeBreak);
+        setShowBreakModal(true);
+      } else {
+        setActiveTimer(null);
+        setShowBreakModal(false);
+      }
+    } else {
+      setActiveTimer(null);
+      setShowBreakModal(false);
+    }
+  }, [todayAttendance]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (activeTimer) {
+      const breakLimit = activeTimer.type === 'lunch' ? 30 * 60 : 5 * 60;
+      const startTime = new Date(activeTimer.startTime).getTime();
+      const currentTime = Date.now();
+      const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+      const remainingSeconds = Math.max(0, breakLimit - elapsedSeconds);
+
+      console.log("⏱️ Timer started:", {
+        type: activeTimer.type,
+        startTime: activeTimer.startTime,
+        limit: breakLimit,
+        remaining: remainingSeconds
+      });
+
+      setTimeLeft(remainingSeconds);
+
+      const interval = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [activeTimer]);
+
+  // Handle Punch In
+  const handlePunchIn = async () => {
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    try {
+      const result = await dispatch(punchIn({
+        userId,
+        shift: "MORNING"
+      })).unwrap();
+
+      console.log("✅ Punch in result:", result);
+      toast.success("Punched in successfully!");
+
+      // Refresh data - FIXED: timeout remove kiya
+      await Promise.all([
+        dispatch(getTodayAttendance(userId)),
+        dispatch(getUserAttendance({ userId, page: 1, limit: 10 })),
+        dispatch(getTodayBreaks(userId))
+      ]);
+
+    } catch (error) {
+      console.error("❌ Punch in failed:", error);
+      toast.error(error.message || "Punch in failed");
+    }
+  };
+
+  // Handle Punch Out
+  const handlePunchOut = async () => {
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    try {
+      const result = await dispatch(punchOut(userId)).unwrap();
+      console.log("✅ Punch out result:", result);
+
+      setShowPunchOutModal(false);
+      toast.success("Punched out successfully!");
+
+      // Refresh data - FIXED: timeout remove kiya
+      await Promise.all([
+        dispatch(getTodayAttendance(userId)),
+        dispatch(getUserAttendance({ userId, page: 1, limit: 10 })),
+        dispatch(getTodayBreaks(userId))
+      ]);
+
+    } catch (error) {
+      console.error("❌ Punch out failed:", error);
+      toast.error(error.message || "Punch out failed");
+    }
+  };
+
+  // Handle Start Break - FIXED: WC और Lunch के लिए conditions सही की
+  const handleStartBreak = async (breakType) => {
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    if (!isOnline) {
+      toast.error("Please punch in first to take a break");
+      return;
+    }
+
+    // Check if break is already active - FIXED: Array based check
+    const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
+    if (breaksArray.length > 0) {
+      const lastBreak = breaksArray[breaksArray.length - 1];
+      if (lastBreak && !lastBreak.end) {
+        toast.error(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break already active`);
+        return;
+      }
+    }
+
+    try {
+      console.log(`🚀 Starting ${breakType} break for user:`, userId);
+      const result = await dispatch(startBreak({ userId, breakType })).unwrap();
+      console.log(`✅ ${breakType} break started:`, result);
+
+      toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break started`);
+
+      // Refresh data - FIXED: Immediate refresh without timeout
+      await Promise.all([
+        dispatch(getTodayBreaks(userId)),
+        dispatch(getTodayAttendance(userId))
+      ]);
+
+    } catch (error) {
+      console.error(`❌ Failed to start ${breakType} break:`, error);
+      toast.error(error.message || `Failed to start ${breakType} break`);
+    }
+  };
+
+  // Handle End Break
+  const handleEndBreak = async () => {
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    if (!activeTimer) {
+      toast.error("No active break found");
+      return;
+    }
+
+    try {
+      console.log(`⏹️ Ending ${activeTimer.type} break for user:`, userId);
+      const result = await dispatch(endBreak({
+        userId,
+        breakType: activeTimer.type
+      })).unwrap();
+
+      console.log(`✅ ${activeTimer.type} break ended:`, result);
+      toast.success(`${activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)} break ended`);
+
+      // Refresh data - FIXED: Immediate refresh
+      await Promise.all([
+        dispatch(getTodayBreaks(userId)),
+        dispatch(getTodayAttendance(userId)),
+        dispatch(getUserAttendance({ userId, page: 1, limit: 10 }))
+      ]);
+
+      setActiveTimer(null);
+      setShowBreakModal(false);
+
+    } catch (error) {
+      console.error("❌ Failed to end break:", error);
+      toast.error(error.message || "Failed to end break");
+    }
+  };
+
+  // Refresh all data - FIXED: सिर्फ एक बार refresh होगा
+  const handleRefresh = async () => {
+    if (!userId) return;
+
+    try {
+      console.log("🔄 Manual refresh triggered");
+      toast.success("Refreshing data...");
+
+      // सिर्फ एक बार Promise.all call करें
+      await Promise.all([
+        dispatch(getTodayAttendance(userId)),
+        dispatch(getUserAttendance({ userId, page: 1, limit: 10 })),
+        dispatch(getTodayBreaks(userId))
+      ]);
+
+      toast.success("Data refreshed successfully!");
+    } catch (error) {
+      console.error("❌ Refresh failed:", error);
+      toast.error("Failed to refresh data");
+    }
+  };
+
+  // Calculate today's worked hours
+  const calculateTodayWorkedHours = () => {
+    if (!todayAttendance?.clockIn) return "0h 00m";
+
+    try {
+      const endTime = todayAttendance?.clockOut
+        ? new Date(todayAttendance.clockOut)
+        : new Date();
+
+      const startTime = new Date(todayAttendance.clockIn);
+
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        return "0h 00m";
+      }
+
+      const diffMs = endTime - startTime;
+      if (diffMs < 0) return "0h 00m";
+
+      const totalMinutes = Math.round(diffMs / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+    } catch (error) {
+      console.error("Error calculating hours:", error);
+      return "0h 00m";
+    }
+  };
+
+  // Calculate total break time today - FIXED: Array based calculation
+  const calculateTotalBreakTime = () => {
+    let totalMinutes = 0;
+
+    // Smoke breaks
+    const smokeBreaks = todayAttendance?.smokeBreaks || [];
+    smokeBreaks.forEach(breakItem => {
+      if (breakItem.start && breakItem.end) {
+        const start = new Date(breakItem.start);
+        const end = new Date(breakItem.end);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          totalMinutes += Math.round((end - start) / 60000);
+        }
+      }
+    });
+
+    // WC breaks
+    const wcBreaks = todayAttendance?.wcBreaks || [];
+    wcBreaks.forEach(breakItem => {
+      if (breakItem.start && breakItem.end) {
+        const start = new Date(breakItem.start);
+        const end = new Date(breakItem.end);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          totalMinutes += Math.round((end - start) / 60000);
+        }
+      }
+    });
+
+    // Lunch breaks
+    const lunchBreaks = todayAttendance?.lunchBreaks || [];
+    lunchBreaks.forEach(breakItem => {
+      if (breakItem.start && breakItem.end) {
+        const start = new Date(breakItem.start);
+        const end = new Date(breakItem.end);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          totalMinutes += Math.round((end - start) / 60000);
+        }
+      }
+    });
+
+    return totalMinutes > 0 ? `${totalMinutes}m` : "0m";
+  };
+
+  // Get status text
+  const getStatusText = () => {
+    if (!todayAttendance) return "Not Punched In";
+    if (todayAttendance.clockOut) return "Punched Out";
+    return "Currently Working";
+  };
+
+  // Check break availability - FIXED
+  const isBreakAvailable = (breakType) => {
+    if (!isOnline) return false;
+
+    const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
+
+    // Check if last break is active (no end time)
+    if (breaksArray.length > 0) {
+      const lastBreak = breaksArray[breaksArray.length - 1];
+      if (lastBreak && !lastBreak.end) {
+        return false; // Break already active
+      }
+    }
+
+    // Check maximum limits - FIXED: Completed breaks count
+    const maxLimits = {
+      smoke: 3,
+      wc: 3,
+      lunch: 2
+    };
+
+    const completedBreaks = breaksArray.filter(b => b && b.end).length;
+    return completedBreaks < maxLimits[breakType];
+  };
+
+  // Handle day off submit
+  const handleDayOffSubmit = async () => {
+    console.log("Day off request:", dayOffForm);
+    // Implement day off request API call here
+    setShowDayOffModal(false);
+    setDayOffForm({ date: "", reason: "", type: "Rest Day" });
+  };
+
+  const calculateTotalFromBreakArray = (breakArray = []) => {
+    let total = 0;
+    breakArray.forEach(b => {
+      if (b && b.start && b.end) {
+        total += Math.round((new Date(b.end) - new Date(b.start)) / 60000);
+      }
+    });
+    return total > 0 ? `${total}m` : "0m";
+  };
+
+  // Get table data for attendance history - FIXED: Debug logs added
+  useEffect(() => {
+    console.log("📋 Table data update triggered");
+    console.log("📋 Redux attendance list:", reduxAttendanceList);
+
+    if (reduxAttendanceList && reduxAttendanceList.length > 0) {
+      const formattedData = reduxAttendanceList.map(record => {
+        if (!record) return null;
+
+        console.log("📋 Processing record:", {
+          id: record._id,
+          date: record.date,
+          smokeBreaks: record.smokeBreaks,
+          wcBreaks: record.wcBreaks,
+          lunchBreaks: record.lunchBreaks
+        });
+
+        return {
+          id: record._id || record.id || Math.random().toString(),
+          date: formatDate(record.date),
+          punchIn: formatTime(record.clockIn),
+          punchOut: formatTime(record.clockOut),
+          wcBreak: calculateTotalFromBreakArray(record.wcBreaks),
+          smokeBreak: calculateTotalFromBreakArray(record.smokeBreaks),
+          lunchBreak: calculateTotalFromBreakArray(record.lunchBreaks),
+          hours: record.workingHours || "0h 00m",
+          status: getRecordStatus(record),
+          fullRecord: record
+        };
+      }).filter(item => item !== null);
+
+      console.log("📋 Formatted table data:", formattedData);
+      setTableData(formattedData);
+    } else {
+      console.log("📋 No attendance records found");
+      setTableData([]);
+    }
+  }, [reduxAttendanceList]);
+
+  // Get record status for table
+  const getRecordStatus = (record) => {
+    if (!record.clockIn) return {
+      text: 'Missed Punch IN',
+      class: 'bg-rose-500/25 text-rose-100 border border-rose-400/70'
+    };
+    if (!record.clockOut) return {
+      text: 'Missed Punch OUT',
+      class: 'bg-amber-500/20 text-amber-100 border border-amber-400/60'
+    };
+    return {
+      text: 'Complete',
+      class: 'bg-sky-500/15 text-sky-100 border border-sky-500/60'
+    };
+  };
+
+  // Debug info
+  useEffect(() => {
+    console.log("📊 DEBUG STATE:");
+    console.log("User ID:", userId);
+    console.log("Today Attendance:", todayAttendance);
+    console.log("Today Attendance smokeBreaks:", todayAttendance?.smokeBreaks);
+    console.log("Today Attendance wcBreaks:", todayAttendance?.wcBreaks);
+    console.log("Today Attendance lunchBreaks:", todayAttendance?.lunchBreaks);
+    console.log("Attendance List length:", reduxAttendanceList?.length);
+    console.log("Table Data length:", tableData?.length);
+    console.log("Is Online:", isOnline);
+    console.log("Active Timer:", activeTimer);
+    console.log("Break Counts:", breakCounts);
+  }, [userId, todayAttendance, reduxAttendanceList, tableData, isLoading, isOnline, activeTimer, breakCounts]);
 
   return (
-    <PageContainer
-      title="Attendance Dashboard"
-      actions={
-        <div className="flex items-center gap-2 ">
-          <Tooltip title="Request Day Off">
-            <IconButton className="bg-white" onClick={() => setShowDayOffModal(true)}>
-              <Calendar className="text-white" />
-              <p className="text-white text-base ms-2 ">Request DayOff</p>
-            </IconButton>
-          </Tooltip>
-
-          <ButtonGroup />
-        </div>
-      }
-    >
-      <div className="flex flex-col 2xl:flex-row justify-between items-start gap-6">
-        <div className="w-full">
-          {error && (
-            <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg mb-4">
-              <p className="text-red-300">{error}</p>
-            </div>
-          )}
-
-          {/* Current Status Banner */}
-          <div className="mb-6 p-4 bg-[rgba(59,130,246,0.03)] border-l-2 text-white rounded-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-3 h-3 rounded-full animate-pulse ${currentStatus === "Ready"
-                    ? "bg-gray-500"
-                    : currentStatus === "Currently Working"
-                      ? "bg-green-500"
-                      : currentStatus?.includes("Break")
-                        ? "bg-orange-500"
-                        : currentStatus === "Punched Out"
-                          ? "bg-red-500"
-                          : "bg-gray-500"
-                    }`}
-                ></div>
-                <span className="text-white font-semibold">Current Status</span>
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {currentStatus || "Unknown"}
-              </div>
-            </div>
-            <div className="mt-2 text-sm text-gray-300">
-              {currentStatus === "Ready" && "Ready to punch in for the day"}
-              {currentStatus === "Currently Working" && "You are currently working"}
-              {currentStatus.includes("Break") && "You are on a break"}
-              {currentStatus === "Punched Out" && "You have completed your work for today"}
-              {!["Ready", "Currently Working", "Punched Out"].includes(currentStatus) &&
-                !currentStatus.includes("Break") &&
-                "Status unknown"}
+    <div className="min-h-screen p-4 text-slate-200 bg-[#020617] bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.65)_0%,_rgba(2,6,23,1)_65%)]">
+      <div className="mx-auto max-w-full px-5 py-6 relative z-10">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 flex-col md:flex-row">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-50">
+              My Attendance
+            </h1>
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Check your daily WFH login time, breaks and history in one simple place.
+            </p>
+            <div className="mt-2 text-xs text-slate-500 flex items-center gap-2">
+              <Clock size={12} />
+              {currentTime.toLocaleString()}
             </div>
           </div>
 
-          {/* Break Timer Section */}
-          {activeTimer && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-white font-semibold">
-                    {activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)} Break Timer
-                  </span>
-                </div>
-                <div className="text-2xl font-bold text-white">{formatTime(timeLeft)}</div>
+          <div className="flex flex-wrap items-center gap-2 justify-end mt-4 md:mt-0">
+            <CustomDatePicker />
+
+            {/* Punch buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handlePunchIn}
+                disabled={isOnline}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${isOnline
+                  ? "bg-slate-700 cursor-not-allowed text-slate-400"
+                  : "bg-sky-500/80 text-slate-950 hover:bg-sky-400"
+                  }`}
+              >
+                <LogIn size={16} />
+                Punch In
+              </button>
+
+              <button
+                onClick={() => setShowPunchOutModal(true)}
+                disabled={!isOnline}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!isOnline
+                  ? "bg-slate-700 cursor-not-allowed text-slate-400"
+                  : "bg-rose-500/90 text-slate-50 hover:bg-rose-400"
+                  }`}
+              >
+                <LogOut size={16} />
+                Punch Out
+              </button>
+            </div>
+
+            {/* Day off button */}
+            <button
+              onClick={() => setShowDayOffModal(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm border border-sky-600/60 bg-slate-900/70 text-sky-100 hover:bg-sky-500/20 hover:border-sky-400 transition-all"
+            >
+              <CalendarPlus size={16} />
+              Request Day Off
+            </button>
+          </div>
+        </div>
+
+        {/* WFH Status Strip */}
+        <div className="mt-5 p-3 rounded-2xl bg-slate-900/70 border border-sky-700/60 backdrop-blur-xl shadow-[0_18px_45px_rgba(15,23,42,0.9)] flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span
+              className={`inline-flex h-2.5 w-2.5 rounded-full animate-pulse ${isOnline ? "bg-sky-400" : "bg-rose-400"
+                }`}
+            ></span>
+            <span className="font-medium text-slate-100">
+              {isOnline ? "You are currently Online (WFH)" : "You are currently Offline"}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-slate-300">
+            <div className="flex items-center gap-1">
+              <HomeIcon size={16} />
+              <span>Mode: WFH</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <User size={16} />
+              <span>{user?.FullName || user?.username || "User"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Today summary */}
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard
+            icon={Clock}
+            title="Today – Logged Hours"
+            value={calculateTodayWorkedHours()}
+            subtitle={getStatusText()}
+            color="blue"
+          />
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-700/60 backdrop-blur-xl p-4 shadow-[0_18px_45px_rgba(15,23,42,0.9)]">
+            <p className="text-xs text-slate-400 uppercase tracking-wide">Today's First Login</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-50">
+              {formatTime(todayAttendance?.clockIn) || "—"}
+            </p>
+            <p className="mt-3 text-xs text-slate-400">
+              {todayAttendance?.clockIn ? "Your login time" : "Not punched in yet"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-700/60 backdrop-blur-xl p-4 shadow-[0_18px_45px_rgba(15,23,42,0.9)]">
+            <p className="text-xs text-slate-400 uppercase tracking-wide">Today – Idle / Break Time</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-50">
+              {calculateTotalBreakTime()}
+            </p>
+            <p className="mt-3 text-xs text-slate-400">Approximate break time (for reference only)</p>
+          </div>
+        </div>
+
+        {/* Punch Out confirmation modal */}
+        {showPunchOutModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
+            <div className="absolute inset-0 bg-black/70"></div>
+            <div className="relative w-full sm:max-w-md p-5 rounded-2xl bg-slate-900/80 border border-slate-700/80 shadow-[0_24px_60px_rgba(15,23,42,0.95)] backdrop-blur-2xl">
+              <h3 className="text-lg font-semibold text-slate-50">Confirm Punch Out</h3>
+              <p className="mt-2 text-sm text-slate-300">
+                Are you sure you want to punch out now?
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
-                  onClick={endBreak}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                  onClick={() => setShowPunchOutModal(false)}
+                  className="rounded-xl px-3.5 py-2 text-sm border border-slate-600 bg-slate-900/80 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
                 >
-                  <Square size={16} />
-                  End Break
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePunchOut}
+                  className="rounded-xl px-3.5 py-2 text-sm font-medium bg-sky-500/90 text-slate-950 hover:bg-sky-400 transition-all"
+                >
+                  Confirm
                 </button>
               </div>
-              <div className="mt-2 text-sm text-gray-300">
-                Time remaining for your {activeTimer.type} break
-              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Break Controls */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            {["smoke", "wc", "lunch"].map((type) => {
-              const isDisabled =
-                type === "smoke"
-                  ? isSmokeBreakDisabled
-                  : type === "wc"
-                    ? isWcBreakDisabled
-                    : isLunchBreakDisabled;
-              const count = breakCounts[type];
-              const limit = type === "lunch" ? 1 : 3;
-              const color = type === "smoke" ? "red" : type === "wc" ? "yellow" : "blue";
+        {/* Break Countdown Modal */}
+        {showBreakModal && activeTimer && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
+            <div className="absolute inset-0 bg-black/70"></div>
+            <div className="relative w-full sm:max-w-sm p-5 rounded-2xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-2xl shadow-[0_24px_60px_rgba(15,23,42,0.95)]">
+              <p className="text-xs text-slate-400 uppercase tracking-wide">Current Break</p>
+              <h3 className="mt-1 text-xl font-semibold text-slate-50">
+                {activeTimer.type === 'smoke' ? 'Smoke Break' :
+                  activeTimer.type === 'wc' ? 'WC Break' : 'Lunch Break'}
+              </h3>
+              <p className="mt-2 text-sm text-slate-300">
+                {activeTimer.type === 'lunch' ?
+                  'You have 30:00 minutes for this break.' :
+                  'You have 05:00 minutes for this break.'}
+              </p>
 
-              return (
-                <div key={type} className="p-4 bg-[rgba(59,130,246,0.03)] border-l-2 rounded-xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`font-semibold ${color === "red" ? "text-red-500" : color === "yellow" ? "text-yellow-500" : "text-blue-500"}`}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)} Break
-                    </span>
-                    <span className="text-xs text-gray-400">{count}/{limit} used today</span>
+              <div className="mt-4 flex flex-col items-center gap-1">
+                <div className={`text-4xl font-mono font-semibold ${timeLeft > 60 ? 'text-slate-50' : 'text-amber-400'
+                  }`}>
+                  {formatBreakTimer(timeLeft)}
+                </div>
+                {timeLeft <= 0 && (
+                  <div className="text-xs text-amber-400">
+                    Time limit exceeded. Please click "Back from Break" when you return.
                   </div>
-                  <button
-                    onClick={() => startBreak(type)}
-                    disabled={isDisabled}
-                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${isDisabled
-                      ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                      : "bg-[rgba(59,130,246,0.03)] border-gray-600 text-white hover:bg-blue-500/20"
-                      }`}
-                  >
-                    <Play size={16} />
-                    {isDisabled ? "Cannot Start Break" : `Start ${type.charAt(0).toUpperCase() + type.slice(1)} Break`}
-                  </button>
-                  {isDisabled && (
-                    <div className="mt-2 text-xs text-center">
-                      {count >= limit
-                        ? "Limit reached"
-                        : !hasPunchedInToday
-                          ? "Punch in first"
-                          : "Another break in progress"}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <StatCard icon={Calendar} title="Total Working Hours" value={stats.todayWorkedHours} subtitle={stats.todayStatus} color="blue" />
-            <StatCard icon={Clock} title="Days Worked" value={stats.daysWorked.toString()} subtitle="Total days" color="green" />
-            <StatCard icon={TrendingUp} title="Avg Daily Hours" value={stats.avgDailyHours} subtitle="Average per day" color="orange" />
-            <StatCard icon={Zap} title="Overtime" value={stats.overtimeHours} subtitle="Extra hours" color="purple" />
-          </div>
-
-          {/* Attendance Table */}
-          <div className="border border-[#2d3748] rounded-xl overflow-hidden shadow-2xl">
-            <div className="overflow-x-auto h-full">
-              <table className="w-full text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-[#4a5568]">
-                    <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">Date</th>
-                    <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">Punch In</th>
-                    <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">Punch Out</th>
-                    <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">WC Break</th>
-                    <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">Smoke Break</th>
-                    <th className="px-4 py-3 text-center text-[#f7fafc] font-bold">Lunch Break</th>
-                    <th className="px-4 py-3 text-left text-[#f7fafc] font-bold">Working Hours</th>
-                  </tr>
-                </thead>
-                <tbody className="cursor-pointer">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400 mx-auto"></div>
-                        Loading...
-                      </td>
-                    </tr>
-                  ) : (!Array.isArray(attendanceList) || attendanceList.length === 0) ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                        No attendance data found
-                      </td>
-                    </tr>
-                  ) : (
-                    attendanceList.slice(0, 1).map((row) => {
-                      const rowDate = new Date(row.date).toISOString().split("T")[0];
-
-                      return (
-                        <tr
-                          key={row._id}
-                          className="border-b border-[#2d3748] hover:bg-[#3b82f6]/10 transition-colors duration-200"
-                        >
-                          <td className="px-4 py-3 text-[#e2e8f0] font-medium">{formatDate(row.date)}</td>
-                          <td className="px-4 py-3 text-[#e2e8f0]">{formatTimeDisplay(row.clockIn)}</td>
-                          <td className="px-4 py-3 text-[#e2e8f0]">
-                            {row.clockOut ? formatTimeDisplay(row.clockOut) : <span className="text-orange-400">Not punched out</span>}
-                          </td>
-                          <td className="px-4 py-3 text-center text-[#60a5fa]">
-                            {calculateWcBreakTime(row.wcStart, row.wcEnd, rowDate)}
-                          </td>
-                          <td className="px-4 py-3 text-center text-[#f59e0b]">
-                            {calculateBreakTime(row.smokeStart, row.smokeEnd, rowDate)}
-                          </td>
-                          <td className="px-4 py-3 text-center text-[#a855f7]">
-                            {calculateLunchBreakTime(row.breakStart, row.breakEnd, rowDate)}
-                          </td>
-                          <td className="px-4 py-3 text-[#10b981] font-semibold">{row.workingHours || "0h 0m"}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {!isLoading && attendanceList?.length > 0 && (
-              <div className="bg-black px-6 py-3 border-t border-[#4a5568] flex justify-between items-center text-[#e2e8f0]">
-                <span>Showing 1 records</span>
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 bg-[#3b82f6]/20 rounded hover:bg-[#3b82f6]/30">Prev</button>
-                  <button className="px-3 py-1 bg-[#3b82f6]/20 rounded hover:bg-[#3b82f6]/30">Next</button>
-                </div>
+                )}
               </div>
-            )}
+
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setShowBreakModal(false)}
+                  className="rounded-xl px-3.5 py-2 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
+                >
+                  Hide Timer
+                </button>
+                <button
+                  onClick={handleEndBreak}
+                  className="rounded-xl px-3.5 py-2 text-sm font-medium bg-sky-500/90 text-slate-950 hover:bg-sky-400 transition-all"
+                >
+                  Back from Break
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Break controls */}
+        <div className="mt-6 p-4 rounded-2xl bg-slate-900/70 border border-slate-700/60 shadow-[0_18px_45px_rgba(15,23,42,0.9)] backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-sky-500/15 text-sky-200 border border-sky-500/50">
+                Today's Status
+              </span>
+              <span className="text-slate-200">
+                {isOnline
+                  ? "You are punched in and working from home."
+                  : todayAttendance?.clockOut
+                    ? "You have punched out for today."
+                    : "You have not punched in yet."}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <button
+                onClick={() => setShowWFHModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm border border-sky-500/60 bg-slate-950/70 text-sky-100 hover:bg-sky-500/20 hover:border-sky-400 transition-all"
+              >
+                <AlertTriangle size={16} />
+                Report WFH Issue
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm border border-emerald-600/60 bg-slate-950/70 text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all"
+              >
+                <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                Refresh Data
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => handleStartBreak('smoke')}
+              disabled={!isBreakAvailable('smoke')}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('smoke')
+                ? "border border-slate-700 bg-slate-900/50 text-slate-500 cursor-not-allowed"
+                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+                }`}
+            >
+              <Coffee size={16} />
+              <span>Smoke Break ({breakCounts.smoke}/3 • 5m)</span>
+            </button>
+            <button
+              onClick={() => handleStartBreak('wc')}
+              disabled={!isBreakAvailable('wc')}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('wc')
+                ? "border border-slate-700 bg-slate-900/50 text-slate-500 cursor-not-allowed"
+                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+                }`}
+            >
+              <Droplets size={16} />
+              <span>WC Break ({breakCounts.wc}/3 • 5m)</span>
+            </button>
+            <button
+              onClick={() => handleStartBreak('lunch')}
+              disabled={!isBreakAvailable('lunch')}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('lunch')
+                ? "border border-slate-700 bg-slate-900/50 text-slate-500 cursor-not-allowed"
+                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+                }`}
+            >
+              <Utensils size={16} />
+              <span>Lunch Break ({breakCounts.lunch}/2 • 30m)</span>
+            </button>
           </div>
         </div>
 
-      
-      </div>
+        {/* Debug Info */}
+        <div className="mt-4 p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+          <div className="text-xs text-slate-400 mb-2">Attendance Info:</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div>
+              <span className="text-slate-500">User:</span>
+              <span className="ml-2 text-slate-300">{user?.FullName || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Status:</span>
+              <span className={`ml-2 ${isOnline ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-500">Today's Login:</span>
+              <span className="ml-2 text-slate-300">{formatTime(todayAttendance?.clockIn) || '—'}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Active Breaks:</span>
+              <span className="ml-2 text-slate-300">
+                {activeTimer ? `${activeTimer.type} (${formatBreakTimer(timeLeft)})` : 'None'}
+              </span>
+            </div>
+          </div>
+        </div>
 
-      {/* Day Off Request Modal */}
-      {showDayOffModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <ShowOffDay
-            handleDayOffSubmit={handleDayOffSubmit}
-            setShowDayOffModal={setShowDayOffModal}
-            setDayOffForm={setDayOffForm}
-            dayOffForm={dayOffForm}
-          />
+        {/* Attendance table */}
+        <div className="mt-6 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-[0_22px_55px_rgba(15,23,42,0.95)] backdrop-blur-2xl overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-2 text-sm text-slate-200">
+              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-sky-500/15 text-sky-200 border border-sky-500/40">
+                My Records
+              </span>
+              <span>Attendance History</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs border border-emerald-600/60 bg-slate-900/70 text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all"
+              >
+                <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[360px] overflow-auto">
+            <table className="w-full text-sm border-t border-slate-800/80">
+              <thead className="sticky top-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-slate-300 shadow-[0_6px_18px_rgba(15,23,42,0.9)]">
+                <tr>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Date</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Punch In</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Punch Out</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">WC Break</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Smoke Break</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Lunch Break</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Hours</th>
+                  <th className="text-left font-medium px-4 py-2 border-b border-slate-800/80">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading && !tableData.length ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-slate-600 border-t-sky-500 rounded-full animate-spin"></div>
+                        Loading attendance history...
+                      </div>
+                    </td>
+                  </tr>
+                ) : tableData.length > 0 ? (
+                  tableData.map((record, index) => (
+                    <tr
+                      key={record.id || index}
+                      className="border-b border-slate-800/70 bg-slate-900/60 hover:bg-slate-800/30 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-slate-100 font-medium">{record.date}</td>
+                      <td className="px-4 py-3 text-slate-200">{record.punchIn}</td>
+                      <td className="px-4 py-3 text-slate-200">{record.punchOut}</td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {record.wcBreak !== "0m" ? (
+                          <button
+                            onClick={() =>
+                              openBreakDetails(
+                                "WC",
+                                record.fullRecord?.wcBreaks?.[0]?.start,
+                                record.fullRecord?.wcBreaks?.[0]?.end,
+                                record.fullRecord?.date
+                              )
+                            }
+                            className="px-3 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 
+      border border-purple-500/30 rounded-lg text-xs transition"
+                          >
+                            See Details
+                          </button>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-300">
+                        {record.smokeBreak !== "0m" ? (
+                          <button
+                            onClick={() =>
+                              openBreakDetails(
+                                "SMOKE",
+                                record.fullRecord?.smokeBreaks?.[0]?.start,
+                                record.fullRecord?.smokeBreaks?.[0]?.end,
+                                record.fullRecord?.date
+                              )
+                            }
+                            className="px-3 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 
+      border border-pink-500/30 rounded-lg text-xs transition"
+                          >
+                            See Details
+                          </button>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-300">
+                        {record.lunchBreak !== "0m" ? (
+                          <button
+                            onClick={() =>
+                              openBreakDetails(
+                                "LUNCH",
+                                record.fullRecord?.lunchBreaks?.[0]?.start,
+                                record.fullRecord?.lunchBreaks?.[0]?.end,
+                                record.fullRecord?.date
+                              )
+                            }
+                            className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 
+      border border-blue-500/30 rounded-lg text-xs transition"
+                          >
+                            See Details
+                          </button>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-200 font-semibold">{record.hours}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-md text-[11px] font-medium ${record.status.class}`}>
+                          {record.status.text}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                      <div className="flex flex-col items-center gap-2">
+                        <Clock size={48} className="text-slate-600" />
+                        <div>No attendance records found</div>
+                        <div className="text-xs text-slate-500">Start by punching in today!</div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="py-8 text-center text-sm text-slate-500">
+          This page shows only your login time, breaks and basic WFH context.
+          It does not track your private content or personal browsing.
+        </div>
+      </div>
+      {breakModal.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-xl p-6 w-full max-w-2xl text-white shadow-2xl">
+
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold tracking-wide">
+                {breakModal.type} Break Details
+              </h2>
+              <button
+                onClick={() => setBreakModal({ open: false })}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <table className="w-full rounded-lg">
+              <thead className="bg-slate-800/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                    DATE
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                    START
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                    END
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                    TOTAL
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr className="border-t border-slate-700">
+
+                  <td className="px-4 py-3 text-sm">
+                    {breakModal.date ? new Date(breakModal.date).toLocaleDateString() : "—"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm">
+                    {breakModal.start ? new Date(breakModal.start).toLocaleTimeString() : "—"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm">
+                    {breakModal.end ? new Date(breakModal.end).toLocaleTimeString() : "—"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm text-blue-400 font-semibold">
+                    {breakModal.start && breakModal.end
+                      ? `${Math.round((new Date(breakModal.end) - new Date(breakModal.start)) / 60000)}m`
+                      : "—"}
+                  </td>
+
+                </tr>
+              </tbody>
+            </table>
+
+          </div>
         </div>
       )}
-    </PageContainer>
+
+      {/* Day Off Modal */}
+      {showDayOffModal && (
+        <ShowOffDay
+          handleDayOffSubmit={handleDayOffSubmit}
+          setShowDayOffModal={setShowDayOffModal}
+          setDayOffForm={setDayOffForm}
+          dayOffForm={dayOffForm}
+        />
+      )}
+
+      {/* Announcement Popup (simplified) */}
+      <AttendanceAnnouncementPopup
+        visible={showAnnouncement}
+        onClose={() => setShowAnnouncement(false)}
+        onProceed={() => setShowAnnouncement(false)}
+        userHasPunchedInToday={!!todayAttendance?.clockIn}
+        userHasPunchedOutToday={!!todayAttendance?.clockOut}
+        forgotPunchIn={false}
+        forgotPunchOut={false}
+        excessiveBreaks={false}
+        latePunchOut={false}
+        totalBreakMinutes={calculateTotalBreakTime().replace('m', '')}
+      />
+    </div>
   );
 };
 
-export default function AttendanceDashboard() {
-  const hookProps = useAttendanceDashboard();
-  const announcementProps = useAttendanceAnnouncement();
-  return (
-    <>
-      <AttendanceDashboardUI {...hookProps} />
-      <AttendanceAnnouncementPopup
-        visible={false}
-        onClose={() => announcementProps.setShowAnnouncement(false)}
-        onProceed={() => announcementProps.setShowAnnouncement(false)}
-        userHasPunchedInToday={announcementProps.hasPunchedIn}
-        userHasPunchedOutToday={announcementProps.hasPunchedOut}
-        forgotPunchIn={announcementProps.forgotPunchIn}
-        forgotPunchOut={announcementProps.forgotPunchOut}
-        excessiveBreaks={announcementProps.excessiveBreaks}
-        latePunchOut={announcementProps.latePunchOut}
-        totalBreakMinutes={announcementProps.totalBreakMinutes}
-      />
-    </>
-  );
-}
+export default AttendanceDashboard;

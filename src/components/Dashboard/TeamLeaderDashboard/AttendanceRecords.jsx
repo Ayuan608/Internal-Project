@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance } from "./../../../redux/attendenceSlice";
 import { useEffect, useState } from "react";
 import { sendCaseMail } from "../../../redux/statSlice";
-
+import { motion } from "framer-motion";
 const AttendanceRecords = () => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -14,8 +14,32 @@ const AttendanceRecords = () => {
     const dispatch = useDispatch();
     const [selectedDate, setSelectedDate] = useState("");
     const { allAttendance } = useSelector((state) => state.attendance);
+    const [expandedRow, setExpandedRow] = useState(null);
     const { loading: caseLoading } = useSelector((state) => state.stat); // Get loading state
     const attendanceData = allAttendance || [];
+    const [breakModal, setBreakModal] = useState({
+        open: false,
+        type: "",
+        start: null,
+        end: null,
+        date: null
+    });
+    const openBreakDetails = (type, start, end, date) => {
+        setBreakModal({
+            open: true,
+            type,
+            start,
+            end,
+            date
+        });
+    };
+    const calculateDuration = (start, end) => {
+        if (!start || !end) return "Active";
+
+        const diffMs = new Date(end) - new Date(start);
+        const diffMin = Math.floor(diffMs / 60000);
+        return `${diffMin} min`;
+    };
 
     // Modal states
     const [isFilingModalOpen, setIsFilingModalOpen] = useState(false);
@@ -64,17 +88,26 @@ const AttendanceRecords = () => {
         fetchAttendanceData();
     }, [dispatch, startDate, endDate, selectedDepartment, selectedRole]);
 
-    const getStatusIcon = (status) =>
-        status === "VIOLATION" ? (
-            <AlertCircle className="w-4 h-4 text-red-400" />
-        ) : (
-            <CheckCircle className="w-4 h-4 text-green-400" />
-        );
+    const getStatusIcon = (status) => {
+        if (status === "NO PUNCH OUT" || status === "NO PUNCH IN") {
+            return <AlertCircle className="w-4 h-4 text-orange-400" />;
+        }
+        if (status === "VIOLATION") {
+            return <AlertCircle className="w-4 h-4 text-red-400" />;
+        }
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
+    };
 
-    const getStatusColor = (status) =>
-        status === "VIOLATION"
-            ? "text-red-400 bg-red-500/20 border-red-500/30"
-            : "text-green-400 bg-green-500/20 border-green-500/30";
+    const getStatusColor = (status) => {
+        if (status === "NO PUNCH OUT" || status === "NO PUNCH IN") {
+            return "text-orange-400 bg-orange-500/20 border-orange-500/30";
+        }
+        if (status === "VIOLATION") {
+            return "text-red-400 bg-red-500/20 border-red-500/30";
+        }
+        return "text-green-400 bg-green-500/20 border-green-500/30";
+    };
+
 
     // 🔍 Filter Data by Search
     const filteredData = attendanceData.filter((record) => {
@@ -92,14 +125,38 @@ const AttendanceRecords = () => {
             (selectedRole === "All" || record.user?.role === selectedRole)
         );
     });
+    const processedData = filteredData.map((r) => {
+        let updatedAlert = r.alert;
+
+        if (r.clockIn && !r.clockOut) {
+            updatedAlert = "NO PUNCH OUT";
+        }
+
+        if (!r.clockIn && r.clockOut) {
+            updatedAlert = "NO PUNCH IN";
+        }
+
+        return {
+            ...r,
+            alert: updatedAlert
+        };
+    });
 
     // Calculate metrics
     const calculateMetrics = () => {
-        const totalRecords = filteredData.length;
-        const missedPunchIn = filteredData.filter(r => !r.clockIn).length;
-        const missedPunchOut = filteredData.filter(r => !r.clockOut).length;
-        const violations = filteredData.filter(r => r.alert === 'VIOLATION').length;
-        const completeShifts = filteredData.filter(r => {
+        const totalRecords = processedData.length;
+
+        const missedPunchIn = processedData.filter(r => !r.clockIn).length;
+        const missedPunchOut = processedData.filter(r => !r.clockOut).length;
+
+        // Violation conditions
+        const violations = processedData.filter(r =>
+            r.alert === "VIOLATION" ||
+            r.alert === "NO PUNCH OUT" ||
+            r.alert === "NO PUNCH IN"
+        ).length;
+
+        const completeShifts = processedData.filter(r => {
             if (!r.workingHours) return false;
             const hours = parseFloat(r.workingHours);
             return hours >= 6;
@@ -111,12 +168,13 @@ const AttendanceRecords = () => {
             missedPunchOut,
             violations,
             completeShifts,
-            avgMissedPunchIn: totalRecords > 0 ? ((missedPunchIn / totalRecords) * 100).toFixed(1) : '0.0',
-            avgMissedPunchOut: totalRecords > 0 ? ((missedPunchOut / totalRecords) * 100).toFixed(1) : '0.0',
-            completionRate: totalRecords > 0 ? ((completeShifts / totalRecords) * 100).toFixed(1) : '0.0',
-            violationRate: totalRecords > 0 ? ((violations / totalRecords) * 100).toFixed(1) : '0.0'
+            avgMissedPunchIn: totalRecords > 0 ? ((missedPunchIn / totalRecords) * 100).toFixed(1) : "0.0",
+            avgMissedPunchOut: totalRecords > 0 ? ((missedPunchOut / totalRecords) * 100).toFixed(1) : "0.0",
+            completionRate: totalRecords > 0 ? ((completeShifts / totalRecords) * 100).toFixed(1) : "0.0",
+            violationRate: totalRecords > 0 ? ((violations / totalRecords) * 100).toFixed(1) : "0.0"
         };
     };
+
 
     const generateCaseContent = (caseType, record) => {
         const date = new Date(record.date).toLocaleDateString();
@@ -265,6 +323,42 @@ Team Leader`
             console.error("Failed to send case:", error);
         }
     };
+    const handleExport = () => {
+        const headers = [
+            "User ID",
+            "Date",
+            "Name",
+            "Department",
+            "Shift",
+            "Punch In",
+            "Punch Out",
+            "Total Hours",
+            "Status"
+        ];
+
+        const rows = filteredData.map(r => [
+            r._id?.slice(0, 8),
+            new Date(r.date).toLocaleDateString(),
+            r.user?.FullName,
+            r.user?.department,
+            r.shift,
+            r.clockIn ? new Date(r.clockIn).toLocaleTimeString() : "Not Punched In",
+            r.clockOut ? new Date(r.clockOut).toLocaleTimeString() : "Not Punched Out",
+            r.workingHours,
+            r.alert
+        ]);
+
+        let csvContent =
+            "data:text/csv;charset=utf-8," +
+            [headers, ...rows].map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.href = encodedUri;
+        link.download = "attendance_report.csv";
+        document.body.appendChild(link);
+        link.click();
+    };
 
     const metrics = calculateMetrics();
 
@@ -405,6 +499,18 @@ Team Leader`
                                 />
                             </div>
 
+                            <select
+                                value={selectedDepartment}
+                                onChange={(e) => setSelectedDepartment(e.target.value)}
+                                className="px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white text-sm"
+                            >
+                                <option className="bg-slate-900" value="All">All Departments</option>
+                                <option className="bg-slate-900" value="CSR">CSR</option>
+                                <option className="bg-slate-900" value="Deposit">Deposit</option>
+                                <option className="bg-slate-900" value="Withdraw">Withdraw</option>
+                                <option className="bg-slate-900" value="Marketing">Marketing</option>
+                            </select>
+
                             {/* Search Input */}
                             <div className="relative">
                                 <Search className="absolute left-4 top-3 text-slate-400 w-5 h-5" />
@@ -418,7 +524,13 @@ Team Leader`
                            min-w-[320px] transition-all duration-300"
                                 />
                             </div>
-
+                            <button
+                                onClick={handleExport}
+                                className="flex items-center gap-2 bg-[#3b82f6] hover:bg-[#2764ba] px-4 py-2 rounded-lg text-white font-semibold"
+                            >
+                                <Upload size={18} />
+                                Export File
+                            </button>
                         </div>
                     </div>
 
@@ -429,13 +541,16 @@ Team Leader`
                             <thead className="bg-slate-900/80 border-b border-slate-700/50">
                                 <tr>
                                     {[
-                                        "USER ID",
                                         "DATE",
                                         "NAME",
+                                        "DEPARTMENT",
                                         "SHIFT",
-                                        "PUNCH IN",
-                                        "PUNCH OUT",
-                                        "TOTAL HOURS",
+                                        "TIME PUNCH IN",
+                                        "TIME PUNCH OUT",
+                                        "TOTAL MINUTES",
+                                        "WC",
+                                        "SMOKE",
+                                        "LUNCH",
                                         "STATUS",
                                     ].map((header) => (
                                         <th
@@ -449,70 +564,156 @@ Team Leader`
                             </thead>
 
                             <tbody className="divide-y divide-slate-700/30">
-                                {filteredData.length > 0 ? (
-                                    filteredData.map((record, index) => (
-                                        <tr key={index} className="hover:bg-slate-800/30 transition-colors duration-200">
-                                            <td className="px-6 py-4 text-sm text-slate-300 font-mono whitespace-nowrap">
-                                                {record._id ? record._id.slice(0, 8) : ""}
-                                            </td>
+                                {processedData.length > 0 ? (
+                                    processedData.map((record, index) => (
+                                        <tr
+                                            key={index}
+                                            className="hover:bg-slate-800/30 transition-colors duration-200"
+                                        >
+                                            {/* DATE */}
                                             <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
                                                 {new Date(record.date).toLocaleDateString()}
                                             </td>
+
+                                            {/* NAME */}
                                             <td className="px-6 py-4 text-sm capitalize text-white font-medium whitespace-nowrap">
                                                 {record.user?.FullName}
                                             </td>
 
+                                            {/* DEPARTMENT */}
+                                            <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
+                                                {record.user?.department || "N/A"}
+                                            </td>
+
+                                            {/* SHIFT */}
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">
                                                 <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-semibold border border-blue-500/30">
                                                     {record.shift}
                                                 </span>
                                             </td>
+
+                                            {/* CLOCK IN */}
                                             <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
-                                                {record.clockIn
-                                                    ? new Date(record.clockIn).toLocaleTimeString()
-                                                    : <span className="text-red-400 font-semibold">Not Punched In</span>}
+                                                {record.clockIn ? (
+                                                    new Date(record.clockIn).toLocaleTimeString()
+                                                ) : (
+                                                    <span className="text-red-400 font-semibold">
+                                                        Not Punched In
+                                                    </span>
+                                                )}
                                             </td>
+
+                                            {/* CLOCK OUT */}
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                {record.clockOut
-                                                    ? <span className="text-slate-300">{new Date(record.clockOut).toLocaleTimeString()}</span>
-                                                    : <span className="text-orange-400 font-semibold">Not Punched Out</span>}
+                                                {record.clockOut ? (
+                                                    <span className="text-slate-300">
+                                                        {new Date(record.clockOut).toLocaleTimeString()}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-orange-400 font-semibold">
+                                                        Not Punched Out
+                                                    </span>
+                                                )}
                                             </td>
+
+                                            {/* TOTAL MINUTES */}
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                <span className={`font-bold ${parseFloat(record.workingHours) < 6 ? 'text-yellow-400' : 'text-green-400'
-                                                    }`}>
+                                                <span
+                                                    className={`font-bold ${parseFloat(record.workingHours) < 6
+                                                        ? "text-yellow-400"
+                                                        : "text-green-400"
+                                                        }`}
+                                                >
                                                     {record.workingHours}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 flex items-center gap-3 whitespace-nowrap">
-                                                <div
-                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border ${getStatusColor(
-                                                        record.alert
-                                                    )}`}
-                                                >
-                                                    {getStatusIcon(record.alert)}
-                                                    {record.alert}
-                                                </div>
 
+                                            {/* WC COLUMN */}
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap text-purple-300">
                                                 <button
-                                                    onClick={() => handleFileClick(record)}
-                                                    className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold rounded-md px-4 py-1.5 cursor-pointer hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
+                                                    onClick={() =>
+                                                        openBreakDetails("WC", record.wcStart, record.wcEnd, record.date)
+                                                    }
+                                                    className="px-3 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 
+    border border-purple-500/30 rounded-lg text-xs transition"
                                                 >
-                                                    <FileText size={18} />
-                                                    <span className="text-sm">Report</span>
+                                                    See Details
                                                 </button>
+
+                                            </td>
+
+
+
+                                            {/* SMOKE COLUMN */}
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap text-pink-300">
+                                                <button
+                                                    onClick={() =>
+                                                        openBreakDetails("SMOKE", record.smokeStart, record.smokeEnd, record.date)
+                                                    }
+                                                    className="px-3 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 
+    border border-pink-500/30 rounded-lg text-xs transition"
+                                                >
+                                                    See Details
+                                                </button>
+
+                                            </td>
+
+
+                                            {/* LUNCH / BREAK COLUMN */}
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap text-blue-300">
+                                                <button
+                                                    onClick={() =>
+                                                        openBreakDetails("LUNCH", record.breakStart, record.breakEnd, record.date)
+                                                    }
+                                                    className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 
+    border border-blue-500/30 rounded-lg text-xs transition"
+                                                >
+                                                    See Details
+                                                </button>
+
+                                            </td>
+
+
+
+                                            {/* STATUS + REPORT BUTTON */}
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-3">
+                                                    {/* STATUS BADGE */}
+                                                    <div
+                                                        className={`flex items-center gap-2 px-3 h-8 rounded-lg text-xs font-bold border ${getStatusColor(
+                                                            record.alert
+                                                        )}`}
+                                                    >
+                                                        {getStatusIcon(record.alert)}
+                                                        <span>{record.alert}</span>
+                                                    </div>
+
+                                                    {/* REPORT BUTTON */}
+                                                    <button
+                                                        onClick={() => handleFileClick(record)}
+                                                        className="flex items-center gap-1 px-3 h-8 rounded-lg bg-gradient-to-r 
+                                        from-yellow-400 to-amber-500 text-black text-xs font-semibold 
+                                        hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
+                                                    >
+                                                        <FileText size={16} />
+                                                        <span>Report</span>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
                                         <td
-                                            colSpan="8"
+                                            colSpan="11"
                                             className="text-center text-slate-400 py-12 text-sm"
                                         >
                                             <div className="flex flex-col items-center gap-3">
                                                 <AlertCircle className="w-12 h-12 text-slate-600" />
                                                 <p className="text-lg font-medium">No records found</p>
-                                                <p className="text-xs text-slate-500">Try adjusting your search criteria</p>
+                                                <p className="text-xs text-slate-500">
+                                                    Try adjusting your search criteria
+                                                </p>
                                             </div>
                                         </td>
                                     </tr>
@@ -520,6 +721,7 @@ Team Leader`
                             </tbody>
                         </table>
                     </div>
+
 
                     {/* Footer */}
                     <div className="bg-slate-900/80 px-6 py-4 border-t border-slate-700/50">
@@ -530,6 +732,81 @@ Team Leader`
                     </div>
                 </div>
             </div>
+            {breakModal.open && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-xl p-6 w-full max-w-2xl text-white shadow-2xl">
+
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold tracking-wide">
+                                {breakModal.type} Break History
+                            </h2>
+                            <button
+                                onClick={() => setBreakModal({ open: false })}
+                                className="text-slate-400 hover:text-white"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* TABLE */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full  rounded-lg">
+                                <thead className="bg-slate-800/50">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">DATE</th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                                            {breakModal.type} START
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                                            {breakModal.type} END
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                                            {breakModal.type} TOTAL
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr className="border-t border-slate-700">
+
+                                        {/* DATE */}
+                                        <td className="px-4 py-3 text-sm">
+                                            {breakModal.date
+                                                ? new Date(breakModal.date).toLocaleDateString()
+                                                : "No Data"}
+                                        </td>
+
+                                        {/* START */}
+                                        <td className="px-4 py-3 text-sm">
+                                            {breakModal.start
+                                                ? new Date(breakModal.start).toLocaleTimeString()
+                                                : "—"}
+                                        </td>
+
+                                        {/* END */}
+                                        <td className="px-4 py-3 text-sm">
+                                            {breakModal.end
+                                                ? new Date(breakModal.end).toLocaleTimeString()
+                                                : "—"}
+                                        </td>
+
+                                        {/* TOTAL */}
+                                        <td className="px-4 py-3 text-sm font-semibold text-blue-400">
+                                            {breakModal.start && breakModal.end
+                                                ? calculateDuration(breakModal.start, breakModal.end)
+                                                : "—"}
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
 
             {/* Filing Modal - Select Case Type */}
             {isFilingModalOpen && (

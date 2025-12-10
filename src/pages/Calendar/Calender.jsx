@@ -10,6 +10,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import ReactCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { motion } from "framer-motion";
+import { Paperclip } from "lucide-react";
 
 const locales = { "en-US": enUS };
 
@@ -22,6 +23,7 @@ const localizer = dateFnsLocalizer({
 });
 
 function CalendarPage() {
+    const [attachment, setAttachment] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
 
@@ -39,6 +41,9 @@ function CalendarPage() {
             end: addHours(new Date(), 2),
         },
     ]);
+    const handleFileUpload = (e) => {
+        setAttachment(e.target.files[0]);
+    };
 
     const defaultDate = useMemo(() => selectedDate, [selectedDate]);
 
@@ -234,7 +239,7 @@ function CalendarPage() {
                             </div>
                         </div>
 
-                
+
 
                         {/* Description */}
                         <label className="block text-sm text-gray-400 mb-2">Notes</label>
@@ -242,6 +247,39 @@ function CalendarPage() {
                             className="w-full h-32 p-3 rounded bg-[rgba(59,130,246,0.06)] border border-gray-800 text-white"
                             placeholder="Add event details..."
                         />
+                        {/* Attachment Upload */}
+                        <div className="mb-5">
+                            <label className="block text-sm text-gray-400 mb-2">Attachment</label>
+
+                            <div className="flex items-center gap-3">
+
+                                {/* Hidden Input */}
+                                <input
+                                    id="fileUpload"
+                                    type="file"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                />
+
+                                {/* Custom Button */}
+                                <label
+                                    htmlFor="fileUpload"
+                                    className="flex items-center gap-2 px-4 py-2 bg-[rgba(59,130,246,0.10)] 
+                       border border-gray-700 rounded-lg cursor-pointer hover:bg-[rgba(59,130,246,0.20)]
+                       transition text-sm"
+                                >
+                                    <Paperclip size={18} className="text-white" />
+                                    <span className="text-gray-300">Attach File</span>
+                                </label>
+
+                                {/* File Name Display */}
+                                {attachment && (
+                                    <span className="text-sm text-gray-400 truncate max-w-[200px]">
+                                        {attachment.name}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Buttons */}
                         <div className="flex justify-end gap-3 mt-6">

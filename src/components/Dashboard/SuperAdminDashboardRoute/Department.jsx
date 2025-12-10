@@ -16,13 +16,15 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab, shiftTargets }) => {
-  const excludedWords = ["hours", "backstage", "senior", "trainee", "highlight", "half", "failed", "assigned", 'reached',"name"];
+  const excludedWords = ["hours", "backstage", "senior", "trainee", "highlight", "half", "failed", "assigned", 'reached', "name"];
+  console.log(nonQuotaMembers);
 
   // Filter out excluded members and seniors/highlights
   const filteredMembers = nonQuotaMembers?.filter((member) => {
     const name = member.name?.toLowerCase() || "";
     return !excludedWords.some((word) => name.includes(word));
   });
+  console.log("FILTERED:", filteredMembers);
 
   // Function to get target based on shift
   const getTargetForShift = (shift) => {
@@ -199,7 +201,7 @@ const Department = () => {
   const { data, loading: combinedQuotaLoading } = useSelector(
     (state) => state.combinedQuota
   );
-  console.log("data of departent",data)
+  console.log("data of departent", data)
 
   const formatNumber = (num) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
@@ -210,6 +212,29 @@ const Department = () => {
   useEffect(() => {
     dispatch(fetchCombinedDepartmentsData());
   }, [dispatch]);
+  // Convert "12/04" or "2025-12-04" → "December 4, 2025"
+  const formatDateReadable = (raw) => {
+    if (!raw) return "N/A";
+
+    let date;
+
+    // If format is "12/04"
+    if (raw.includes("/")) {
+      const [month, day] = raw.split("/");
+      const year = new Date().getFullYear();
+      date = new Date(`${year}-${month}-${day}`);
+    }
+    // If format already "2025-12-04"
+    else {
+      date = new Date(raw);
+    }
+
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+  };
 
   // Function to extract shift from agent name
   const getShiftFromName = (name) => {
@@ -284,10 +309,10 @@ const Department = () => {
     };
 
     const nonQuotaList = [];
-    const today = new Date().toLocaleDateString("en-GB");
 
     data.forEach((row) => {
       if (!Array.isArray(row) || row.length < 3) return;
+      const sheetDate = row[1];
 
       const department = row[0]?.toString()?.trim();
       const memberName = row[2]?.toString()?.trim();
@@ -322,7 +347,7 @@ const Department = () => {
           stats.CSR.nonQuotaCount += 1;
           nonQuotaList.push({
             department: "CSR",
-            date: today,
+            date: formatDateReadable(sheetDate),
             name: memberName,
             output: conversations,
             shift: shift,
@@ -348,7 +373,7 @@ const Department = () => {
           stats.Deposit.nonQuotaCount += 1;
           nonQuotaList.push({
             department: "Deposit",
-            date: today,
+            date: formatDateReadable(sheetDate),
             name: memberName,
             output: depositAmount,
             shift: shift,
@@ -358,26 +383,26 @@ const Department = () => {
           });
         }
       } else if (department === "Withdraw") {
-        const transactionsProcessed  = parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
+        const transactionsProcessed = parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
         const target = getTargetForAgent("Withdrawal", shift);
 
-        stats.Withdrawal.transactions += transactionsProcessed ;
+        stats.Withdrawal.transactions += transactionsProcessed;
         stats.Withdrawal.totalAgents += 1;
 
-        const quotaPercentage = target > 0 ? (transactionsProcessed  / target) * 100 : 0;
+        const quotaPercentage = target > 0 ? (transactionsProcessed / target) * 100 : 0;
         if (quotaPercentage >= 70) {
           stats.Withdrawal.quotaMetCount += 1;
         } else {
           stats.Withdrawal.nonQuotaCount += 1;
           nonQuotaList.push({
             department: "Withdrawal",
-            date: today,
+            date: formatDateReadable(sheetDate),
             name: memberName,
             output: transactionsProcessed,
             shift: shift,
             quota: target,
             completion: Math.round(quotaPercentage),
-            variance: Math.round(transactionsProcessed  - target),
+            variance: Math.round(transactionsProcessed - target),
           });
         }
       }

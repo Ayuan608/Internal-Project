@@ -110,10 +110,10 @@ const EmployeeDirectory = () => {
       </div>
 
       <div className="bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left  custom-employee-table">
           <thead className="border-b border-slate-700">
             <tr>
-              {["Name", "Hired", "Salary", "Phone", "Email", "Status", "Actions"].map(
+              {["Name", "DATE Hired", "Salary", "Phone", "Email", "Status", "Actions"].map(
                 (h) => (
                   <th
                     key={h}
@@ -130,20 +130,26 @@ const EmployeeDirectory = () => {
             {filteredEmployees.map((emp) => (
               <tr
                 key={emp._id}
-                className="hover:bg-slate-700/20 transition-colors text-center"
+                className="hover:bg-slate-700/20 transition-colors text-start afjj"
               >
-                <td className="px-6 py-4 text-white">{emp.FullName}</td>
+                <td className="px-6 py-4 text-white capitalize afjj">{emp.FullName}</td>
                 <td className="px-6 py-4 text-slate-300">
                   {formatDate(emp.dateHired)}
                 </td>
-                <td className="px-6 py-4 text-emerald-400 font-medium">
+                <td
+                  className={`px-6 py-4 font-medium salerywidth ${emp.salary && Number(emp.salary) < 20000
+                      ? "text-red-500"
+                      : "text-emerald-400"
+                    }`}
+                >
                   {emp.salary
                     ? `₱${Number(emp.salary).toLocaleString("en-PH")}`
                     : "N/A"}
                 </td>
 
-                <td className="px-6 py-4 text-slate-300">{emp.phone}</td>
-                <td className="px-6 py-4 text-slate-300">{emp.email}</td>
+
+                <td className="px-6 py-4 text-slate-300 phwidth">+63{emp.phone}</td>
+                <td className="px-6 py-4 text-slate-300 hfiash">{emp.email}</td>
 
                 <td className="px-6 py-4">
                   <span
@@ -178,8 +184,6 @@ const EmployeeDirectory = () => {
           </tbody>
         </table>
       </div>
-
-
     </div>
   );
 };

@@ -11,7 +11,7 @@ import {
 const NotificationPopup = ({ userId }) => {
   const [visible, setVisible] = useState(false);
   const dispatch = useDispatch();
-  const { notifications, unreadCount, loading,  } = useSelector(
+  const { notifications, unreadCount, loading, } = useSelector(
     (state) => state.notifications
   );
 
@@ -36,17 +36,17 @@ const NotificationPopup = ({ userId }) => {
   }, []);
 
   useEffect(() => {
-      if (userId) {
-        dispatch(fetchNotifications(userId));
-      }
+    if (userId) {
+      dispatch(fetchNotifications(userId));
+    }
   }, [dispatch, userId]);
 
   return (
-    <div className="relative" ref={popupRef}>
+    <div ref={popupRef}>
       <motion.div
         onClick={() => setVisible((prev) => !prev)}
         whileTap={{ scale: 0.9 }}
-        className="relative w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer hover:bg-[#3a3f4f] transition"
+        className=" w-10 h-10 flex items-center justify-center rounded-full bg-[#282e3c61] cursor-pointer hover:bg-[#3a3f4f] transition"
       >
         <Bell className="text-white" />
         {unreadCount > 0 && (
@@ -62,7 +62,7 @@ const NotificationPopup = ({ userId }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="rounded-xl border border-[#2e3135] bg-[#111113]/95 backdrop-blur-md fixed top-[65px] right-5 w-[380px] max-h-[500px] overflow-y-auto shadow-2xl z-50 p-4 text-white custom-scrollbar"
+            className="rounded-xl border border-[#2e3135] bg-[#111113]/95 backdrop-blur-md  top-[65px] right-5 w-[380px] max-h-[500px] overflow-y-auto fixed shadow-2xl z-[9999] p-4 text-white custom-scrollbar"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Notifications</h3>
@@ -82,7 +82,7 @@ const NotificationPopup = ({ userId }) => {
                 animate={{ opacity: 1 }}
                 className="text-gray-400 text-center py-4"
               >
-                No notifications yet 
+                No notifications yet
               </motion.p>
             ) : (
               <motion.ul
@@ -95,11 +95,10 @@ const NotificationPopup = ({ userId }) => {
                   <motion.li
                     key={n._id}
                     whileHover={{ scale: 1.02 }}
-                    className={`p-3 rounded-lg border ${
-                      n.isRead
+                    className={`p-3 rounded-lg border ${n.isRead
                         ? " border-[#25272b]"
                         : "bg-[#282e3c1d] border-slate-800/30"
-                    } transition flex justify-between items-start`}
+                      } transition flex justify-between items-start`}
                   >
                     <div>
                       <p className="font-medium text-white text-sm">

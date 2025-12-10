@@ -16,6 +16,7 @@ import {
   Database,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const GlassCard = ({ children, className = "" }) => (
   <div
@@ -180,7 +181,7 @@ export const CollapsibleDepartment = ({
   const csrData = filterByDepartment("CSR");
   const depositData = filterByDepartment("Deposit");
   const withdrawData = filterByDepartment("Withdraw");
-
+  const { role } = useSelector((state) => state.auth);
   const deptData =
     deptKey === "csr"
       ? csrData
@@ -590,9 +591,21 @@ export const CollapsibleDepartment = ({
         <div className="flex items-center gap-3">
           <button
             onClick={() =>
-              navigate('/dashboard/data-storage', {
-                state: { department: deptKey === 'csr' ? 'CSR' : deptKey === 'deposit' ? 'Deposit' : 'Withdraw' }
-              })
+              navigate(
+                role === "Admin" || role === "Super-Admin"
+                  ? "/admin/data-storage"
+                  : "/dashboard/data-storage",
+                {
+                  state: {
+                    department:
+                      deptKey === "csr"
+                        ? "CSR"
+                        : deptKey === "deposit"
+                          ? "Deposit"
+                          : "Withdraw",
+                  },
+                }
+              )
             }
             className="flex items-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-lg text-purple-300 transition-all hover:scale-105"
           >

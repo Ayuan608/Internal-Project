@@ -573,7 +573,7 @@ const Performance = () => {
                                             {customHeaders.map((header, j) => (
                                                 <td
                                                     key={j}
-                                                    className={`px-4 py-3 whitespace-nowrap text-center text-sm ${j === 0 ? 'font-medium text-gray-100' : getCellColor(header, row[j])}`}
+                                                    className={`px-4 py-3 whitespace-nowrap text-center sfsdf  text-sm ${j === 0 ? 'font-medium text-gray-100' : getCellColor(header, row[j])}`}
                                                 >
                                                     {row[j] !== undefined && row[j] !== null && row[j] !== '' && row[j] !== '-' ? row[j] : '0'}
                                                 </td>
@@ -586,7 +586,7 @@ const Performance = () => {
                                             Total
                                         </td>
                                         {columnTotals.slice(1).map((total, index) => (
-                                            <td key={index + 1} className="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-100">
+                                            <td key={index + 1} className="px-4 py-3 whitespace-nowrap  text-sm text-gray-100">
                                                 {total > 0 ? total.toFixed(0) : '0'}
                                             </td>
                                         ))}

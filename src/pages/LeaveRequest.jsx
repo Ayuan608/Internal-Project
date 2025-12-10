@@ -20,7 +20,7 @@ function LeaveRequest() {
                     <ArrowLeft
                       className="w-6 h-6 text-slate-300" />
                 </button>
-                    Leave Requests – {employee?.FullName}
+                    Leave Requests – <span className="capitalize"> {employee?.FullName}</span>
                 </h2>
             </div>
 
@@ -34,7 +34,7 @@ function LeaveRequest() {
                             key={leave.requestId}
                             className="p-6 bg-slate-900/60 border border-slate-700 rounded-xl"
                         >
-                            <p className="text-lg font-semibold">{leave.reason}</p>
+                            <p className="text-lg font-semibold capitalize">{leave.reason}</p>
 
                             <p className="text-slate-400 text-sm">
                                 <span className="font-medium text-slate-300">Date: </span>

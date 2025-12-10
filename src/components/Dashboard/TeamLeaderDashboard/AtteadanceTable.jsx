@@ -1,6 +1,6 @@
 // AttendanceTable.jsx
 import React, { useMemo, useState } from "react";
-import { Edit2, Save, X } from "lucide-react";
+import { Edit2, Save, X, ChevronLeft, ChevronRight, Calendar, Download } from "lucide-react";
 
 
 const STATUS_MAP = {
@@ -36,14 +36,15 @@ export default function AttendanceTable({
     const [editingEmployee, setEditingEmployee] = useState(null);
     const [editedPattern, setEditedPattern] = useState([]);
     const [showStatusMenu, setShowStatusMenu] = useState({ show: false, dayIndex: null, x: 0, y: 0 });
-
+    const [tableMonth, setTableMonth] = useState(selectedMonth);
     const canEdit = role === "Super-Admin" || role === "Admin";
 
     const monthDaysArr = useMemo(() => {
-        const arr = [];
-        for (let d = 1; d <= daysInMonth; d++) arr.push(d);
-        return arr;
-    }, [daysInMonth]);
+        const y = tableMonth.getFullYear();
+        const m = tableMonth.getMonth();
+        const days = new Date(y, m + 1, 0).getDate();
+        return Array.from({ length: days }, (_, i) => i + 1);
+    }, [tableMonth]);
 
     // Get pattern for employee
     const getPatternForEmp = (emp) => {
@@ -119,14 +120,14 @@ export default function AttendanceTable({
         try {
             // TODO: Dispatch Redux action to save attendance pattern
             // Example: await dispatch(updateEmployeeAttendance({ empId, pattern: editedPattern, month: selectedMonth }));
-            
+
             console.log("Saving attendance for employee:", empId);
             console.log("Pattern:", editedPattern);
             console.log("Month:", selectedMonth);
-            
+
             // Show success message
             alert("Attendance pattern updated successfully!");
-            
+
             setEditingEmployee(null);
             setEditedPattern([]);
         } catch (error) {
@@ -195,6 +196,16 @@ export default function AttendanceTable({
         return "bg-slate-500/20 border-slate-500 text-slate-300";
     };
 
+    const tableMonthLabel = useMemo(() => {
+        return `${tableMonth.toLocaleString("default", { month: "long" })} ${tableMonth.getFullYear()}`;
+    }, [tableMonth]);
+
+    const gotoPreviousMonth = () => {
+        setTableMonth((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1));
+    };
+    const gotoNextMonth = () => {
+        setTableMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1));
+    };
     return (
         <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl overflow-hidden">
             <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
@@ -219,6 +230,20 @@ export default function AttendanceTable({
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
+                        <button onClick={gotoPreviousMonth}>
+                            <ChevronLeft className="w-5 h-5 text-slate-300" />
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm text-white">{tableMonthLabel}</span>
+                        </div>
+
+                        <button onClick={gotoNextMonth}>
+                            <ChevronRight className="w-5 h-5 text-slate-300" />
+                        </button>
+                    </div>
                     <div className="text-sm text-slate-400">Days: {daysInMonth}</div>
                     <button
                         onClick={exportMonthCSV}
@@ -248,7 +273,7 @@ export default function AttendanceTable({
                                 const orig = empNorm.raw;
                                 const isEditing = editingEmployee === empNorm._id;
                                 const pattern = isEditing ? editedPattern : getPatternForEmp(orig);
-                                
+
                                 return (
                                     <tr key={empNorm._id || empNorm.FullName} className="hover:bg-slate-800/30 transition">
                                         <td className="px-3 py-3 text-sm text-slate-300">{formatShortId(empNorm._id)}</td>
@@ -275,9 +300,8 @@ export default function AttendanceTable({
                                                         <div
                                                             key={i}
                                                             onClick={(e) => isEditing && handleDayClick(i, e)}
-                                                            className={`w-6 h-6 rounded text-[10px] font-semibold flex items-center justify-center transition ${item.className} ${
-                                                                isEditing ? 'cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'
-                                                            }`}
+                                                            className={`w-6 h-6 rounded text-[10px] font-semibold flex items-center justify-center transition ${item.className} ${isEditing ? 'cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'
+                                                                }`}
                                                             title={`Day ${i + 1} - ${item.fullName}`}
                                                         >
                                                             {item.label}
@@ -334,8 +358,8 @@ export default function AttendanceTable({
             {/* Status Selection Menu */}
             {showStatusMenu.show && (
                 <>
-                    <div 
-                        className="fixed inset-0 z-40" 
+                    <div
+                        className="fixed inset-0 z-40"
                         onClick={() => setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0 })}
                     />
                     <div
