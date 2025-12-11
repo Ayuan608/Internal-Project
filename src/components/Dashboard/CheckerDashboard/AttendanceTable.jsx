@@ -1,8 +1,8 @@
 // src/components/Dashboard/CheckerDashboard/AttendanceTable.jsx
 import React from 'react';
-import { 
-  CheckCircle, 
-  XCircle, 
+import {
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Clock,
   User,
@@ -101,10 +101,10 @@ const AttendanceTable = ({ data = [] }) => {
               const status = employee.status || (employee.clockIn ? 'Present' : 'Absent');
               const statusColor = getStatusColor(status);
               const breaks = employee.breaks || {};
-              
+
               return (
-                <tr 
-                  key={index} 
+                <tr
+                  key={index}
                   className="hover:bg-slate-800/40 transition-colors group"
                 >
                   <td className="px-6 py-4">
@@ -122,38 +122,40 @@ const AttendanceTable = ({ data = [] }) => {
                       </div>
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-300">
                       {employee.department || 'N/A'}
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-300">
-                      {formatDate(employee.date)}
+                      {/* {formatDate(employee.date)} */}
+                      {employee.date}
+
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-300 font-medium">
                       {formatTime(employee.clockIn)}
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className="text-sm text-slate-300 font-medium">
                       {formatTime(employee.clockOut)}
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${statusColor.bg} ${statusColor.text}`}>
                       {statusColor.icon}
                       {status}
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {breaks.smoke > 0 && (
@@ -179,7 +181,7 @@ const AttendanceTable = ({ data = [] }) => {
                       )}
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors">

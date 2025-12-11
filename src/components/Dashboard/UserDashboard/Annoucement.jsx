@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Plus, X, Upload, User, Calendar, Trash2, Filter, Image as ImageIcon, Edit, Eye } from "lucide-react";
-import { fetchAllAnnouncements, createAnnouncement, clearError } from '../../../redux/announcementSlice';
+import { fetchAllAnnouncements, createAnnouncement, clearError, updateAnnouncement, deleteAnnouncement } from '../../../redux/announcementSlice';
 
 export default function Announcement() {
   const dispatch = useDispatch();
   const [selected, setSelected] = useState(null);
   const [createAnnouncementModal, setCreateAnnouncementModal] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+
+
   const [imageModal, setImageModal] = useState({ open: false, images: [], currentIndex: 0 });
   const [dateFilter, setDateFilter] = useState('all');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
@@ -17,6 +20,11 @@ export default function Announcement() {
     recipients: 'ALL',
     files: []
   });
+
+  // When modal opens for editing:
+
+
+
   const [dragOver, setDragOver] = useState(false);
 
   const announcementsState = useSelector((state) => state.announcements);
@@ -34,11 +42,7 @@ export default function Announcement() {
     dispatch(fetchAllAnnouncements());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!createAnnouncementModal) {
-      dispatch(clearError());
-    }
-  }, [createAnnouncementModal, dispatch]);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,57 +87,117 @@ export default function Announcement() {
     }));
   };
 
+  // const handleSubmit = async (e) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.title.trim() || !formData.details.trim()) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
     const announcementData = {
       ...formData,
-      createdBy: user?.name || 'Super-Admin',
-      recipients: formData.recipients === 'ALL' ? ['ALL'] : [formData.recipients]
+      createdBy: user?.name || "Super-Admin",
+      recipients: formData.recipients === "ALL" ? ["ALL"] : [formData.recipients]
     };
 
     try {
-      const result = await dispatch(createAnnouncement(announcementData)).unwrap();
+      let result;
+
+      // 🟡 EDIT MODE
+      if (selectedAnnouncement && selectedAnnouncement._id) {
+        result = await dispatch(
+          updateAnnouncement({
+            id: selectedAnnouncement._id,
+            data: announcementData,
+          })
+        ).unwrap();
+        setSelectedAnnouncement(null);
+        setCreateAnnouncementModal(false);
+
+      }
+
+      // 🔵 CREATE MODE
+      else {
+        result = await dispatch(createAnnouncement(announcementData)).unwrap();
+      }
 
       if (result.success) {
         setFormData({
-          title: '',
-          details: '',
-          recipients: 'ALL',
-          files: []
+          title: "",
+          details: "",
+          recipients: "ALL",
+          files: [],
+          removeImages: []
         });
+
+        setSelectedAnnouncement(null);
         setCreateAnnouncementModal(false);
+
         dispatch(fetchAllAnnouncements());
       }
-    } catch (error) {
-      console.error('Failed to create announcement:', error);
+    } catch (err) {
+      console.error("Submit error:", err);
     }
   };
 
-  const handleDeleteAnnouncement = async (e, announcementId) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this announcement?')) {
-      try {
-        // Add your delete API call here
-        // await dispatch(deleteAnnouncement(announcementId)).unwrap();
-        console.log('Deleting announcement:', announcementId);
-        dispatch(fetchAllAnnouncements());
-      } catch (error) {
-        console.error('Failed to delete announcement:', error);
-      }
-    }
-  };
+
+
+
 
   const handleEditAnnouncement = (e, announcement) => {
     e.stopPropagation();
-    // Add your edit logic here
-    console.log('Edit announcement:', announcement);
+    setSelectedAnnouncement(announcement);  // store selected announcement
+    setCreateAnnouncementModal(true);       // open modal
   };
+
+  useEffect(() => {
+    if (!createAnnouncementModal) {
+      setSelectedAnnouncement(null);   // <-- resets edit mode
+      setFormData({
+        title: "",
+        details: "",
+        recipients: "ALL",
+        files: [],
+        removeImages: []
+      });
+    }
+  }, [createAnnouncementModal]);
+  useEffect(() => {
+    if (selectedAnnouncement) {
+      setFormData({
+        title: selectedAnnouncement.title || "",
+        details: selectedAnnouncement.details || "",
+        recipients: selectedAnnouncement.recipients || [],
+        files: [],
+        removeImages: []
+      });
+    }
+  }, [selectedAnnouncement]);
+
+  const handleDeleteAnnouncement = async (e, announcementId) => {
+    e.stopPropagation();
+
+    if (!announcementId) return console.error("Announcement ID missing");
+
+    if (window.confirm("Are you sure you want to delete this announcement?")) {
+      try {
+        await dispatch(deleteAnnouncement(announcementId)).unwrap();
+        console.log("Announcement deleted:", announcementId);
+        dispatch(fetchAllAnnouncements());
+
+      } catch (error) {
+        console.error("Failed to delete announcement:", error);
+      }
+    }
+  };
+
+  // useEffect(() => {
+  //   if (!createAnnouncementModal) {
+  //     setSelectedAnnouncement(null);
+  //   }
+  // }, [createAnnouncementModal]);
 
   const openImageModal = (images, index = 0) => {
     setImageModal({ open: true, images, currentIndex: index });
@@ -364,7 +428,7 @@ export default function Announcement() {
                       <Edit size={16} />
                     </button>
                     <button
-                      onClick={(e) => handleDeleteAnnouncement(e, announcement._id || announcement.id)}
+                      onClick={(e) => handleDeleteAnnouncement(e, announcement._id)}
                       className="p-2 bg-red-600 text-white rounded-lg transition-all shadow-lg hover:shadow-red-500/50 hover:bg-red-700"
                       title="Delete"
                     >
@@ -532,7 +596,7 @@ export default function Announcement() {
             >
               <div className="px-6 py-4  flex justify-between items-center bg-slate-900/50flex-shrink-0">
                 <h2 className="text-2xl font-bold text-white">
-                  Create Announcement
+                  {!selectedAnnouncement ? "Create Announcement" : "Edit Announcement"}
                 </h2>
                 <button
                   onClick={() => setCreateAnnouncementModal(false)}
@@ -650,7 +714,7 @@ export default function Announcement() {
                         Creating...
                       </>
                     ) : (
-                      'Publish Now'
+                      !selectedAnnouncement ? 'Publish Now' : 'Edit Now'
                     )}
                   </button>
                 </div>

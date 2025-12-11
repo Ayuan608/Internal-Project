@@ -181,6 +181,7 @@ export const getDepartmentWiseUsers = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.get("/attendance/get-department-wise");
+
       return data;
     } catch (error) {
       return rejectWithValue(handleError(error, "Failed to get department users"));
