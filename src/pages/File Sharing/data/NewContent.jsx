@@ -1,31 +1,40 @@
 import clsx from "clsx";
 import { Plus, Search, ArrowLeft } from "lucide-react";
 import React, { useState } from "react";
+import axiosInstance from "../../../Helpers/axiosInstance";
+import DocsFileEditor from "./DocsFile"; // New component for Docs editor
+import SpreadsheetEditor from "./ExcelFIle"; // New component for Sheets
+import SlidesEditor from "./PPTFile"; // New component for Slides
+import PdfViewer from "./PdfFile"; // For PDF
+import { DocumentEditorContainerComponent, Toolbar, Inject } from '@syncfusion/ej2-react-documenteditor';
+import { useRef } from "react";
 
 function NewContent() {
   const [fileData, setFileData] = useState(null);
+  const editorRef = useRef(null);
 
   const createFile = async (type) => {
     let endpoint = "";
-    if (type === "Docs") endpoint = "/api/docs";
-    if (type === "Sheets") endpoint = "/api/sheets";
-    if (type === "Slides") endpoint = "/api/slides";
-    if (type === "PDF") endpoint = "/api/pdf";
+    if (type === "Docs") endpoint = "/file/docs";
+    if (type === "Sheets") endpoint = "/file/sheet";
+    if (type === "Slides") endpoint = "/file/slide";
+    if (type === "PDF") endpoint = "/file/pdf";
 
-    const res = await fetch(`http://localhost:3400${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: `My First ${type}` }),
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      setFileData({
-        type,
-        id: data.docId || data.sheetId || data.slideId || data.pdfId,
-        title: data.title,
-        link: data.link,
+    try {
+      const res = await axiosInstance.post(endpoint, {
+        text: `My First ${type}`,
       });
+
+      if (res.data.success) {
+        setFileData({
+          type,
+          title: `My First ${type}`,
+          link: res.data.fileUrl,
+          id: Date.now()
+        });
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -35,6 +44,53 @@ function NewContent() {
     { title: "Sheets", bgColor: "bg-[#21A366]", borderColor: "border-[#21A366]" },
     { title: "PDF", bgColor: "bg-[#E5252A]", borderColor: "border-[#E5252A]" },
   ];
+
+  // Render appropriate editor based on file type
+  const renderEditor = () => {
+    switch (fileData.type) {
+      case "Docs":
+        return (
+          <div className="w-full h-screen rounded-lg overflow-hidden border border-white/10">
+            <DocumentEditorContainerComponent
+              ref={editorRef}
+              id="documenteditor-container"
+              height="100%"
+              width="100%"
+              serviceUrl="https://document.syncfusion.com/web-services/docx-editor/api/documenteditor/"
+              enableToolbar={true}
+              enableSelection={true}
+              enableEditor={true}
+              enableEditorHistory={true}
+              enableSfdtExport={true}
+              usecolor={"#1e293b3a"}
+              title={fileData?.title || "Internal Project"}
+            >
+              <Inject services={[Toolbar]} />
+            </DocumentEditorContainerComponent>
+          </div>
+        );
+      case "Sheets":
+        return <SpreadsheetEditor fileData={fileData} />;
+      case "Slides":
+        return (
+          <div className="w-full h-screen bg-black text-white flex items-center justify-center">
+            <h1 className="text-3xl font-semibold">Slides Editor Coming Soon...</h1>
+          </div>
+        );
+      case "PDF":
+        return <PdfViewer fileData={fileData} />;
+      default:
+        return (
+          <iframe
+            src={fileData.link}
+            title={fileData.type}
+            width="100%"
+            height="950px"
+            style={{ borderRadius: "8px" }}
+          />
+        );
+    }
+  };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">
@@ -57,10 +113,22 @@ function NewContent() {
 
               return (
                 <div
-                  onClick={() => createFile(file.title)}
+                  onClick={() => {
+                    if (file.title === "Docs") {
+                      setFileData({ type: "Docs" });   // Docs → Direct open
+                    }
+                    else if (file.title === "Slides") {
+                      setFileData({ type: "Slides" }); // Slides → Direct open
+                    }
+                    else {
+                      createFile(file.title);          // Sheets + PDF → Backend
+                    }
+                  }}
+
+
                   key={index}
                   className={clsx(
-                    " rounded-xl p-3  flex flex-col items-center relative cursor-pointer",
+                    " rounded-xl p-3  flex flex-col items-center relative cursor-pointer hover:bg-white/5 transition",
                     isSlide
                       ? "w-[250px] h-[230px] mt-14"
                       : isSheet
@@ -85,22 +153,17 @@ function NewContent() {
                     {!isSheet && file.title === "PDF" && (
                       <div className="absolute left-2 right-2 top-2/3 h-[4px] bg-black/60" />
                     )}
-                    {/* <div
-                      className={clsx(
-                        "absolute top-2 left-2 right-2 bottom-2 rounded-md",
-                        file.bgColor
-                      )}
-                    /> */}
+
                     {isSheet && (
                       <>
                         {/* Vertical lines */}
                         <div className="absolute top-0 bottom-0 left-1/3 w-[4px] bg-black/60" />
                         <div className="absolute top-0 bottom-0 left-2/3 w-[3px] bg-black/60" />
-
                         {/* Horizontal lines */}
                         <div className="absolute left-0 right-0 top-1/2 h-[3px] bg-black/60" />
                       </>
                     )}
+
                     <div className="absolute inset-0  bg-black/40 group-hover:bg-[#07091037] transition-all duration-300 rounded-lg z-10" />
                     <div className="absolute inset-0 flex items-center justify-center  opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 ">
                       <Plus className="text-white w-10 h-10" />
@@ -126,13 +189,7 @@ function NewContent() {
             </h2>
           </div>
 
-          <iframe
-            src={fileData.link}
-            title={fileData.type}
-            width="100%"
-            height="700px"
-            style={{ borderRadius: "8px" }}
-          />
+          {renderEditor()}
         </div>
       )}
     </div>

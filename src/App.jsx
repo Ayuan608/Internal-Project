@@ -1,3 +1,4 @@
+import "./App.css"
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
@@ -118,7 +119,7 @@ function App() {
           <Route path="calender" element={<Calender />} />
           <Route path="file-sharing" element={<FileSharing />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
-
+          <Route path="audit-trial" element={<AuditTrailSection />}/>
         </Route>
       </Route>
 
@@ -142,7 +143,6 @@ function App() {
           <Route path="shift-management" element={<ShiftManagement />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
-          <Route path="audit-trial" element={<AuditTrailSection />}/>
         </Route>
       </Route>
 

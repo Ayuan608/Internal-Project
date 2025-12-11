@@ -1,78 +1,115 @@
-import React from 'react';
-import {
-    FileText,
-    FileSpreadsheet,
-    Presentation,
-    FilePieChart,
-    EllipsisVertical,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Share2, MoreVertical, FileText, File, Presentation } from 'lucide-react';
 
-function Files({ sidebarOpen, setSidebarOpen }) {
-    const files = [
+function Files({ onSelectFile }) {
+    // Sample files data
+    const [files, setFiles] = useState([
         {
-            type: "PDF file",
-            icon: <FilePieChart size={24} className="text-red-500" />,
-            location: "C:/Users/Admin...",
-            modified: "Today 10:27",
-            size: "1.8 MB"
+            id: 1,
+            name: 'Project Report.docx',
+            type: 'Docs',
+            date: 'Today 10:27',
+            location: 'C:/Users/Memin...',
+            size: '1.8 MB'
         },
         {
-            type: "Docs file",
-            icon: <FileText size={28} className="text-blue-400" />,
-            location: "C:/Users/Admin...",
-            modified: "Today 10:27",
-            size: "1.8 MB"
+            id: 2,
+            name: 'Financial Analysis.xlsx',
+            type: 'Sheets',
+            date: 'Today 10:27',
+            location: 'C:/Users/Memin...',
+            size: '2.3 MB'
         },
         {
-            type: "Slides file",
-            icon: <Presentation size={28} className="text-orange-400" />,
-            location: "C:/Users/Admin...",
-            modified: "Today 10:27",
-            size: "1.8 MB"
+            id: 3,
+            name: 'Quarterly Presentation.pptx',
+            type: 'Slides',
+            date: 'Today 10:27',
+            location: 'C:/Users/Memin...',
+            size: '4.1 MB'
         },
         {
-            type: "Sheets file",
-            icon: <FileSpreadsheet size={28} className="text-green-500" />,
-            location: "C:/Users/Admin...",
-            modified: "Today 10:27",
-            size: "1.8 MB"
+            id: 4,
+            name: 'Contract.pdf',
+            type: 'PDF',
+            date: 'Today 10:27',
+            location: 'C:/Users/Memin...',
+            size: '1.2 MB'
         }
-    ];
+    ]);
+
+    const getFileIcon = (type) => {
+        switch (type) {
+            case 'Docs':
+                return <FileText className="w-5 h-5 text-blue-400" />;
+     
+            case 'Slides':
+                return <Presentation className="w-5 h-5 text-orange-400" />;
+            case 'PDF':
+                return <File className="w-5 h-5 text-red-400" />;
+            default:
+                return <File className="w-5 h-5 text-gray-400" />;
+        }
+    };
+
+    const handleFileClick = (file) => {
+        console.log("File clicked:", file);
+        if (onSelectFile) {
+            onSelectFile(file);
+        }
+    };
 
     return (
-        <div className="mt-6 overflow-y-auto">
-            <table className="min-w-full table-auto text-left text-white">
-                <thead className="text-white text-[18px]">
-                    <tr className="border-b border-white/20">
-                        <th className="px-6 py-2 font-extralight">File Name</th>
-                        <th className="px-6 py-2 font-extralight">Location</th>
-                        <th className="px-6 py-2 font-extralight">Last Modified</th>
-                        <th className="px-6 py-2 font-extralight">Size</th>
-                        <th className="px-6 py-2 font-extralight">Action</th>
+        <div className="overflow-x-auto">
+            <table className="w-full text-white">
+                <thead>
+                    <tr className="border-b border-white/10">
+                        <th className="py-3 px-4 text-left text-sm font-light">File Name</th>
+                        <th className="py-3 px-4 text-left text-sm font-light">Date</th>
+                        <th className="py-3 px-4 text-left text-sm font-light">Location</th>
+                        <th className="py-3 px-4 text-left text-sm font-light">Last Modified</th>
+                        <th className="py-3 px-4 text-left text-sm font-light">Size</th>
+                        <th className="py-3 px-4 text-left text-sm font-light">Action</th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    {files.map((file, index) => (
-                        <tr
-                            key={index}
-                            className="cursor-pointer hover:bg-white/5 transition"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                    {files.map((file) => (
+                        <tr 
+                            key={file.id} 
+                            className="border-b border-white/10 hover:bg-white/5 cursor-pointer transition"
+                            onClick={() => handleFileClick(file)}
                         >
-                            <td className="px-6 py-3 flex items-center gap-3">
-                                {file.icon}
-                                {file.type}
+                            <td className="py-3 px-4">
+                                <div className="flex items-center gap-3">
+                                    {getFileIcon(file.type)}
+                                    <span className="text-sm">{file.name}</span>
+                                </div>
                             </td>
-
-                            <td className="px-6 py-3">{file.location}</td>
-                            <td className="px-6 py-3">{file.modified}</td>
-                            <td className="px-6 py-3">{file.size}</td>
-
-                            <td className="px-6 py-3 flex gap-6">
-                                <button className="bg-[#1c1c27] px-2 py-1 rounded text-[14px] hover:bg-[#1f1f2d]">
-                                    Share
-                                </button>
-                                <EllipsisVertical size={26} />
+                            <td className="py-3 px-4 text-sm text-white/70">{file.date}</td>
+                            <td className="py-3 px-4 text-sm text-white/70">{file.location}</td>
+                            <td className="py-3 px-4 text-sm text-white/70">{file.date}</td>
+                            <td className="py-3 px-4 text-sm text-white/70">{file.size}</td>
+                            <td className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        className="p-1.5 hover:bg-white/10 rounded transition"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            console.log("Share:", file.name);
+                                        }}
+                                    >
+                                        <Share2 className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                        className="p-1.5 hover:bg-white/10 rounded transition"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            console.log("More options:", file.name);
+                                        }}
+                                    >
+                                        <MoreVertical className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}

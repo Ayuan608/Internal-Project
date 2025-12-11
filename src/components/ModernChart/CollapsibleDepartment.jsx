@@ -182,6 +182,7 @@ export const CollapsibleDepartment = ({
   const depositData = filterByDepartment("Deposit");
   const withdrawData = filterByDepartment("Withdraw");
   const { role } = useSelector((state) => state.auth);
+  console.log(role)
   const deptData =
     deptKey === "csr"
       ? csrData
@@ -592,9 +593,11 @@ export const CollapsibleDepartment = ({
           <button
             onClick={() =>
               navigate(
-                role === "Admin" || role === "Super-Admin"
+                role === "Admin"
                   ? "/admin/data-storage"
-                  : "/dashboard/data-storage",
+                  : role === "Super-Admin"
+                    ? "/dashboard/data-storage"
+                    : "/dashboard/data-storage",
                 {
                   state: {
                     department:
@@ -607,6 +610,7 @@ export const CollapsibleDepartment = ({
                 }
               )
             }
+
             className="flex items-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-lg text-purple-300 transition-all hover:scale-105"
           >
             <Database size={18} />

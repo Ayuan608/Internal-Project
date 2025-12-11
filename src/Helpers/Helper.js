@@ -133,6 +133,7 @@ export const superAdminButtons = () => [
   { to: "/dashboard/activityLogs", label: ("Activity Logs"), icon: Antenna },
   { to: "/dashboard/file-sharing", label: ("WPS-Office"), icon: FileText },
   { to: "/dashboard/calender", label: ("Calendar"), icon: Calendar },
+  { to: "/dashboard/audit-trial", label: ("Audit Logs"), icon: Proportions },
 ];
 
 // ✅ Admin Routes
@@ -150,7 +151,6 @@ export const AdminRoutes = () => [
   { to: "/admin/Internal-mailing", label: ("Internal Mailing"), icon: Mail },
   { to: "/admin/shift-management", label: ("Shift Management"), icon: SquareChartGantt },
   { to: "/admin/calender", label: ("Calendar"), icon: Proportions },
-  { to: "/admin/audit-trial", label: ("Audit Logs"), icon: Proportions },
 
 ];
 

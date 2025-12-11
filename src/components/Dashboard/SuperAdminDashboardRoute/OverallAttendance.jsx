@@ -106,9 +106,21 @@ const OverallAttendanceDashboard = () => {
 
 
   const statuses = useMemo(() => {
-    const stats = ['All', ...new Set(allAttendance?.map(item => item.alert).filter(Boolean))];
-    return stats;
+    const backendStatuses = new Set(allAttendance?.map(item => item.alert).filter(Boolean));
+
+    const staticStatuses = [
+      "Missed Punch-In",
+      "Missed Punch-Out",
+      "Late Arrival",
+      "Early Leave",
+      "System Error",
+      "Work-error",
+      "Other"
+    ];
+
+    return ["All", ...new Set([...backendStatuses, ...staticStatuses])];
   }, [allAttendance]);
+
 
   // Filter data based on search and filters
   const filteredData = useMemo(() => {
@@ -257,21 +269,52 @@ const OverallAttendanceDashboard = () => {
   }, [allAttendance]);
 
   // Break time analysis
+  const calculateDynamicStatus = (row) => {
+    const clockIn = row.clockIn ? new Date(row.clockIn) : null;
+    const clockOut = row.clockOut ? new Date(row.clockOut) : null;
 
+    if (!clockIn && !clockOut) return "Absent";
 
-  // Get status color
-  const getStatusColor = (status) => {
-    const colors = {
-      'Present': 'bg-skyblue-100 text-skyblue-800 border border-skyblue-200',
-      'Absent': 'bg-red-100 text-red-800 border border-red-200',
-      'Late': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-      'Leave': 'bg-purple-100 text-purple-800 border border-purple-200',
-      'Half Day': 'bg-pink-100 text-pink-800 border border-pink-200',
-      'Overtime': 'bg-blue-100 text-blue-800 border border-blue-200',
-      'Normal': 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    if (!clockIn) return "Missed Punch-In";
+
+    if (!clockOut) return "Missed Punch-Out";
+
+    // Late arrival logic → After 9:30 AM
+    const lateLimit = new Date(row.date);
+    lateLimit.setHours(9, 30, 0, 0);
+    if (clockIn > lateLimit) return "Late Arrival";
+
+    // Early Leave logic (example: before 6 PM)
+    const shiftEnd = new Date(row.date);
+    shiftEnd.setHours(18, 0, 0, 0);
+    if (clockOut < shiftEnd) return "Early Leave";
+
+    return row.alert || "Normal";
   };
+
+const getStatusColor = (status) => {
+  const styles = {
+    "Normal": "bg-emerald-900/40 border border-emerald-700 text-emerald-300",
+
+    "Missed Punch-Out": "bg-orange-900/40 border border-orange-700 text-orange-300",
+    "No Punch Out": "bg-orange-900/40 border border-orange-700 text-orange-300",
+
+    "Missed Punch-In": "bg-red-900/40 border border-red-700 text-red-300",
+
+    "Late Arrival": "bg-yellow-900/40 border border-yellow-700 text-yellow-300",
+
+    "Early Leave": "bg-amber-900/40 border border-amber-700 text-amber-300",
+
+    "System Error": "bg-purple-900/40 border border-purple-700 text-purple-300",
+
+    "Work-error": "bg-indigo-900/40 border border-indigo-700 text-indigo-300",
+
+    "Other": "bg-gray-900/40 border border-gray-700 text-gray-300",
+  };
+
+  return styles[status] || "bg-gray-900/40 border border-gray-700 text-gray-300";
+};
+
 
   // Export to CSV
   const exportToCSV = () => {
@@ -711,7 +754,7 @@ const OverallAttendanceDashboard = () => {
                 <label className="text-sm text-gray-300 mb-2 block">Status</label>
                 <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="w-full px-4 py-2  border  border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
                   {statuses.map(status => (
-                    <option key={status} value={status}>{status}</option>
+                    <option className="bg-slate-900" key={status} value={status}>{status}</option>
                   ))}
                 </select>
               </div>
@@ -784,9 +827,10 @@ const OverallAttendanceDashboard = () => {
                       <td className="px-6 py-4 text-sm text-gray-300">{row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</td>
                       <td className="px-6 py-4 text-sm text-gray-300">{row.workingHours || '0'}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(row.alert)}`}>
-                          {row.alert}
+                        <span className={`inline-block px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
+                          {calculateDynamicStatus(row)}
                         </span>
+
                       </td>
                     </tr>
                   ))

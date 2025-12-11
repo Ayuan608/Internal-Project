@@ -93,13 +93,10 @@ const DataStoragePage = () => {
     const allRows = extractRows(periodArray);
     const safeInt = (v) => parseInt(v, 10) || 0;
 
-    // ------------------------------------------
-    // CSR (MAIN FIX HERE)
-    // ------------------------------------------
+    // CSR
     if (department === "CSR") {
       console.log("📊 ALL CSR ROWS FOR DATE:", allRows);
 
-      // 1. Extract extra completed from "FAILED TO REACH QUOTA" row
       let extraCompleted = 0;
       allRows.forEach(row => {
         if (!Array.isArray(row)) return;
@@ -108,10 +105,9 @@ const DataStoragePage = () => {
         if (label.includes("failed to reach quota") || 
             label.includes("failed to reach") || 
             label.includes("failed")) {
-          // Check for the total value (10550 in your data)
           for (let i = 1; i < row.length; i++) {
             const val = safeInt(row[i]);
-            if (val >= 10000) { // Looking for 10550
+            if (val >= 10000) {
               extraCompleted = val;
               console.log("✅ FOUND EXTRA COMPLETED:", extraCompleted, "IN ROW:", row);
               break;
@@ -120,7 +116,6 @@ const DataStoragePage = () => {
         }
       });
 
-      // 2. Filter out all header, summary, and senior rows
       const shouldExcludeRow = (row) => {
         if (!Array.isArray(row)) return true;
         if (row.length < 3) return true;
@@ -128,7 +123,6 @@ const DataStoragePage = () => {
         const name = String(row[0] || "").toLowerCase().trim();
         const secondCol = String(row[1] || "").toLowerCase().trim();
         
-        // Exclude headers and summaries
         if (name.includes("night shift") || 
             name.includes("morning shift") ||
             name.includes("ave.") ||
@@ -147,13 +141,11 @@ const DataStoragePage = () => {
           return true;
         }
         
-        // 🔴 CRITICAL: EXCLUDE ALL SENIOR ROWS
         if (name.includes("senior") || name.includes("yd05 senior")) {
           console.log("❌ EXCLUDING SENIOR ROW:", name);
           return true;
         }
         
-        // Exclude summary rows like "Ave. Completed Convo"
         if (name.includes("ave.") || name.includes("average")) {
           return true;
         }
@@ -161,14 +153,11 @@ const DataStoragePage = () => {
         return false;
       };
 
-      // Filter out invalid rows
       const validRows = allRows.filter(row => !shouldExcludeRow(row));
       
-      // Filter for agent rows (should have time in format)
       const agentRows = validRows.filter(row => {
         if (!Array.isArray(row) || row.length < 8) return false;
         
-        // Check if it has time format (hh:mm:ss or hh:mm:ss)
         for (let i = 5; i < row.length; i++) {
           const val = String(row[i] || "");
           if (val.includes(":") && val.match(/\d{1,2}:\d{2}:\d{2}/)) {
@@ -180,12 +169,10 @@ const DataStoragePage = () => {
 
       console.log("✅ VALID AGENT ROWS:", agentRows.length, agentRows);
 
-      // 3. Parse agent data
       const agents = [];
       agentRows.forEach(row => {
         if (!Array.isArray(row) || row.length < 9) return;
         
-        // Find time column index
         let timeIdx = -1;
         for (let i = 5; i < row.length; i++) {
           const val = String(row[i] || "");
@@ -209,7 +196,6 @@ const DataStoragePage = () => {
           offline: safeInt(row[timeIdx + 3] || 0)
         };
         
-        // Only include agents with some data
         if (agent.name && (agent.completed > 0 || agent.effective > 0)) {
           agents.push(agent);
         }
@@ -219,14 +205,12 @@ const DataStoragePage = () => {
 
       if (agents.length === 0) return null;
 
-      // 4. Calculate totals
       const sumCompleted = agents.reduce((sum, agent) => sum + agent.completed, 0);
       const sumEffective = agents.reduce((sum, agent) => sum + agent.effective, 0);
       const sumMessages = agents.reduce((sum, agent) => sum + agent.message, 0);
       const sumMissed = agents.reduce((sum, agent) => sum + agent.missed, 0);
       const sumOffline = agents.reduce((sum, agent) => sum + agent.offline, 0);
 
-      // 5. Calculate online time
       const timeToSeconds = (str) => {
         if (!str) return 0;
         str = String(str).trim();
@@ -251,7 +235,6 @@ const DataStoragePage = () => {
         return `${h}h ${m}m ${s}s`;
       };
 
-      // 6. Calculate percentages
       const pct = (v) => {
         const str = String(v).replace("%", "").trim();
         const num = parseFloat(str);
@@ -272,7 +255,6 @@ const DataStoragePage = () => {
         ? (agentsWithFeedback.reduce((sum, agent) => sum + pct(agent.negative), 0) / agentsWithFeedback.length)
         : 0;
 
-      // 🔴 FINAL FIX: Use extraCompleted if it exists, otherwise use sumCompleted
       const finalCompleted = extraCompleted > 0 ? extraCompleted : sumCompleted;
 
       console.log("📈 FINAL METRICS:", {
@@ -297,9 +279,7 @@ const DataStoragePage = () => {
       };
     }
 
-    // ------------------------------------------
     // Deposit
-    // ------------------------------------------
     if (department === "Deposit") {
       const clean = allRows.filter((r) =>
         Array.isArray(r) && r.length >= 8
@@ -326,9 +306,7 @@ const DataStoragePage = () => {
       };
     }
 
-    // ------------------------------------------
     // Withdraw
-    // ------------------------------------------
     if (department === "Withdraw") {
       const clean = allRows.filter((r) => Array.isArray(r) && r.length >= 7);
       console.log("🧹 Clean Withdraw Rows:", clean);
@@ -383,10 +361,12 @@ const DataStoragePage = () => {
     }
 
     const csvRows = [];
-    const headerRow = rows[0];
-    const headers = [];
-    const headerCells = headerRow.querySelectorAll('th');
+    let headers = [];
 
+    // First try to get headers from table
+    const headerRow = rows[0];
+    const headerCells = headerRow.querySelectorAll('th');
+    
     if (headerCells.length > 0) {
       headerCells.forEach(th => {
         let headerText = th.textContent.trim();
@@ -397,15 +377,19 @@ const DataStoragePage = () => {
           .toUpperCase();
         headers.push(headerText);
       });
-    } else {
-      if (selectedDepartment === "CSR") {
-        headers.push("DATE", "COMPLETED CONVO", "TOTAL EFFECTIVE", "TOTAL MESSAGE",
-          "MISSED CHATS", "ONLINE TIME", "POSITIVE RATES", "NEGATIVE RATES", "OFFLINE");
-      }
+    } 
+    // If no headers in table, use departmentHeaders
+    if (headers.length === 0) {
+      headers = [...departmentHeaders[selectedDepartment]];
+      headers[0] = headers[0].toUpperCase(); // Ensure DATE is uppercase
+      
+      // Convert all to uppercase for consistency
+      headers = headers.map(h => h.toUpperCase());
     }
 
     csvRows.push(headers.join(','));
 
+    // Add data rows
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const cells = row.querySelectorAll('td');
@@ -417,25 +401,32 @@ const DataStoragePage = () => {
       cells.forEach((cell, index) => {
         let cellText = cell.textContent.trim();
 
+        // Clean up text
         cellText = cellText
           .replace(/Oh/g, '0h')
           .replace(/om/g, '0m')
           .replace(/Os/g, '0s')
           .replace(/gh/g, '9h')
-          .replace(/\s+/g, ' ');
+          .replace(/\s+/g, ' ')
+          .trim();
 
-        if ((index === 6 || index === 7) && !cellText.includes('%') && cellText !== '') {
-          cellText = cellText + '%';
-        }
+        // Fix percentages for CSR
+        if (selectedDepartment === "CSR") {
+          if ((index === 6 || index === 7) && !cellText.includes('%') && cellText !== '') {
+            cellText = cellText + '%';
+          }
 
-        if (index === 5) {
-          if (!cellText.includes('h') && !cellText.includes('m') && !cellText.includes('s')) {
-            cellText = '0h 0m 0s';
-          } else if (!cellText.includes('s')) {
-            cellText = cellText + 's';
+          // Fix time format
+          if (index === 5) {
+            if (!cellText.includes('h') && !cellText.includes('m') && !cellText.includes('s')) {
+              cellText = '0h 0m 0s';
+            } else if (!cellText.includes('s')) {
+              cellText = cellText + 's';
+            }
           }
         }
 
+        // Handle CSV special characters
         if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
           cellText = `"${cellText.replace(/"/g, '""')}"`;
         }
@@ -521,7 +512,7 @@ const DataStoragePage = () => {
           <table className="min-w-full border-collapse">
             <thead>
               <tr className="bg-slate-800 text-slate-300 text-sm border-b border-slate-700 ashish-madhu">
-                {departmentHeaders[selectedDepartment].map((h, i) => <th key={i} className="p-4 text-center font-semibold tracking-wide uppercase ">{h}</th>)}
+                {departmentHeaders[selectedDepartment].map((h, i) => <th key={i} className="p-4 text-center font-semibold tracking-wide uppercase">{h}</th>)}
               </tr>
             </thead>
           </table>

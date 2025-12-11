@@ -125,7 +125,10 @@ function Admin() {
     Marketing: "bg-orange-500/20 text-orange-300 border-orange-500/30",
   };
 
-  const getDepartmentColor = (dept) => {
+  const getDepartmentColor = (dept, userRole) => {
+    if (userRole === "Admin") {
+      return "bg-gray-500/10 text-gray-400 border-gray-500/20";
+    }
     const formattedDept = formatDepartment(dept);
     if (formattedDept === "—") return "bg-gray-500/10 text-gray-400 border-gray-500/20";
     return departmentColors[dept] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
@@ -312,7 +315,7 @@ function Admin() {
   // Handle form submit
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    
+
     const { FullName, username, password, email, phone, department, dateHired, role, salary, workingHour, Shift } = formData;
 
     // Basic validation
@@ -329,7 +332,7 @@ function Admin() {
     }
 
     // Department validation for non-Checker roles
-    if (role !== "Checker" && !department) {
+    if (role !== "Checker" && role !== "Admin" && !department) {
       toast.error("Department is required for this role");
       return;
     }
@@ -470,8 +473,8 @@ function Admin() {
             whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab("all")}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${activeTab === "all"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
               }`}
           >
             All Users ({users?.length || 0})
@@ -482,8 +485,8 @@ function Admin() {
             whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab("checker")}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${activeTab === "checker"
-                ? "bg-pink-600 text-white"
-                : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
+              ? "bg-pink-600 text-white"
+              : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
               }`}
           >
             Checkers ({users?.filter(u => u?.role === "Checker")?.length || 0})
@@ -494,8 +497,8 @@ function Admin() {
             whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab("admin")}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${activeTab === "admin"
-                ? "bg-yellow-600 text-white"
-                : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
+              ? "bg-yellow-600 text-white"
+              : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
               }`}
           >
             Admins ({users?.filter(u => u?.role === "Admin")?.length || 0})
@@ -506,8 +509,8 @@ function Admin() {
             whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab("super-admin")}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${activeTab === "super-admin"
-                ? "bg-red-600 text-white"
-                : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
+              ? "bg-red-600 text-white"
+              : "bg-slate-800/30 text-gray-300 hover:bg-slate-800/50"
               }`}
           >
             Super Admin ({users?.filter(u => u?.role === "Super-Admin")?.length || 0})
@@ -709,10 +712,11 @@ function Admin() {
                   <td className="px-6 py-4 sdsadepart">
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getDepartmentColor(
-                        user?.department
+                        user?.department,
+                        user?.role
                       )}`}
                     >
-                      {formatDepartment(user?.department)}
+                      {user?.role === "Admin" || user?.role === "Checker" ? "—" : formatDepartment(user?.department)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -746,8 +750,8 @@ function Admin() {
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${user?.status === "active"
-                          ? "bg-green-500/20 text-green-300"
-                          : "bg-red-500/20 text-red-300"
+                        ? "bg-green-500/20 text-green-300"
+                        : "bg-red-500/20 text-red-300"
                         }`}
                     >
                       {user?.status === "active" ? (
@@ -905,8 +909,8 @@ function Admin() {
                         placeholder="Enter username"
                         disabled={modalType === "edit"}
                         className={`w-full border border-slate-700 rounded-xl px-4 py-3 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${modalType === "edit"
-                            ? "bg-slate-800/30 text-gray-400 cursor-not-allowed"
-                            : "bg-slate-800/50 text-white"
+                          ? "bg-slate-800/30 text-gray-400 cursor-not-allowed"
+                          : "bg-slate-800/50 text-white"
                           }`}
                       />
                       {modalType === "edit" && (
@@ -935,7 +939,7 @@ function Admin() {
                     )}
 
                     {/* Department */}
-                    {formData.role !== "Checker" && (
+                    {formData.role !== "Checker" && formData.role !== "Admin" && (
                       <div>
                         <label className="block text-gray-300 mb-2 text-sm font-medium">
                           Department *
@@ -1126,8 +1130,8 @@ function Admin() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${modalType === "add"
-                          ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                          : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                        : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
                         } text-white`}
                     >
                       {modalType === "add" ? (
@@ -1242,8 +1246,8 @@ function Admin() {
                     setActionUser(null);
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${actionUser.status === "active"
-                      ? "bg-red-500/20 text-red-300 hover:bg-red-500/30"
-                      : "bg-green-500/20 text-green-300 hover:bg-green-500/30"
+                    ? "bg-red-500/20 text-red-300 hover:bg-red-500/30"
+                    : "bg-green-500/20 text-green-300 hover:bg-green-500/30"
                     }`}
                 >
                   {actionUser.status === "active" ? (
@@ -1384,8 +1388,8 @@ function Admin() {
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAction}
                   className={`px-6 py-2.5 rounded-xl font-semibold transition-all shadow-lg ${selectedAction === "suspend" ? "bg-red-600 hover:bg-red-700" :
-                      selectedAction === "activate" ? "bg-green-600 hover:bg-green-700" :
-                        "bg-blue-600 hover:bg-blue-700"
+                    selectedAction === "activate" ? "bg-green-600 hover:bg-green-700" :
+                      "bg-blue-600 hover:bg-blue-700"
                     } text-white`}
                 >
                   {selectedAction === "suspend" && "Suspend"}
