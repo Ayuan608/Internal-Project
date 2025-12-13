@@ -12,8 +12,8 @@ const initialState = {
   stats: null,
   pagination: null,
   departmentAttendance: [],
-  dayOffRequests: [],
   requestWfhIssue: [],
+  dayOffRequests: [],
   departmentPagination: null,
   isLoading: false,
   error: null,
@@ -230,14 +230,17 @@ export const reportWfhIssue = createAsyncThunk(
   }
 );
 
+
 export const getDayOffRequests = createAsyncThunk(
   "attendance/getDayOffRequests",
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.get("/attendance/day-off-requests");
+      console.log('data', data)
       return data;
     } catch (error) {
-      return rejectWithValue(handleError(error, "Failed to get day off requests"));
+      console.error("❌ Error fetching checker stats:", error);
+      return rejectWithValue(handleError(error, "Failed to get checker stats"));
     }
   }
 );
@@ -258,20 +261,35 @@ export const approveDayOffRequest = createAsyncThunk(
   }
 );
 
-export const rejectDayOffRequest = createAsyncThunk(
-  "attendance/rejectDayOffRequest",
-  async (requestId, { rejectWithValue }) => {
+// attendanceThunks.js
+
+export const updateDayOffStatus = createAsyncThunk(
+  "attendance/updateDayOffStatus",
+  async ({ requestId, status }, { rejectWithValue }) => {
+    console.log("status", status)
     try {
-      const { data } = await axiosInstance.put(`/attendance/day-off-requests/${requestId}/reject`);
-      if (data.success) toast.success("Day off request rejected!");
-      return data;
+      const token = localStorage.getItem("token");
+
+      const res = await axiosInstance.patch(
+        `/attendance/leave-requests`,
+        { requestId, status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      return res.data.updatedRequest;
     } catch (error) {
-      return rejectWithValue(handleError(error, "Failed to reject day off request"));
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update leave status"
+      );
     }
   }
 );
 
-// =============== SLICE ===============
+// SLICE
 const attendanceSlice = createSlice({
   name: "attendance",
   initialState,
@@ -572,38 +590,34 @@ const attendanceSlice = createSlice({
         state.isLoading = false;
       })
 
-      .addCase(getDayOffRequests.fulfilled, (state, action) => {
-        if (action.payload.success) {
-          state.dayOffRequests = action.payload.requests || [];
-          console.log(`📅 Set ${state.dayOffRequests.length} day off requests`);
-        }
+      .addCase(updateDayOffStatus.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateDayOffStatus.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.success = true;
+        const index = state.dayOffRequests.findIndex(
+          (req) => req.requestId === action.payload._id
+        );
+
+        if (index !== -1) {
+          state.dayOffRequests[index] = {
+            ...state.dayOffRequests[index],
+            ...action.payload,
+            requestId: action.payload._id, // maintain consistency
+          };
+        }
       })
 
-      .addCase(approveDayOffRequest.fulfilled, (state, action) => {
-        if (action.payload.success) {
-          // Update request status in dayOffRequests array
-          const requestId = action.meta.arg.requestId;
-          const index = state.dayOffRequests.findIndex(req => req.requestId === requestId);
-          if (index !== -1) {
-            state.dayOffRequests[index].status = "APPROVED";
-          }
-        }
-        state.success = true;
+
+      .addCase(updateDayOffStatus.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.success = false;
       })
 
-      .addCase(rejectDayOffRequest.fulfilled, (state, action) => {
-        if (action.payload.success) {
-          const requestId = action.meta.arg.requestId;
-          const index = state.dayOffRequests.findIndex(req => req.requestId === requestId);
-          if (index !== -1) {
-            state.dayOffRequests[index].status = "REJECTED";
-          }
-        }
-        state.success = true;
-      })
-
-      // =============== GENERAL PENDING/REJECTED HANDLERS ===============
+      // PENDING STATES FOR ALL
       .addMatcher(
         (action) => action.type.endsWith('/pending'),
         (state) => {
@@ -621,9 +635,11 @@ const attendanceSlice = createSlice({
           state.success = false;
           toast.error(action.payload || "Something went wrong");
         }
-      );
+      )
+
   },
 });
+
 
 export const {
   clearAttendance,

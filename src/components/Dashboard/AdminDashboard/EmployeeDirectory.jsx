@@ -11,8 +11,7 @@ const EmployeeDirectory = () => {
   const dispatch = useDispatch();
 
   const { users } = useSelector((state) => state.auth);
-  const { dayOffRequests } = useSelector((state) => state.attendance);
-  console.log(dayOffRequests)
+  const { dayOffRequests } = useSelector((state) => state?.attendance);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
