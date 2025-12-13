@@ -25,7 +25,10 @@ jobs:
             git reset --hard origin/main &&
             git clean -fd &&
             git pull origin main &&
-            npm install &&
+
+            export NODE_OPTIONS='--max-old-space-size=4096' &&
+
+            npm ci &&
             npm run build &&
             pm2 restart all
           "
