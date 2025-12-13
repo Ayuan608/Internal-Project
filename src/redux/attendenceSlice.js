@@ -12,6 +12,7 @@ const initialState = {
   pagination: null,
   departmentAttendance: [],
   dayOffRequests: [],
+  requestWfhIssue: [],
   departmentPagination: null,
   isLoading: false,
   error: null,
@@ -203,6 +204,24 @@ export const requestDayOff = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(handleError(error, "Day off request failed"));
+    }
+  }
+);
+// Change from requestWfhIssue to reportWfhIssue for clarity
+export const reportWfhIssue = createAsyncThunk(
+  "attendance/reportWfhIssue",
+  async ({ issueType, startTime, endTime, note }, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.post("/attendance/report-wfh-issue", {
+        issueType,
+        startTime,
+        endTime,
+        note
+      });
+      if (data.success) toast.success(data.message || "WFH issue reported successfully!");
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to report WFH issue"));
     }
   }
 );
@@ -446,6 +465,20 @@ const attendanceSlice = createSlice({
         state.dayOffRequests = action.payload.data || [];
         state.success = true;
         state.isLoading = false;
+      })
+      .addCase(reportWfhIssue.fulfilled, (state, action) => {
+        // Add the new issue to the list
+        if (action.payload.data) {
+          state.wfhIssues = action.payload.data;
+        }
+        state.success = true;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(reportWfhIssue.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.success = false;
       })
       .addCase(getDayOffRequests.fulfilled, (state, action) => {
         state.dayOffRequests = action.payload.requests || [];

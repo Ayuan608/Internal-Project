@@ -14,6 +14,7 @@ import {
   User,
   LogOut,
   LogIn,
+  X // Add this import
 } from "lucide-react";
 import {
   punchIn,
@@ -28,6 +29,7 @@ import ShowOffDay from "../../popup/ShowOffDay";
 import AttendanceAnnouncementPopup from "../../popup/AttendanceAnnouncementPopup";
 import CustomDatePicker from "../../CommonButton/CustomCalendar";
 import { toast } from "react-hot-toast";
+import { reportWfhIssue } from "../../../redux/attendenceSlice";
 
 // Stats card component
 const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => {
@@ -645,6 +647,115 @@ const AttendanceDashboard = () => {
     console.log("Break Counts:", breakCounts);
   }, [userId, todayAttendance, reduxAttendanceList, tableData, isLoading, isOnline, activeTimer, breakCounts]);
 
+  // ... existing state declarations
+
+  // Add this to your existing state declarations:
+  const [wfhFormData, setWfhFormData] = useState({
+    issueType: 'Internet issue',
+    startTime: '',
+    endTime: '',
+    note: ''
+  });
+
+  // Add these handler functions after your existing handlers (like handleRefresh, handleStartBreak, etc.)
+
+  // Handle WFH form change
+  const handleWFHFormChange = (e) => {
+    const { id, value } = e.target;
+    setWfhFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
+  // Handle WFH issue save
+  // Replace your handleWFHSave function with this:
+  const handleWFHSave = async () => {
+    if (!wfhFormData.startTime) {
+      toast.error("Start time is required");
+      return;
+    }
+
+    if (!wfhFormData.issueType) {
+      toast.error("Issue type is required");
+      return;
+    }
+
+    try {
+      console.log('📝 Submitting WFH issue:', wfhFormData);
+
+      // Dispatch the WFH issue action
+      await dispatch(
+        reportWfhIssue({
+          userId: currentUser.id,
+          issueType: wfhFormData.issueType,
+          startTime: wfhFormData.startTime,
+          endTime: wfhFormData.endTime || null,
+          note: wfhFormData.note || "",
+        })
+      ).unwrap();
+
+      toast.success("WFH issue reported successfully!");
+      setShowWFHModal(false);
+
+      // Reset form
+      setWfhFormData({
+        issueType: 'Internet issue',
+        startTime: '',
+        endTime: '',
+        note: ''
+      });
+
+    } catch (error) {
+      console.error("❌ Failed to report WFH issue:", error);
+      toast.error(error?.message || "Failed to report WFH issue");
+    }
+  };
+
+  // Handle WFH issue send to Team Leader
+  const handleWFHSendToTL = async () => {
+    if (!wfhFormData.startTime) {
+      toast.error("Start time is required");
+      return;
+    }
+
+    if (!wfhFormData.issueType) {
+      toast.error("Issue type is required");
+      return;
+    }
+
+    try {
+      console.log('📤 Sending WFH issue to TL:', wfhFormData);
+
+      // Dispatch the WFH issue action (same as save, but you might want to add a flag for TL notification)
+      await dispatch(
+        reportWfhIssue({
+          issueType: wfhFormData.issueType,
+          startTime: wfhFormData.startTime,
+          endTime: wfhFormData.endTime || null,
+          note: wfhFormData.note || "",
+        })
+      ).unwrap();
+
+      toast.success("WFH issue sent to Team Leader successfully! 🎉");
+      setShowWFHModal(false);
+
+      // Reset form
+      setWfhFormData({
+        issueType: 'Internet issue',
+        startTime: '',
+        endTime: '',
+        note: ''
+      });
+
+    } catch (error) {
+      console.error("❌ Failed to send WFH issue:", error);
+      toast.error(error?.message || "Failed to send WFH issue to Team Leader");
+    }
+  };
+
+  // ... rest of your state
+
   return (
     <div className="min-h-screen p-4 text-slate-200 bg-[#020617] bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.65)_0%,_rgba(2,6,23,1)_65%)]">
       <div className="mx-auto max-w-full px-5 py-6 relative z-10">
@@ -861,6 +972,8 @@ const AttendanceDashboard = () => {
             </div>
           </div>
 
+
+
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               onClick={() => handleStartBreak('smoke')}
@@ -1070,78 +1183,211 @@ const AttendanceDashboard = () => {
           It does not track your private content or personal browsing.
         </div>
       </div>
-      {breakModal.open && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-xl p-6 w-full max-w-2xl text-white shadow-2xl">
+      {/* WFH Issue Modal */}
+      {showWFHModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
 
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold tracking-wide">
-                {breakModal.type} Break Details
-              </h2>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setShowWFHModal(false)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative w-full sm:max-w-xl p-5 rounded-2xl bg-slate-900/80 border border-slate-700/80 shadow-[0_24px_60px_rgba(15,23,42,0.95)] backdrop-blur-2xl">
+
+            {/* Header */}
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-3xl font-semibold text-slate-50">
+                  Report WFH Issue
+                </h3>
+                <p className="mt-1 text-xl text-slate-300">
+                  Log power or internet problems so your attendance has proper context.
+                </p>
+              </div>
               <button
-                onClick={() => setBreakModal({ open: false })}
-                className="text-slate-400 hover:text-white"
+                onClick={() => setShowWFHModal(false)}
+                className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
               >
-                ✕
+                <X className="w-6 h-6 text-slate-400" />
               </button>
             </div>
 
-            <table className="w-full rounded-lg">
-              <thead className="bg-slate-800/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
-                    DATE
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
-                    START
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
-                    END
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
-                    TOTAL
-                  </th>
-                </tr>
-              </thead>
+            {/* Form */}
+            <div className="space-y-4">
 
-              <tbody>
-                <tr className="border-t border-slate-700">
+              {/* Issue Type */}
+              <div>
+                <label className="block text-base text-slate-400 mb-2">
+                  Issue Type
+                </label>
+                <select
+                  id="issueType"
+                  value={wfhFormData.issueType}
+                  onChange={handleWFHFormChange}
+                  className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                >
+                  <option value="Internet issue">Internet issue</option>
+                  <option value="Power cut">Power cut</option>
+                  <option value="System issue">System issue</option>
+                  <option value="Personal emergency">Personal emergency</option>
+                  <option value="Network problems">Network problems</option>
+                  <option value="Software issue">Software issue</option>
+                </select>
+              </div>
 
-                  <td className="px-4 py-3 text-sm">
-                    {breakModal.date ? new Date(breakModal.date).toLocaleDateString() : "—"}
-                  </td>
+              {/* Time Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    Start Time
+                  </label>
+                  <input
+                    id="startTime"
+                    type="time"
+                    value={wfhFormData.startTime}
+                    onChange={handleWFHFormChange}
+                    className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    End Time (optional)
+                  </label>
+                  <input
+                    id="endTime"
+                    type="time"
+                    value={wfhFormData.endTime}
+                    onChange={handleWFHFormChange}
+                    className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                  />
+                </div>
+              </div>
 
-                  <td className="px-4 py-3 text-sm">
-                    {breakModal.start ? new Date(breakModal.start).toLocaleTimeString() : "—"}
-                  </td>
+              {/* Note */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">
+                  Note (optional)
+                </label>
+                <textarea
+                  id="note"
+                  value={wfhFormData.note}
+                  onChange={handleWFHFormChange}
+                  rows="3"
+                  placeholder="Example: Internet down from 3:10–3:40 PM, using mobile hotspot after that."
+                  className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 resize-none transition-all"
+                />
+              </div>
 
-                  <td className="px-4 py-3 text-sm">
-                    {breakModal.end ? new Date(breakModal.end).toLocaleTimeString() : "—"}
-                  </td>
+            </div>
 
-                  <td className="px-4 py-3 text-sm text-blue-400 font-semibold">
-                    {breakModal.start && breakModal.end
-                      ? `${Math.round((new Date(breakModal.end) - new Date(breakModal.start)) / 60000)}m`
-                      : "—"}
-                  </td>
+            {/* Action Buttons */}
+            <div className="mt-6 grid grid-cols-3 gap-2">
 
-                </tr>
-              </tbody>
-            </table>
+              <button
+                onClick={() => setShowWFHModal(false)}
+                className="rounded-xl px-3.5 py-2 text-base border border-slate-600 bg-slate-900/80 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
+              >
+                Cancel
+              </button>
 
+              <button
+                onClick={handleWFHSave}
+                className="rounded-xl px-3.5 py-2 text-base font-medium bg-slate-800 text-slate-100 border border-slate-600 hover:bg-slate-700 hover:border-slate-400 transition-all flex items-center justify-center gap-2"
+              >
+                <AlertTriangle className="w-5 h-5" />
+                Save Issue
+              </button>
+
+              <button
+                onClick={handleWFHSendToTL}
+                className="rounded-xl px-3.5 py-2 text-base font-medium bg-sky-500/90 text-slate-950 hover:bg-sky-400 transition-all"
+              >
+                Send to Team Leader
+              </button>
+
+            </div>
           </div>
         </div>
       )}
 
+      {
+        breakModal.open && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-xl p-6 w-full max-w-2xl text-white shadow-2xl">
+
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold tracking-wide">
+                  {breakModal.type} Break Details
+                </h2>
+                <button
+                  onClick={() => setBreakModal({ open: false })}
+                  className="text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <table className="w-full rounded-lg">
+                <thead className="bg-slate-800/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                      DATE
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                      START
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                      END
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase">
+                      TOTAL
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr className="border-t border-slate-700">
+
+                    <td className="px-4 py-3 text-sm">
+                      {breakModal.date ? new Date(breakModal.date).toLocaleDateString() : "—"}
+                    </td>
+
+                    <td className="px-4 py-3 text-sm">
+                      {breakModal.start ? new Date(breakModal.start).toLocaleTimeString() : "—"}
+                    </td>
+
+                    <td className="px-4 py-3 text-sm">
+                      {breakModal.end ? new Date(breakModal.end).toLocaleTimeString() : "—"}
+                    </td>
+
+                    <td className="px-4 py-3 text-sm text-blue-400 font-semibold">
+                      {breakModal.start && breakModal.end
+                        ? `${Math.round((new Date(breakModal.end) - new Date(breakModal.start)) / 60000)}m`
+                        : "—"}
+                    </td>
+
+                  </tr>
+                </tbody>
+              </table>
+
+            </div>
+          </div>
+        )
+      }
+
       {/* Day Off Modal */}
-      {showDayOffModal && (
-        <ShowOffDay
-          handleDayOffSubmit={handleDayOffSubmit}
-          setShowDayOffModal={setShowDayOffModal}
-          setDayOffForm={setDayOffForm}
-          dayOffForm={dayOffForm}
-        />
-      )}
+      {
+        showDayOffModal && (
+          <ShowOffDay
+            handleDayOffSubmit={handleDayOffSubmit}
+            setShowDayOffModal={setShowDayOffModal}
+            setDayOffForm={setDayOffForm}
+            dayOffForm={dayOffForm}
+          />
+        )
+      }
 
       {/* Announcement Popup (simplified) */}
       <AttendanceAnnouncementPopup
@@ -1156,7 +1402,7 @@ const AttendanceDashboard = () => {
         latePunchOut={false}
         totalBreakMinutes={calculateTotalBreakTime().replace('m', '')}
       />
-    </div>
+    </div >
   );
 };
 
