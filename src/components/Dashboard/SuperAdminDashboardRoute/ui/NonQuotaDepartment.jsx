@@ -50,7 +50,11 @@ const NonQuotaDepartment = () => {
         "9 HOURS",
         "completed",
         "convo",
-        "x"
+        "x",
+        "name",                       
+        "output",                     
+        "total transaction process",  
+        "transaction",
     ];
 
     // Filter non-quota data based on department
@@ -60,7 +64,7 @@ const NonQuotaDepartment = () => {
         const config = departmentConfig[department];
         if (!config) return [];
 
-   
+
 
         const filteredData = data
             .filter(row => {
@@ -80,7 +84,7 @@ const NonQuotaDepartment = () => {
                 const rawValue = row[config.valueIndex];
                 const outputValue = parseInt(rawValue) || 0;
 
-               
+
 
                 // Special condition for Withdraw department - exclude if length is less than or equal to 3
                 if (department === 'Withdraw') {
@@ -116,7 +120,7 @@ const NonQuotaDepartment = () => {
                     variance: variance
                 };
 
-                
+
                 return memberData;
             });
 
@@ -151,7 +155,7 @@ const NonQuotaDepartment = () => {
         return { below50, below80, below100 };
     }, [nonQuotaData]);
 
-  
+
 
     return (
         <div className="min-h-screen p-6">

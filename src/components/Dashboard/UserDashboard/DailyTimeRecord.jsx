@@ -256,7 +256,7 @@ export default function DailyTimeRecord() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state?.auth?.data);
   const userId = user?._id;
-
+  const { role } = useSelector((state) => state.auth);
   // State
   const [view, setView] = useState('weekly');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -799,6 +799,13 @@ export default function DailyTimeRecord() {
     setShowBreakModal(true);
   };
 
+
+  const linkPath =
+    role === "Admin"
+      ? "/admin/DayOffRequestsPage"
+      : role === "Team-Leader"
+        ? "/team/DayOffRequestsPage"
+        : "/user/DayOffRequestsPage"; // default for normal user
   return (
     <div className="min-h-screen text-slate-200 bg-[#020617] bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.65)_0%,_rgba(2,6,23,1)_65%)]">
       <div className="w-full px-4 py-6 max-w-full mx-auto">
@@ -991,10 +998,10 @@ export default function DailyTimeRecord() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Link to={'/user/DayOffRequestsPage'}  className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/60 bg-blue-500/15 px-3 py-1.5 text-xs text-blue-200">
+              <Link to={linkPath} className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/60 bg-blue-500/15 px-3 py-1.5 text-xs text-blue-200">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>
-                Leave Data
+                  Leave Data
                 </span>
               </Link>
               <div className="flex items-center gap-2">

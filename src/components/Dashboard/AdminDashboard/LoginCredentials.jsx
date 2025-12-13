@@ -31,16 +31,16 @@ function LoginCredentials() {
     const filteredUsers = users?.filter(user => {
         const matchesSearch = user?.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user?.username?.toLowerCase().includes(searchTerm.toLowerCase());
-        
+
         const matchesDepartment = selectedDepartment === 'all' || user?.department === selectedDepartment;
-        
+
         let matchesDate = true;
         if (startDate || endDate) {
             const userDate = new Date(user?.createdAt || user?.dateAdded);
             if (startDate) matchesDate = matchesDate && userDate >= new Date(startDate);
             if (endDate) matchesDate = matchesDate && userDate <= new Date(endDate);
         }
-        
+
         return matchesSearch && matchesDepartment && matchesDate;
     }) || [];
 
@@ -132,7 +132,7 @@ function LoginCredentials() {
 
                 {/* Department Stats */}
                 <div className="flex flex-wrap justify-end gap-3 mt-4">
-                    {['CSR', 'Deposit', 'Withdraw','Marketing'].map(dept => {
+                    {['CSR', 'Deposit', 'Withdraw', 'Marketing'].map(dept => {
                         const count = users?.filter(u => u?.department === dept).length || 0;
                         const colors = {
                             'CSR': 'bg-blue-500/20 text-blue-300 border-blue-500',
@@ -185,7 +185,7 @@ function LoginCredentials() {
                                     <td className="p-4">
                                         <div className="flex items-center gap-2">
                                             <span className="text-white font-mono">
-                                                {showPassword[user._id] ? user.password : '••••••••••••'}
+                                                {showPassword[user._id] ? user.password.slice(0, 8) : '••••••••••••'}
                                             </span>
                                             <button
                                                 onClick={() => togglePassword(user._id)}
@@ -216,8 +216,8 @@ function LoginCredentials() {
                                                 <Edit2 className="w-4 h-4" />
                                                 Edit
                                             </button>
-                                            <button 
-                                                onClick={() => handleDelete(user._id)} 
+                                            <button
+                                                onClick={() => handleDelete(user._id)}
                                                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-lg"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -261,7 +261,7 @@ function LoginCredentials() {
                             </h2>
                             <label htmlFor="">Department : </label>
                             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border mb-4 ${departmentColors[selectedUser.department] || 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
-                               {selectedUser.department || 'N/A'}
+                                {selectedUser.department || 'N/A'}
                             </span>
                             <img
                                 src={selectedUser.qrCode}

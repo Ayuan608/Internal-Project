@@ -117,6 +117,8 @@ const CheckerDashboard = () => {
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
+  console.log(filteredData)
+
   // Stats cards
   const statsCards = [
     {
@@ -183,7 +185,7 @@ const CheckerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.65)_0%,_rgba(2,6,23,1)_35%)] p-4 md:p-6">
+    <div className="min-h-screen bg-[#020617]  p-4 md:p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

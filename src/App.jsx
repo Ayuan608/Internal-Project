@@ -119,14 +119,13 @@ function App() {
           <Route path="calender" element={<Calender />} />
           <Route path="file-sharing" element={<FileSharing />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
-          <Route path="audit-trial" element={<AuditTrailSection />}/>
+          <Route path="audit-trial" element={<AuditTrailSection />} />
         </Route>
       </Route>
 
       {/* ADMIN ROUTES */}
       <Route element={<RequireAuth allowedRoles={["Admin"]} />}>
         <Route path="/admin" element={<Layout />}>
-
           <Route index element={<Dashboard />} />
           <Route path="login" element={<LoginCredentials />} />
           <Route path="department" element={<Department />} />
@@ -143,6 +142,7 @@ function App() {
           <Route path="shift-management" element={<ShiftManagement />} />
           <Route path="overallAttendance" element={<OverallAttendance />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
+          <Route path="daily-time-record" element={<DailyTimeRecord />} />
         </Route>
       </Route>
 
@@ -164,7 +164,7 @@ function App() {
           <Route path="calender" element={<Calender />} />
           <Route path="Internal-mailing" element={<InternalMailingPage />} />
           <Route path="shift-management" element={<ShiftManagement />} />
-
+          <Route path="daily-time-record" element={<DailyTimeRecord />} />
         </Route>
       </Route>
 
@@ -191,7 +191,7 @@ function App() {
           <Route index element={<CheckerDashboard />} />
           <Route path="report" element={<CheckReport />} />
           <Route path="setting" element={<Setting />} />
-
+          <Route path="storage" element={<Storage />} />
         </Route>
       </Route>
 

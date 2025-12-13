@@ -30,6 +30,7 @@ import {
   User2,
   UserCheck,
   Users,
+  ChartColumnIncreasing
 } from "lucide-react";
 import ReportIcon from "./Icons";
 
@@ -143,8 +144,8 @@ export const AdminRoutes = () => [
   { to: "/admin/directory", label: ("Directory"), icon: Users },
   { to: "/admin/announcement", label: ("Announcements"), icon: Megaphone },
   { to: "/admin/attendance", label: ("Attendance"), icon: FileText },
+  { to: "/admin/daily-time-record", label: ("Daily Puch Records"), icon: ChartColumnIncreasing },
   { to: "/admin/overallAttendance", label: ("Overall Attendance"), icon: CalendarCheck2 },
-  { to: "/admin/attendancerecords", label: ("Daily Puch Records"), icon: CalendarCheck2 },
   { to: "/admin/login", label: ("Login Credentials"), icon: KeyRound },
   { to: "/admin/report", label: ("Reports"), icon: Proportions },
   { to: "/admin/storage", label: ("Storage"), icon: DatabaseZap },
@@ -161,7 +162,8 @@ export const TeamButtons = () => [
   { to: "/team/restday", label: ("Schedule & Rest day"), icon: User2 },
   { to: "/team/non-quotamember", label: ("Non-Quota Members"), icon: FileText },
   { to: "/team/attandance", label: ("Attendance"), icon: FileText },
-  { to: "/team/attendancerecords", label: ("Daily Punch Record"), icon: CalendarCheck2 },
+  { to: "/team/daily-time-record", label: ("Daily Time Record"), icon: FileText },
+  { to: "/team/attendancerecords", label: ("Daily Punch Record"), icon: ChartColumnIncreasing },
   { to: "/team/Performance", label: ("Team Performance"), icon: KeyRound },
   { to: "/team/report", label: ("Reports"), icon: Proportions },
   { to: "/team/calender", label: ("Calender"), icon: Proportions },
@@ -172,6 +174,7 @@ export const TeamButtons = () => [
 export const CheckerButtons = () => [
   { to: "/checker", label: ("Overall Attendance"), icon: UserCheck },
   { to: "/checker/report", label: ("Reports"), icon: ReportIcon },
+  { to: "/checker/storage", label: ("Storage"), icon: DatabaseZap },
 ];
 
 
@@ -180,6 +183,7 @@ export const userData = {
   datasets: [
     {
       label: "Toatal Usage",
+
       data: [62.32, 76],
       backgroundColor: ["#615fff", "#00A6B4"],
       borderColor: ["#615fff", "#00A6B4"],

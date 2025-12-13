@@ -76,7 +76,7 @@ export const createAnnouncement = createAsyncThunk(
     }
 );
 
-// Alternative simplified version
+
 export const createAnnouncementSimple = createAsyncThunk(
     'announcements/createSimple',
     async (announcementData, { rejectWithValue }) => {
@@ -119,6 +119,61 @@ export const createAnnouncementSimple = createAsyncThunk(
             return rejectWithValue(
                 error.response?.data?.message ||
                 'Failed to create announcement'
+            );
+        }
+    }
+);
+
+
+
+export const deleteAnnouncement = createAsyncThunk(
+    "announcements/delete",
+    async (id, { rejectWithValue }) => {
+        try {
+            await axiosInstance.delete(`/announcement/deleteAnnouncement/${id}`);
+
+            return id;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to delete announcement"
+            );
+        }
+    }
+);
+
+
+export const updateAnnouncement = createAsyncThunk(
+    "announcements/update",
+    async ({ id, data }, { rejectWithValue }) => {
+        try {
+            const formData = new FormData();
+
+            if (data.title) formData.append("title", data.title);
+            if (data.details) formData.append("details", data.details);
+
+            if (data.recipients) {
+                formData.append("recipients", JSON.stringify(data.recipients));
+            }
+
+            if (data.removeImages?.length) {
+                formData.append("removeImages", JSON.stringify(data.removeImages));
+            }
+
+            if (data.files?.length) {
+                data.files.forEach((file) => formData.append("images", file));
+            }
+
+            const response = await axiosInstance.put(
+                `/announcement/updateAnnouncement/${id}`,
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            );
+
+            // Return updated announcement to update the slice
+            return response.data.announcement;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to update announcement"
             );
         }
     }
@@ -201,12 +256,29 @@ const announcementSlice = createSlice({
                     }
                 }
             })
-            .addCase(createAnnouncementSimple.rejected, (state, action) => {
+
+            .addCase(deleteAnnouncement.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(deleteAnnouncement.fulfilled, (state, action) => {
+                state.loading = false;
+                const deletedId = action.payload; // <- this is the ID returned by thunk
+                state.announcements = state.announcements.filter(item => item._id !== deletedId);
+            })
+
+
+            // UPDATE
+            .addCase(updateAnnouncement.fulfilled, (state, action) => {
                 state.createLoading = false;
-                state.createError = action.payload;
-            });
+
+                const updated = action.payload; // ⚡ Already the announcement
+                if (!updated) return;
+
+                state.announcements = state.announcements.map((item) =>
+                    item._id === updated._id ? updated : item
+                );
+            })
     },
 });
+
 
 export const { clearError, clearCreateError, addAnnouncement, setAnnouncements } = announcementSlice.actions;
 export default announcementSlice.reducer;

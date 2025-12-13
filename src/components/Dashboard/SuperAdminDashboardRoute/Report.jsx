@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff, X, Search, Filter, Download, Archive, Send, MessageSquare } from 'lucide-react';
+import { Calendar, ImageIcon, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff, X, Search, Filter, Download, Archive, Send, MessageSquare } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteReport, getAllReports, markReportAsSeen, getDeletedReports } from '../../../redux/reportSlice';
 import toast from 'react-hot-toast';
@@ -351,7 +351,7 @@ function Report() {
                                                     </p>
                                                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
                                                         <span className="flex items-center gap-1">
-                                                            <Calendar size={12} />
+                                                            <Ca lendar size={12} />
                                                             {formatDate(report.date || report.createdAt)}
                                                         </span>
                                                         <span className="flex items-center gap-1">
@@ -369,6 +369,12 @@ function Report() {
                                                     <CheckCircle size={12} />
                                                     {isSeen ? 'Seen' : 'Unseen'}
                                                 </span>
+                                                {report.imageUrl && (
+                                                    <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50 mt-4">
+                                                        <ImageIcon size={14} />
+                                                        <span>Image attached</span>
+                                                    </div>
+                                                )}
                                                 {reportReplies.length > 0 && (
                                                     <span className="text-xs text-purple-400 flex items-center gap-1">
                                                         <MessageSquare size={12} />
@@ -445,7 +451,9 @@ function Report() {
                     })
                 )}
             </div>
+            <div>
 
+            </div>
             {selectedReport && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
                     <div className="bg-slate-900/50 backdrop-blur-lg rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
@@ -549,7 +557,16 @@ function Report() {
                                     </div>
                                 </div>
                             )}
-
+                            {selectedReport.imageUrl && (
+                                <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
+                                    <h3 className="text-sm font-semibold text-gray-400 mb-3">Attachment</h3>
+                                    <img
+                                        src={selectedReport.imageUrl}
+                                        alt="Report attachment"
+                                        className="w-full rounded-lg border border-gray-700"
+                                    />
+                                </div>
+                            )}
                             {/* Actions */}
                             <div className="flex gap-3">
                                 {activeTab !== 'archive' && (

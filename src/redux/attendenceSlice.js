@@ -1,3 +1,4 @@
+// src/redux/attendenceSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../Helpers/axiosInstance";
 import { toast } from "react-hot-toast";
@@ -27,10 +28,10 @@ const handleError = (error, defaultMessage = "Operation failed") => {
   return message;
 };
 
-// 1. PUNCH IN/OUT
+// =============== 1. PUNCH IN/OUT ===============
 export const punchIn = createAsyncThunk(
   "attendance/punchIn",
-  async ({ userId, shift }, { rejectWithValue }) => {
+  async ({ userId, shift = "MORNING" }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.post(`/attendance/punch-in/${userId}`, { shift });
       if (data.success) toast.success(data.message || "Punched in!");
@@ -54,7 +55,7 @@ export const punchOut = createAsyncThunk(
   }
 );
 
-// 2. BREAK MANAGEMENT (NEW FUNCTIONS)
+// =============== 2. BREAK MANAGEMENT ===============
 export const startBreak = createAsyncThunk(
   "attendance/startBreak",
   async ({ userId, breakType }, { rejectWithValue }) => {
@@ -97,7 +98,7 @@ export const getTodayBreaks = createAsyncThunk(
   }
 );
 
-// 3. ATTENDANCE DATA FETCHING
+// =============== 3. ATTENDANCE DATA FETCHING ===============
 export const getTodayAttendance = createAsyncThunk(
   "attendance/getTodayAttendance",
   async (userId, { rejectWithValue }) => {
@@ -128,8 +129,7 @@ export const getUserAttendance = createAsyncThunk(
   }
 );
 
-// src/redux/attendenceSlice.js
-
+// =============== GET ALL ATTENDANCE (ADMIN DASHBOARD) ===============
 export const getAllAttendance = createAsyncThunk(
   "attendance/getAllAttendance",
   async ({ startDate, endDate, department, page = 1, limit = 50 }, { rejectWithValue }) => {
@@ -137,28 +137,29 @@ export const getAllAttendance = createAsyncThunk(
       const params = new URLSearchParams();
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
-      if (department) params.append("department", department);
+      if (department && department !== 'All') params.append("department", department);
       params.append("page", page);
       params.append("limit", limit);
 
-      console.log("🚀 Making API call to /attendance/all with params:", params.toString());
+      console.log("🚀 Fetching all attendance from /attendance/all");
 
       const response = await axiosInstance.get(`/attendance/all?${params}`);
 
-      console.log("✅ API Response:", response);
-      console.log("📊 Response data:", response.data);
-      console.log("👥 Attendance data received:", response.data?.attendance?.length || 0);
+      console.log("✅ API Response received:", {
+        success: response.data.success,
+        attendanceCount: response.data.attendance?.length,
+        pagination: response.data.pagination
+      });
 
       return response.data;
     } catch (error) {
       console.error("❌ Error in getAllAttendance:", error);
-      console.error("❌ Error response:", error.response);
       return rejectWithValue(handleError(error, "Failed to get all attendance"));
     }
   }
 );
 
-// 4. STATS & DEPARTMENT
+// =============== 4. STATS & ANALYTICS ===============
 export const getAttendanceStats = createAsyncThunk(
   "attendance/getAttendanceStats",
   async ({ userId, startDate, endDate }, { rejectWithValue }) => {
@@ -176,11 +177,15 @@ export const getAttendanceStats = createAsyncThunk(
   }
 );
 
+
+
+// =============== 5. DEPARTMENT MANAGEMENT ===============
 export const getDepartmentWiseUsers = createAsyncThunk(
   "attendance/getDepartmentWiseUsers",
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.get("/attendance/get-department-wise");
+      console.log("🏢 Department wise data received:", data);
       return data;
     } catch (error) {
       return rejectWithValue(handleError(error, "Failed to get department users"));
@@ -188,15 +193,15 @@ export const getDepartmentWiseUsers = createAsyncThunk(
   }
 );
 
-// 5. DAY OFF REQUESTS
+// =============== 6. DAY OFF REQUESTS ===============
 export const requestDayOff = createAsyncThunk(
   "attendance/requestDayOff",
-  async ({ date, reason, type = "Rest Day" }, { rejectWithValue }) => {
+  async ({ date, reason, attachmentType = "Emergency" }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.post("/attendance/request-day-off", {
         date,
         reason,
-        type
+        attachmentType
       });
       if (data.success) toast.success(data.message || "Day off request submitted!");
       return data;
@@ -217,29 +222,37 @@ export const getDayOffRequests = createAsyncThunk(
     }
   }
 );
-export const getCheckerStats = createAsyncThunk(
-  "attendance/getCheckerStats",
-  async ({ startDate, endDate, department }, { rejectWithValue }) => {
+
+// =============== 7. MANAGE DAY OFF REQUESTS ===============
+export const approveDayOffRequest = createAsyncThunk(
+  "attendance/approveDayOffRequest",
+  async ({ requestId, attendanceId }, { rejectWithValue }) => {
     try {
-      const params = new URLSearchParams();
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-      if (department && department !== 'all') params.append("department", department);
-
-      console.log("📡 Fetching checker stats with params:", params.toString());
-
-      const { data } = await axiosInstance.get(`/attendance/checker-stats?${params}`);
-
-      console.log("✅ Checker stats response:", data);
-
+      const { data } = await axiosInstance.put(`/attendance/day-off-requests/${requestId}/approve`, {
+        attendanceId
+      });
+      if (data.success) toast.success("Day off request approved!");
       return data;
     } catch (error) {
-      console.error("❌ Error fetching checker stats:", error);
-      return rejectWithValue(handleError(error, "Failed to get checker stats"));
+      return rejectWithValue(handleError(error, "Failed to approve day off request"));
     }
   }
 );
-// SLICE
+
+export const rejectDayOffRequest = createAsyncThunk(
+  "attendance/rejectDayOffRequest",
+  async (requestId, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.put(`/attendance/day-off-requests/${requestId}/reject`);
+      if (data.success) toast.success("Day off request rejected!");
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to reject day off request"));
+    }
+  }
+);
+
+// =============== SLICE ===============
 const attendanceSlice = createSlice({
   name: "attendance",
   initialState,
@@ -263,200 +276,301 @@ const attendanceSlice = createSlice({
     clearAttendanceError: (state) => {
       state.error = null;
       state.success = false;
+    },
+    updateAttendanceData: (state, action) => {
+      state.allAttendance = action.payload;
+    },
+    addBreakToAttendance: (state, action) => {
+      const { attendanceId, breakType, breakData } = action.payload;
+      const attendance = state.allAttendance.find(a => a._id === attendanceId);
+      if (attendance) {
+        if (!attendance[`${breakType}Breaks`]) {
+          attendance[`${breakType}Breaks`] = [];
+        }
+        attendance[`${breakType}Breaks`].push(breakData);
+      }
     }
   },
   extraReducers: (builder) => {
     builder
-      // PUNCH IN/OUT
+      // =============== PUNCH IN/OUT ===============
+      .addCase(punchIn.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(punchIn.fulfilled, (state, action) => {
         const newRecord = action.payload.attendance;
         if (newRecord) {
-          const existingIndex = state.attendanceList.findIndex(row => row.date === newRecord.date);
+          // Update today's attendance
+          state.todayAttendance = newRecord;
+          state.attendance = newRecord;
+          
+          // Add to attendance list
+          const existingIndex = state.attendanceList.findIndex(row => 
+            new Date(row.date).toDateString() === new Date(newRecord.date).toDateString()
+          );
           if (existingIndex !== -1) {
             state.attendanceList[existingIndex] = newRecord;
           } else {
             state.attendanceList.unshift(newRecord);
           }
         }
-        state.todayAttendance = newRecord;
-        state.attendance = newRecord;
         state.success = true;
         state.isLoading = false;
+      })
+      .addCase(punchIn.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(punchOut.pending, (state) => {
+        state.isLoading = true;
       })
       .addCase(punchOut.fulfilled, (state, action) => {
         const newRecord = action.payload.attendance;
         if (newRecord) {
-          const existingIndex = state.attendanceList.findIndex(row => row.date === newRecord.date);
+          state.todayAttendance = newRecord;
+          state.attendance = newRecord;
+          
+          const existingIndex = state.attendanceList.findIndex(row => 
+            new Date(row.date).toDateString() === new Date(newRecord.date).toDateString()
+          );
           if (existingIndex !== -1) {
             state.attendanceList[existingIndex] = newRecord;
           } else {
             state.attendanceList.unshift(newRecord);
           }
         }
-        state.todayAttendance = newRecord;
-        state.attendance = newRecord;
         state.success = true;
         state.isLoading = false;
       })
+      .addCase(punchOut.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
 
-      // BREAKS MANAGEMENT
+      // =============== BREAK MANAGEMENT ===============
       .addCase(startBreak.pending, (state) => {
         state.breaksLoading = true;
       })
       .addCase(startBreak.fulfilled, (state, action) => {
         state.breaksLoading = false;
         state.success = true;
-        // Update today's attendance if exists
+        
+        // Update today's attendance breaks
         if (state.todayAttendance) {
           const breakType = action.meta.arg.breakType;
-          const now = new Date().toISOString();
-
-          if (breakType === "smoke") {
-            if (!state.todayAttendance.smokeBreaks) state.todayAttendance.smokeBreaks = [];
-            state.todayAttendance.smokeBreaks.push({ start: now });
+          const now = new Date();
+          
+          if (!state.todayAttendance[`${breakType}Breaks`]) {
+            state.todayAttendance[`${breakType}Breaks`] = [];
           }
-
-          if (breakType === "wc") {
-            if (!state.todayAttendance.wcBreaks) state.todayAttendance.wcBreaks = [];
-            state.todayAttendance.wcBreaks.push({ start: now });
-          }
-
-          if (breakType === "lunch") {
-            if (!state.todayAttendance.lunchBreaks) state.todayAttendance.lunchBreaks = [];
-            state.todayAttendance.lunchBreaks.push({ start: now });
-          }
-
+          
+          state.todayAttendance[`${breakType}Breaks`].push({
+            start: now,
+            _id: `temp_${Date.now()}`
+          });
         }
       })
       .addCase(startBreak.rejected, (state, action) => {
         state.breaksLoading = false;
         state.error = action.payload;
       })
+
       .addCase(endBreak.pending, (state) => {
         state.breaksLoading = true;
       })
       .addCase(endBreak.fulfilled, (state, action) => {
         state.breaksLoading = false;
         state.success = true;
-        // Update today's attendance
+        
         if (state.todayAttendance) {
           const breakType = action.meta.arg.breakType;
-          const now = new Date().toISOString();
-
-          if (breakType === "smoke") {
-            let last = state.todayAttendance.smokeBreaks?.[state.todayAttendance.smokeBreaks.length - 1];
-            if (last) last.end = now;
+          const now = new Date();
+          
+          const breaks = state.todayAttendance[`${breakType}Breaks`];
+          if (breaks && breaks.length > 0) {
+            const lastBreak = breaks[breaks.length - 1];
+            if (!lastBreak.end) {
+              lastBreak.end = now;
+            }
           }
-
-          if (breakType === "wc") {
-            let last = state.todayAttendance.wcBreaks?.[state.todayAttendance.wcBreaks.length - 1];
-            if (last) last.end = now;
-          }
-
-          if (breakType === "lunch") {
-            let last = state.todayAttendance.lunchBreaks?.[state.todayAttendance.lunchBreaks.length - 1];
-            if (last) last.end = now;
-          }
-
         }
       })
       .addCase(endBreak.rejected, (state, action) => {
         state.breaksLoading = false;
         state.error = action.payload;
       })
+
       .addCase(getTodayBreaks.fulfilled, (state, action) => {
-        state.todayBreaks = action.payload.breaks;
+        if (action.payload.success) {
+          state.todayBreaks = action.payload.breaks || {
+            smoke: { active: false, count: 0 },
+            wc: { active: false, count: 0 },
+            lunch: { active: false, count: 0 }
+          };
+        }
         state.success = true;
       })
 
+      // =============== ATTENDANCE DATA FETCHING ===============
+      .addCase(getTodayAttendance.fulfilled, (state, action) => {
+        console.log("✅ getTodayAttendance fulfilled:", action.payload);
+        
+        if (action.payload.success) {
+          state.todayAttendance = action.payload.attendance || null;
+          state.success = true;
+        }
+        state.isLoading = false;
+      })
 
       .addCase(getUserAttendance.fulfilled, (state, action) => {
         console.log("✅ getUserAttendance fulfilled:", action.payload);
-
-        // IMPORTANT: isLoading को false करें
-        state.isLoading = false;
-
-        // Data set करें
-        if (action.payload && action.payload.attendance) {
-          state.attendanceList = Array.isArray(action.payload.attendance)
-            ? action.payload.attendance
-            : [];
+        
+        if (action.payload.success) {
+          state.attendanceList = action.payload.attendance || [];
+          state.pagination = action.payload.pagination || null;
         } else {
           state.attendanceList = [];
         }
-
-        state.pagination = action.payload.pagination || null;
+        state.isLoading = false;
         state.success = true;
+      })
+
+      .addCase(getAllAttendance.pending, (state) => {
+        state.isLoading = true;
         state.error = null;
       })
-      .addCase(getCheckerStats.fulfilled, (state, action) => {
-        console.log("🎯 getCheckerStats.fulfilled:", action.payload);
-        state.stats = action.payload.stats || {};
-        state.success = true;
-        state.isLoading = false;
-      })
-      // Get Today's Attendance
-      .addCase(getTodayAttendance.fulfilled, (state, action) => {
-        console.log("✅ getTodayAttendance fulfilled:", action.payload); // Debug log
-
-        // Fix: Check if attendance exists in response
-        if (action.payload && action.payload.attendance) {
-          state.todayAttendance = action.payload.attendance;
-        } else {
-          state.todayAttendance = null;
-        }
-
-        state.success = true;
-        state.isLoading = false;
-        state.error = null;
-      })
-      // ALL ATTENDANCE (ADMIN)
-      // ALL ATTENDANCE (ADMIN)
       .addCase(getAllAttendance.fulfilled, (state, action) => {
-        console.log("🎯 getAllAttendance.fulfilled - Action payload:", action.payload);
-        console.log("📈 Attendance array:", action.payload?.attendance);
-        console.log("🔢 Number of records:", action.payload?.attendance?.length || 0);
-
-        // Fix: Properly extract attendance array from response
-        state.allAttendance = action.payload?.attendance || [];
-        state.pagination = action.payload?.pagination || null;
-        state.success = true;
+        console.log("🎯 getAllAttendance.fulfilled - Processing data");
+        
+        if (action.payload.success) {
+          state.allAttendance = action.payload.attendance || [];
+          state.pagination = action.payload.pagination || {
+            total: action.payload.attendance?.length || 0,
+            page: 1,
+            pages: 1
+          };
+          
+          console.log(`📊 Set ${state.allAttendance.length} attendance records`);
+          
+          // Debug first record
+          if (state.allAttendance.length > 0) {
+            const first = state.allAttendance[0];
+            console.log("📝 Sample record structure:", {
+              id: first._id,
+              name: first.user?.FullName,
+              department: first.user?.department,
+              clockIn: first.clockIn,
+              clockOut: first.clockOut,
+              workingHours: first.workingHours,
+              alert: first.alert,
+              smokeBreaks: first.smokeBreaks?.length || 0,
+              wcBreaks: first.wcBreaks?.length || 0,
+              lunchBreaks: first.lunchBreaks?.length || 0,
+              dayOffRequests: first.dayOffRequests?.length || 0
+            });
+          }
+        } else {
+          console.error("❌ API returned success: false", action.payload);
+          state.allAttendance = [];
+        }
+        
         state.isLoading = false;
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(getAllAttendance.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        console.error("❌ getAllAttendance rejected:", action.payload);
       })
 
-      // STATS
+      // =============== STATS & ANALYTICS ===============
       .addCase(getAttendanceStats.fulfilled, (state, action) => {
-        state.stats = action.payload.stats || {};
+        if (action.payload.success) {
+          state.stats = action.payload.stats || {
+            totalDays: 0,
+            completedDays: 0,
+            incompleteDays: 0
+          };
+        }
         state.success = true;
-        state.isLoading = false;
       })
 
-      // DEPARTMENT USERS
+
+
+      // =============== DEPARTMENT MANAGEMENT ===============
       .addCase(getDepartmentWiseUsers.fulfilled, (state, action) => {
-        state.departmentAttendance = action.payload.users || [];
-        state.department = action.payload.department;
-        state.departmentCount = action.payload.count;
+        if (action.payload.success) {
+          state.departmentAttendance = action.payload.users || [];
+          state.department = action.payload.department;
+          state.departmentCount = action.payload.count;
+          console.log(`🏢 Set ${state.departmentAttendance.length} department users`);
+        }
         state.success = true;
-        state.isLoading = false;
       })
 
-      // DAY OFF REQUESTS
+      // =============== DAY OFF REQUESTS ===============
       .addCase(requestDayOff.fulfilled, (state, action) => {
-        state.dayOffRequests = action.payload.data || [];
+        if (action.payload.success) {
+          if (state.todayAttendance) {
+            if (!state.todayAttendance.dayOffRequests) {
+              state.todayAttendance.dayOffRequests = [];
+            }
+            // Add the new request
+            const newRequest = {
+              reason: action.meta.arg.reason,
+              date: action.meta.arg.date,
+              attachmentType: action.meta.arg.attachmentType,
+              status: "PENDING",
+              _id: `temp_${Date.now()}`
+            };
+            state.todayAttendance.dayOffRequests.push(newRequest);
+          }
+          toast.success("Day off request submitted!");
+        }
         state.success = true;
-        state.isLoading = false;
-      })
-      .addCase(getDayOffRequests.fulfilled, (state, action) => {
-        state.dayOffRequests = action.payload.requests || [];
-        state.success = true;
-        state.isLoading = false;
       })
 
-      // PENDING STATES FOR ALL
+      .addCase(getDayOffRequests.fulfilled, (state, action) => {
+        if (action.payload.success) {
+          state.dayOffRequests = action.payload.requests || [];
+          console.log(`📅 Set ${state.dayOffRequests.length} day off requests`);
+        }
+        state.success = true;
+      })
+
+      .addCase(approveDayOffRequest.fulfilled, (state, action) => {
+        if (action.payload.success) {
+          // Update request status in dayOffRequests array
+          const requestId = action.meta.arg.requestId;
+          const index = state.dayOffRequests.findIndex(req => req.requestId === requestId);
+          if (index !== -1) {
+            state.dayOffRequests[index].status = "APPROVED";
+          }
+        }
+        state.success = true;
+      })
+
+      .addCase(rejectDayOffRequest.fulfilled, (state, action) => {
+        if (action.payload.success) {
+          const requestId = action.meta.arg.requestId;
+          const index = state.dayOffRequests.findIndex(req => req.requestId === requestId);
+          if (index !== -1) {
+            state.dayOffRequests[index].status = "REJECTED";
+          }
+        }
+        state.success = true;
+      })
+
+      // =============== GENERAL PENDING/REJECTED HANDLERS ===============
       .addMatcher(
         (action) => action.type.endsWith('/pending'),
         (state) => {
-          state.isLoading = true;
+          if (!state.isLoading) {
+            state.isLoading = true;
+          }
           state.error = null;
         }
       )
@@ -466,6 +580,7 @@ const attendanceSlice = createSlice({
           state.isLoading = false;
           state.error = action.payload;
           state.success = false;
+          toast.error(action.payload || "Something went wrong");
         }
       );
   },
@@ -477,7 +592,9 @@ export const {
   clearBreaks,
   resetAttendanceState,
   setAttendanceLoading,
-  clearAttendanceError
+  clearAttendanceError,
+  updateAttendanceData,
+  addBreakToAttendance
 } = attendanceSlice.actions;
 
 export default attendanceSlice.reducer;
