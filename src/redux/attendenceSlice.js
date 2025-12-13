@@ -11,8 +11,8 @@ const initialState = {
   stats: null,
   pagination: null,
   departmentAttendance: [],
-  dayOffRequests: [],
   requestWfhIssue: [],
+  dayOffRequests: [],
   departmentPagination: null,
   isLoading: false,
   error: null,
@@ -226,14 +226,17 @@ export const reportWfhIssue = createAsyncThunk(
   }
 );
 
+
 export const getDayOffRequests = createAsyncThunk(
   "attendance/getDayOffRequests",
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.get("/attendance/day-off-requests");
+      console.log('data', data)
       return data;
     } catch (error) {
-      return rejectWithValue(handleError(error, "Failed to get day off requests"));
+      console.error("❌ Error fetching checker stats:", error);
+      return rejectWithValue(handleError(error, "Failed to get checker stats"));
     }
   }
 );
@@ -259,6 +262,35 @@ export const getCheckerStats = createAsyncThunk(
     }
   }
 );
+
+// attendanceThunks.js
+
+export const updateDayOffStatus = createAsyncThunk(
+  "attendance/updateDayOffStatus",
+  async ({ requestId, status }, { rejectWithValue }) => {
+    console.log("status", status)
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axiosInstance.patch(
+        `/attendance/leave-requests`,
+        { requestId, status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      return res.data.updatedRequest;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update leave status"
+      );
+    }
+  }
+);
+
 // SLICE
 const attendanceSlice = createSlice({
   name: "attendance",
@@ -486,6 +518,33 @@ const attendanceSlice = createSlice({
         state.isLoading = false;
       })
 
+      .addCase(updateDayOffStatus.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateDayOffStatus.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.success = true;
+        const index = state.dayOffRequests.findIndex(
+          (req) => req.requestId === action.payload._id
+        );
+
+        if (index !== -1) {
+          state.dayOffRequests[index] = {
+            ...state.dayOffRequests[index],
+            ...action.payload,
+            requestId: action.payload._id, // maintain consistency
+          };
+        }
+      })
+
+
+      .addCase(updateDayOffStatus.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.success = false;
+      })
+
       // PENDING STATES FOR ALL
       .addMatcher(
         (action) => action.type.endsWith('/pending'),
@@ -501,9 +560,11 @@ const attendanceSlice = createSlice({
           state.error = action.payload;
           state.success = false;
         }
-      );
+      )
+
   },
 });
+
 
 export const {
   clearAttendance,

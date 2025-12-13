@@ -1,26 +1,53 @@
-import React from "react";
+
+
+
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+    getDayOffRequests,
+    updateDayOffStatus
+} from "../redux/attendenceSlice";
 
 function LeaveRequest() {
+    const dispatch = useDispatch();
     const { state } = useLocation();
     const employee = state?.employee;
-    const leaves = state?.leaves || [];
+
+    const { dayOffRequests } = useSelector(
+        (state) => state.attendance
+    );
+
+    useEffect(() => {
+        dispatch(getDayOffRequests());
+    }, [dispatch]);
+
+    // 🔥 FILTER FROM REDUX (NOT location.state)
+    const leaves = dayOffRequests.filter(
+        (req) => req.userId === employee?._id
+    );
 
     const formatDate = (date) =>
         new Date(date).toLocaleDateString("en-US");
 
-    return (
-        <div className="min-h-screen p-8  text-white">
+    const handleUpdateLeaveReq = (requestId, status) => {
+        dispatch(updateDayOffStatus({ requestId, status }));
+    };
 
+    return (
+        <div className="min-h-screen p-8 text-white">
             {/* Header */}
-            <div className="flex justify-between items-center gap-3 mb-8">
-                <h2 className="text-3xl  font-bold">
-                <button  onClick={() => window.history.back()} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                    <ArrowLeft
-                      className="w-6 h-6 text-slate-300" />
+            <div className="flex items-center gap-3 mb-8">
+                <button
+                    onClick={() => window.history.back()}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                    <ArrowLeft className="w-6 h-6 text-slate-300" />
                 </button>
-                    Leave Requests – <span className="capitalize"> {employee?.FullName}</span>
+
+                <h2 className="text-3xl font-bold">
+                    Leave Requests – <span className="capitalize">{employee?.FullName}</span>
                 </h2>
             </div>
 
@@ -47,7 +74,7 @@ function LeaveRequest() {
                             </p>
 
                             {/* STATUS */}
-                            <span
+                            {leave.status && <span
                                 className={`inline-block px-3 py-1 text-xs rounded-full ${leave.status === "PENDING"
                                     ? "bg-yellow-600/20 text-yellow-400"
                                     : leave.status === "APPROVED"
@@ -57,19 +84,31 @@ function LeaveRequest() {
                             >
                                 {leave.status}
                             </span>
+                            }
 
-                            {/* APPROVE / REJECT BUTTONS */}
-                            {leave.status === "PENDING" && (
-                                <div className="flex gap-4 mt-4">
-                                    <button className="flex-1 px-4 py-2 rounded-lg bg-green-600/30 border border-green-500/40 hover:bg-green-600/50 text-green-300">
-                                        Approve
-                                    </button>
+                            {/* ACTION BUTTONS */}
+                            {/* {leave.status === "PENDING" && ( */}
+                            {!leave.status && <div className="flex gap-4 mt-4">
+                                <button
+                                    onClick={() =>
+                                        handleUpdateLeaveReq(leave.requestId, "APPROVED")
+                                    }
+                                    className="flex-1 px-4 py-2 rounded-lg bg-green-600/30 border border-green-500/40 hover:bg-green-600/50 text-green-300"
+                                >
+                                    Approve
+                                </button>
 
-                                    <button className="flex-1 px-4 py-2 rounded-lg bg-red-600/30 border border-red-500/40 hover:bg-red-600/50 text-red-300">
-                                        Reject
-                                    </button>
-                                </div>
-                            )}
+                                <button
+                                    onClick={() =>
+                                        handleUpdateLeaveReq(leave.requestId, "REJECTED")
+                                    }
+                                    className="flex-1 px-4 py-2 rounded-lg bg-red-600/30 border border-red-500/40 hover:bg-red-600/50 text-red-300"
+                                >
+                                    Reject
+                                </button>
+                            </div>
+                            }
+                            {/* )} */}
                         </div>
                     ))
                 )}
@@ -79,3 +118,4 @@ function LeaveRequest() {
 }
 
 export default LeaveRequest;
+
