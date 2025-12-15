@@ -100,7 +100,6 @@ function Admin() {
     return shift;
   };
 
-  // Format phone number
   const formatPhone = (phone, userRole) => {
     if (["Admin", "Checker"].includes(userRole) && !phone) return "—";
     if (!phone) return "—";
