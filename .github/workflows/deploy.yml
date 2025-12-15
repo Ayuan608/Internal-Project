@@ -32,7 +32,7 @@ jobs:
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
             cd ${{ secrets.PROJECT_PATH }} &&
             export NODE_OPTIONS='--max-old-space-size=4096' &&
-            npm ci &&
+            npm install &&
             npm run build &&
             pm2 restart all
           "
