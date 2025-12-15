@@ -236,7 +236,6 @@ export const getDayOffRequests = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.get("/attendance/day-off-requests");
-      console.log('data', data)
       return data;
     } catch (error) {
       console.error("❌ Error fetching checker stats:", error);
