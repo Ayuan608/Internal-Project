@@ -1,4 +1,4 @@
-name: Auto Deploy Frontend
+name: Auto Deploy to Server
 
 on:
   push:
@@ -9,26 +9,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Frontend
-        run: npm run build
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy dist to Server
+      - name: Deploy to Server
         run: |
-          rsync -avz --delete dist/ \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.PROJECT_PATH }}/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+            cd /www/wwwroot/Internal-Project &&
+            git pull origin main &&
+
+            export NODE_OPTIONS='--max-old-space-size=4096' &&
+
+            npm ci &&
+            npm run build &&
+            pm2 restart all
+          "
