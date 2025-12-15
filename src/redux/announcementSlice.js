@@ -179,15 +179,92 @@ export const updateAnnouncement = createAsyncThunk(
     }
 );
 
-// Slice
+export const createEvent = createAsyncThunk(
+    'announcements/createEvent',
+    async (eventData, { rejectWithValue }) => {
+        try {
+            console.log('Sending event data:', eventData);
+
+            const formData = new FormData();
+            formData.append('title', eventData.title);
+            formData.append('startDate', eventData.startDate);
+            formData.append('endDate', eventData.endDate);
+            if (eventData.notes) formData.append('notes', eventData.notes);
+
+            if (eventData.files?.length) {
+                eventData.files.forEach(file => {
+                    formData.append('attachments', file);
+                });
+            }
+
+            const response = await axiosInstance.post(
+                '/announcement/create-event',
+                formData
+            );
+
+            console.log('Create event response:', response.data);
+            return response.data;
+
+        } catch (error) {
+            console.error('Create event error:', error.response?.data || error.message);
+            return rejectWithValue(
+                error.response?.data?.message || 'Failed to create event'
+            );
+        }
+    }
+);
+
+
+export const fetchAllEvents = createAsyncThunk(
+    'announcements/fetchAllEvents',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.get('/announcement/getAllEvents');
+            console.log('Fetched events:', response.data);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || 'Failed to fetch events'
+            );
+        }
+    }
+);
+
+
+// 1️⃣ Create async thunk for deleting an event
+export const deleteEvent = createAsyncThunk(
+    "announcements/deleteEvent",
+    async (eventId, { rejectWithValue }) => {
+        try {
+            const response = await axios.axiosInstance.delete(
+                `/deleteEvent/${eventId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`, // or wherever you store auth
+                    },
+                }
+            );
+            return response.data; // { success, message }
+        } catch (error) {
+            return rejectWithValue(error.response.data || error.message);
+        }
+    }
+);
+
+
 const announcementSlice = createSlice({
     name: 'announcements',
     initialState: {
         announcements: [],
+        events: [],
         loading: false,
         error: null,
         createLoading: false,
         createError: null,
+        createEventLoading: false,
+        createEventError: null,
+        deleteLoading: false,
+        deleteError: null,
     },
     reducers: {
         clearError: (state) => {
@@ -202,6 +279,12 @@ const announcementSlice = createSlice({
         },
         setAnnouncements: (state, action) => {
             state.announcements = action.payload;
+        },
+        addEvent: (state, action) => {
+            state.events.unshift(action.payload); // add a new event to the top
+        },
+        setEvents: (state, action) => {
+            state.events = action.payload; // replace all events
         }
     },
     extraReducers: (builder) => {
@@ -276,6 +359,50 @@ const announcementSlice = createSlice({
                     item._id === updated._id ? updated : item
                 );
             })
+            .addCase(createEvent.pending, (state) => {
+                state.createEventLoading = true;
+                state.createEventError = null;
+            })
+            .addCase(createEvent.fulfilled, (state, action) => {
+                state.createEventLoading = false;
+                if (action.payload.success) {
+                    const newEvent = action.payload.event || action.payload.data || action.payload;
+                    if (newEvent) state.events.unshift(newEvent);
+                }
+            })
+            .addCase(createEvent.rejected, (state, action) => {
+                state.createEventLoading = false;
+                state.createEventError = action.payload;
+            })
+
+            .addCase(fetchAllEvents.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchAllEvents.fulfilled, (state, action) => {
+                state.loading = false;
+
+                if (Array.isArray(action.payload)) {
+                    // backend returned array directly
+                    state.events = action.payload;
+                } else if (action.payload?.events) {
+                    state.events = action.payload.events;
+                } else {
+                    state.events = [];
+                }
+            })
+
+            .addCase(fetchAllEvents.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(deleteEvent.fulfilled, (state, action) => {
+                // action.payload is { success: true, message: "Event deleted successfully" }
+                state.events = state.events.filter(evt => evt._id !== action.meta.arg);
+            })
+            .addCase(deleteEvent.rejected, (state, action) => {
+                console.error("Failed to delete event:", action.payload?.message);
+            });
     },
 });
 
