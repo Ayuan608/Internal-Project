@@ -1,4 +1,4 @@
-name: Auto Deploy to Server
+name: Auto Deploy Frontend
 
 on:
   push:
@@ -10,25 +10,25 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Frontend
+        run: npm run build
 
       - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Server
+      - name: Deploy dist to Server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
-            cd ${{ secrets.PROJECT_PATH }} &&
-            git fetch --all &&
-            git reset --hard origin/main &&
-            git clean -fd &&
-            git pull origin main &&
-
-            export NODE_OPTIONS='--max-old-space-size=4096' &&
-
-            npm ci &&
-            npm run build &&
-            pm2 restart all
-          "
+          rsync -avz --delete dist/ \
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.PROJECT_PATH }}/
