@@ -1,4 +1,4 @@
-name: Auto Deploy to Server
+name: Auto Deploy Frontend
 
 on:
   push:
@@ -17,10 +17,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install & Build
+      - name: Install dependencies (only if needed)
         run: |
-          npm install
-          npm run build
+          if [ ! -d "node_modules" ]; then
+            npm install
+          fi
+
+      - name: Build (increase memory)
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        run: npm run build
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
