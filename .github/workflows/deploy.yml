@@ -17,13 +17,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies (only if needed)
+      - name: Install deps (only if needed)
         run: |
           if [ ! -d "node_modules" ]; then
             npm install
           fi
 
-      - name: Build (increase memory)
+      - name: Build
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: npm run build
@@ -36,5 +36,6 @@ jobs:
       - name: Deploy dist to Server
         run: |
           rsync -avz --delete \
+          -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
           dist/ \
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/www/wwwroot/frontend-live/
