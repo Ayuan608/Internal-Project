@@ -233,23 +233,27 @@ export const fetchAllEvents = createAsyncThunk(
 
 // 1️⃣ Create async thunk for deleting an event
 export const deleteEvent = createAsyncThunk(
-    "announcements/deleteEvent",
-    async (eventId, { rejectWithValue }) => {
-        try {
-            const response = await axios.axiosInstance.delete(
-                `/deleteEvent/${eventId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`, // or wherever you store auth
-                    },
-                }
-            );
-            return response.data; // { success, message }
-        } catch (error) {
-            return rejectWithValue(error.response.data || error.message);
-        }
+  "announcements/deleteEvent",
+  async (eventId, { rejectWithValue }) => {
+    try {
+      console.log("deleteEvent dispatched with id:", eventId);
+
+      await axiosInstance.delete(
+        `/announcement/deleteEvent/${eventId}`
+      );
+
+      // ✅ IMPORTANT: return the ID so reducer can remove it
+      return eventId;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to delete event"
+      );
     }
+  }
 );
+
 
 
 const announcementSlice = createSlice({
@@ -263,8 +267,7 @@ const announcementSlice = createSlice({
         createError: null,
         createEventLoading: false,
         createEventError: null,
-        deleteLoading: false,
-        deleteError: null,
+   
     },
     reducers: {
         clearError: (state) => {
@@ -344,6 +347,7 @@ const announcementSlice = createSlice({
             .addCase(deleteAnnouncement.fulfilled, (state, action) => {
                 state.loading = false;
                 const deletedId = action.payload; // <- this is the ID returned by thunk
+
                 state.announcements = state.announcements.filter(item => item._id !== deletedId);
             })
 
@@ -397,8 +401,10 @@ const announcementSlice = createSlice({
                 state.error = action.payload;
             })
             .addCase(deleteEvent.fulfilled, (state, action) => {
-                // action.payload is { success: true, message: "Event deleted successfully" }
-                state.events = state.events.filter(evt => evt._id !== action.meta.arg);
+                state.loading = false;
+                const deletedId = action.payload; // <- this is the ID returned by thunk
+
+                state.events = state.events.filter(item => item._id !== deletedId);
             })
             .addCase(deleteEvent.rejected, (state, action) => {
                 console.error("Failed to delete event:", action.payload?.message);
