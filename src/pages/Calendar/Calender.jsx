@@ -11,6 +11,8 @@ import ReactCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { motion } from "framer-motion";
 import { Paperclip } from "lucide-react";
+import toast from "react-hot-toast";
+
 import { createEvent, deleteEvent, fetchAllEvents } from "../../redux/announcementSlice";
 
 // Create the localizer with ES module imports
@@ -47,7 +49,7 @@ function CalendarPage() {
     const defaultDate = useMemo(() => selectedDate, [selectedDate]);
     useEffect(() => {
         dispatch(fetchAllEvents()).then(res => {
-            console.log("FETCH EVENTS RESULT 👉", res.payload);
+            console.log("event fetched successfully");
         });
     }, [dispatch]);
 
@@ -110,6 +112,7 @@ function CalendarPage() {
                 .unwrap()
                 .then(() => console.log("Event deleted successfully"))
                 .catch(err => console.error("Failed to delete event:", err));
+            toast.error("You haven't access to delete event");
         }
     }, [dispatch]);
 

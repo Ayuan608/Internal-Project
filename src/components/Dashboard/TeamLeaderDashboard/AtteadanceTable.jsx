@@ -13,13 +13,13 @@ const STATUS_MAP = {
     S: { label: "S", className: "bg-purple-600 text-white", fullName: "Suspended" },
 };
 
-const DEPARTMENTS = [
-    "All Department",
-    "CSR Department",
-    "Deposit Department",
-    "Withdraw Department",
-    "Marketing Department",
-];
+// const DEPARTMENTS = [
+//     "All Department",
+//     "CSR Department",
+//     "Deposit Department",
+//     "Withdraw Department",
+//     "Marketing Department",
+// ];
 
 function formatShortId(id) {
     return id ? id.slice(0, 8) : "N/A";
@@ -92,6 +92,7 @@ export default function AttendanceTable({
 
     const filteredData = useMemo(() => {
         const normalized = data.map(normalizeEmp);
+        console.log(normalized, "normalized")
         if (selectedDept === "All") return normalized;
         return normalized.filter((e) => {
             return (e.department || "").toString() === selectedDept;
@@ -214,19 +215,7 @@ export default function AttendanceTable({
                         Schedule & Attendance — {monthLabel}
                     </h2>
 
-                    <div className="w-52">
-                        <select
-                            value={selectedDept}
-                            onChange={(e) => setSelectedDept(e.target.value)}
-                            className="w-full px-4 py-2 border border-slate-700 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 bg-slate-900"
-                        >
-                            {DEPARTMENTS.map((dept, idx) => (
-                                <option key={idx} value={dept} className="bg-slate-900 text-gray-300">
-                                    {dept}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+
                 </div>
 
                 <div className="flex items-center gap-3">
