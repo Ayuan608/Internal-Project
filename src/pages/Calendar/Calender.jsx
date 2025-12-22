@@ -43,6 +43,7 @@ function CalendarPage() {
         startDate: new Date(),
         endDate: new Date(),
         notes: "",
+        link: "",
         files: [],
     });
 
@@ -68,6 +69,7 @@ function CalendarPage() {
             startDate: start,
             endDate: end,
             notes: "",
+            link: "",
             files: [],
         });
         setAttachment(null);
@@ -82,6 +84,7 @@ function CalendarPage() {
             startDate: newEvent.startDate.toISOString(),
             endDate: newEvent.endDate.toISOString(),
             notes: newEvent.notes,
+            link: newEvent.link,
             files: newEvent.files,
         };
 
@@ -94,6 +97,7 @@ function CalendarPage() {
                 startDate: new Date(),
                 endDate: new Date(),
                 notes: "",
+                link: "",
                 files: [],
             });
             setAttachment(null);
@@ -182,6 +186,8 @@ function CalendarPage() {
             title: evt.title,
             start: new Date(evt.startDate),
             end: new Date(evt.endDate),
+            notes: evt.notes || "",
+            link: evt.link || "",
             resource: evt,
         }));
     }, [events]);
@@ -290,6 +296,15 @@ function CalendarPage() {
                             </div>
 
                             <div>
+                                <label className="block text-sm text-gray-400 mb-2">Add Link</label>
+                                <textarea
+                                    className="w-full h-32 p-3 rounded bg-[rgba(59,130,246,0.06)] border border-gray-800 text-white"
+                                    placeholder="Add event details..."
+                                    value={newEvent.link}
+                                    onChange={(e) => setNewEvent({ ...newEvent, link: e.target.value })}
+                                />
+                            </div>
+                            <div>
                                 <label className="block text-sm text-gray-400 mb-2">Attachment</label>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -314,6 +329,7 @@ function CalendarPage() {
                                     )}
                                 </div>
                             </div>
+
                         </div>
 
                         <div className="flex justify-end gap-3 mt-6">

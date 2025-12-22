@@ -190,7 +190,7 @@ export const createEvent = createAsyncThunk(
             formData.append('startDate', eventData.startDate);
             formData.append('endDate', eventData.endDate);
             if (eventData.notes) formData.append('notes', eventData.notes);
-
+            if (eventData.link) formData.append('link', eventData.link);
             if (eventData.files?.length) {
                 eventData.files.forEach(file => {
                     formData.append('attachments', file);
@@ -233,25 +233,25 @@ export const fetchAllEvents = createAsyncThunk(
 
 // 1️⃣ Create async thunk for deleting an event
 export const deleteEvent = createAsyncThunk(
-  "announcements/deleteEvent",
-  async (eventId, { rejectWithValue }) => {
-    try {
-      console.log("deleteEvent dispatched with id:", eventId);
+    "announcements/deleteEvent",
+    async (eventId, { rejectWithValue }) => {
+        try {
+            console.log("deleteEvent dispatched with id:", eventId);
 
-      await axiosInstance.delete(
-        `/announcement/deleteEvent/${eventId}`
-      );
+            await axiosInstance.delete(
+                `/announcement/deleteEvent/${eventId}`
+            );
 
-      // ✅ IMPORTANT: return the ID so reducer can remove it
-      return eventId;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to delete event"
-      );
+            // ✅ IMPORTANT: return the ID so reducer can remove it
+            return eventId;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message ||
+                error.message ||
+                "Failed to delete event"
+            );
+        }
     }
-  }
 );
 
 
@@ -267,7 +267,7 @@ const announcementSlice = createSlice({
         createError: null,
         createEventLoading: false,
         createEventError: null,
-   
+
     },
     reducers: {
         clearError: (state) => {
