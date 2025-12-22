@@ -308,7 +308,7 @@ const AttendanceDashboard = () => {
     try {
       const result = await dispatch(punchIn({
         userId,
-        shift: "MORNING"
+        shift: "Day"
       })).unwrap();
 
       console.log("✅ Punch in result:", result);

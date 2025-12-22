@@ -62,7 +62,16 @@ const departments = [
 
 const OverallAttendanceDashboard = () => {
   const popupRef = useRef();
-  const [viewMode, setViewMode] = useState('analytics');
+  const [viewMode, setViewMode] = useState(() => {
+    const savedViewMode = localStorage.getItem('attendanceDashboardViewMode');
+    return savedViewMode || 'analytics';
+  });
+  useEffect(() => {
+    localStorage.setItem('attendanceDashboardViewMode', viewMode);
+  }, [viewMode]);
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -292,28 +301,28 @@ const OverallAttendanceDashboard = () => {
     return row.alert || "Normal";
   };
 
-const getStatusColor = (status) => {
-  const styles = {
-    "Normal": "bg-emerald-900/40 border border-emerald-700 text-emerald-300",
+  const getStatusColor = (status) => {
+    const styles = {
+      "Normal": "bg-emerald-900/40 border border-emerald-700 text-emerald-300",
 
-    "Missed Punch-Out": "bg-orange-900/40 border border-orange-700 text-orange-300",
-    "No Punch Out": "bg-orange-900/40 border border-orange-700 text-orange-300",
+      "Missed Punch-Out": "bg-orange-900/40 border border-orange-700 text-orange-300",
+      "No Punch Out": "bg-orange-900/40 border border-orange-700 text-orange-300",
 
-    "Missed Punch-In": "bg-red-900/40 border border-red-700 text-red-300",
+      "Missed Punch-In": "bg-red-900/40 border border-red-700 text-red-300",
 
-    "Late Arrival": "bg-yellow-900/40 border border-yellow-700 text-yellow-300",
+      "Late Arrival": "bg-yellow-900/40 border border-yellow-700 text-yellow-300",
 
-    "Early Leave": "bg-amber-900/40 border border-amber-700 text-amber-300",
+      "Early Leave": "bg-amber-900/40 border border-amber-700 text-amber-300",
 
-    "System Error": "bg-purple-900/40 border border-purple-700 text-purple-300",
+      "System Error": "bg-purple-900/40 border border-purple-700 text-purple-300",
 
-    "Work-error": "bg-indigo-900/40 border border-indigo-700 text-indigo-300",
+      "Work-error": "bg-indigo-900/40 border border-indigo-700 text-indigo-300",
 
-    "Other": "bg-gray-900/40 border border-gray-700 text-gray-300",
+      "Other": "bg-gray-900/40 border border-gray-700 text-gray-300",
+    };
+
+    return styles[status] || "bg-gray-900/40 border border-gray-700 text-gray-300";
   };
-
-  return styles[status] || "bg-gray-900/40 border border-gray-700 text-gray-300";
-};
 
 
   // Export to CSV
@@ -394,18 +403,18 @@ const getStatusColor = (status) => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Attendance Dashboard</h1>
-            <p className="text-blue-300">Real-time employee tracking & analytics</p>
+            <p className="text-white">Real-time employee tracking & analytics</p>
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setViewMode('analytics')}
+              onClick={() => handleViewModeChange('analytics')}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'analytics' ? 'bg-blue-600 text-white' : 'bg-[rgba(59,130,246,0.03)] border border-slate-800/30 text-gray-300 hover:bg-slate-700'}`}
             >
               <BarChart3 size={18} />
               Analytics
             </button>
             <button
-              onClick={() => setViewMode('manpower')}
+              onClick={() => handleViewModeChange('manpower')}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'manpower' ? 'bg-blue-600 text-white' : 'bg-[rgba(59,130,246,0.03)] border border-slate-800/30 text-gray-300 hover:bg-slate-700'}`}
             >
               <Users size={18} />
@@ -414,21 +423,21 @@ const getStatusColor = (status) => {
 
 
             <button
-              onClick={() => setViewMode('table')}
+              onClick={() => handleViewModeChange('table')}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'bg-[rgba(59,130,246,0.03)] border border-slate-800/30 text-gray-300 hover:bg-slate-700'}`}
             >
               <List size={18} />
               Table
             </button>
             <button
-              onClick={() => setViewMode('cards')}
+              onClick={() => handleViewModeChange('cards')}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'cards' ? 'bg-blue-600 text-white' : 'bg-[rgba(59,130,246,0.03)] border border-slate-800/30 text-gray-300 hover:bg-slate-700'}`}
             >
               <Grid3x3 size={18} />
               Cards
             </button>
             <button
-              onClick={() => setViewMode('dashboard')}
+              onClick={() => handleViewModeChange('dashboard')}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${viewMode === 'dashboard'
                 ? 'bg-purple-600 text-white'
                 : 'bg-[rgba(128,90,213,0.15)] border border-slate-800/30 text-gray-300 hover:bg-purple-900/30'
@@ -441,70 +450,108 @@ const getStatusColor = (status) => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div className="bg-gradient-to-br from-emerald-900/40 to-emerald-900/10 border border-emerald-500/30 rounded-lg p-4 hover:border-emerald-500/60 transition">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* TOTAL STAFF */}
+          <div className="bg-gradient-to-br from-gray-900/40 to-gray-900/10 border border-gray-500/30 rounded-lg p-4 hover:border-gray-500/60 transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-emerald-300 mb-1">Present</p>
-                <p className="text-3xl font-bold text-emerald-100">{stats.present}</p>
-                <p className="text-xs text-emerald-400 mt-2">{stats.attendanceRate}%</p>
+                <p className="text-sm text-gray-300 mb-1">TOTAL STAFF</p>
+                <p className="text-3xl font-bold text-gray-100">57</p>
+                <p className="text-xs text-gray-400 mt-2">All registered agents</p>
               </div>
-              <Users className="w-10 h-10 text-emerald-500/60" />
+              <Users className="w-10 h-10 text-gray-500/60" />
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-red-900/40 to-red-900/10 border border-red-500/30 rounded-lg p-4 hover:border-red-500/60 transition">
+          {/* WORKING */}
+          <div className="bg-gradient-to-br from-green-900/40 to-green-900/10 border border-green-500/30 rounded-lg p-4 hover:border-green-500/60 transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-300 mb-1">Absent</p>
-                <p className="text-3xl font-bold text-red-100">{stats.absent}</p>
-                <p className="text-xs text-red-400 mt-2">No check-in</p>
+                <p className="text-sm text-green-300 mb-1">WORKING</p>
+                <p className="text-3xl font-bold text-green-100">18</p>
+                <p className="text-xs text-green-400 mt-2">Currently on duty</p>
               </div>
-              <AlertCircle className="w-10 h-10 text-red-500/60" />
+              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-400" />
+              </div>
             </div>
           </div>
 
+          {/* ON BREAK */}
           <div className="bg-gradient-to-br from-yellow-900/40 to-yellow-900/10 border border-yellow-500/30 rounded-lg p-4 hover:border-yellow-500/60 transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-yellow-300 mb-1">Late</p>
-                <p className="text-3xl font-bold text-yellow-100">{stats.late}</p>
-                <p className="text-xs text-yellow-400 mt-2">After 9:30 AM</p>
+                <p className="text-sm text-yellow-300 mb-1">ON BREAK</p>
+                <p className="text-3xl font-bold text-yellow-100">4</p>
+                <p className="text-xs text-yellow-400 mt-2">Any break type</p>
               </div>
               <Clock className="w-10 h-10 text-yellow-500/60" />
             </div>
           </div>
 
+          {/* LEAVE */}
           <div className="bg-gradient-to-br from-blue-900/40 to-blue-900/10 border border-blue-500/30 rounded-lg p-4 hover:border-blue-500/60 transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-300 mb-1">On Time</p>
-                <p className="text-3xl font-bold text-blue-100">{stats.onTime}</p>
-                <p className="text-xs text-blue-400 mt-2">Before 9:30 AM</p>
+                <p className="text-sm text-blue-300 mb-1">LEAVE</p>
+                <p className="text-3xl font-bold text-blue-100">0</p>
+                <p className="text-xs text-blue-400 mt-2">Approved some today</p>
               </div>
-              <TrendingUp className="w-10 h-10 text-blue-500/60" />
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-400" />
+              </div>
             </div>
           </div>
 
+          {/* ABSENT */}
+          <div className="bg-gradient-to-br from-red-900/40 to-red-900/10 border border-red-500/30 rounded-lg p-4 hover:border-red-500/60 transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-300 mb-1">ABSENT</p>
+                <p className="text-3xl font-bold text-red-100">9</p>
+                <p className="text-xs text-red-400 mt-2">Marked as absent</p>
+              </div>
+              <AlertCircle className="w-10 h-10 text-red-500/60" />
+            </div>
+          </div>
+
+          {/* AVG NET WORK */}
           <div className="bg-gradient-to-br from-purple-900/40 to-purple-900/10 border border-purple-500/30 rounded-lg p-4 hover:border-purple-500/60 transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-300 mb-1">Avg Hours</p>
-                <p className="text-3xl font-bold text-purple-100">{stats.avgHours}</p>
-                <p className="text-xs text-purple-400 mt-2">Per employee</p>
+                <p className="text-sm text-purple-300 mb-1">AVG NET WORK</p>
+                <p className="text-3xl font-bold text-purple-100">00:00:00</p>
+                <p className="text-xs text-purple-400 mt-2">Per staff today</p>
               </div>
-              <Clock className="w-10 h-10 text-purple-500/60" />
+              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Target className="w-6 h-6 text-purple-400" />
+              </div>
             </div>
           </div>
 
+          {/* AVG BREAK USED */}
+          <div className="bg-gradient-to-br from-amber-900/40 to-amber-900/10 border border-amber-500/30 rounded-lg p-4 hover:border-amber-500/60 transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-300 mb-1">AVG BREAK USED</p>
+                <p className="text-3xl font-bold text-amber-100">00:30:34</p>
+                <p className="text-xs text-amber-400 mt-2">Per staff today</p>
+              </div>
+              <Clock className="w-10 h-10 text-amber-500/60" />
+            </div>
+          </div>
+
+          {/* ONLINE RATE */}
           <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-900/10 border border-cyan-500/30 rounded-lg p-4 hover:border-cyan-500/60 transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-cyan-300 mb-1">Total Staff</p>
-                <p className="text-3xl font-bold text-cyan-100">{stats.total}</p>
-                <p className="text-xs text-cyan-400 mt-2">Registered</p>
+                <p className="text-sm text-cyan-300 mb-1">ONLINE RATE</p>
+                <p className="text-3xl font-bold text-cyan-100">31.6%</p>
+                <p className="text-xs text-cyan-400 mt-2">Working / (Total - Leave)</p>
               </div>
-              <Users className="w-10 h-10 text-cyan-500/60" />
+              <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-cyan-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -729,44 +776,56 @@ const getStatusColor = (status) => {
                     placeholder="Name or ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2  border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 bg-[#0d1b2a] border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
-              {/* department */}
-
 
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">Department</label>
                 <select
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value)}
-                  className="w-full px-4 py-2  border border-slate-600 rounded-lg text-white"
+                  className="w-full px-4 py-2 bg-[#0d1b2a] border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 >
-                  <option className="bg-[#0d1b2af3] text-gray-300" value="All">All</option>
-
+                  <option value="All">All</option>
                   {departments.map((d, idx) => (
-                    <option className="bg-[#0d1b2af3] text-gray-300" key={idx} value={d.value}>{d.label}</option>
+                    <option key={idx} value={d.value}>{d.label}</option>
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">Status</label>
-                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="w-full px-4 py-2  border  border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-4 py-2 bg-[#0d1b2a] border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                >
                   {statuses.map(status => (
-                    <option className="bg-slate-900" key={status} value={status}>{status}</option>
+                    <option key={status} value={status}>{status}</option>
                   ))}
                 </select>
               </div>
 
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">From Date</label>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-2  border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500" />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-2 bg-[#0d1b2a] border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">To Date</label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2  border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500" />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-4 py-2 bg-[#0d1b2a] border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
               </div>
             </div>
 
@@ -775,10 +834,17 @@ const getStatusColor = (status) => {
                 Showing {filteredData.length} of {allAttendance?.length || 0} records
               </div>
               <div className="flex gap-2">
-                <button onClick={clearFilters} className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition">
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition focus:outline-none focus:ring-2 focus:ring-slate-600"
+                >
                   Clear Filters
                 </button>
-                <button onClick={exportToCSV} disabled={filteredData.length === 0} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50">
+                <button
+                  onClick={exportToCSV}
+                  disabled={filteredData.length === 0}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
                   <Download size={18} />
                   Export CSV
                 </button>
@@ -788,55 +854,98 @@ const getStatusColor = (status) => {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-slate-800/50 border-b border-slate-700/50">
                 <tr>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">ID</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Name</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Department</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Date</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Punch In</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Punch Out</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Hours</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-32">ID</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-48">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-40">Department</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-32">Date</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-32">Punch In</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-32">Punch Out</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-28">Hours</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-40">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/30">
                 {isLoading ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-8 text-center">
+                    <td colSpan="8" className="px-4 py-8 text-center">
                       <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                       </div>
                     </td>
                   </tr>
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-8 text-center text-gray-400">
+                    <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
                       No records found
                     </td>
                   </tr>
                 ) : (
                   filteredData.map((row) => (
-                    <tr key={row._id} className="hover:bg-slate-800/30 text-center transition">
-                      <td className="px-6 py-4 text-sm text-white">{row._id?.slice(0, 8)}</td>
-                      <td className="px-6 py-4 text-sm text-white font-medium">{row.user?.FullName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{row.user?.department}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{new Date(row.date).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{row.workingHours || '0'}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-block px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
+                    <tr key={row._id} className="hover:bg-slate-800/30 transition">
+                      <td className="px-4 py-3 text-sm text-white font-mono w-32">
+                        {row._id?.slice(0, 8)}...
+                      </td>
+                      <td className="px-4 py-3 text-sm capitalize text-white font-medium w-48">
+                        {row.user?.FullName}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300 w-40">
+                        {row.user?.department || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                        {new Date(row.date).toLocaleDateString('en-GB')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                        {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : '--'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                        {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : '--'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300 w-28">
+                        <span className="font-medium text-blue-300">
+                          {row.workingHours || '0'}h
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 w-40">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
                           {calculateDynamicStatus(row)}
                         </span>
-
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination/Footer */}
+          <div className="p-4 border-t border-slate-700/50 bg-slate-800/30">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-400">
+                Page 1 of {Math.ceil((pagination?.total || 0) / 100)}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-3 py-1 text-sm bg-slate-700 rounded hover:bg-slate-600 disabled:opacity-50"
+                  disabled
+                >
+                  Previous
+                </button>
+                <button className="px-3 py-1 text-sm bg-blue-600 rounded hover:bg-blue-700">
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -928,7 +1037,7 @@ const getStatusColor = (status) => {
                   {/* Header */}
                   <div className="flex justify-between items-start pb-4 border-b border-slate-700/50 mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{emp.user?.FullName}</h3>
+                      <h3 className="text-lg font-semibold text-white capitalize">{emp.user?.FullName}</h3>
                       <p className="text-sm text-blue-300">{emp.user?.department}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp.alert)}`}>

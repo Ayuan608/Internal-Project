@@ -49,6 +49,7 @@ function Admin() {
   const [actionModal, setActionModal] = useState(false);
   const [selectedAction, setSelectedAction] = useState("");
   const [actionUser, setActionUser] = useState(null);
+  const [useManualWorkingHour, setUseManualWorkingHour] = useState(false);
 
   // Single form state for both add and edit
   const [formData, setFormData] = useState({
@@ -68,6 +69,30 @@ function Admin() {
   const [selectedCountry] = useState(
     countries.find((c) => c.dialCode === "+63")
   );
+
+  // Department-specific shifts data
+  const departmentShifts = {
+    "CSR": [
+      { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM" },
+      { value: "Night", label: "Night: 4:00 PM - 4:00 AM" },
+      { value: "Mid Shift", label: "Mid Shift: 10:00 AM - 10:00 PM" }
+    ],
+    "Deposit": [
+      { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM | 3:00 AM - 3:00 PM" },
+      { value: "Night", label: "Night: 4:00 PM - 4:00 AM | 3:00 PM - 3:00 AM" },
+      { value: "Mid Shift", label: "Mid Shift: 7:00 AM - 4:00 PM | 7:00 PM - 4:00 AM" }
+    ],
+    "Withdraw": [
+      { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM" },
+      { value: "Night", label: "Night: 4:00 PM - 4:00 AM" }
+    ],
+    "Marketing": [
+      { value: "Marketing/SEO", label: "Marketing/SEO: 12 Noon - 12 Midnight | 12 Noon - 10:00 PM" }
+    ],
+    "Admin": [
+      { value: "Admin", label: "Admin: 10:00 AM - 10:00 PM" }
+    ]
+  };
 
   const rolePermissions = {
     "Super-Admin": ["Team-Leader", "Admin", "User", "Checker"],
@@ -151,9 +176,10 @@ function Admin() {
   // Shift colors
   const shiftColors = {
     Morning: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    Evening: "bg-violet-500/20 text-violet-300 border-violet-500/30",
     Night: "bg-slate-500/20 text-slate-300 border-slate-500/30",
-    Rotational: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+    "Mid Shift": "bg-teal-500/20 text-teal-300 border-teal-500/30",
+    "Marketing/SEO": "bg-orange-500/20 text-orange-300 border-orange-500/30",
+    Admin: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
   };
 
   const getShiftColor = (shift, userRole) => {
@@ -166,6 +192,31 @@ function Admin() {
   useEffect(() => {
     dispatch(getAllUsers());
   }, [dispatch]);
+
+  // Auto-fill working hours when shift is selected
+  useEffect(() => {
+    if (formData.Shift && !useManualWorkingHour) {
+      // Find the selected shift details
+      const allShifts = Object.values(departmentShifts).flat();
+      const selectedShift = allShifts.find(shift => shift.value === formData.Shift);
+      
+      if (selectedShift) {
+        // Extract working hours from label (format: "Shift Name: Working Hours")
+        const match = selectedShift.label.match(/:\s*(.+)/);
+        if (match) {
+          setFormData(prev => ({
+            ...prev,
+            workingHour: match[1].trim()
+          }));
+        }
+      } else if (formData.role === "Admin" && formData.Shift === "Admin") {
+        setFormData(prev => ({
+          ...prev,
+          workingHour: "10:00 AM - 10:00 PM"
+        }));
+      }
+    }
+  }, [formData.Shift, useManualWorkingHour, formData.role]);
 
   // Filter users based on active tab
   const filteredUsers = useMemo(() => {
@@ -247,6 +298,22 @@ function Admin() {
     };
   }, [filteredUsers]);
 
+  // Function to get available shifts based on role and department
+  const getAvailableShifts = () => {
+    // For Admin role
+    if (formData.role === "Admin") {
+      return departmentShifts["Admin"] || [];
+    }
+    
+    // For other roles with department
+    if (formData.department && departmentShifts[formData.department]) {
+      return departmentShifts[formData.department];
+    }
+    
+    // Default empty array
+    return [];
+  };
+
   // Handle form input change
   const handleFormInput = (e) => {
     const { name, value } = e.target;
@@ -264,6 +331,17 @@ function Admin() {
       updatedData.salary = "";
       updatedData.workingHour = "";
       updatedData.Shift = "";
+      // For Admin role, show Admin shift options
+      if (name === "role") {
+        updatedData.department = "";
+      }
+    }
+
+    // When department changes, reset Shift to empty
+    if (name === "department") {
+      updatedData.Shift = "";
+      updatedData.workingHour = "";
+      setUseManualWorkingHour(false);
     }
 
     setFormData(updatedData);
@@ -286,6 +364,7 @@ function Admin() {
       Shift: "",
     });
     setSelectedUser(null);
+    setUseManualWorkingHour(false);
     setIsModalOpen(true);
   };
 
@@ -308,6 +387,7 @@ function Admin() {
       workingHour: user.workingHour || "",
       Shift: user.Shift || "",
     });
+    setUseManualWorkingHour(false);
     setIsModalOpen(true);
   };
 
@@ -1072,42 +1152,106 @@ function Admin() {
                           />
                         </div>
 
-                        {/* Working Hours */}
-                        <div>
-                          <label className="block text-gray-300 mb-2 text-sm font-medium">
-                            Working Hours *
-                          </label>
-                          <input
-                            type="text"
-                            name="workingHour"
-                            value={formData.workingHour}
-                            onChange={handleFormInput}
-                            placeholder="e.g., 9 AM - 5 PM"
-                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                          />
-                        </div>
+                        {/* Working Hours - Show only when shift is selected or manual entry */}
+                        {(formData.Shift && !useManualWorkingHour) || useManualWorkingHour ? (
+                          <div>
+                            <label className="block text-gray-300 mb-2 text-sm font-medium">
+                              Working Hours *
+                            </label>
+                            <input
+                              type="text"
+                              name="workingHour"
+                              value={formData.workingHour}
+                              onChange={handleFormInput}
+                              placeholder="e.g., 9 AM - 5 PM"
+                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            />
+                            {!useManualWorkingHour && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Working hours are automatically set based on the selected shift
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
 
                         {/* Shift */}
                         <div>
                           <label className="block text-gray-300 mb-2 text-sm font-medium">
                             Shift *
                           </label>
-                          <select
-                            name="Shift"
-                            value={formData.Shift}
-                            onChange={handleFormInput}
-                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                          >
-                            <option className="bg-slate-800" value="">
-                              Select Shift
-                            </option>
-                            <option className="bg-slate-800" value="Morning">
-                              Morning
-                            </option>
-                            <option className="bg-slate-800" value="Night">
-                              Night
-                            </option>
-                          </select>
+                          
+                          {/* Toggle for manual entry */}
+                          {formData.department && formData.role !== "Admin" && formData.role !== "Checker" && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <input
+                                type="checkbox"
+                                id="manualWorkingHour"
+                                checked={useManualWorkingHour}
+                                onChange={(e) => {
+                                  setUseManualWorkingHour(e.target.checked);
+                                  if (e.target.checked) {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      Shift: "",
+                                      workingHour: ""
+                                    }));
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                              <label htmlFor="manualWorkingHour" className="text-sm text-gray-400">
+                                Enter working hours manually
+                              </label>
+                            </div>
+                          )}
+                          
+                          {useManualWorkingHour ? (
+                            // Manual working hours input
+                            <div className="space-y-3">
+                              <input
+                                type="text"
+                                name="workingHour"
+                                value={formData.workingHour}
+                                onChange={handleFormInput}
+                                placeholder="e.g., 9 AM - 5 PM"
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              />
+                              <input
+                                type="text"
+                                name="Shift"
+                                value={formData.Shift}
+                                onChange={handleFormInput}
+                                placeholder="Shift name (e.g., Custom Shift)"
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              />
+                            </div>
+                          ) : (
+                            // Department-based shift dropdown
+                            <select
+                              name="Shift"
+                              value={formData.Shift}
+                              onChange={handleFormInput}
+                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              disabled={!formData.department && formData.role !== "Admin"}
+                            >
+                              <option className="bg-slate-800" value="">
+                                {formData.role === "Admin" 
+                                  ? "Select Admin Shift" 
+                                  : !formData.department 
+                                    ? "Select Department First"
+                                    : "Select Shift"}
+                              </option>
+                              {getAvailableShifts().map((shift) => (
+                                <option
+                                  key={shift.value}
+                                  value={shift.value}
+                                  className="bg-slate-800"
+                                >
+                                  {shift.label}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </>
                     )}

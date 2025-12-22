@@ -355,7 +355,7 @@ const ManpowerStatusSection = () => {
                         <td className="px-4 py-3 text-slate-100">
                           {row.department}
                         </td>
-                        <td className="px-4 py-3 text-slate-100">{row.name}</td>
+                        <td className="px-4 py-3 text-slate-100 uppercase">{row.name}</td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-2">
                             <span

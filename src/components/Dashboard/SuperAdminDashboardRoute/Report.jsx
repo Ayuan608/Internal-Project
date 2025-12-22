@@ -351,7 +351,7 @@ function Report() {
                                                     </p>
                                                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
                                                         <span className="flex items-center gap-1">
-                                                            <Ca lendar size={12} />
+                                                            <Calendar size={12} />
                                                             {formatDate(report.date || report.createdAt)}
                                                         </span>
                                                         <span className="flex items-center gap-1">

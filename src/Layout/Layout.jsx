@@ -25,21 +25,57 @@ const Layout = () => {
     const handleToggle = () => {
         setToggle(!toggle);
     };
+    const getAsiaManilaTime = () => {
+        const now = new Date();
+
+        // Base formatter
+        const formatter = new Intl.DateTimeFormat("sv-SE", {
+            timeZone: "Asia/Manila",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+        });
+
+        const formatted = formatter.format(now).replace(" ", "T");
+
+        // milliseconds → microseconds style (fake but standard UI practice)
+        const ms = String(now.getMilliseconds()).padStart(3, "0");
+
+        const serverTime = `${formatted}.${ms}000+08:00`;
+
+        const businessDate = formatted.split("T")[0];
+
+        const lastUpdate = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Manila",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+        }).format(now);
+
+        return {
+            serverTime,
+            businessDate,
+            lastUpdate,
+        };
+    };
+    const [timeData, setTimeData] = useState({
+        serverTime: "",
+        businessDate: "",
+        lastUpdate: "",
+    });
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
+        const update = () => {
+            setTimeData(getAsiaManilaTime());
+        };
 
-            const date = now.toLocaleDateString("en-GB", {
-                timeZone: "Asia/Manila",
-            });
-
-            const time = now.toLocaleTimeString("en-US", {
-                timeZone: "Asia/Manila",
-            });
-
-            setDateTime(`${date} - ${time}`);
-        }, 1000);
+        update();
+        const interval = setInterval(update, 1000);
 
         return () => clearInterval(interval);
     }, []);
@@ -99,9 +135,13 @@ const Layout = () => {
                     <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-700 shrink-0 sticky top-0 z-10 bg-[#00010B]">
 
 
-                     
+
                         <div className="flex items-center gap-4 absolute right-0">
-                            <span className="whitespace-nowrap">{dateTime}</span>
+                            <div className="text-sm text-gray-400 space-y-1 whitespace-nowrap">
+                                <div>Server time: {timeData.serverTime}</div>
+                           
+                            </div>
+
                             <NotificationPopup userId={userData?._id} />
                             <RecentAnnoucement />
                             <div className="flex items-center gap-3" ref={menuRef}>

@@ -38,6 +38,8 @@ export default function AttendanceDashboard() {
   const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
+
+  console.log("desparetmebt",departmentAttendance)
   const { role } = useSelector((s) => s.auth || {});
   const [searchName, setSearchName] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -173,11 +175,10 @@ export default function AttendanceDashboard() {
         <div className="w-2/3 h-2/3 mx-auto rounded-full opacity-10 blur-3xl bg-blue-500/40 mt-12" />
       </div>
 
-      <div className="relative z-10 p-6 lg:p-8">
+      <div className="relative z-10  ">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-1">Attendance Dashboard</h1>
-            <p className="text-sm text-slate-300">Department: <span className="font-semibold text-blue-100">{department || "All"}</span></p>
+            <p className="text-xl text-slate-400">Agents status - <span className="font-semibold text-slate-400">Live</span></p>
           </div>
 
           <div className="flex items-center gap-3">

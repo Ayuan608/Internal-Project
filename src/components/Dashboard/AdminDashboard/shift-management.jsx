@@ -43,7 +43,7 @@ const ShiftManagement = () => {
       bg: "bg-emerald-500/15",
       text: "text-emerald-400"
     },
-    Withdrawal: {
+    Withdraw: {
       badge: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
       border: "border border-purple-500/30",
       bg: "bg-purple-500/15",
@@ -57,145 +57,63 @@ const ShiftManagement = () => {
     }
   };
 
-  const shiftConfig = {
-    Morning: {
-      icon: Sunrise,
-      CSR: {
-        bg: "bg-blue-500/15",
-        text: "text-blue-400",
-        border: "border-blue-500/30"
-      },
-      Deposit: {
-        bg: "bg-emerald-500/15",
-        text: "text-emerald-400",
-        border: "border-emerald-500/30"
-      },
-      Withdrawal: {
-        bg: "bg-purple-500/15",
-        text: "text-purple-400",
-        border: "border-purple-500/30"
-      },
-      Marketing: {
-        bg: "bg-orange-500/15",
-        text: "text-orange-400",
-        border: "border-orange-500/30"
-      },
-
+  // Department-specific shift options and times
+  const departmentShiftOptions = {
+    CSR: {
+      shifts: ["Morning", "Night", "Mid Shift"],
       times: {
-        CSR: [{ start: "04:00", end: "16:00", hours: 12 }],
-
-        Deposit: [
-          { start: "04:00", end: "16:00", hours: 12 }
+        "Morning": [{ start: "04:00", end: "16:00", hours: 12 }],
+        "Night": [{ start: "16:00", end: "04:00", hours: 12 }],
+        "Mid Shift": [{ start: "10:00", end: "22:00", hours: 12 }]
+      }
+    },
+    Deposit: {
+      shifts: ["Morning", "Night", "Mid Shift"],
+      times: {
+        "Morning": [
+          { start: "04:00", end: "16:00", hours: 12 },
+          { start: "03:00", end: "15:00", hours: 12 }
         ],
-
-        Withdrawal: [
-          { start: "04:00", end: "16:00", hours: 12 }
+        "Night": [
+          { start: "16:00", end: "04:00", hours: 12 },
+          { start: "15:00", end: "03:00", hours: 12 }
         ],
-
-        Marketing: [
-          { start: "12:00", end: "24:00", hours: 12 }
+        "Mid Shift": [
+          { start: "07:00", end: "16:00", hours: 9 },
+          { start: "19:00", end: "04:00", hours: 9 }
         ]
       }
     },
-
-    "Trainee (M)": {
-      icon: Sun,
-      CSR: {
-        bg: "bg-blue-500/15",
-        text: "text-blue-400",
-        border: "border-blue-500/30"
-      },
-      Deposit: {
-        bg: "bg-emerald-500/15",
-        text: "text-emerald-400",
-        border: "border-emerald-500/30"
-      },
-      Withdrawal: {
-        bg: "bg-purple-500/15",
-        text: "text-purple-400",
-        border: "border-purple-500/30"
-      },
-      Marketing: {
-        bg: "bg-orange-500/15",
-        text: "text-orange-400",
-        border: "border-orange-500/30"
-      },
-
+    Withdraw: {
+      shifts: ["Morning", "Night"],
       times: {
-        Deposit: [{ start: "07:00", end: "16:00", hours: 9 }],
-        Withdrawal: [{ start: "07:00", end: "16:00", hours: 9 }]
+        "Morning": [{ start: "04:00", end: "16:00", hours: 12 }],
+        "Night": [{ start: "16:00", end: "04:00", hours: 12 }]
       }
     },
-
-    "Trainee (N)": {
-      icon: Sunset,
-      CSR: {
-        bg: "bg-blue-500/15",
-        text: "text-blue-400",
-        border: "border-blue-500/30"
-      },
-      Deposit: {
-        bg: "bg-emerald-500/15",
-        text: "text-emerald-400",
-        border: "border-emerald-500/30"
-      },
-      Withdrawal: {
-        bg: "bg-purple-500/15",
-        text: "text-purple-400",
-        border: "border-purple-500/30"
-      },
-      Marketing: {
-        bg: "bg-orange-500/15",
-        text: "text-orange-400",
-        border: "border-orange-500/30"
-      },
-
+    Marketing: {
+      shifts: ["Marketing/SEO"],
       times: {
-        Withdrawal: [{ start: "19:00", end: "04:00", hours: 9 }]
-      }
-    },
-
-    Night: {
-      icon: Moon,
-      CSR: {
-        bg: "bg-blue-500/15",
-        text: "text-blue-400",
-        border: "border-blue-500/30"
-      },
-      Deposit: {
-        bg: "bg-emerald-500/15",
-        text: "text-emerald-400",
-        border: "border-emerald-500/30"
-      },
-      Withdrawal: {
-        bg: "bg-purple-500/15",
-        text: "text-purple-400",
-        border: "border-purple-500/30"
-      },
-      Marketing: {
-        bg: "bg-orange-500/15",
-        text: "text-orange-400",
-        border: "border-orange-500/30"
-      },
-
-      times: {
-        CSR: [{ start: "16:00", end: "04:00", hours: 12 }],
-
-        Deposit: [
-          { start: "16:00", end: "04:00", hours: 12 },
-          { start: "07:00", end: "16:00", hours: 9 } // I kept your line
-        ],
-
-        Withdrawal: [
-          { start: "16:00", end: "04:00", hours: 12 }
+        "Marketing/SEO": [
+          { start: "12:00", end: "24:00", hours: 12 },
+          { start: "12:00", end: "22:00", hours: 10 }
         ]
       }
     }
   };
 
+  // Shift icons
+  const shiftIcons = {
+    "Morning": Sunrise,
+    "Night": Moon,
+    "Mid Shift": Sun,
+    "Trainee (M)": Sun,
+    "Trainee (N)": Sunset,
+    "Marketing/SEO": TrendingUp
+  };
 
-  const shiftOptions = ["Morning", "Trainee (M)", "Trainee (N)", "Night"];
-
+  // Roles to exclude from shift management
+  const excludedRoles = ["Super-Admin", "Admin", "Checker"];
 
   // Format time to 12-hour format
   const formatTime = (time24) => {
@@ -206,18 +124,21 @@ const ShiftManagement = () => {
     return `${hour12}:${minutes} ${period}`;
   };
 
-  const getShiftTimeDisplay = (shift) => {
-    const fixedTimes = {
-      "Morning": [{ start: "04:00", end: "16:00", hours: 12 }],
-      "Trainee (M)": [{ start: "07:00", end: "16:00", hours: 9 }],
-      "Trainee (N)": [{ start: "19:00", end: "04:00", hours: 9 }],
-      "Night": [{ start: "16:00", end: "04:00", hours: 12 }]
-    };
-
-    return fixedTimes[shift] || [];
+  // Get shift time display based on department and shift
+  const getShiftTimeDisplay = (shift, department) => {
+    if (!department || !shift) return [];
+    
+    const deptShifts = departmentShiftOptions[department];
+    if (!deptShifts) return [];
+    
+    return deptShifts.times[shift] || [];
   };
 
-
+  // Get available shifts for a department
+  const getAvailableShiftsForDepartment = (department) => {
+    const deptShifts = departmentShiftOptions[department];
+    return deptShifts ? deptShifts.shifts : [];
+  };
 
   // Format Philippine Peso
   const formatPHP = (amount) => {
@@ -286,12 +207,19 @@ const ShiftManagement = () => {
     });
   };
 
+  // Filter users: exclude Super-Admin, Admin, and Checker roles
   const filteredUsers = users?.filter((user) => {
+    // Exclude users with Super-Admin, Admin, or Checker roles
+    if (excludedRoles.includes(user.role)) {
+      return false;
+    }
+
     const matchesSearch =
       user.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.agent?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept =
       departmentFilter === "all" || user.department === departmentFilter;
+    
     return matchesSearch && matchesDept;
   });
 
@@ -318,7 +246,7 @@ const ShiftManagement = () => {
                 </button>
                 <div>
                   <h1 className="text-2xl font-bold text-white">Shift Management</h1>
-                  <p className="text-slate-400 text-sm mt-0.5">Real-time workforce scheduling system</p>
+                  <p className="text-slate-400 text-sm mt-0.5">Manage shifts for Team-Leaders and Users only</p>
                 </div>
               </div>
 
@@ -347,7 +275,7 @@ const ShiftManagement = () => {
                     <option value="all" className="bg-slate-900">All Departments</option>
                     <option value="CSR" className="bg-slate-900">CSR</option>
                     <option value="Deposit" className="bg-slate-900">Deposit</option>
-                    <option value="Withdrawal" className="bg-slate-900">Withdrawal</option>
+                    <option value="Withdraw" className="bg-slate-900">Withdraw</option>
                     <option value="Marketing" className="bg-slate-900">Marketing</option>
                   </select>
                 </div>
@@ -408,13 +336,13 @@ const ShiftManagement = () => {
 
                 <tbody className="divide-y divide-slate-800/50">
                   {filteredUsers?.map((employee) => {
-                    const shiftData = shiftConfig[employee.Shift] || {};
-                    const ShiftIcon = shiftData.icon || Clock;
+                    const ShiftIcon = shiftIcons[employee.Shift] || Clock;
                     const deptConfig = departmentConfig[employee.department] || departmentConfig.CSR;
                     const shiftColors = departmentConfig[employee.department] || departmentConfig["CSR"];
 
                     const isAnimating = animateRow === employee._id;
                     const timeSlots = getShiftTimeDisplay(employee.Shift, employee.department);
+                    const availableShifts = getAvailableShiftsForDepartment(employee.department);
 
                     return (
                       <tr
@@ -428,9 +356,14 @@ const ShiftManagement = () => {
                             <div className="text-sm font-semibold text-white capitalize">
                               {employee.FullName}
                             </div>
-                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium w-fit ${deptConfig.badge} transition-all duration-200 ${deptConfig.hover}`}>
-                              <Users className="w-3 h-3" />
-                              {employee.department}
+                            <div className="flex items-center gap-2">
+                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium w-fit ${deptConfig.badge} transition-all duration-200 ${deptConfig.hover}`}>
+                                <Users className="w-3 h-3" />
+                                {employee.department}
+                              </div>
+                              <span className="text-xs px-2 py-1 rounded-md bg-gray-500/20 text-gray-300 border border-gray-500/30">
+                                {employee.role}
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -455,12 +388,9 @@ const ShiftManagement = () => {
                           </div>
                         </td>
 
-
                         {/* Current Shift Column */}
                         <td className="px-6 py-4">
                           <div className={`inline-flex flex-col gap-1.5 ${shiftColors.bg} ${shiftColors.border} px-4 py-2.5 rounded-lg transition-all duration-200 hover:scale-105`}>
-
-
                             <div className="flex items-center gap-2">
                               <ShiftIcon className={`w-4 h-4 ${shiftColors.text}`} />
                               <span className={`font-semibold text-sm ${shiftColors.text}`}>
@@ -468,15 +398,15 @@ const ShiftManagement = () => {
                               </span>
                             </div>
                             <div className="flex flex-col gap-1">
-                              {Array.isArray(timeSlots) ? (
+                              {Array.isArray(timeSlots) && timeSlots.length > 0 ? (
                                 timeSlots.map((slot, idx) => (
                                   <div key={idx} className={`text-xs font-medium ${shiftColors.text} opacity-90`}>
-                                    {slot.text}
+                                    {formatTime(slot.start)} - {formatTime(slot.end)} ({slot.hours} hrs)
                                   </div>
                                 ))
                               ) : (
                                 <div className={`text-xs font-medium ${shiftColors.text} opacity-90`}>
-                                  {timeSlots[0]?.text}
+                                  {employee.workingHour || "No schedule"}
                                 </div>
                               )}
                             </div>
@@ -491,20 +421,19 @@ const ShiftManagement = () => {
                             className="w-52 bg-slate-800/50 text-white text-sm border border-slate-700/50 rounded-lg px-3.5 py-2.5 font-medium focus:border-slate-600 focus:bg-slate-800/70 focus:outline-none transition-all duration-200 hover:bg-slate-800/70 cursor-pointer"
                           >
                             <option value="" className="bg-slate-900">Select new shift</option>
-
-                            {shiftOptions.map((shift) => {
-                              const t = getShiftTimeDisplay(shift)[0];
-
+                            {availableShifts.map((shift) => {
+                              const shiftTimes = getShiftTimeDisplay(shift, employee.department);
+                              const firstTimeSlot = shiftTimes[0];
+                              
                               return (
                                 <option key={shift} value={shift} className="bg-slate-900">
-                                  {shift} — {formatTime(t.start)} – {formatTime(t.end)}
+                                  {shift} — {firstTimeSlot ? 
+                                    `${formatTime(firstTimeSlot.start)} – ${formatTime(firstTimeSlot.end)}` : 
+                                    "No schedule"}
                                 </option>
                               );
                             })}
-
-
                           </select>
-
                         </td>
 
                         {/* Start Date Column */}
@@ -543,7 +472,7 @@ const ShiftManagement = () => {
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <AlertCircle className="w-12 h-12 text-slate-600 mb-4" />
                 <p className="text-slate-400 text-lg font-medium mb-2">No employees found</p>
-                <p className="text-slate-500 text-sm">Try adjusting your search or filters</p>
+                <p className="text-slate-500 text-sm">Only Team-Leader and User roles are shown in shift management</p>
               </div>
             )}
           </div>
