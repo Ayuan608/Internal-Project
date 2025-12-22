@@ -2,7 +2,6 @@ import "./App.css";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Suspense } from "react";
 
-// Lazy load all components from centralized routes
 import {
   Login,
   Layout,
