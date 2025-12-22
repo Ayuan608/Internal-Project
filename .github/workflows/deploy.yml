@@ -1,4 +1,4 @@
-name: Auto Deploy Frontend
+name: Auto Deploy Frontend (Server Build)
 
 on:
   push:
@@ -13,27 +13,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
-        run: npm run build
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to Server
+      - name: Deploy & Build on Server
         run: |
-          rsync -avz --delete \
-          -e "ssh -o StrictHostKeyChecking=no" \
-          dist/ \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/www/wwwroot/Internal-Project/
+          ssh -o StrictHostKeyChecking=no \
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+
+          cd /www/wwwroot/Internal-Project
+
+          echo "🔄 Pulling latest code..."
+          git pull origin main
+
+          echo "📦 Installing dependencies..."
+          npm install
+
+          echo "🏗️ Building frontend..."
+          npm run build
+
+          echo "✅ Deployment completed"
+
+          EOF
