@@ -288,6 +288,7 @@ export const updateDayOffStatus = createAsyncThunk(
   }
 );
 
+
 // SLICE
 const attendanceSlice = createSlice({
   name: "attendance",
@@ -340,9 +341,9 @@ const attendanceSlice = createSlice({
           // Update today's attendance
           state.todayAttendance = newRecord;
           state.attendance = newRecord;
-          
+
           // Add to attendance list
-          const existingIndex = state.attendanceList.findIndex(row => 
+          const existingIndex = state.attendanceList.findIndex(row =>
             new Date(row.date).toDateString() === new Date(newRecord.date).toDateString()
           );
           if (existingIndex !== -1) {
@@ -367,8 +368,8 @@ const attendanceSlice = createSlice({
         if (newRecord) {
           state.todayAttendance = newRecord;
           state.attendance = newRecord;
-          
-          const existingIndex = state.attendanceList.findIndex(row => 
+
+          const existingIndex = state.attendanceList.findIndex(row =>
             new Date(row.date).toDateString() === new Date(newRecord.date).toDateString()
           );
           if (existingIndex !== -1) {
@@ -392,16 +393,16 @@ const attendanceSlice = createSlice({
       .addCase(startBreak.fulfilled, (state, action) => {
         state.breaksLoading = false;
         state.success = true;
-        
+
         // Update today's attendance breaks
         if (state.todayAttendance) {
           const breakType = action.meta.arg.breakType;
           const now = new Date();
-          
+
           if (!state.todayAttendance[`${breakType}Breaks`]) {
             state.todayAttendance[`${breakType}Breaks`] = [];
           }
-          
+
           state.todayAttendance[`${breakType}Breaks`].push({
             start: now,
             _id: `temp_${Date.now()}`
@@ -419,11 +420,11 @@ const attendanceSlice = createSlice({
       .addCase(endBreak.fulfilled, (state, action) => {
         state.breaksLoading = false;
         state.success = true;
-        
+
         if (state.todayAttendance) {
           const breakType = action.meta.arg.breakType;
           const now = new Date();
-          
+
           const breaks = state.todayAttendance[`${breakType}Breaks`];
           if (breaks && breaks.length > 0) {
             const lastBreak = breaks[breaks.length - 1];
@@ -452,7 +453,7 @@ const attendanceSlice = createSlice({
       // =============== ATTENDANCE DATA FETCHING ===============
       .addCase(getTodayAttendance.fulfilled, (state, action) => {
         console.log("✅ getTodayAttendance fulfilled:", action.payload);
-        
+
         if (action.payload.success) {
           state.todayAttendance = action.payload.attendance || null;
           state.success = true;
@@ -462,7 +463,7 @@ const attendanceSlice = createSlice({
 
       .addCase(getUserAttendance.fulfilled, (state, action) => {
         console.log("✅ getUserAttendance fulfilled:", action.payload);
-        
+
         if (action.payload.success) {
           state.attendanceList = action.payload.attendance || [];
           state.pagination = action.payload.pagination || null;
@@ -479,7 +480,7 @@ const attendanceSlice = createSlice({
       })
       .addCase(getAllAttendance.fulfilled, (state, action) => {
         console.log("🎯 getAllAttendance.fulfilled - Processing data");
-        
+
         if (action.payload.success) {
           state.allAttendance = action.payload.attendance || [];
           state.pagination = action.payload.pagination || {
@@ -487,9 +488,9 @@ const attendanceSlice = createSlice({
             page: 1,
             pages: 1
           };
-          
+
           console.log(`📊 Set ${state.allAttendance.length} attendance records`);
-          
+
           // Debug first record
           if (state.allAttendance.length > 0) {
             const first = state.allAttendance[0];
@@ -511,7 +512,7 @@ const attendanceSlice = createSlice({
           console.error("❌ API returned success: false", action.payload);
           state.allAttendance = [];
         }
-        
+
         state.isLoading = false;
         state.success = true;
         state.error = null;
@@ -583,11 +584,7 @@ const attendanceSlice = createSlice({
         state.error = action.payload;
         state.success = false;
       })
-      .addCase(getDayOffRequests.fulfilled, (state, action) => {
-        state.dayOffRequests = action.payload.requests || [];
-        state.success = true;
-        state.isLoading = false;
-      })
+      
 
       .addCase(updateDayOffStatus.pending, (state) => {
         state.isLoading = true;
@@ -609,6 +606,11 @@ const attendanceSlice = createSlice({
         }
       })
 
+      .addCase(getDayOffRequests.fulfilled, (state, action) => {
+        state.dayOffRequests = action.payload.requests || [];
+        state.success = true;
+        state.isLoading = false;
+      })
 
       .addCase(updateDayOffStatus.rejected, (state, action) => {
         state.isLoading = false;
