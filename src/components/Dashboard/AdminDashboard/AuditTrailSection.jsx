@@ -1,184 +1,186 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Download, Search, Filter, Calendar, User, Settings, FileText, Shield, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { getAuditTrail } from "../../../redux/auditTrailSlice";
 
-const MOCK_AUDIT_LOGS = [
-  {
-    id: "1",
-    timestamp: "2025-12-08T09:05:10",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "Directory",
-    eventType: "MANPOWER_CREATE",
-    entityType: "User",
-    entityLabel: "Rahul Sharma (CSR Department)",
-    details: "Added new manpower record with role CSR and day shift.",
-  },
-  {
-    id: "2",
-    timestamp: "2025-12-08T09:22:34",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "OverallAttendance",
-    eventType: "ATTENDANCE_STATUS_UPDATE",
-    entityType: "Attendance",
-    entityLabel: "Attendance for Rahul Sharma on 2025-12-08",
-    details: "Status changed from Late to Half Day with remark: approved by Admin.",
-  },
-  {
-    id: "3",
-    timestamp: "2025-12-08T09:40:02",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "LoginCredentials",
-    eventType: "CREDENTIAL_UPDATE",
-    entityType: "Credentials",
-    entityLabel: "Login for user EMP-102 (Simran Kaur)",
-    details: "Updated login email from simran.old@example.com to simran.new@example.com.",
-  },
-  {
-    id: "4",
-    timestamp: "2025-12-08T09:55:18",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "LoginCredentials",
-    eventType: "CREDENTIAL_DELETE",
-    entityType: "Credentials",
-    entityLabel: "Login for user EMP-099 (Meera Joshi)",
-    details: "Disabled login after resignation (soft deactivation).",
-  },
-  {
-    id: "5",
-    timestamp: "2025-12-08T10:10:45",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "Announcements",
-    eventType: "ANNOUNCEMENT_CREATE",
-    entityType: "Announcement",
-    entityLabel: "Dec 2025 – Attendance Policy Reminder",
-    details: "Created announcement targeting all departments.",
-  },
-  {
-    id: "6",
-    timestamp: "2025-12-08T10:12:30",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "Announcements",
-    eventType: "ANNOUNCEMENT_SEND",
-    entityType: "Announcement",
-    entityLabel: "Dec 2025 – Attendance Policy Reminder",
-    details: "Published announcement to CSR, Deposit, Withdrawal, Marketing.",
-  },
-  {
-    id: "7",
-    timestamp: "2025-12-08T11:05:00",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "Reports",
-    eventType: "REPORT_CREATE",
-    entityType: "Report",
-    entityLabel: "CSR Monthly Attendance Summary – Nov 2025",
-    details: "Created monthly attendance and violation summary for CSR department.",
-  },
-  {
-    id: "8",
-    timestamp: "2025-12-08T11:06:40",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "Reports",
-    eventType: "REPORT_SEND_TO_SUPER_ADMIN",
-    entityType: "Report",
-    entityLabel: "CSR Monthly Attendance Summary – Nov 2025",
-    details: "Sent report to Super Admin for review.",
-  },
-  {
-    id: "9",
-    timestamp: "2025-12-08T11:30:15",
-    actorName: "Lekh Raj",
-    actorRole: "Admin",
-    module: "ShiftingManagement",
-    eventType: "SHIFT_CHANGE",
-    entityType: "Shift",
-    entityLabel: "All CSR Department members",
-    details: "Changed shift from 09:30–18:30 to 10:00–19:00 effective 2025-12-15.",
-  },
-  {
-    id: "10",
-    timestamp: "2025-12-08T12:05:55",
-    actorName: "Chandan Kumar",
-    actorRole: "Checker",
-    module: "OverallAttendance",
-    eventType: "FILE_EXPORT",
-    entityType: "Export",
-    entityLabel: "overall-attendance-2025-12-08.csv",
-    details: "Exported overall attendance with filters: Dept: CSR, Date: 2025-12-08, Status: Absent, Late.",
-  },
-  {
-    id: "11",
-    timestamp: "2025-12-08T12:15:20",
-    actorName: "Chandan Kumar",
-    actorRole: "Checker",
-    module: "DailyPunchRecord",
-    eventType: "FILE_EXPORT",
-    entityType: "Export",
-    entityLabel: "punch-record-CSR-2025-12-07.csv",
-    details: "Exported daily punch record for CSR department (view-only permission).",
-  },
-  {
-    id: "12",
-    timestamp: "2025-12-08T13:05:05",
-    actorName: "Rahul Sharma",
-    actorRole: "Team Leader – CSR",
-    module: "ScheduleRestday",
-    eventType: "DAYOFF_APPROVE",
-    entityType: "DayOffRequest",
-    entityLabel: "Day off request REQ-CSR-145 (Simran Kaur)",
-    details: "Approved day off on 2025-12-10 (Type: Vacation) for CSR member Simran Kaur.",
-  },
-  {
-    id: "13",
-    timestamp: "2025-12-08T13:25:30",
-    actorName: "Rahul Sharma",
-    actorRole: "Team Leader – CSR",
-    module: "DailyPunchRecord",
-    eventType: "WARNING_LETTER_SEND",
-    entityType: "WarningLetter",
-    entityLabel: "Warning letter WL-2025-077 (Deepak Singh)",
-    details: "Sent warning letter for 3 consecutive late punches (2025-12-01 to 2025-12-03).",
-  },
-  {
-    id: "14",
-    timestamp: "2025-12-08T14:00:10",
-    actorName: "Rahul Sharma",
-    actorRole: "Team Leader – CSR",
-    module: "ShiftingManagement",
-    eventType: "SHIFT_CHANGE",
-    entityType: "Shift",
-    entityLabel: "CSR Department members: EMP-101, EMP-102, EMP-103",
-    details: "Changed shift from 12:00–21:00 to 14:00–23:00 for selected CSR team members.",
-  },
-  {
-    id: "15",
-    timestamp: "2025-12-08T15:10:00",
-    actorName: "Suraj Sharma",
-    actorRole: "Super Admin",
-    module: "Files",
-    eventType: "FILE_DELETE",
-    entityType: "File",
-    entityLabel: "old-audit-backup-2025-10.csv",
-    details: "Deleted outdated audit log backup file.",
-  },
-  {
-    id: "16",
-    timestamp: "2025-12-08T15:20:45",
-    actorName: "Suraj Sharma",
-    actorRole: "Super Admin",
-    module: "Exports",
-    eventType: "FILE_EXPORT",
-    entityType: "Export",
-    entityLabel: "full-audit-trail-2025-12-08.csv",
-    details: "Exported full audit trail for daily governance review and backup.",
-  },
-];
+// const MOCK_AUDIT_LOGS = [
+//   {
+//     id: "1",
+//     timestamp: "2025-12-08T09:05:10",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "Directory",
+//     eventType: "MANPOWER_CREATE",
+//     entityType: "User",
+//     entityLabel: "Rahul Sharma (CSR Department)",
+//     details: "Added new manpower record with role CSR and day shift.",
+//   },
+//   {
+//     id: "2",
+//     timestamp: "2025-12-08T09:22:34",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "OverallAttendance",
+//     eventType: "ATTENDANCE_STATUS_UPDATE",
+//     entityType: "Attendance",
+//     entityLabel: "Attendance for Rahul Sharma on 2025-12-08",
+//     details: "Status changed from Late to Half Day with remark: approved by Admin.",
+//   },
+//   {
+//     id: "3",
+//     timestamp: "2025-12-08T09:40:02",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "LoginCredentials",
+//     eventType: "CREDENTIAL_UPDATE",
+//     entityType: "Credentials",
+//     entityLabel: "Login for user EMP-102 (Simran Kaur)",
+//     details: "Updated login email from simran.old@example.com to simran.new@example.com.",
+//   },
+//   {
+//     id: "4",
+//     timestamp: "2025-12-08T09:55:18",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "LoginCredentials",
+//     eventType: "CREDENTIAL_DELETE",
+//     entityType: "Credentials",
+//     entityLabel: "Login for user EMP-099 (Meera Joshi)",
+//     details: "Disabled login after resignation (soft deactivation).",
+//   },
+//   {
+//     id: "5",
+//     timestamp: "2025-12-08T10:10:45",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "Announcements",
+//     eventType: "ANNOUNCEMENT_CREATE",
+//     entityType: "Announcement",
+//     entityLabel: "Dec 2025 – Attendance Policy Reminder",
+//     details: "Created announcement targeting all departments.",
+//   },
+//   {
+//     id: "6",
+//     timestamp: "2025-12-08T10:12:30",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "Announcements",
+//     eventType: "ANNOUNCEMENT_SEND",
+//     entityType: "Announcement",
+//     entityLabel: "Dec 2025 – Attendance Policy Reminder",
+//     details: "Published announcement to CSR, Deposit, Withdrawal, Marketing.",
+//   },
+//   {
+//     id: "7",
+//     timestamp: "2025-12-08T11:05:00",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "Reports",
+//     eventType: "REPORT_CREATE",
+//     entityType: "Report",
+//     entityLabel: "CSR Monthly Attendance Summary – Nov 2025",
+//     details: "Created monthly attendance and violation summary for CSR department.",
+//   },
+//   {
+//     id: "8",
+//     timestamp: "2025-12-08T11:06:40",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "Reports",
+//     eventType: "REPORT_SEND_TO_SUPER_ADMIN",
+//     entityType: "Report",
+//     entityLabel: "CSR Monthly Attendance Summary – Nov 2025",
+//     details: "Sent report to Super Admin for review.",
+//   },
+//   {
+//     id: "9",
+//     timestamp: "2025-12-08T11:30:15",
+//     actorName: "Lekh Raj",
+//     actorRole: "Admin",
+//     module: "ShiftingManagement",
+//     eventType: "SHIFT_CHANGE",
+//     entityType: "Shift",
+//     entityLabel: "All CSR Department members",
+//     details: "Changed shift from 09:30–18:30 to 10:00–19:00 effective 2025-12-15.",
+//   },
+//   {
+//     id: "10",
+//     timestamp: "2025-12-08T12:05:55",
+//     actorName: "Chandan Kumar",
+//     actorRole: "Checker",
+//     module: "OverallAttendance",
+//     eventType: "FILE_EXPORT",
+//     entityType: "Export",
+//     entityLabel: "overall-attendance-2025-12-08.csv",
+//     details: "Exported overall attendance with filters: Dept: CSR, Date: 2025-12-08, Status: Absent, Late.",
+//   },
+//   {
+//     id: "11",
+//     timestamp: "2025-12-08T12:15:20",
+//     actorName: "Chandan Kumar",
+//     actorRole: "Checker",
+//     module: "DailyPunchRecord",
+//     eventType: "FILE_EXPORT",
+//     entityType: "Export",
+//     entityLabel: "punch-record-CSR-2025-12-07.csv",
+//     details: "Exported daily punch record for CSR department (view-only permission).",
+//   },
+//   {
+//     id: "12",
+//     timestamp: "2025-12-08T13:05:05",
+//     actorName: "Rahul Sharma",
+//     actorRole: "Team Leader – CSR",
+//     module: "ScheduleRestday",
+//     eventType: "DAYOFF_APPROVE",
+//     entityType: "DayOffRequest",
+//     entityLabel: "Day off request REQ-CSR-145 (Simran Kaur)",
+//     details: "Approved day off on 2025-12-10 (Type: Vacation) for CSR member Simran Kaur.",
+//   },
+//   {
+//     id: "13",
+//     timestamp: "2025-12-08T13:25:30",
+//     actorName: "Rahul Sharma",
+//     actorRole: "Team Leader – CSR",
+//     module: "DailyPunchRecord",
+//     eventType: "WARNING_LETTER_SEND",
+//     entityType: "WarningLetter",
+//     entityLabel: "Warning letter WL-2025-077 (Deepak Singh)",
+//     details: "Sent warning letter for 3 consecutive late punches (2025-12-01 to 2025-12-03).",
+//   },
+//   {
+//     id: "14",
+//     timestamp: "2025-12-08T14:00:10",
+//     actorName: "Rahul Sharma",
+//     actorRole: "Team Leader – CSR",
+//     module: "ShiftingManagement",
+//     eventType: "SHIFT_CHANGE",
+//     entityType: "Shift",
+//     entityLabel: "CSR Department members: EMP-101, EMP-102, EMP-103",
+//     details: "Changed shift from 12:00–21:00 to 14:00–23:00 for selected CSR team members.",
+//   },
+//   {
+//     id: "15",
+//     timestamp: "2025-12-08T15:10:00",
+//     actorName: "Suraj Sharma",
+//     actorRole: "Super Admin",
+//     module: "Files",
+//     eventType: "FILE_DELETE",
+//     entityType: "File",
+//     entityLabel: "old-audit-backup-2025-10.csv",
+//     details: "Deleted outdated audit log backup file.",
+//   },
+//   {
+//     id: "16",
+//     timestamp: "2025-12-08T15:20:45",
+//     actorName: "Suraj Sharma",
+//     actorRole: "Super Admin",
+//     module: "Exports",
+//     eventType: "FILE_EXPORT",
+//     entityType: "Export",
+//     entityLabel: "full-audit-trail-2025-12-08.csv",
+//     details: "Exported full audit trail for daily governance review and backup.",
+//   },
+// ];
 
 const moduleOptions = [
   "All Modules",
@@ -215,6 +217,7 @@ const eventTypeOptions = [
 ];
 
 const AuditTrailSection = () => {
+  const dispatch = useDispatch()
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [moduleFilter, setModuleFilter] = useState("All Modules");
@@ -222,14 +225,21 @@ const AuditTrailSection = () => {
   const [actorFilter, setActorFilter] = useState("All Users");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  // const [auditTrail, setAuditTrail] = useState([]);
+  const { auditTrails = [] } = useSelector(state => state.auditTrail || {});
+
+  useEffect(() => {
+    dispatch(getAuditTrail());
+  }, []);
+
 
   const actorOptions = useMemo(() => {
-    const set = new Set(MOCK_AUDIT_LOGS.map((l) => l.actorName));
+    const set = new Set(auditTrails.map((l) => l.actorName));
     return ["All Users", ...Array.from(set)];
   }, []);
 
   const filteredLogs = useMemo(() => {
-    return MOCK_AUDIT_LOGS.filter((log) => {
+    return auditTrails.filter((log) => {
       const dateOnly = log.timestamp.slice(0, 10);
       let matchDate = true;
       if (dateFrom && dateOnly < dateFrom) matchDate = false;
@@ -246,9 +256,9 @@ const AuditTrailSection = () => {
       const matchSearch = !q
         ? true
         : [log.actorName, log.actorRole, log.entityLabel, log.details, log.module]
-            .join(" ")
-            .toLowerCase()
-            .includes(q);
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
 
       return matchDate && matchModule && matchEvent && matchActor && matchSearch;
     }).sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
@@ -279,6 +289,7 @@ const AuditTrailSection = () => {
       )
       .join("\n");
 
+    console.log("filterd", filteredLogs);
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -408,11 +419,10 @@ const AuditTrailSection = () => {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded-xl border px-6 text-sm font-medium transition-all ${
-              showFilters
-                ? "border-blue-500/50 bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/20"
-                : "border-slate-700/50 bg-slate-900/60 text-slate-400 hover:bg-slate-800/60"
-            }`}
+            className={`flex items-center gap-2 rounded-xl border px-6 text-sm font-medium transition-all ${showFilters
+              ? "border-blue-500/50 bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/20"
+              : "border-slate-700/50 bg-slate-900/60 text-slate-400 hover:bg-slate-800/60"
+              }`}
           >
             <Filter className="h-4 w-4" />
             Filters
@@ -505,8 +515,8 @@ const AuditTrailSection = () => {
         {/* Results Count */}
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-slate-400">
-            Showing <span className="font-semibold text-blue-400">{filteredLogs.length}</span> of{" "}
-            <span className="font-semibold text-slate-300">{MOCK_AUDIT_LOGS.length}</span> records
+            Showing <span className="font-semibold text-blue-400">{auditTrails.length}</span> of{" "}
+            <span className="font-semibold text-slate-300">{auditTrails.length}</span> records
           </p>
         </div>
 
@@ -545,7 +555,7 @@ const AuditTrailSection = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.length === 0 ? (
+                {auditTrails.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
@@ -559,7 +569,7 @@ const AuditTrailSection = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log, idx) => (
+                  auditTrails.map((log, idx) => (
                     <tr
                       key={log.id}
                       className="group border-b border-slate-800/50 transition-colors hover:bg-slate-800/30"
@@ -567,31 +577,31 @@ const AuditTrailSection = () => {
                       <Td>
                         <div className="flex items-center gap-2 text-xs text-slate-400">
                           <Clock className="h-3.5 w-3.5 text-slate-600" />
-                          {formatTimestamp(log.timestamp)}
+                          {formatTimestamp(log.date)}
                         </div>
                       </Td>
                       <Td>
                         <div className="flex items-center gap-3">
-                         
+
                           <div>
-                            <div className="text-sm font-medium text-slate-200">{log.actorName}</div>
+                            <div className="text-sm font-medium text-slate-200">{log.userName}</div>
                             <div className="text-xs text-slate-500">{log.actorRole}</div>
                           </div>
                         </div>
                       </Td>
                       <Td>
                         <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800/50 px-2.5 py-1 text-xs font-medium text-slate-300">
-                          {log.module}
+                          {log.action}
                         </span>
                       </Td>
                       <Td>
-                        <div className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium ${getEventColor(log.eventType)}`}>
-                          {getEventIcon(log.eventType)}
-                          {renderEventLabel(log.eventType)}
+                        <div className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium ${getEventColor(log.details)}`}>
+                          {getEventIcon(log.details)}
+                          {renderEventLabel(log.details)}
                         </div>
                       </Td>
                       <Td>
-                        <div className="text-sm font-medium text-slate-300">{log.entityLabel}</div>
+                        <div className="text-sm font-medium text-slate-300">{log.target}</div>
                       </Td>
                       <Td>
                         <div className="text-sm text-slate-400">{log.details}</div>

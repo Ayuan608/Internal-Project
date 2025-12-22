@@ -9,18 +9,20 @@ import combinedQuotaReducer from './combinedQuotaSlice'
 import activitySliceReducer from './activitylogSlice'
 import employeeOfMonthReducer from './employeeOfMonthSlice'
 import statSliceReducer from './statSlice'
+import auditTrailSliceReducer from './auditTrailSlice'
 const store = configureStore({
     reducer: {
-        stat:statSliceReducer,
+        stat: statSliceReducer,
         auth: authSliceReducer,
         attendance: attendenceSliceReducer,
         report: reportSliceReducer,
-        activity:activitySliceReducer,
+        activity: activitySliceReducer,
         sheet: sheetSliceReducer,
         notifications: notificationSliceReducer,
         announcements: announcementSliceReducer,
         combinedQuota: combinedQuotaReducer,
-        employeeOfMonth:employeeOfMonthReducer
+        employeeOfMonth: employeeOfMonthReducer,
+        auditTrail: auditTrailSliceReducer,
     },
     devtools: true
 })
