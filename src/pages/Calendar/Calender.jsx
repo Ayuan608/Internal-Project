@@ -31,7 +31,6 @@ const localizer = dateFnsLocalizer({
 function CalendarPage() {
     const dispatch = useDispatch();
     const { events, createEventLoading, createEventError } = useSelector(state => state.announcements);
-    console.log("events", events)
 
     const [attachment, setAttachment] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -185,7 +184,7 @@ function CalendarPage() {
             id: evt._id || evt.id,
             title: evt.title,
             start: new Date(evt.startDate),
-            end: new Date(evt.endDate),
+            end: new Date(evt.startDate),
             notes: evt.notes || "",
             link: evt.link || "",
             resource: evt,
@@ -200,7 +199,7 @@ function CalendarPage() {
                 <ReactCalendar
                     className="rounded-lg overflow-hidden shadow-md"
                     onChange={handleDateChange}
-                    value={selectedDate}
+                // value={selectedDate}
                 />
                 <button
                     onClick={() => setSelectedDate(new Date())}
@@ -219,18 +218,19 @@ function CalendarPage() {
                     defaultView={Views.MONTH}
                     view={view}
                     onView={setView}
-                    views={[Views.DAY, Views.WEEK, Views.MONTH]}
+                    views={[Views.MONTH]}
                     style={{ height: "90vh" }}
                     selectable
                     onSelectSlot={handleSelectSlot}
                     onSelectEvent={handleDelete}
                     onNavigate={setSelectedDate}
                     popup
+                    maxRows={1}
                     components={{ toolbar: Toolbar }}
                 />
             </div>
 
-            {/* NEW EVENT MODAL */}
+            {/* NEW EVENMODAL */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur flex justify-center items-center z-50">
                     <motion.div
@@ -298,7 +298,7 @@ function CalendarPage() {
                             <div>
                                 <label className="block text-sm text-gray-400 mb-2">Add Link</label>
                                 <textarea
-                                    className="w-full h-32 p-3 rounded bg-[rgba(59,130,246,0.06)] border border-gray-800 text-white"
+                                    className="w-full h-22 p-3 rounded bg-[rgba(59,130,246,0.06)] border border-gray-800 text-white"
                                     placeholder="Add event details..."
                                     value={newEvent.link}
                                     onChange={(e) => setNewEvent({ ...newEvent, link: e.target.value })}
