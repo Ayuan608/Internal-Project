@@ -3,13 +3,14 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  base: '/',
   plugins: [
     react({
       fastRefresh: true,
     }),
     tailwindcss()
   ],
-  
+
   server: {
     port: 5173,
     strictPort: false,
@@ -18,7 +19,7 @@ export default defineConfig({
       overlay: false
     }
   },
-  
+
   build: {
     rollupOptions: {
       output: {
@@ -33,9 +34,9 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 1000,
-    minify: 'esbuild', 
+    minify: 'esbuild',
   },
-  
+
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']
   }
