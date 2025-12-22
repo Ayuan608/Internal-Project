@@ -38,4 +38,4 @@ jobs:
           rsync -avz --delete \
           -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
           dist/ \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/www/wwwroot/frontend-live/
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/www/wwwroot/Internal-Project /
