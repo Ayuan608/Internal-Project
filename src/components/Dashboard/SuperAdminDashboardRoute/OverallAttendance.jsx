@@ -664,20 +664,37 @@ const OverallAttendanceDashboard = () => {
             </div>
             {/* Department Analytics */}
             <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-lg font-semibold text-white mb-4">Department Performance</h3>
-              <ResponsiveContainer style={{ background: "transparent" }} width="100%" height={300}>
-                <BarChart data={deptAnalytics}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
-                  <Legend />
-                  <Bar dataKey="Present" fill={COLORS.present} />
-                  <Bar dataKey="Absent" fill={COLORS.absent} />
-                  <Bar dataKey="Late" fill={COLORS.late} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+  <h3 className="text-lg font-semibold text-white mb-4">
+    Department Performance
+  </h3>
+
+  <ResponsiveContainer width="100%" height={300}>
+    <BarChart data={deptAnalytics}>
+      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+      <XAxis dataKey="name" stroke="#9CA3AF" />
+      <YAxis stroke="#9CA3AF" />
+
+      {/* 🔥 Tooltip fix */}
+      <Tooltip
+        cursor={{ fill: "transparent" }}   // ❌ hover white bg removed
+        contentStyle={{
+          backgroundColor: "#020617",
+          border: "1px solid #334155",
+          borderRadius: "8px",
+          color: "#fff"
+        }}
+      />
+
+      <Legend />
+
+      {/* 🔥 activeBar disabled */}
+      <Bar dataKey="Present" fill={COLORS.present} activeBar={false} />
+      <Bar dataKey="Absent" fill={COLORS.absent} activeBar={false} />
+      <Bar dataKey="Late" fill={COLORS.late} activeBar={false} />
+    </BarChart>
+  </ResponsiveContainer>
+</div>
+
           </div>
           <div
             className={`transition-all duration-500 overflow-hidden ${showCharts ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
@@ -737,7 +754,7 @@ const OverallAttendanceDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
                     <XAxis type="number" stroke="#9CA3AF" />
                     <YAxis dataKey="range" type="category" stroke="#9CA3AF" />
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
+                    <Tooltip   cursor={{ fill: "transparent" }} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
                     <Bar dataKey="count" fill={COLORS.present} />
                   </BarChart>
                 </ResponsiveContainer>

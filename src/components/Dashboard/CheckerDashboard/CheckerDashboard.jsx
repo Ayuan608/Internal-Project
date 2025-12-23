@@ -173,19 +173,9 @@ const CheckerDashboard = () => {
     }
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen  p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading Checker Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#020617]  p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -316,7 +306,7 @@ const CheckerDashboard = () => {
       </div>
 
       {/* Main Content with Tabs */}
-      <div className="bg-slate-900/30 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden">
+      <div className=" backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="border-b border-slate-700/50">
             <TabsList className="bg-transparent p-4">

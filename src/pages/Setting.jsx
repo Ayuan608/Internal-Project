@@ -1,39 +1,154 @@
-import { ArrowRight, Eye, EyeOff, Lock, LogOut, Trash2, TriangleAlert, User } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, LogOut, Trash2, TriangleAlert, User, Settings as SettingsIcon, UserCircle, PieChart, Shield, Bell, Mail, Building2, Wallet, CreditCard, RefreshCw, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { changePassword, getUserData, logout, updateProfile } from "../redux/authSlice";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-function Setting() {
+function Settings() {
     const dispatch = useDispatch()
+    const navigate = useNavigate()
+    const userData = useSelector((state) => state?.auth?.data)
+   const [activeDept, setActiveDept] = useState("CSR");
+    const [activeTab, setActiveTab] = useState("basic-details");
     const [twoFA, setTwoFA] = useState(true);
-    const [previewImage, setImagePreview] = useState("");
+    const [previewImage, setImagePreview] = useState(userData?.avatar || "");
     const [userPassword, setUserPassword] = useState({
         currentPassword: "",
         newPassword: "",
+        confirmPassword: ""
     });
-    const [showcurrentPassword, setShowcurrentPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [data, setData] = useState({
-        name: "",
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false
+    });
+
+    const [userInfo, setUserInfo] = useState({
+        FullName: userData?.FullName || "",
+        email: userData?.email || "",
+        phone: userData?.phone || "",
         avatar: undefined,
-        userID: useSelector((state) => state?.auth?.data?._id),
+        userID: userData?._id,
     });
+
+    // Password handling functions
     const handlePasswordChange = (event) => {
         const { name, value } = event.target;
-        setUserPassword({
-            ...userPassword,
+        setUserPassword(prev => ({
+            ...prev,
             [name]: value,
-        });
+        }));
     };
-    const handleLogoutSession = async (event) => {
-        event.preventDefault();
+    const [quotas, setQuotas] = useState({
+        CSR: {
+            morning9: 500,
+            night5: 600
+        },
+        Deposit: {
+            morning9: 530,
+            night5: 450
+        },
+        Withdrawal: {
+            morning9: 1400,
+            night5: 900
+        }
+    });
+
+    // Default quotas function
+    const getDefaultQuota = (dept, shift) => {
+        if (dept === "CSR") {
+            if (shift === "morning9") return 500;
+            if (shift === "night5") return 600;
+            return 560;
+        } else if (dept === "Deposit") {
+            if (shift === "morning9") return 530;
+            if (shift === "night5") return 450;
+            return 560;
+        } else if (dept === "Withdrawal") {
+            if (shift === "morning9") return 900;
+            if (shift === "night5") return 1000;
+            return 1500;
+        }
+        return 0;
+    };
+
+    // Department colors
+    const deptColors = {
+        CSR: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+        Deposit: "bg-green-500/20 text-green-300 border-green-500/30",
+        Withdrawal: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+        Marketing: "bg-orange-500/20 text-orange-300 border-orange-500/30"
+    };
+
+    // Handle quota change
+    const handleQuotaChange = (dept, shift, value) => {
+        setQuotas(prev => ({
+            ...prev,
+            [dept]: {
+                ...prev[dept],
+                [shift]: parseInt(value) || 0
+            }
+        }));
+    };
+    const handleSaveQuota = (dept) => {
+        toast.success(`${dept} department quotas saved successfully!`);
+        // Here you would typically save to backend
+    };
+    const handleResetAll = () => {
+        setQuotas({
+            CSR: {
+                morning9: getDefaultQuota("CSR", "morning9"),
+                night5: getDefaultQuota("CSR", "night5")
+            },
+            Deposit: {
+                morning9: getDefaultQuota("Deposit", "morning9"),
+                night5: getDefaultQuota("Deposit", "night5")
+            },
+            Withdrawal: {
+                morning9: getDefaultQuota("Withdrawal", "morning9"),
+                night5: getDefaultQuota("Withdrawal", "night5")
+            }
+        });
+        toast.success("All quotas reset to default values!");
+    };
+
+    const departments = [
+        {
+            id: "CSR",
+            name: "CSR Department",
+            icon: <Building2 size={20} />,
+            shifts: [
+                { id: "morning9", label: "Morning 9th Quota" },
+                { id: "night5", label: "Night 5th Quota" }
+            ]
+        },
+        {
+            id: "Deposit",
+            name: "Deposit Department",
+            icon: <Wallet size={20} />,
+            shifts: [
+                { id: "morning9", label: "Morning 9th Quota" },
+                { id: "night5", label: "Night 5th Quota" }
+            ]
+        },
+        {
+            id: "Withdrawal",
+            name: "Withdrawal Department",
+            icon: <CreditCard size={20} />,
+            shifts: [
+                { id: "morning9", label: "Morning 9th Quota" },
+                { id: "night5", label: "Night 5th Quota" }
+            ]
+        }
+    ];
+    const handleLogoutSession = async () => {
         const res = await dispatch(logout());
         if (res?.payload?.success) navigate("/");
     };
+
     const getPasswordStrength = (password) => {
-        if (!password) return { strength: 0, label: '', color: '' };
+        if (!password) return { strength: 0, label: 'Weak', color: 'bg-red-500' };
 
         let score = 0;
         const checks = {
@@ -55,276 +170,702 @@ function Setting() {
         }
     };
 
-    const passwordStrength = getPasswordStrength(userPassword.currentPassword)
+    const passwordStrength = getPasswordStrength(userPassword.newPassword)
 
-    const getImage = (event) => {
-        event.preventDefault();
+    // Image upload handler
+    const handleImageUpload = (event) => {
         const uploadedImage = event.target.files[0];
+        if (!uploadedImage) return;
 
-        if (uploadedImage) {
-            setData({
-                ...data,
-                avatar: uploadedImage,
-            });
-            const fileReader = new FileReader();
-            fileReader.readAsDataURL(uploadedImage);
-            fileReader.addEventListener("load", function () {
-                setImagePreview(this.result);
-            });
+        if (uploadedImage.size > 5 * 1024 * 1024) {
+            toast.error("Image size should be less than 5MB");
+            return;
         }
+
+        setUserInfo(prev => ({
+            ...prev,
+            avatar: uploadedImage,
+        }));
+
+        const fileReader = new FileReader();
+        fileReader.readAsDataURL(uploadedImage);
+        fileReader.onload = function () {
+            setImagePreview(this.result);
+        };
     };
 
-    const setName = (event) => {
+    const handleUserInfoChange = (event) => {
         const { name, value } = event.target;
-        const newUserData = { ...data, [name]: value };
-        setData(newUserData);
+        setUserInfo(prev => ({ ...prev, [name]: value }));
     };
 
     const handleUpdateProfile = async (event) => {
         event.preventDefault();
 
-
-        if (!data.name || !data.avatar) {
-            toast.error("All fields are mandatory");
-            return;
-        }
-        if (data.name.length < 5) {
-            toast.error("Name should have more than 5 characters");
+        if (!userInfo.FullName.trim()) {
+            toast.error("Name is required");
             return;
         }
 
-        const formData = new FormData();
-        formData.append("name", data.name);
-        formData.append("avatar", data.avatar);
+        if (userInfo.FullName.length < 3) {
+            toast.error("Name should have at least 3 characters");
+            return;
+        }
 
-        const newUserData = [data.userID, formData];
+        try {
+            const formData = new FormData();
+            formData.append("name", userInfo.name);
+            formData.append("phone", userInfo.phone);
+            if (userInfo.avatar) {
+                formData.append("avatar", userInfo.avatar);
+            }
 
-        await dispatch(updateProfile(newUserData));
+            const res = await dispatch(updateProfile([userInfo.userID, formData]));
 
-        await dispatch(getUserData());
-
+            if (res?.payload?.success) {
+                toast.success("Profile updated successfully!");
+                await dispatch(getUserData());
+            } else {
+                toast.error(res?.payload?.message || "Failed to update profile");
+            }
+        } catch (error) {
+            toast.error("Something went wrong!");
+        }
     };
+
     const handleUpdatePassword = async (event) => {
         event.preventDefault();
+
         if (!userPassword.currentPassword || !userPassword.newPassword) {
             toast.error("All fields are mandatory");
             return;
         }
-        if (
-            !userPassword.newPassword.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/)
-        ) {
-            toast.error(
-                "Minimum password length should be 6 with Uppercase, Lowercase, Number and Symbol"
-            );
+
+        if (userPassword.newPassword !== userPassword.confirmPassword) {
+            toast.error("New passwords don't match");
             return;
         }
-        const res = await dispatch(changePassword(userPassword));
-        setUserPassword({
-            currentPassword: "",
-            newPassword: "",
-        });
-    }
+
+        if (userPassword.newPassword.length < 6) {
+            toast.error("Password should be at least 6 characters long");
+            return;
+        }
+
+        if (!/(?=.*[A-Z])(?=.*[!@#$%^&*])/.test(userPassword.newPassword)) {
+            toast.error("Password must contain at least one uppercase letter and one special character");
+            return;
+        }
+
+        const res = await dispatch(changePassword({
+            currentPassword: userPassword.currentPassword,
+            newPassword: userPassword.newPassword
+        }));
+
+        if (res?.payload?.success) {
+            toast.success("Password updated successfully!");
+            setUserPassword({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: ""
+            });
+        } else {
+            toast.error(res?.payload?.message || "Failed to update password");
+        }
+    };
+
+    // Quota management
+    const [quotaRequest, setQuotaRequest] = useState({
+        amount: "",
+        reason: ""
+    });
+
+    const handleQuotaRequest = async () => {
+        if (!quotaRequest.amount || !quotaRequest.reason) {
+            toast.error("Please fill all fields");
+            return;
+        }
+
+        toast.success("Quota increase request submitted!");
+        setQuotaRequest({ amount: "", reason: "" });
+    };
+
+    // Settings Menu Items
+    const settingsMenu = [
+        { id: "basic-details", label: "Basic Details", icon: <UserCircle size={20} /> },
+        { id: "change-quota", label: "Change Quota", icon: <PieChart size={20} /> },
+        { id: "security", label: "Security", icon: <Shield size={20} /> },
+    ];
 
     return (
-        <div className="h-screen  text-base-content p-6 flex flex-col gap-6">
-            <h2 className="text-[18px] dark:text-white text-black tracking-wide font-semibold">User settings</h2>
-            <div className="bg-[#9696a814] border dark:border-gray-700 border-[#9696a831] rounded-lg p-6  flex items-center justify-between">
-                <div>
-                    <h1 className="dark:text-white text-black text-lg font-medium">Account settings</h1>
-                    <p className="text-[#9696a8f0] text-sm">
-                        Configure credentials, secrets, and more in account settings.
-                    </p>
-                </div>
-
-                <button className="bg-[#3B82F6] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded-full flex items-center gap-2 transition">
-                    Account Settings <ArrowRight size={18} />
-                </button>
-            </div>
-            <div className="bg-[#9696a814] border dark:border-[#9696a814] border-[#9696a831] rounded-lg p-6 flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <span className="flex gap-1 text-black dark:text-white"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="icon-md h-8 w-8 text-icon-default translate-z shrink-0" role="img"><g id="passcode-lock-outline-icon"><path id="Icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 11V8.2C22 7.0799 22 6.51984 21.782 6.09202C21.5903 5.71569 21.2843 5.40973 20.908 5.21799C20.4802 5 19.9201 5 18.8 5H5.2C4.0799 5 3.51984 5 3.09202 5.21799C2.71569 5.40973 2.40973 5.71569 2.21799 6.09202C2 6.51984 2 7.0799 2 8.2V11.8C2 12.9201 2 13.4802 2.21799 13.908C2.40973 14.2843 2.71569 14.5903 3.09202 14.782C3.51984 15 4.0799 15 5.2 15H11M12 10H12.005M17 10H17.005M7 10H7.005M19.25 17V15.25C19.25 14.2835 18.4665 13.5 17.5 13.5C16.5335 13.5 15.75 14.2835 15.75 15.25V17M12.25 10C12.25 10.1381 12.1381 10.25 12 10.25C11.8619 10.25 11.75 10.1381 11.75 10C11.75 9.86193 11.8619 9.75 12 9.75C12.1381 9.75 12.25 9.86193 12.25 10ZM17.25 10C17.25 10.1381 17.1381 10.25 17 10.25C16.8619 10.25 16.75 10.1381 16.75 10C16.75 9.86193 16.8619 9.75 17 9.75C17.1381 9.75 17.25 9.86193 17.25 10ZM7.25 10C7.25 10.1381 7.13807 10.25 7 10.25C6.86193 10.25 6.75 10.1381 6.75 10C6.75 9.86193 6.86193 9.75 7 9.75C7.13807 9.75 7.25 9.86193 7.25 10ZM15.6 21H19.4C19.9601 21 20.2401 21 20.454 20.891C20.6422 20.7951 20.7951 20.6422 20.891 20.454C21 20.2401 21 19.9601 21 19.4V18.6C21 18.0399 21 17.7599 20.891 17.546C20.7951 17.3578 20.6422 17.2049 20.454 17.109C20.2401 17 19.9601 17 19.4 17H15.6C15.0399 17 14.7599 17 14.546 17.109C14.3578 17.2049 14.2049 17.3578 14.109 17.546C14 17.7599 14 18.0399 14 18.6V19.4C14 19.9601 14 20.2401 14.109 20.454C14.2049 20.6422 14.3578 20.7951 14.546 20.891C14.7599 21 15.0399 21 15.6 21Z"></path></g></svg> Enable two-factor authentication</span>
-                    <input
-                        type="checkbox"
-                        className="toggle toggle-info"
-                        checked={twoFA}
-                        onChange={() => setTwoFA(!twoFA)}
-                    />
-                </div>
-                <p className="text-black dark:text-white">Two-factor authentication increases the security of your account by requiring a one-time password in addition to your password to log in.</p>
-            </div>
-            <form noValidate onSubmit={handleUpdateProfile} className="bg-[#9696a814] border border-[#9696a814] rounded-lg p-6 shadow-md ">
-                <h2 className="text-black dark:text-white text-lg font-medium mb-4">About you</h2>
-
-                <div className="flex items-center gap-4 mb-6">
-                    <label className="cursor-pointer" htmlFor="image_uploads">
-                        {previewImage ? (
-                            <img
-                                className="w-28 h-28  rounded-full m-auto"
-                                src={previewImage}
-                                alt="preview image"
-                            />
-                        ) : (
-                            <User className="w-22  border-2 border-slate-800  text-gray-500 h-22 rounded-full m-auto" />
-                        )}
-                    </label>
-                    <input
-                        onChange={getImage}
-                        className="hidden"
-                        type="file"
-                        id="image_uploads"
-                        name="image_uploads"
-                        accept=".jpg, .jpeg, .png"
-                    />
-                    <div>
-                        <p className="dark:text-white text-black font-medium text-sm">If you have <Link to={"https://gravatar.com"} className="text-[#3B82F6]">Gravatar</Link>  set for infotech8513@gmail.com it will be displayed in absence of uploaded avatar. You can upload and remove your own avatar to Techlance.</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 ">
-                    <div>
-                        <label className="dark:text-gray-400  text-black font-medium  text-[16px]">First name</label>
-                        <input
-                            required
-                            type="text"
-                            name="name"
-                            id="name"
-                            placeholder="Enter your full name"
-                            value={data.name}
-                            onChange={setName}
-
-                            className="w-full mt-1 bg-transparent border border-[#9696a862] text-gray-800   placeholder-gray-500 rounded-lg px-4 py-2 dark:text-white dark:border-gray-500 dark:placeholder-gray-400  focus:outline-none focus:ring-blue-500"
-                        />
-
-
-                    </div>
-                </div>
-
-                <div className="flex justify-end ">
-                    <button type="submit" className="bg-[#3B82F6] disabled:cursor-not-allowed hover:bg-[#1e66d8] text-white px-5 py-2 rounded-full transition">
-                        Save
-                    </button>
-                </div>
-                <div>
-
-                </div>
-            </form>
-            <form onSubmit={handleUpdatePassword} className="bg-[#9696a814] border dark:b   order-[#9696a814] border-[#9696a831]  rounded-lg p-6  flex flex-col  gap-4">
+        <div className="min-h-screen  text-white p-4 md:p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <Lock className="dark:text-gray-400  text-black" size={24} />
-                    <h2 className="dark:text-white  text-black text-xl font-medium">Change Password</h2>
+                    <SettingsIcon className="text-blue-400" size={28} />
+                    <h2 className="text-2xl font-bold text-white">Settings</h2>
                 </div>
-                <div className="space-y-4">
-                    <div className="relative">
-                        <input
-                            required
-                            type={showcurrentPassword ? "text" : "password"}
-                            name="currentPassword"
-                            id="currentPassword"
-                            placeholder="Enter your old password"
-                            value={userPassword.currentPassword}
-                            onChange={handlePasswordChange}
-                            className="w-full bg-transparent border border-[#9696a831]  rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowcurrentPassword(!showcurrentPassword)}
-                            className="absolute right-3 top-2.5 dark:text-gray-400 text-[#9696a86a]  hover:text-gray-300 transition-colors"
-                        >
-                            {showcurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
+                <div className="text-sm text-gray-400">
+                    Last updated: {new Date().toLocaleDateString()}
+                </div>
+            </div>
 
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Sidebar Navigation */}
+                <div className="lg:w-1/4">
+                    <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-4 sticky top-6">
+                        <h3 className="text-lg font-semibold text-gray-300 mb-4 px-2">Navigation</h3>
+                        <div className="space-y-1">
+                            {settingsMenu.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === item.id
+                                        ? "bg-gray-700 text-blue-400 shadow-lg"
+                                        : "text-gray-400 hover:bg-gray-700 hover:text-gray-300"
+                                        }`}
+                                >
+                                    <div className={`p-1.5 rounded ${activeTab === item.id ? 'bg-blue-900/30' : 'bg-gray-700'
+                                        }`}>
+                                        {item.icon}
+                                    </div>
+                                    <span className="font-medium">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    {userPassword && (
-                        <div className="space-y-2">
-                            <div className="flex gap-0.5 red items-center">
-                                <span className="dark:text-gray-300 text-black text-sm">Password Strength</span>
-                                <span className={`text-sm font-medium ${passwordStrength.label === 'Weak' ? 'text-red-400' :
-                                    passwordStrength.label === 'Medium' ? 'text-yellow-400' :
-                                        'text-green-400'
-                                    }`}>
-                                </span>
-                                {[1, 2, 3].map((level) => (
-                                    <div
-                                        key={level}
-                                        className={`h-1.5 w-[20px] flex redus ${level <= passwordStrength.strength
-                                            ? passwordStrength.color
-                                            : 'bg-gray-600'
-                                            } transition-colors duration-300`}
-                                    />
-                                ))}
+                </div>
+
+                {/* Main Content */}
+                <div className="lg:w-3/4">
+                    {/* Basic Details Section */}
+                    {activeTab === "basic-details" && (
+                        <div className="space-y-6">
+                            {/* Profile Card */}
+                            <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-bold text-white">Basic Details</h3>
+                                    <div className="text-sm text-gray-400">
+                                        User ID: <span className="font-mono text-gray-300">{userInfo.userID?.substring(0, 8)}...</span>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handleUpdateProfile}>
+                                    <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
+                                        {/* Avatar Upload */}
+                                        <div className="flex flex-col items-center">
+                                            <label className="cursor-pointer group" htmlFor="avatar-upload">
+                                                <div className="relative">
+                                                    {previewImage ? (
+                                                        <img
+                                                            className="w-32 h-32 rounded-full border-4 border-gray-700 shadow-lg object-cover"
+                                                            src={previewImage}
+                                                            alt="Profile"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-32 h-32 rounded-full border-4 border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 shadow-lg flex items-center justify-center">
+                                                            <User className="w-16 h-16 text-gray-500" />
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <span className="text-white text-sm font-medium">Change</span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            <input
+                                                onChange={handleImageUpload}
+                                                className="hidden"
+                                                type="file"
+                                                id="avatar-upload"
+                                                accept="image/*"
+                                            />
+                                            <p className="text-sm text-gray-400 mt-3 text-center">
+                                                Click to upload (Max 5MB)<br />
+                                                JPG, PNG, GIF supported
+                                            </p>
+                                        </div>
+
+                                        {/* User Info */}
+                                        <div className="flex-1 space-y-4">
+                                            <div>
+                                                <label className="block text-gray-300 font-medium mb-2">
+                                                    Full Name *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="name"
+                                                    value={userInfo.FullName}
+                                                    onChange={handleUserInfoChange}
+                                                    placeholder="Enter your full name"
+                                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-gray-300 font-medium mb-2 flex items-center gap-2">
+                                                    <Mail size={16} /> Email Address
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    value={userInfo.email}
+                                                    disabled
+                                                    className="w-full bg-[#9696a814] border border-gray-600 rounded-lg px-4 py-3 text-gray-400 cursor-not-allowed"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-gray-300 font-medium mb-2">
+                                                    Phone Number
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    value={userInfo.phone}
+                                                    onChange={handleUserInfoChange}
+                                                    placeholder="Enter phone number"
+                                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setUserInfo({
+                                                    name: userData?.name || "",
+                                                    email: userData?.email || "",
+                                                    phone: userData?.phone || "",
+                                                    avatar: undefined,
+                                                    userID: userData?._id,
+                                                });
+                                                setImagePreview(userData?.avatar || "");
+                                            }}
+                                            className="px-5 py-2.5 border border-gray-600 rounded-lg font-medium text-gray-300 hover:bg-gray-700 transition"
+                                        >
+                                            Reset
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={!userInfo?.FullName?.trim()}
+                                            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-medium transition"
+                                        >
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            {/* Security Section */}
+                            <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white mb-1">Security</h3>
+                                        <p className="text-gray-400">Enhanced account security</p>
+                                    </div>
+                                </div>
+
+                                {/* Two-Factor Authentication */}
+                                <div className="flex items-center justify-between p-4 bg-gray-900/50 rounded-lg mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-900/30 rounded-lg">
+                                            <Shield className="text-blue-400" size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-white">Two-Factor Authentication</h4>
+                                            <p className="text-sm text-gray-400">Enhanced account security</p>
+                                        </div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={twoFA}
+                                            onChange={() => setTwoFA(!twoFA)}
+                                        />
+                                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                <p className="text-gray-400 text-sm mb-4 px-2">
+                                    Enable 2FA for extra security. You'll need a verification code from your authentication app to sign in.
+                                </p>
+                                {twoFA && (
+                                    <div className="mt-4 p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
+                                        <div className="flex items-center gap-2 text-green-400">
+                                            <Shield size={16} />
+                                            <span className="font-medium">2FA is active</span>
+                                        </div>
+                                        <p className="text-sm text-green-500 mt-1">
+                                            Your account is protected with two-factor authentication
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Change Password */}
+                            <form onSubmit={handleUpdatePassword} className="bg-[#9696a814] border border-gray-700 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-2 bg-blue-900/30 rounded-lg">
+                                        <Lock className="text-blue-400" size={20} />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Change Password</h3>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label className="block text-gray-300 font-medium mb-2">
+                                            Current Password
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPasswords.current ? "text" : "password"}
+                                                name="currentPassword"
+                                                value={userPassword.currentPassword}
+                                                onChange={handlePasswordChange}
+                                                placeholder="Enter current password"
+                                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                                                className="absolute right-4 top-3.5 text-gray-500 hover:text-gray-300"
+                                            >
+                                                {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-gray-300 font-medium mb-2">
+                                            New Password
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPasswords.new ? "text" : "password"}
+                                                name="newPassword"
+                                                value={userPassword.newPassword}
+                                                onChange={handlePasswordChange}
+                                                placeholder="Enter new password"
+                                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                                                className="absolute right-4 top-3.5 text-gray-500 hover:text-gray-300"
+                                            >
+                                                {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
+                                            </button>
+                                        </div>
+                                        {userPassword.newPassword && (
+                                            <div className="mt-2">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-sm text-gray-400">Strength:</span>
+                                                    <span className={`text-sm font-medium ${passwordStrength.label === 'Weak' ? 'text-red-400' :
+                                                        passwordStrength.label === 'Medium' ? 'text-yellow-400' :
+                                                            'text-green-400'
+                                                        }`}>
+                                                        {passwordStrength.label}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    {[1, 2, 3, 4, 5].map((level) => (
+                                                        <div
+                                                            key={level}
+                                                            className={`h-1.5 flex-1 rounded-full ${level <= passwordStrength.strength
+                                                                ? passwordStrength.color
+                                                                : 'bg-gray-700'
+                                                                }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-gray-300 font-medium mb-2">
+                                            Confirm New Password
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPasswords.confirm ? "text" : "password"}
+                                                name="confirmPassword"
+                                                value={userPassword.confirmPassword}
+                                                onChange={handlePasswordChange}
+                                                placeholder="Confirm new password"
+                                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                                                className="absolute right-4 top-3.5 text-gray-500 hover:text-gray-300"
+                                            >
+                                                {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                                            </button>
+                                        </div>
+                                        {userPassword.confirmPassword && userPassword.newPassword !== userPassword.confirmPassword && (
+                                            <p className="text-red-400 text-sm mt-1">Passwords don't match</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            !userPassword.currentPassword ||
+                                            !userPassword.newPassword ||
+                                            !userPassword.confirmPassword ||
+                                            userPassword.newPassword !== userPassword.confirmPassword
+                                        }
+                                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-medium transition"
+                                    >
+                                        Update Password
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* Danger Zone */}
+                            <div className="bg-[#9696a814] border border-red-900/50 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <TriangleAlert className="text-red-400" size={24} />
+                                    <h3 className="text-xl font-bold text-red-400">Danger Zone</h3>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-red-900/30 rounded-lg bg-red-900/10">
+                                        <div className="mb-4 md:mb-0">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <LogOut className="text-red-400" size={18} />
+                                                <h4 className="font-bold text-red-300">Logout All Sessions</h4>
+                                            </div>
+                                            <p className="text-sm text-red-400/80">
+                                                Logout from all devices except this one
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={handleLogoutSession}
+                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition"
+                                        >
+                                            Logout All
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-red-900/30 rounded-lg bg-red-900/10">
+                                        <div className="mb-4 md:mb-0">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Trash2 className="text-red-400" size={18} />
+                                                <h4 className="font-bold text-red-300">Delete Account</h4>
+                                            </div>
+                                            <p className="text-sm text-red-400/80">
+                                                Permanently delete your account and all data
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => toast.error("Account deletion not implemented yet")}
+                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg flex items-center gap-2 transition"
+                                        >
+                                            Delete Account
+                                            <ArrowRight size={16} />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="relative">
-                        <input
-                            required
-                            type={showNewPassword ? "text" : "password"}
-                            name="newPassword"
-                            id="newPassword"
-                            placeholder="Enter your new password"
-                            value={userPassword.newPassword}
-                            onChange={handlePasswordChange}
-                            className="w-full bg-transparent border border-[#9696a831]   rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                            className="absolute right-3 top-2.5 dark:text-gray-400 text-[#9696a874]  hover:text-gray-300 transition-colors"
-                        >
-                            {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
-                    </div>
+                    {/* Change Quota Section */}
+                    {activeTab === "change-quota" && (
+                        <div className="space-y-6">
+                            {/* Header */}
+                            <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <PieChart className="text-blue-400" size={24} />
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white">Quota Settings</h3>
+                                        <p className="text-gray-400">Configure quota targets for each department and shift</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Department Selection Tabs */}
+                            <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-4">
+                                <div className="flex flex-wrap gap-2">
+                                    {departments.map((dept) => (
+                                        <button
+                                            key={dept.id}
+                                            onClick={() => setActiveDept(dept.id)}
+                                            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${activeDept === dept.id
+                                                ? deptColors[dept.id]
+                                                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                                }`}
+                                        >
+                                            {dept.icon}
+                                            <span>{dept.name.split(" ")[0]}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Department Quota Configuration */}
+                            <div className="space-y-6">
+                                {departments.map((dept) => (
+                                    <div
+                                        key={dept.id}
+                                        className={`bg-[#9696a814] border border-gray-700 rounded-xl p-6 ${activeDept !== dept.id ? 'hidden' : ''}`}
+                                    >
+                                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-6 ${deptColors[dept.id]}`}>
+                                            {dept.icon}
+                                            <h4 className="text-lg font-bold">{dept.name}</h4>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            {dept.shifts.map((shift) => (
+                                                <div key={shift.id} className="bg-gray-900/30 rounded-lg p-4">
+                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                        <div>
+                                                            <h5 className="font-bold text-white mb-1">{shift.label}</h5>
+                                                            <div className="text-sm text-gray-400">
+                                                                Current target: <span className="text-blue-400 font-semibold">{quotas[dept.id][shift.id]}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={quotas[dept.id][shift.id]}
+                                                                    onChange={(e) => handleQuotaChange(dept.id, shift.id, e.target.value)}
+                                                                    className="w-32 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                />
+                                                                {dept.id === "Deposit" && (
+                                                                    <span className="absolute left-3 top-2.5 text-gray-400">$</span>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleQuotaChange(dept.id, shift.id, getDefaultQuota(dept.id, shift.id))}
+                                                                className="px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition"
+                                                            >
+                                                                Reset
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {/* Save Changes Button */}
+                                            <div className="pt-4 border-t border-gray-700">
+                                                <div className="flex justify-end">
+                                                    <button
+                                                        onClick={() => handleSaveQuota(dept.name)}
+                                                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition"
+                                                    >
+                                                        Save Changes
+                                                        <ArrowRight size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Reset All Button */}
+                            <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-6">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <AlertCircle className="text-yellow-400" size={24} />
+                                        <div>
+                                            <h4 className="font-bold text-white">Reset All to Default</h4>
+                                            <p className="text-sm text-gray-400">Reset all quotas to their default values</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleResetAll}
+                                        className="px-5 py-2.5 border border-yellow-600 text-yellow-400 hover:bg-yellow-600/10 rounded-lg font-medium flex items-center gap-2 transition"
+                                    >
+                                        <RefreshCw size={18} />
+                                        Reset All
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Security Tab */}
+                    {activeTab === "security" && (
+                        <div className="bg-[#9696a814] border border-gray-700 rounded-xl p-6">
+                            <div className="mb-8">
+                                <h3 className="text-2xl font-bold text-white mb-2">Security Settings</h3>
+                                <p className="text-gray-400">Manage your account security and authentication</p>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Session Management */}
+                                <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-6">
+                                    <h4 className="text-lg font-bold text-white mb-4">Active Sessions</h4>
+                                    <div className="space-y-3">
+                                        {[
+                                            { device: "Chrome on Windows", location: "Mumbai, IN", current: true, time: "Now" },
+                                            { device: "Safari on iPhone", location: "Delhi, IN", current: false, time: "2 hours ago" },
+                                            { device: "Firefox on Mac", location: "Bangalore, IN", current: false, time: "1 day ago" }
+                                        ].map((session, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-[#9696a814] rounded-lg">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-white">{session.device}</span>
+                                                        {session.current && (
+                                                            <span className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded">Current</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-sm text-gray-400">
+                                                        {session.location} • {session.time}
+                                                    </div>
+                                                </div>
+                                                {!session.current && (
+                                                    <button className="text-red-400 hover:text-red-300 text-sm font-medium">
+                                                        Revoke
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Security Settings */}
+                                <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-6">
+                                    <h4 className="text-lg font-bold text-white mb-4">Security Preferences</h4>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="font-medium text-white">Login Notifications</div>
+                                                <div className="text-sm text-gray-400">Get notified for new logins</div>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" className="sr-only peer" defaultChecked />
+                                                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="font-medium text-white">Password Reset Protection</div>
+                                                <div className="text-sm text-gray-400">Require email confirmation for password reset</div>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" className="sr-only peer" defaultChecked />
+                                                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-
-
-                <div type='submit' className="flex justify-end">
-                    <button disabled={!userPassword.currentPassword || !userPassword.newPassword} className="bg-[#3B82F6] disabled:bg-gray-600 disabled:cursor-not-allowed hover:bg-[#1e66d8] text-white px-5 py-2 rounded-full transition">
-                        Update Password
-                    </button>
-                </div>
-            </form>
-            <div class="p-6 border border-[#9696a857] rounded-md   text-white mb-10">
-                <h3 class="text-lg font-medium flex items-center gap-1 text-black dark:text-white">
-                    <TriangleAlert size={20} className="text-red-500" />
-                    Custom Danger Zone
-                </h3>
-                <p class="text-sm text-gray-400 mb-4">This is your custom irreversible action section.</p>
-                <div className="p-4 mb-3 border border-[#9696a84d] rounded-md ">
-                    <div>
-                        <h4 className="dark:text-white text-[#9696a8c8]  font-semibold text-base mb-1 flex gap-1 items-center">
-                            <LogOut /> Log out of other sessions
-                        </h4>
-                        <p className="text-sm text-gray-400">
-                            Clear all your active user sessions. This will log you out of all other devices and browsers, except this one.
-                        </p>
-                    </div>
-
-                    <div onClick={handleLogoutSession} className=" border-[#9696a850] mt-4  flex justify-end">
-                        <button  className="bg-[#ba111d] cursor-pointer hover:bg-[#ff2300] text-white font-base py-1.5 px-4 rounded-md text-sm">
-                            Log Out of Other Sessions
-                        </button>
-                    </div>
-                </div>
-
-
-                <div class="p-4 border dark:border-[#9696a814] border-[#9696a841]  rounded-md flex items-center justify-between ">
-                    <div>
-                        <h4 class="text-white font-semibold text-base mb-1 flex gap-1 items-center">
-                            <Trash2 size={20} /> Delete your account
-                        </h4>
-                        <p class="text-sm text-gray-400">Delete your personal account, projects, and activity.</p>
-                    </div>
-                    <button class="bg-[#3B82F6] hover:bg-[#2b74eb] cursor-pointer gap-1 flex text-white font-semibold py-1.5 px-2 rounded-md text-sm ml-4">
-                        Start <ArrowRight size={18} />
-                    </button>
-
-                </div>
-
             </div>
-
         </div>
     );
 }
 
-export default Setting;
+export default Settings;

@@ -38,7 +38,7 @@ export default function AttendanceDashboard() {
   const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
-
+console.log(departmentAttendance,"abhishek")
   console.log("desparetmebt",departmentAttendance)
   const { role } = useSelector((s) => s.auth || {});
   const [searchName, setSearchName] = useState("");

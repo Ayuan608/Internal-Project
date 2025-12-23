@@ -108,20 +108,6 @@ function AttendanceData({ view = "daily", data = [] }) {
         </p>
       </div>
 
-      {/* Absent Today */}
-      {/* <div className="relative bg-[rgba(239,68,68,0.04)] rounded-lg p-4 border-l-4 border-rose-500/80 shadow-sm">
-        <p className="text-xs text-slate-300 mb-1 uppercase tracking-wider">
-          Absent {getTimePeriodText()}
-        </p>
-        <p className="text-3xl font-extrabold text-white mb-2">
-          {d.absentToday}
-        </p>
-        <p className="text-xs text-slate-400">
-          {d.totalUsers > 0
-            ? `${Math.round((d.absentToday / d.totalUsers) * 100)}% of total`
-            : "No data"}
-        </p>
-      </div> */}
 
       {/* Late Arrivals */}
       <div className="relative bg-[rgba(234,179,8,0.05)] rounded-lg p-4 border-l-4 border-yellow-400/80 shadow-sm">
