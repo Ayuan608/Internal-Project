@@ -15,7 +15,7 @@ export const fetchAllAnnouncements = createAsyncThunk(
 );
 
 export const createAnnouncement = createAsyncThunk(
-    'announcements/create',
+    'announcement/create',
     async (announcementData, { rejectWithValue }) => {
         try {
             console.log('Sending announcement data:', announcementData);
@@ -43,18 +43,7 @@ export const createAnnouncement = createAsyncThunk(
                 });
             }
 
-            // Log FormData contents for debugging
-            console.log('FormData contents:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
-
-            const response = await axiosInstance.post('/announcement/create', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                timeout: 30000,
-            });
+            const response = await axiosInstance.post('/announcement/create', formData);
 
             console.log('Response received:', response.data);
             return response.data;
@@ -77,52 +66,52 @@ export const createAnnouncement = createAsyncThunk(
 );
 
 
-export const createAnnouncementSimple = createAsyncThunk(
-    'announcements/createSimple',
-    async (announcementData, { rejectWithValue }) => {
-        try {
-            console.log('Simple version - sending:', announcementData);
+// export const createAnnouncementSimple = createAsyncThunk(
+//     'announcements/createSimple',
+//     async (announcementData, { rejectWithValue }) => {
+//         try {
+//             console.log('Simple version - sending:', announcementData);
 
-            const formData = new FormData();
+//             const formData = new FormData();
 
-            // Only essential fields
-            formData.append('title', announcementData.title);
-            formData.append('details', announcementData.details);
+//             // Only essential fields
+//             formData.append('title', announcementData.title);
+//             formData.append('details', announcementData.details);
 
-            // Simple recipients handling
-            if (announcementData.recipients) {
-                formData.append('recipients', announcementData.recipients[0] || 'ALL');
-            }
+//             // Simple recipients handling
+//             if (announcementData.recipients) {
+//                 formData.append('recipients', announcementData.recipients[0] || 'ALL');
+//             }
 
-            // Simple createdBy
-            if (announcementData.createdBy) {
-                formData.append('createdBy', announcementData.createdBy);
-            }
+//             // Simple createdBy
+//             if (announcementData.createdBy) {
+//                 formData.append('createdBy', announcementData.createdBy);
+//             }
 
-            // Files only if they exist
-            if (announcementData.files && announcementData.files.length > 0) {
-                announcementData.files.forEach(file => {
-                    formData.append('files', file);
-                });
-            }
+//             // Files only if they exist
+//             if (announcementData.files && announcementData.files.length > 0) {
+//                 announcementData.files.forEach(file => {
+//                     formData.append('files', file);
+//                 });
+//             }
 
-            const response = await axiosInstance.post('/announcement/create', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+//             const response = await axiosInstance.post('/announcement/create', formData, {
+//                 headers: {
+//                     'Content-Type': 'multipart/form-data',
+//                 },
+//             });
 
-            return response.data;
+//             return response.data;
 
-        } catch (error) {
-            console.error('Simple version error:', error.response?.data);
-            return rejectWithValue(
-                error.response?.data?.message ||
-                'Failed to create announcement'
-            );
-        }
-    }
-);
+//         } catch (error) {
+//             console.error('Simple version error:', error.response?.data);
+//             return rejectWithValue(
+//                 error.response?.data?.message ||
+//                 'Failed to create announcement'
+//             );
+//         }
+//     }
+// );
 
 
 
@@ -141,36 +130,39 @@ export const deleteAnnouncement = createAsyncThunk(
     }
 );
 
-
 export const updateAnnouncement = createAsyncThunk(
     "announcements/update",
     async ({ id, data }, { rejectWithValue }) => {
         try {
+            console.log("data", data)
             const formData = new FormData();
 
             if (data.title) formData.append("title", data.title);
             if (data.details) formData.append("details", data.details);
 
-            if (data.recipients) {
-                formData.append("recipients", JSON.stringify(data.recipients));
+            // ✅ Send recipients properly
+            if (data.recipients?.length) {
+                data.recipients.forEach((recipient) =>
+                    formData.append("recipients[]", recipient)
+                );
             }
 
-            if (data.removeImages?.length) {
-                formData.append("removeImages", JSON.stringify(data.removeImages));
-            }
-
+            // ✅ Files
             if (data.files?.length) {
-                data.files.forEach((file) => formData.append("images", file));
+                data.files.forEach((file) =>
+                    formData.append("images", file)
+                );
             }
 
             const response = await axiosInstance.put(
                 `/announcement/updateAnnouncement/${id}`,
                 formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
+
             );
 
-            // Return updated announcement to update the slice
-            return response.data.announcement;
+            console.log("response", response.data)
+            // ✅ Match backend response
+            return response.data;
         } catch (error) {
             return rejectWithValue(
                 error.response?.data?.message || "Failed to update announcement"
@@ -178,6 +170,7 @@ export const updateAnnouncement = createAsyncThunk(
         }
     }
 );
+
 
 export const createEvent = createAsyncThunk(
     'announcements/createEvent',
@@ -199,7 +192,7 @@ export const createEvent = createAsyncThunk(
 
             const response = await axiosInstance.post(
                 '/announcement/create-event',
-                formData
+                formData,
             );
 
             console.log('Create event response:', response.data);
@@ -254,6 +247,39 @@ export const deleteEvent = createAsyncThunk(
     }
 );
 
+export const updateEvent = createAsyncThunk(
+    "announcements/updateEvent",
+    async ({ id, data }, { rejectWithValue }) => {
+        try {
+            const formData = new FormData();
+
+            if (data.title) formData.append("title", data.title);
+            if (data.startDate) formData.append("startDate", data.startDate);
+            if (data.endDate) formData.append("endDate", data.endDate);
+            if (data.notes) formData.append("notes", data.notes);
+            if (data.link) formData.append("link", data.link);
+
+            // 🔑 MUST MATCH BACKEND
+            if (data.attachments?.length) {
+                data.attachments.forEach(file =>
+                    formData.append("attachments", file)
+                );
+            }
+
+            const res = await axiosInstance.put(
+                `/announcement/updateEvent/${id}`,
+                formData
+            );
+
+            return res.data.announcement;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to update event"
+            );
+        }
+    }
+);
+
 
 
 const announcementSlice = createSlice({
@@ -267,7 +293,7 @@ const announcementSlice = createSlice({
         createError: null,
         createEventLoading: false,
         createEventError: null,
-
+        updateEventLoading: false,
     },
     reducers: {
         clearError: (state) => {
@@ -319,29 +345,30 @@ const announcementSlice = createSlice({
                 state.createLoading = false;
                 if (action.payload.success) {
                     const newAnnouncement = action.payload.announcement || action.payload.data || action.payload;
+                    console.log('New announcement added to state:', newAnnouncement);
                     if (newAnnouncement) {
                         state.announcements.unshift(newAnnouncement);
                     }
                 }
             })
-            .addCase(createAnnouncement.rejected, (state, action) => {
-                state.createLoading = false;
-                state.createError = action.payload;
-            })
-            // Create announcement simple
-            .addCase(createAnnouncementSimple.pending, (state) => {
-                state.createLoading = true;
-                state.createError = null;
-            })
-            .addCase(createAnnouncementSimple.fulfilled, (state, action) => {
-                state.createLoading = false;
-                if (action.payload.success) {
-                    const newAnnouncement = action.payload.announcement || action.payload.data || action.payload;
-                    if (newAnnouncement) {
-                        state.announcements.unshift(newAnnouncement);
-                    }
-                }
-            })
+            // .addCase(createAnnouncement.rejected, (state, action) => {
+            //     state.createLoading = false;
+            //     state.createError = action.payload;
+            // })
+            // // Create announcement simple
+            // .addCase(createAnnouncementSimple.pending, (state) => {
+            //     state.createLoading = true;
+            //     state.createError = null;
+            // })
+            // .addCase(createAnnouncementSimple.fulfilled, (state, action) => {
+            //     state.createLoading = false;
+            //     if (action.payload.success) {
+            //         const newAnnouncement = action.payload.announcement || action.payload.data || action.payload;
+            //         if (newAnnouncement) {
+            //             state.announcements.unshift(newAnnouncement);
+            //         }
+            //     }
+            // })
 
             .addCase(deleteAnnouncement.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(deleteAnnouncement.fulfilled, (state, action) => {
@@ -408,9 +435,35 @@ const announcementSlice = createSlice({
             })
             .addCase(deleteEvent.rejected, (state, action) => {
                 console.error("Failed to delete event:", action.payload?.message);
+            })
+
+            .addCase(updateEvent.pending, (state) => {
+                state.updateEventLoading = true;
+                state.error = null;
+            })
+            .addCase(updateEvent.fulfilled, (state, action) => {
+                state.updateEventLoading = false;
+
+                const updatedEvent = action.payload;
+
+                const index = state.events.findIndex(
+                    (event) => event._id === updatedEvent._id
+                );
+
+                if (index !== -1) {
+                    state.events[index] = updatedEvent;
+                }
+            })
+
+            .addCase(updateEvent.rejected, (state, action) => {
+                state.updateEventLoading = false;
+                state.error = action.payload;
             });
+
     },
 });
+
+
 
 
 export const { clearError, clearCreateError, addAnnouncement, setAnnouncements } = announcementSlice.actions;

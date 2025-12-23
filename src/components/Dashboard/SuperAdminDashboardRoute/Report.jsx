@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { Calendar, ImageIcon, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff, X, Search, Filter, Download, Archive, Send, MessageSquare } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteReport, getAllReports, markReportAsSeen, getDeletedReports } from '../../../redux/reportSlice';
+import { deleteReport, getAllReports, markReportAsSeen, getDeletedReports, replyToReport, } from '../../../redux/reportSlice';
 import toast from 'react-hot-toast';
 
 function Report() {
@@ -17,6 +18,7 @@ function Report() {
     const [showReplyModal, setShowReplyModal] = useState(false);
     const [replyMessage, setReplyMessage] = useState('');
     const [replies, setReplies] = useState({});
+    const [selectedQuickReplies, setSelectedQuickReplies] = useState([]);
 
     const quickResponses = [
         'Acknowledged. Will review shortly.',
@@ -68,9 +70,10 @@ function Report() {
         }
     };
 
-    const handleReply = (message) => {
+    const handleReply = async (message) => {
         if (!selectedReport) return;
 
+        // Single reply mode (for backward compatibility)
         const newReply = {
             id: Date.now(),
             message,
@@ -86,6 +89,66 @@ function Report() {
         setReplyMessage('');
         setShowReplyModal(false);
         toast.success('Reply sent successfully');
+    };
+
+    const handleMultiReply = async () => {
+        if (!selectedReport) return;
+        console.log(selectedReport, "selectedReport")
+
+        const quickReplies = selectedQuickReplies;
+        const customReplies = replyMessage.trim() ? [replyMessage.trim()] : [];
+
+        if (quickReplies.length === 0 && customReplies.length === 0) {
+            toast.error('Please select at least one quick reply or write a custom message');
+            return;
+        }
+
+        try {
+            await dispatch(replyToReport({
+                reportId: selectedReport._id,
+                quickReplies,
+                customReplies
+            })).unwrap();
+
+            // Add local replies to state for immediate UI update
+            const newReplies = [
+                ...quickReplies.map(message => ({
+                    id: Date.now() + Math.random(),
+                    message,
+                    timestamp: new Date(),
+                    sender: 'Admin'
+                })),
+                ...customReplies.map(message => ({
+                    id: Date.now() + Math.random(),
+                    message,
+                    timestamp: new Date(),
+                    sender: 'Admin'
+                }))
+            ];
+
+            setReplies(prev => ({
+                ...prev,
+                [selectedReport._id]: [...(prev[selectedReport._id] || []), ...newReplies]
+            }));
+
+            // Reset state
+            setSelectedQuickReplies([]);
+            setReplyMessage('');
+            setShowReplyModal(false);
+
+            // Refresh reports to get updated data from server
+            dispatch(getAllReports());
+        } catch (error) {
+            console.error('Failed to send replies:', error);
+        }
+    };
+
+    const toggleQuickReply = (response) => {
+        setSelectedQuickReplies(prev =>
+            prev.includes(response)
+                ? prev.filter(r => r !== response)
+                : [...prev, response]
+        );
     };
 
     const formatDate = (dateString) => {
@@ -618,11 +681,15 @@ function Report() {
                             <div>
                                 <h2 className="text-2xl font-bold text-white">Reply to Report</h2>
                                 <p className="text-gray-400 text-sm mt-1">From: {selectedReport.createdBy?.FullName || "Unknown User"}</p>
+                                <p className="text-gray-400 text-sm mt-1">
+                                    You can select multiple quick replies and/or write a custom message
+                                </p>
                             </div>
                             <button
                                 onClick={() => {
                                     setShowReplyModal(false);
                                     setReplyMessage('');
+                                    setSelectedQuickReplies([]);
                                 }}
                                 className="text-gray-400 hover:text-white transition-colors"
                             >
@@ -633,15 +700,35 @@ function Report() {
                         <div className="p-6 space-y-4">
                             {/* Quick Responses */}
                             <div>
-                                <h3 className="text-sm font-semibold text-gray-400 mb-3">Quick Responses</h3>
+                                <h3 className="text-sm font-semibold text-gray-400 mb-3">
+                                    Quick Responses
+                                    {selectedQuickReplies.length > 0 && (
+                                        <span className="ml-2 text-purple-400">
+                                            ({selectedQuickReplies.length} selected)
+                                        </span>
+                                    )}
+                                </h3>
                                 <div className="space-y-2 mb-6">
                                     {quickResponses.map((response, idx) => (
                                         <button
                                             key={idx}
-                                            onClick={() => handleReply(response)}
-                                            className="w-full text-left p-3 bg-slate-800/30 hover:bg-slate-800/50 rounded-lg border border-gray-700 hover:border-purple-600/50 text-gray-300 hover:text-white transition-all text-sm"
+                                            onClick={() => toggleQuickReply(response)}
+                                            className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${selectedQuickReplies.includes(response)
+                                                ? 'bg-purple-600/20 border-purple-600/50 text-white'
+                                                : 'bg-slate-800/30 hover:bg-slate-800/50 border-gray-700 hover:border-purple-600/50 text-gray-300 hover:text-white'
+                                                }`}
                                         >
-                                            {response}
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center ${selectedQuickReplies.includes(response)
+                                                    ? 'bg-purple-600 border-purple-600'
+                                                    : 'border-gray-600'
+                                                    }`}>
+                                                    {selectedQuickReplies.includes(response) && (
+                                                        <CheckCircle size={14} className="text-white" />
+                                                    )}
+                                                </div>
+                                                <span>{response}</span>
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
@@ -665,23 +752,18 @@ function Report() {
                             {/* Send Button */}
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => {
-                                        if (replyMessage.trim()) {
-                                            handleReply(replyMessage);
-                                        } else {
-                                            toast.error('Please enter a message');
-                                        }
-                                    }}
-                                    disabled={!replyMessage.trim()}
+                                    onClick={handleMultiReply}
+                                    disabled={selectedQuickReplies.length === 0 && !replyMessage.trim()}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Send size={20} />
-                                    Send Reply
+                                    Send {selectedQuickReplies.length + (replyMessage.trim() ? 1 : 0)} {selectedQuickReplies.length + (replyMessage.trim() ? 1 : 0) === 1 ? 'Reply' : 'Replies'}
                                 </button>
                                 <button
                                     onClick={() => {
                                         setShowReplyModal(false);
                                         setReplyMessage('');
+                                        setSelectedQuickReplies([]);
                                     }}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium bg-gray-700/30 hover:bg-gray-700/50 text-gray-300 transition-all"
                                 >

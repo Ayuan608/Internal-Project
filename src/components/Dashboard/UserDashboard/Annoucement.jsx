@@ -21,9 +21,6 @@ export default function Announcement() {
     files: []
   });
 
-  // When modal opens for editing:
-
-
 
   const [dragOver, setDragOver] = useState(false);
 
@@ -129,7 +126,6 @@ export default function Announcement() {
           details: "",
           recipients: "ALL",
           files: [],
-          removeImages: []
         });
 
         setSelectedAnnouncement(null);
@@ -141,9 +137,6 @@ export default function Announcement() {
       console.error("Submit error:", err);
     }
   };
-
-
-
 
 
   const handleEditAnnouncement = (e, announcement) => {
@@ -160,7 +153,7 @@ export default function Announcement() {
         details: "",
         recipients: "ALL",
         files: [],
-        removeImages: []
+
       });
     }
   }, [createAnnouncementModal]);
@@ -171,7 +164,7 @@ export default function Announcement() {
         details: selectedAnnouncement.details || "",
         recipients: selectedAnnouncement.recipients || [],
         files: [],
-        removeImages: []
+
       });
     }
   }, [selectedAnnouncement]);
@@ -724,7 +717,7 @@ export default function Announcement() {
         )}
 
         {/* Announcement Detail Modal */}
-        {selected && (
+        {/* {selected && (
           <div
             className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-md"
             onClick={() => setSelected(null)}
@@ -793,6 +786,147 @@ export default function Announcement() {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        )} */}
+        {selected && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-md"
+            onClick={() => setSelected(null)}
+          >
+            <div
+              className="bg-slate-900/50 backdrop-blur-md rounded-2xl w-full max-w-2xl border-2 border-gray-800/30 shadow-2xl overflow-hidden transform transition-all max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-6 py-4 flex justify-between items-center bg-slate-900/50 flex-shrink-0">
+                <h2 className="text-2xl font-bold text-white">
+                  Announcement Details
+                </h2>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-gray-400 hover:text-white transition-colors hover:bg-gray-700 rounded-full p-1"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="p-8 overflow-y-auto flex-1 space-y-6">
+
+                  {/* Title Display */}
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Title</label>
+                    <div className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/30 rounded-lg">
+                      <p className="text-white">{selected.title || 'No Title'}</p>
+                    </div>
+                  </div>
+
+                  {/* Details Display */}
+                  <div>
+                    <label className="block text-white mb-2 font-medium">Details</label>
+                    <div className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/30 rounded-lg min-h-[120px]">
+                      <pre className="whitespace-pre-wrap text-white leading-relaxed font-sans">
+                        {selected.details || 'No details available'}
+                      </pre>
+                    </div>
+                  </div>
+
+                  {/* Author and Date Display */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-white mb-2 font-medium">Author</label>
+                      <div className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/50 rounded-lg">
+                        <p className="text-white flex items-center gap-2">
+                          <User size={16} className="text-blue-400" />
+                          {selected.createdBy || 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-white mb-2 font-medium">Date</label>
+                      <div className="w-full px-4 py-2.5 bg-[rgba(59,130,246,0.03)] text-white border-2 border-gray-800/50 rounded-lg">
+                        <p className="text-white flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-400" />
+                          {formatDate(selected.createdAt || selected.date)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Attachments Section */}
+                  {selected.imageUrls && selected.imageUrls.length > 0 && (
+                    <div>
+                      <label className="block text-white mb-2 font-medium">
+                        Attachments ({selected.imageUrls.length})
+                      </label>
+
+                      <div className="mb-3 space-y-2 max-h-32 overflow-y-auto">
+                        {selected.imageUrls.map((url, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-gray-700 px-4 py-2.5 rounded-lg border border-gray-600 hover:border-blue-500 transition-all cursor-pointer"
+                            onClick={() => openImageModal(selected.imageUrls, index)}
+                          >
+                            <span className="text-gray-300 text-sm truncate flex-1 flex items-center gap-2">
+                              <ImageIcon size={16} className="text-blue-400" />
+                              Attachment {index + 1}
+                            </span>
+                            <span className="text-blue-400 text-sm hover:text-blue-300 transition-colors">
+                              View
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Image Thumbnails Grid */}
+                      <div className="grid grid-cols-4 gap-3">
+                        {selected.imageUrls.map((url, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-700 rounded-lg border-2 border-gray-600 overflow-hidden hover:border-blue-500 transition-all cursor-pointer"
+                            onClick={() => openImageModal(selected.imageUrls, index)}
+                          >
+                            <img
+                              src={url}
+                              alt={`Attachment ${index + 1}`}
+                              className="w-full h-20 object-cover hover:scale-110 transition-transform"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div className="w-full h-20 hidden items-center justify-center text-gray-400">
+                              <ImageIcon size={24} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="px-8 py-3 flex justify-end gap-3 bg-gray-900/50 flex-shrink-0">
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="px-6 py-2.5 border-2 border-gray-600 text-white rounded-lg hover:bg-gray-800/30 transition-all duration-200 font-medium"
+                  >
+                    Close
+                  </button>
+                  {selected.imageUrls && selected.imageUrls.length > 0 && (
+                    <button
+                      onClick={() => openImageModal(selected.imageUrls, 0)}
+                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium flex items-center gap-2 shadow-lg hover:shadow-blue-500/50"
+                    >
+                      <ImageIcon size={18} />
+                      View All Attachments
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
