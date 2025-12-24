@@ -61,6 +61,7 @@ const departments = [
 ];
 
 const OverallAttendanceDashboard = () => {
+  //  data = [],
   const popupRef = useRef();
   const [viewMode, setViewMode] = useState(() => {
     const savedViewMode = localStorage.getItem('attendanceDashboardViewMode');
@@ -81,6 +82,26 @@ const OverallAttendanceDashboard = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const dispatch = useDispatch();
   const { allAttendance, isLoading, pagination } = useSelector((state) => state.attendance);
+  console.log(allAttendance)
+  const { departmentAttendance = [],department } = useSelector(
+    (s) => s.attendance || {}
+  );
+
+const totalUsers= departmentAttendance.length
+const totalWorking = departmentAttendance.filter(
+  item => item.status === "working"
+).length;
+const totalAbsent = departmentAttendance.filter(
+  item => item.status === "Absent"
+).length;
+const totalBreakUsers = departmentAttendance.filter(
+  item => item.breaks?.total > 0
+).length;
+
+
+const totalLeaves =departmentAttendance.filter(
+  item => item.dayOffRequests
+).length;
 
   // Fetch data on mount and when filters change
   useEffect(() => {
@@ -133,11 +154,11 @@ const OverallAttendanceDashboard = () => {
 
   // Filter data based on search and filters
   const filteredData = useMemo(() => {
-    if (!allAttendance) return [];
-    return allAttendance.filter(emp => {
-      const matchesSearch = emp.user?.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    if (!departmentAttendance) return [];
+    return departmentAttendance.filter(emp => {
+      const matchesSearch = emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp._id?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDept = selectedDept === 'All' || emp.user?.department === selectedDept;
+      const matchesDept = selectedDept === 'All' || emp.department === selectedDept;
       const matchesStatus = selectedStatus === 'All' || emp.alert === selectedStatus;
       return matchesSearch && matchesDept && matchesStatus;
     });
@@ -179,6 +200,7 @@ const OverallAttendanceDashboard = () => {
     }
 
     const total = allAttendance.length;
+
     const present = allAttendance.filter(e => e.alert === 'Present' || e.alert === 'Normal').length;
     const absent = allAttendance.filter(e => e.alert === 'Absent').length;
     const late = allAttendance.filter(e => e.alert === 'Late').length;
@@ -395,7 +417,44 @@ const OverallAttendanceDashboard = () => {
       <span className="text-sm font-medium text-gray-200">{value}</span>
     </div>
   );
+const parseWorkingHoursToSeconds = (timeStr) => {
+  if (!timeStr) return 0;
 
+  let hours = 0;
+  let minutes = 0;
+
+  const hourMatch = timeStr.match(/(\d+)\s*h/);
+  const minuteMatch = timeStr.match(/(\d+)\s*m/);
+
+  if (hourMatch) hours = parseInt(hourMatch[1], 10);
+  if (minuteMatch) minutes = parseInt(minuteMatch[1], 10);
+
+  return hours * 3600 + minutes * 60;
+};
+const totalNetSeconds = departmentAttendance.reduce((total, item) => {
+ 
+  return total + parseWorkingHoursToSeconds(item.workingHours);
+}, 0);
+// console.log(totalNetSeconds)
+// const workingStaffCount = departmentAttendance.filter(
+//   item => item.status === "working"
+// ).length;
+// console.log(workingStaffCount)
+// console.log(totalWorking)
+const avgNetSeconds =
+  totalWorking > 0 ? totalNetSeconds / totalWorking : 0;
+  const formatTime = (seconds) => {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  return `${hrs.toString().padStart(2, "0")}:${mins
+    .toString()
+    .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+};
+// console.log(avgNetSeconds)
+const avgNetWorkTime = formatTime(avgNetSeconds);
+// console.log(avgNetWorkTime)
   return (
     <div className="min-h-screen  text-white p-6">
       {/* Header Section */}
@@ -456,7 +515,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-300 mb-1">TOTAL STAFF</p>
-                <p className="text-3xl font-bold text-gray-100">57</p>
+                <p className="text-3xl font-bold text-gray-100">{totalUsers}</p>
                 <p className="text-xs text-gray-400 mt-2">All registered agents</p>
               </div>
               <Users className="w-10 h-10 text-gray-500/60" />
@@ -468,7 +527,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-300 mb-1">WORKING</p>
-                <p className="text-3xl font-bold text-green-100">18</p>
+                <p className="text-3xl font-bold text-green-100">{totalWorking}</p>
                 <p className="text-xs text-green-400 mt-2">Currently on duty</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -482,7 +541,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-yellow-300 mb-1">ON BREAK</p>
-                <p className="text-3xl font-bold text-yellow-100">4</p>
+                <p className="text-3xl font-bold text-yellow-100">{totalBreakUsers}</p>
                 <p className="text-xs text-yellow-400 mt-2">Any break type</p>
               </div>
               <Clock className="w-10 h-10 text-yellow-500/60" />
@@ -494,7 +553,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-300 mb-1">LEAVE</p>
-                <p className="text-3xl font-bold text-blue-100">0</p>
+                <p className="text-3xl font-bold text-blue-100">{totalLeaves}</p>
                 <p className="text-xs text-blue-400 mt-2">Approved some today</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -508,7 +567,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-red-300 mb-1">ABSENT</p>
-                <p className="text-3xl font-bold text-red-100">9</p>
+                <p className="text-3xl font-bold text-red-100">{totalAbsent}</p>
                 <p className="text-xs text-red-400 mt-2">Marked as absent</p>
               </div>
               <AlertCircle className="w-10 h-10 text-red-500/60" />
@@ -520,7 +579,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-300 mb-1">AVG NET WORK</p>
-                <p className="text-3xl font-bold text-purple-100">00:00:00</p>
+                <p className="text-3xl font-bold text-purple-100">{avgNetWorkTime}</p>
                 <p className="text-xs text-purple-400 mt-2">Per staff today</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
@@ -893,7 +952,8 @@ const OverallAttendanceDashboard = () => {
                       </div>
                     </td>
                   </tr>
-                ) : filteredData.length === 0 ? (
+                ) :
+                 filteredData.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
                       No records found
@@ -906,10 +966,10 @@ const OverallAttendanceDashboard = () => {
                         {row._id?.slice(0, 8)}...
                       </td>
                       <td className="px-4 py-3 text-sm capitalize text-white font-medium w-48">
-                        {row.user?.FullName}
+                        {row?.FullName}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-300 w-40">
-                        {row.user?.department || 'N/A'}
+                        {row?.department || 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-300 w-32">
                         {new Date(row.date).toLocaleDateString('en-GB')}
@@ -940,7 +1000,8 @@ const OverallAttendanceDashboard = () => {
                       </td>
                     </tr>
                   ))
-                )}
+                )
+                }
               </tbody>
             </table>
           </div>
