@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, ImageIcon, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff, X, Search, Filter, Download, Archive, Send, MessageSquare } from 'lucide-react';
+import { Calendar, ImageIcon, User, FileText, Clock, CheckCircle, Trash2, Eye, EyeOff, X, Search, Filter, Download, Archive, Send, MessageSquare, ArchiveRestore } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteReport, getAllReports, markReportAsSeen, getDeletedReports, replyToReport, } from '../../../redux/reportSlice';
+import { getAllReports, markReportAsSeen, getDeletedReports, replyToReport, softDeleteReport, deleteReport, restoreReport, } from '../../../redux/reportSlice';
 import toast from 'react-hot-toast';
 
 function Report() {
@@ -39,12 +39,15 @@ function Report() {
     }, [activeTab, dispatch]);
 
     const handleDelete = async (reportId) => {
+
         if (window.confirm('Are you sure you want to delete this report?')) {
             try {
-                await dispatch(deleteReport(reportId)).unwrap();
-                toast.success('Report deleted successfully');
+                await dispatch(softDeleteReport(reportId)).unwrap();
+                toast.success('Moved to bin Successfully!');
                 dispatch(getAllReports());
                 if (activeTab === 'archive') {
+                    dispatch(deleteReport(reportId)).unwrap();
+                    toast.success('Report deleted successfully');
                     dispatch(getDeletedReports());
                 }
             } catch (error) {
@@ -52,6 +55,23 @@ function Report() {
             }
         }
     };
+
+    const handleRestore = async (reportId) => {
+        if (window.confirm('Are you sure you want to restore this report?')) {
+            try {
+                await dispatch(restoreReport(reportId)).unwrap();
+                toast.success('Report Restore Successfully!');
+                dispatch(getAllReports());
+                if (activeTab === 'archive') {
+
+                    dispatch(getDeletedReports());
+                }
+            } catch (error) {
+                console.error('Failed to Restore report:', error);
+            }
+        }
+
+    }
 
     const handleMarkAsSeen = async (reportId, currentStatus) => {
         try {
@@ -70,30 +90,65 @@ function Report() {
         }
     };
 
-    const handleReply = async (message) => {
-        if (!selectedReport) return;
 
-        // Single reply mode (for backward compatibility)
-        const newReply = {
-            id: Date.now(),
-            message,
-            timestamp: new Date(),
-            sender: 'Admin'
-        };
 
-        setReplies(prev => ({
-            ...prev,
-            [selectedReport._id]: [...(prev[selectedReport._id] || []), newReply]
-        }));
 
-        setReplyMessage('');
-        setShowReplyModal(false);
-        toast.success('Reply sent successfully');
-    };
+    // const handleMultiReply = async () => {
+    //     if (!selectedReport) return;
+    //     console.log(selectedReport, "selectedReport")
+
+    //     const quickReplies = selectedQuickReplies;
+    //     const customReplies = replyMessage.trim() ? [replyMessage.trim()] : [];
+
+    //     if (quickReplies.length === 0 && customReplies.length === 0) {
+    //         toast.error('Please select at least one quick reply or write a custom message');
+    //         return;
+    //     }
+
+    //     try {
+    //         await dispatch(replyToReport({
+    //             reportId: selectedReport._id,
+    //             quickReplies,
+    //             customReplies
+    //         })).unwrap();
+    //         toast.success("Report send successfully!")
+
+    //         // Add local replies to state for immediate UI update
+    //         const newReplies = [
+    //             ...quickReplies.map(message => ({
+    //                 id: Date.now() + Math.random(),
+    //                 message,
+    //                 timestamp: new Date(),
+    //                 sender: 'Admin'
+    //             })),
+    //             ...customReplies.map(message => ({
+    //                 id: Date.now() + Math.random(),
+    //                 message,
+    //                 timestamp: new Date(),
+    //                 sender: 'Admin'
+    //             }))
+    //         ];
+
+    //         setReplies(prev => ({
+    //             ...prev,
+    //             [selectedReport._id]: [...(prev[selectedReport._id] || []), ...newReplies]
+    //         }));
+
+    //         // Reset state
+    //         setSelectedQuickReplies([]);
+    //         setReplyMessage('');
+    //         setShowReplyModal(false);
+
+    //         // Refresh reports to get updated data from server
+    //         dispatch(getAllReports());
+    //     } catch (error) {
+    //         console.error('Failed to send replies:', error);
+    //     }
+    // };
+
 
     const handleMultiReply = async () => {
         if (!selectedReport) return;
-        console.log(selectedReport, "selectedReport")
 
         const quickReplies = selectedQuickReplies;
         const customReplies = replyMessage.trim() ? [replyMessage.trim()] : [];
@@ -104,45 +159,43 @@ function Report() {
         }
 
         try {
-            await dispatch(replyToReport({
+            const response = await dispatch(replyToReport({
                 reportId: selectedReport._id,
                 quickReplies,
                 customReplies
             })).unwrap();
-            toast.success("Report send successfully!")
 
-            // Add local replies to state for immediate UI update
+            toast.success("Reply sent successfully!");
+
+            // ✅ Create new reply objects
             const newReplies = [
-                ...quickReplies.map(message => ({
-                    id: Date.now() + Math.random(),
-                    message,
-                    timestamp: new Date(),
-                    sender: 'Admin'
+                ...quickReplies.map(msg => ({
+                    replyMessage: msg,
+                    repliedAt: new Date(),
                 })),
-                ...customReplies.map(message => ({
-                    id: Date.now() + Math.random(),
-                    message,
-                    timestamp: new Date(),
-                    sender: 'Admin'
-                }))
+                ...customReplies.map(msg => ({
+                    replyMessage: msg,
+                    repliedAt: new Date(),
+                })),
             ];
 
-            setReplies(prev => ({
+            // ✅ UPDATE selectedReport immediately
+            setSelectedReport(prev => ({
                 ...prev,
-                [selectedReport._id]: [...(prev[selectedReport._id] || []), ...newReplies]
+                replies: [...(prev.replies || []), ...newReplies]
             }));
 
-            // Reset state
             setSelectedQuickReplies([]);
             setReplyMessage('');
             setShowReplyModal(false);
 
-            // Refresh reports to get updated data from server
             dispatch(getAllReports());
+
         } catch (error) {
             console.error('Failed to send replies:', error);
         }
     };
+
 
     const toggleQuickReply = (response) => {
         setSelectedQuickReplies(prev =>
@@ -234,6 +287,7 @@ function Report() {
         a.click();
         toast.success('CSV exported successfully');
     };
+
 
     return (
         <div className='min-h-[92.7vh] pt-2 flex flex-col gap-6 text-white px-4'>
@@ -387,7 +441,8 @@ function Report() {
                     filteredReports.map((report) => {
                         const isSeen = report.status === "seen";
                         const isArchived = activeTab === 'archive';
-                        const reportReplies = replies[report._id] || [];
+                        {/* const reportReplies = report.replies.length
+                        console.log(reportReplies, "reportRE") */}
                         return (
                             <div
                                 key={report._id}
@@ -439,10 +494,10 @@ function Report() {
                                                         <span>Image attached</span>
                                                     </div>
                                                 )}
-                                                {reportReplies.length > 0 && (
+                                                {report.replies?.length > 0 && (
                                                     <span className="text-xs text-purple-400 flex items-center gap-1">
                                                         <MessageSquare size={12} />
-                                                        {reportReplies.length}
+                                                        {report.replies?.length}
                                                     </span>
                                                 )}
                                                 {isArchived && report.deletedAt && (
@@ -508,6 +563,19 @@ function Report() {
                                             <Trash2 size={16} />
                                             {isArchived ? 'Permanently Delete' : 'Delete'}
                                         </button>
+                                        {isArchived &&
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRestore(report._id);
+                                                }}
+                                                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 transition-all ${!isArchived ? '' : 'flex-1'
+                                                    }`}
+                                            >
+                                                {/* <Trash2 size={16} /> */}
+                                                <ArchiveRestore size={16} />
+                                                Restrore
+                                            </button>}
                                     </div>
                                 </div>
                             </div>
@@ -600,22 +668,22 @@ function Report() {
                             </div>
 
                             {/* Replies Section */}
-                            {replies[selectedReport._id] && replies[selectedReport._id].length > 0 && (
+                            {selectedReport.replies.length > 0 && (
                                 <div className="bg-[rgba(59,131,246,0.06)] rounded-lg p-4 border border-gray-700">
                                     <h3 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                                         <MessageSquare size={16} />
-                                        Replies ({replies[selectedReport._id].length})
+                                        Replies{selectedReport.replies?.length}
                                     </h3>
                                     <div className="space-y-3 max-h-64 overflow-y-auto">
-                                        {replies[selectedReport._id].map(reply => (
+                                        {selectedReport.replies.map(reply => (
                                             <div key={reply.id} className="bg-slate-800/50 rounded-lg p-3 border border-gray-700">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <span className="text-sm font-medium text-purple-400">{reply.sender}</span>
-                                                    <span className="text-xs text-gray-500">
-                                                        {reply.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                                    <span className="text-sm font-medium text-purple-400">{reply.replyMessage}</span>
+                                                    {/* <span className="text-xs text-gray-500">
+                                                        {reply.repliedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span> */}
                                                 </div>
-                                                <p className="text-sm text-gray-300">{reply.message}</p>
+                                                <p className="text-sm text-gray-300"></p>
                                             </div>
                                         ))}
                                     </div>
@@ -657,6 +725,7 @@ function Report() {
                                         </button>
                                     </>
                                 )}
+
                                 <button
                                     onClick={() => {
                                         handleDelete(selectedReport._id);
@@ -668,6 +737,20 @@ function Report() {
                                     <Trash2 size={20} />
                                     {activeTab === 'archive' ? 'Permanently Delete' : 'Delete Report'}
                                 </button>
+                                {
+                                    activeTab === 'archive' &&
+                                    <button
+                                        onClick={() => {
+                                            handleRestore(selectedReport._id);
+                                            setSelectedReport(null);
+                                        }}
+                                        className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 transition-all ${activeTab === 'archive' ? 'flex-1' : ''
+                                            }`}
+                                    >
+                                        <ArchiveRestore size={16} />
+                                        Restore
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>

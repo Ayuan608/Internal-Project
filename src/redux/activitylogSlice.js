@@ -136,6 +136,24 @@ export const deleteWhitelistIp = createAsyncThunk(
     }
 );
 
+export const activateStatus = createAsyncThunk(
+    "activity/activateStatus",
+    async ({ id, status }, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.put(`/activate-status/${id}`,
+                { status },
+                { withCredentials: true }
+            );
+            return data.user;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to update user status"
+            );
+        }
+    }
+);
+
+
 const activitySlice = createSlice({
     name: "activity",
     initialState,
@@ -168,27 +186,7 @@ const activitySlice = createSlice({
                 state.error = action.payload;
             })
 
-            // ===== Terminate Session =====
-            .addCase(terminateSession.fulfilled, (state, action) => {
-                state.activities = state.activities.map((activity) =>
-                    activity._id === action.payload.id
-                        ? { ...activity, terminated: true }
-                        : activity
-                );
-            })
-            .addCase(terminateSession.rejected, (state, action) => {
-                state.error = action.payload;
-            })
-            .addCase(activateSession.fulfilled, (state, action) => {
-                state.activities = state.activities.map((activity) =>
-                    activity._id === action.payload.id
-                        ? { ...activity, terminated: false }
-                        : activity
-                );
-            })
-            .addCase(activateSession.rejected, (state, action) => {
-                state.error = action.payload;
-            })
+
             .addCase(addWhitelistIp.pending, (state) => {
                 state.loading = true;
             })
@@ -242,7 +240,26 @@ const activitySlice = createSlice({
             .addCase(deleteWhitelistIp.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+
+            .addCase(activateStatus.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(activateStatus.fulfilled, (state, action) => {
+                state.loading = false;
+                // Update the corresponding activity if exists
+                state.activities = state.activities.map((activity) =>
+                    activity.userId === action.payload._id
+                        ? { ...activity, status: action.payload.status, isBlocked: action.payload.isBlocked }
+                        : activity
+                );
+            })
+            .addCase(activateStatus.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
+
 
     },
 });

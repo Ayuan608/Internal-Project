@@ -70,7 +70,7 @@ export const createReport = createAsyncThunk("report/create", async (data) => {
 });
 
 // Soft delete report
-export const deleteReport = createAsyncThunk("report/delete", async (id) => {
+export const softDeleteReport = createAsyncThunk("report/delete", async (id) => {
     try {
         await axiosInstance.patch(`/report/delete/${id}`);
         toast.success("Report deleted successfully");
@@ -81,6 +81,22 @@ export const deleteReport = createAsyncThunk("report/delete", async (id) => {
         throw error;
     }
 });
+
+export const deleteReport = createAsyncThunk(
+    "report/deleteReport",
+    async (reportId, { rejectWithValue }) => {
+        console.log(reportId)
+        try {
+            const res = await axiosInstance.delete(`/report/delete-report/${reportId}`);
+            return reportId; // return ID to remove from store
+        } catch (error) {
+            const message =
+                error?.response?.data?.message || "Failed to delete report";
+            toast.error(message);
+            return rejectWithValue(message);
+        }
+    }
+);
 
 // Mark report as seen
 export const markReportAsSeen = createAsyncThunk("report/markAsSeen", async (id, { rejectWithValue }) => {
@@ -115,6 +131,24 @@ export const replyToReport = createAsyncThunk(
     }
 );
 
+export const restoreReport = createAsyncThunk(
+    "report/restoreReport",
+    async (reportId, { rejectWithValue }) => {
+        console.log("reportId", reportId)
+        try {
+
+            const response = await axiosInstance.put(
+                `/report/restore/${reportId}`
+            );
+
+            console.log(response.data.report)
+            return response.data.report;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to restore report");
+        }
+    }
+);
+
 const reportSlice = createSlice({
     name: "report",
     initialState,
@@ -139,7 +173,7 @@ const reportSlice = createSlice({
                 state.allReports.unshift(action.payload);
             })
             // Delete report
-            .addCase(deleteReport.fulfilled, (state, action) => {
+            .addCase(softDeleteReport.fulfilled, (state, action) => {
                 const reportId = action.payload;
                 state.reportsData = state.reportsData.filter(r => r._id !== reportId);
                 state.allReports = state.allReports.filter(r => r._id !== reportId);
@@ -157,20 +191,78 @@ const reportSlice = createSlice({
             })
             .addCase(replyToReport.fulfilled, (state, action) => {
                 state.loading = false;
-                const updatedReport = action.payload;
+                const updatedReport = action.payload.data;  // <--- fix here
 
-                // Update all arrays where this report exists
                 ["reportsData", "allReports", "deletedReports"].forEach((arr) => {
                     const index = state[arr].findIndex(r => r._id === updatedReport._id);
                     if (index !== -1) state[arr][index] = updatedReport;
                     else state[arr].push(updatedReport);
                 });
             })
+
             .addCase(replyToReport.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload?.message || "Failed to send replies";
+            })
+            .addCase(deleteReport.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteReport.fulfilled, (state, action) => {
+                state.loading = false;
+                const reportId = action.payload;
+
+                state.reportsData = state.reportsData.filter(
+                    (r) => r._id !== reportId
+                );
+                state.allReports = state.allReports.filter(
+                    (r) => r._id !== reportId
+                );
+                state.deletedReports = state.deletedReports.filter(
+                    (r) => r._id !== reportId
+                );
+            })
+            .addCase(deleteReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            .addCase(restoreReport.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(restoreReport.fulfilled, (state, action) => {
+                state.loading = false;
+                const restoredReport = action.payload;
+
+                // Remove from deletedReports
+                state.deletedReports = state.deletedReports.filter(r => r._id !== restoredReport._id);
+
+                // Add or update in reportsData
+                const index = state.reportsData.findIndex(r => r._id === restoredReport._id);
+                if (index !== -1) {
+                    state.reportsData[index] = restoredReport;
+                } else {
+                    state.reportsData.unshift(restoredReport);
+                }
+
+                // Add or update in allReports
+                const allIndex = state.allReports.findIndex(r => r._id === restoredReport._id);
+                if (allIndex !== -1) {
+                    state.allReports[allIndex] = restoredReport;
+                } else {
+                    state.allReports.unshift(restoredReport);
+                }
+            })
+            .addCase(restoreReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || "Failed to restore report";
             });
+
+
     },
 });
+
+
 
 export default reportSlice.reducer;

@@ -8,13 +8,14 @@ import {
   Shield,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllActivities, terminateSession } from "../../../redux/activitylogSlice";
+import { activateStatus, getAllActivities, terminateSession } from "../../../redux/activitylogSlice";
 
 
-const   ActivityLogs = () => {
+const ActivityLogs = () => {
   const dispatch = useDispatch();
   const { activities } = useSelector((state) => state.activity);
   const [filter, setFilter] = useState("all");
+  const [status, setStatus] = useState("active")
 
   useEffect(() => {
     dispatch(getAllActivities());
@@ -24,16 +25,37 @@ const   ActivityLogs = () => {
     return () => clearInterval(interval);
   }, [dispatch, filter]);
 
-  const handleTerminate = (id) => {
-    if (window.confirm("Are you sure you want to terminate this session?")) {
-      dispatch(terminateSession(id));
+  // const handleTerminate = (id) => {
+  //   if (window.confirm("Are you sure you want to terminate this session?")) {
+  //     dispatch(terminateSession(id));
+  //   }
+  // };
+  // const handleActivate = (id) => {
+  //   if (window.confirm("Do you want to reactivate this session?")) {
+  //     dispatch(activateSession(id));
+  //   }
+  // };
+
+  const handleActivityStatus = (activity) => {
+    if (window.confirm("Are You sure for want to change the status?")) {
+      if (!activity.terminated) {
+        dispatch(activateStatus(
+          {
+            id: activity._id,
+            status: "terminate"
+          }
+        ))
+      }
+      else {
+        dispatch(activateStatus(
+          {
+            id: activity._id,
+            status: "active"
+          }
+        ))
+      }
     }
-  };
-  const handleActivate = (id) => {
-    if (window.confirm("Do you want to reactivate this session?")) {
-      dispatch(activateSession(id));
-    }
-  };
+  }
 
   const formatTime = (date) => {
     const now = new Date();
@@ -52,7 +74,7 @@ const   ActivityLogs = () => {
         (a) => a.loginAttempt?.toLowerCase() === filter.toLowerCase()
       );
 
-
+  console.log("filteredActivities", filteredActivities)
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-full mx-auto">
@@ -234,25 +256,23 @@ const   ActivityLogs = () => {
                     </td>
 
                     <td className="px-6 py-4">
-                      {activity.loginAttempt === "Success" && (
-                        <>
-                          {!activity.terminated ? (
-                            <button
-                              onClick={() => handleTerminate(activity._id)}
-                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
-                            >
-                              Terminate
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleActivate(activity._id)}
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
-                            >
-                              Activate
-                            </button>
-                          )}
-                        </>
+
+                      {!activity.terminated ? (
+                        <button
+                          onClick={() => handleActivityStatus(activity)}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
+                        >
+                          Terminate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActivityStatus(activity)}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                        >
+                          Activate
+                        </button>
                       )}
+
                     </td>
 
                   </tr>
