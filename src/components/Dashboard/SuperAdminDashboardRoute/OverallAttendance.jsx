@@ -86,7 +86,7 @@ const OverallAttendanceDashboard = () => {
   const { departmentAttendance = [],department } = useSelector(
     (s) => s.attendance || {}
   );
-console.log(departmentAttendance,"abhishek")
+
 const totalUsers= departmentAttendance.length
 const totalWorking = departmentAttendance.filter(
   item => item.status === "working"
@@ -200,7 +200,7 @@ const totalLeaves =departmentAttendance.filter(
     }
 
     const total = allAttendance.length;
-    console.log(total)
+
     const present = allAttendance.filter(e => e.alert === 'Present' || e.alert === 'Normal').length;
     const absent = allAttendance.filter(e => e.alert === 'Absent').length;
     const late = allAttendance.filter(e => e.alert === 'Late').length;
