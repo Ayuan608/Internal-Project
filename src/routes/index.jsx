@@ -50,7 +50,7 @@ export const Performance = lazy(() => import('../components/Dashboard/TeamLeader
 export const CheckReport = lazy(() => import('../components/Dashboard/CheckerDashboard/CheckReport'));
 
 // Common Pages
-export const Setting = lazy(() => import('../pages/Setting'));
+export const Settings = lazy(() => import('../pages/Setting Page/Settings'));
 export const InternalMailingPage = lazy(() => import('../pages/Internal Mailing/InternalMailingPages'));
 export const LeaveRequest = lazy(() => import('../pages/LeaveRequest'));
 export const FileSharing = lazy(() => import('../pages/File Sharing/FileSharing'));
