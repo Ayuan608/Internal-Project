@@ -116,7 +116,7 @@ text-gray-300 text-sm font-medium p-4">
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Shift Hours -</span>
-          <span className="text-[12px] w-40">{userData?.workingHour}</span>
+          <span className="text-[12px] w-36">{userData?.workingHour}</span>
         </div>
       </div>
 

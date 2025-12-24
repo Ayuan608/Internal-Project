@@ -302,16 +302,15 @@ const Menus = ({ toggle, onTitleChange }) => {
               </div>
             </div>
 
-            {toggle && role === "Super-Admin" && (
+            {toggle && (role === "Super-Admin" || role === "Admin") && (
               <Link
-                to="/dashboard/setting"
+                to={role === "Super-Admin" ? "/dashboard/setting" : "/admin/setting"}
                 className="flex px-2 items-center gap-4 font-medium text-white cursor-pointer transition-colors duration-200"
               >
                 <Settings className="w-5 h-5" />
                 <span className="text-sm">Settings</span>
               </Link>
             )}
-
           </div>
         </div>
       ) : (
@@ -341,7 +340,7 @@ const Menus = ({ toggle, onTitleChange }) => {
 
           <div className="absolute bottom-4 left-6 flex justify-center items-center z-10">
             <div className="flex flex-col gap-4 relative">
-          
+
               <div ref={wrapperRef} className="relative">
                 <img
                   src={
