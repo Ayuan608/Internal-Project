@@ -109,6 +109,7 @@ function Report() {
                 quickReplies,
                 customReplies
             })).unwrap();
+            toast.success("Report send successfully!")
 
             // Add local replies to state for immediate UI update
             const newReplies = [

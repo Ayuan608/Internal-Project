@@ -104,8 +104,9 @@ export const replyToReport = createAsyncThunk(
                 quickReplies,
                 customReplies,
             });
-            toast.success("Replies sent successfully");
-            return res.data.data;
+
+            console.log("responses", res)
+            return res.data;
         } catch (error) {
             const message = error?.response?.data?.message || "Failed to send replies";
             toast.error(message);
