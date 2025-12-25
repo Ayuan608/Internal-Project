@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, Users, UserCheck, UserX, Search } from "lucide-react";
-import { getDepartmentWiseUsers } from "../../../redux/attendenceSlice";
+// import { getDepartmentWiseUsers } from "../../../redux/attendenceSlice";
 import {
   ResponsiveContainer,
   PieChart,
@@ -50,11 +50,11 @@ console.log(departmentAttendance,"abhishek")
   const [statusFilter, setStatusFilter] = useState("All");
 
   // fetch data
-  useEffect(() => {
-    dispatch(getDepartmentWiseUsers()).catch((e) =>
-      console.error("fetch dept users err", e)
-    );
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(getDepartmentWiseUsers()).catch((e) =>
+  //     console.error("fetch dept users err", e)
+  //   );
+  // }, [dispatch]);
 
   // months utilities
   const daysInSelectedMonth = useMemo(() => {
