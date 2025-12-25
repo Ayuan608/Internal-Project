@@ -17,6 +17,8 @@ const initialState = {
   tempToken: null,
   require2FA: false,
   fcmToken: localStorage.getItem("fcmToken") || null,
+  error: null,
+  loading: false,
 };
 
 // function to handle signup
@@ -63,24 +65,20 @@ export const addAdminAccount = createAsyncThunk(
   }
 );
 // function to handle login
-export const login = createAsyncThunk("auth/login", async (data) => {
-  try {
-    let res = axiosInstance.post("/user/login", data);
-
-    await toast.promise(res, {
-      loading: "Loading...",
-      success: (data) => {
-        return data?.data?.message;
-      },
-      error: "Failed to log in",
-    });
-
-    res = await res;
-    return res.data;
-  } catch (error) {
-    toast.error(error.message);
+export const login = createAsyncThunk(
+  "auth/login",
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await axiosInstance.post("/user/login", data);
+      return res.data;
+    } catch (err) {
+      console.log(err.response?.data?.message); // for debugging
+      return rejectWithValue(err.response?.data?.message || "Login failed");
+    }
   }
-});
+);
+
+
 export const addFcm = createAsyncThunk(
   "/auth/add-fcm",
   async (fcmToken, { rejectWithValue }) => {
@@ -428,6 +426,15 @@ const authSlice = createSlice({
           localStorage.setItem('role', user.role);
         }
       })
+      .addCase(login.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        console.log(state.error, "errors")
+      })
       .addCase(verify2FA.fulfilled, (state, action) => {
         if (action.payload?.success) {
           // Store the new token
@@ -575,5 +582,4 @@ const authSlice = createSlice({
   },
 });
 
-export const { } = authSlice.actions;
 export default authSlice.reducer;
