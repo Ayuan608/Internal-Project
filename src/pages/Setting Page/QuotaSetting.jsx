@@ -71,7 +71,7 @@ const SimpleTab = styled(Tab)(({ theme }) => ({
 }));
 
 const SimpleSlider = styled(Slider)(({ theme }) => ({
-  color: '#9696a814',
+  // color: '#9696a814',
   height: 6,
   marginTop: '12px',
   marginBottom: '8px',
@@ -197,7 +197,7 @@ function QuotaSetting({ activeTab }) {
   const handleInputChange = (dept, shift) => (event) => {
     const value = parseInt(event.target.value) || quotas[dept].min;
     const clampedValue = Math.min(Math.max(value, quotas[dept].min), quotas[dept].max);
-    
+
     setQuotas(prev => ({
       ...prev,
       [dept]: {
@@ -220,7 +220,7 @@ function QuotaSetting({ activeTab }) {
 
       await dispatch(createQuota(quotaData)).unwrap();
       toast.success(`${dept} department quotas saved successfully!`);
-      
+
       // Refresh quotas
       await fetchQuotas();
     } catch (error) {
@@ -233,7 +233,7 @@ function QuotaSetting({ activeTab }) {
     try {
       await dispatch(resetAllQuotas()).unwrap();
       toast.success("All quotas reset to default values!");
-      
+
       // Refresh quotas
       await fetchQuotas();
     } catch (error) {
@@ -249,7 +249,7 @@ function QuotaSetting({ activeTab }) {
     } else {
       defaultValue = quotas[dept].default;
     }
-    
+
     setQuotas(prev => ({
       ...prev,
       [dept]: {
@@ -261,21 +261,21 @@ function QuotaSetting({ activeTab }) {
 
   // Department data
   const departments = [
-    { 
-      id: "CSR", 
-      name: "CSR Department", 
+    {
+      id: "CSR",
+      name: "CSR Department",
       description: "Customer Service Representative",
       icon: <UsersIcon sx={{ color: '#4a9eff' }} />
     },
-    { 
-      id: "Deposit", 
-      name: "Deposit Department", 
+    {
+      id: "Deposit",
+      name: "Deposit Department",
       description: "Deposit Operations",
       icon: <DollarSignIcon sx={{ color: '#4a9eff' }} />
     },
-    { 
-      id: "Withdraw", 
-      name: "Withdraw Department", 
+    {
+      id: "Withdraw",
+      name: "Withdraw Department",
       description: "Withdrawal Operations",
       icon: <CreditCardIcon sx={{ color: '#4a9eff' }} />
     }
@@ -291,15 +291,15 @@ function QuotaSetting({ activeTab }) {
   if (activeTab !== "change-quota") return null;
 
   return (
-    <Container maxWidth="" sx={{ py: 4, minHeight: '100vh' }}>
+    <Container maxWidth="xl" sx={{ py: 4, minHeight: '100vh' }}>
       {/* Header */}
       <SimpleCard sx={{ mb: 4 }}>
         <CardContent>
           <Stack direction="row" alignItems="center" spacing={2} mb={2}>
             <PieChartIcon sx={{ fontSize: 32, color: '#4a9eff' }} />
             <Box>
-              <Typography variant="h5" component="h1" gutterBottom sx={{ 
-                fontWeight: 'bold', 
+              <Typography variant="h5" component="h1" gutterBottom sx={{
+                fontWeight: 'bold',
                 color: '#ffffff'
               }}>
                 Quota Settings
@@ -332,7 +332,7 @@ function QuotaSetting({ activeTab }) {
               />
             ))}
           </Tabs>
-          
+
           <FormControlLabel
             control={
               <Switch
@@ -356,16 +356,16 @@ function QuotaSetting({ activeTab }) {
           <Box key={dept.id} sx={{ display: activeDept === dept.id ? 'block' : 'none' }}>
             <SimpleCard sx={{ p: 3 }}>
               {/* Department Header */}
-              <Stack 
-                direction={{ xs: 'column', md: 'row' }} 
-                justifyContent="space-between" 
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                justifyContent="space-between"
                 alignItems={{ xs: 'flex-start', md: 'center' }}
                 spacing={2}
                 mb={4}
               >
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Box sx={{ 
-                    backgroundColor: '#9696a814', 
+                  <Box sx={{
+                    backgroundColor: '#9696a814',
                     border: '1px solid #373747',
                     borderRadius: '6px',
                     px: 2,
@@ -379,9 +379,9 @@ function QuotaSetting({ activeTab }) {
                     {dept.description}
                   </Typography>
                 </Stack>
-                
-                <Box sx={{ 
-                  backgroundColor: '#2a2a36', 
+
+                <Box sx={{
+                  backgroundColor: '#2a2a36',
                   border: '1px solid #373747',
                   borderRadius: '6px',
                   px: 2,
@@ -394,23 +394,31 @@ function QuotaSetting({ activeTab }) {
               </Stack>
 
               {/* Shift Cards Grid */}
-              <Grid container spacing={2}>
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',          
+                  sm: '1fr 1fr',      
+                  md: '1fr 1fr',      
+                },
+                gap: 2,
+              }}>
                 {shifts.map((shift) => (
-                  <Grid item xs={12} sm={6} key={shift.id}>
+                  <Grid item xs={12} sm={6} md={6} key={shift.id}>
                     <SimpleShiftCard>
                       {/* Shift Header */}
-                      <Typography variant="subtitle1" sx={{ 
-                        fontWeight: 'bold', 
+                      <Typography variant="subtitle1" sx={{
+                        fontWeight: 'bold',
                         color: '#ffffff',
                         mb: 2
                       }}>
                         {shift.label}
                       </Typography>
-                      
+
                       {/* Current Target */}
-                      <Box sx={{ 
-                        mb: 2, 
-                        p: 1.5, 
+                      <Box sx={{
+                        mb: 2,
+                        p: 1.5,
                         backgroundColor: '#1e1e28',
                         borderRadius: '4px',
                         border: '1px solid #373747'
@@ -419,15 +427,15 @@ function QuotaSetting({ activeTab }) {
                           <Typography variant="body2" sx={{ color: '#a0a0a0' }}>
                             Current Target:
                           </Typography>
-                          <Typography variant="h6" sx={{ 
-                            fontWeight: 'bold', 
+                          <Typography variant="h6" sx={{
+                            fontWeight: 'bold',
                             color: '#4a9eff'
                           }}>
                             {quotas[dept.id][shift.id]}
                           </Typography>
                         </Stack>
                       </Box>
-                      
+
                       {/* Slider */}
                       <SimpleSlider
                         value={quotas[dept.id][shift.id]}
@@ -442,28 +450,28 @@ function QuotaSetting({ activeTab }) {
                           { value: quotas[dept.id].max, label: `${quotas[dept.id].max}` }
                         ]}
                       />
-                      
+
                       {/* Controls */}
                       <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
                         <Typography variant="caption" sx={{ color: '#808080' }}>
                           Min: {quotas[dept.id].min}
                         </Typography>
-                        
+
                         <TextField
                           type="number"
                           size="small"
                           value={quotas[dept.id][shift.id]}
                           onChange={handleInputChange(dept.id, shift.id)}
-                          inputProps={{ 
-                            min: quotas[dept.id].min, 
+                          inputProps={{
+                            min: quotas[dept.id].min,
                             max: quotas[dept.id].max,
-                            style: { 
+                            style: {
                               color: '#ffffff',
                               textAlign: 'center',
                               backgroundColor: '#1e1e28'
                             }
                           }}
-                          sx={{ 
+                          sx={{
                             width: 80,
                             '& .MuiOutlinedInput-root': {
                               backgroundColor: '#1e1e28',
@@ -476,12 +484,12 @@ function QuotaSetting({ activeTab }) {
                             }
                           }}
                         />
-                        
+
                         <Button
                           size="small"
                           variant="outlined"
                           onClick={() => resetShift(dept.id, shift.id)}
-                          sx={{ 
+                          sx={{
                             color: '#4a9eff',
                             borderColor: '#4a4a5a',
                             fontSize: '0.75rem',
@@ -493,7 +501,7 @@ function QuotaSetting({ activeTab }) {
                         >
                           Reset to Default
                         </Button>
-                        
+
                         <Typography variant="caption" sx={{ color: '#808080' }}>
                           Max: {quotas[dept.id].max}
                         </Typography>
@@ -501,7 +509,7 @@ function QuotaSetting({ activeTab }) {
                     </SimpleShiftCard>
                   </Grid>
                 ))}
-              </Grid>
+              </Box>
 
               {/* Save Changes Button */}
               <Divider sx={{ my: 3, borderColor: '#373747' }} />
@@ -511,7 +519,7 @@ function QuotaSetting({ activeTab }) {
                   startIcon={loading ? <CircularProgress size={18} sx={{ color: '#ffffff' }} /> : <SaveIcon />}
                   onClick={() => handleSaveQuota(dept.id)}
                   disabled={loading}
-                  sx={{ 
+                  sx={{
                     backgroundColor: '#4a9eff',
                     '&:hover': {
                       backgroundColor: '#3a8eff'
@@ -549,7 +557,7 @@ function QuotaSetting({ activeTab }) {
             startIcon={loading ? <CircularProgress size={18} sx={{ color: '#ffb74d' }} /> : <RefreshIcon />}
             onClick={handleResetAll}
             disabled={loading}
-            sx={{ 
+            sx={{
               color: '#ffb74d',
               borderColor: '#ffb74d',
               '&:hover': {
