@@ -26,10 +26,12 @@ export const getAllActivities = createAsyncThunk(
 export const recordLogin = createAsyncThunk(
     "activity/record",
     async (_, { rejectWithValue }) => {
+
         try {
             const { data } = await axiosInstance.post(`/activity/record`, {}, {
                 withCredentials: true,
             });
+            console.log(data)
             return data.activity;
         } catch (error) {
             return rejectWithValue(
@@ -139,8 +141,9 @@ export const deleteWhitelistIp = createAsyncThunk(
 export const activateStatus = createAsyncThunk(
     "activity/activateStatus",
     async ({ id, status }, { rejectWithValue }) => {
+
         try {
-            const { data } = await axiosInstance.put(`/activate-status/${id}`,
+            const { data } = await axiosInstance.put(`/activity/activate-status/${id}`,
                 { status },
                 { withCredentials: true }
             );
@@ -157,7 +160,8 @@ export const activateStatus = createAsyncThunk(
 const activitySlice = createSlice({
     name: "activity",
     initialState,
-    reducers: {},
+    reducers: {
+    },
     extraReducers: (builder) => {
         builder
             // ===== Get All Activities =====
@@ -248,13 +252,18 @@ const activitySlice = createSlice({
             })
             .addCase(activateStatus.fulfilled, (state, action) => {
                 state.loading = false;
-                // Update the corresponding activity if exists
                 state.activities = state.activities.map((activity) =>
-                    activity.userId === action.payload._id
-                        ? { ...activity, status: action.payload.status, isBlocked: action.payload.isBlocked }
+                    activity.userId === action.payload._id || activity.userId?._id === action.payload._id
+                        ? {
+                            ...activity,
+                            terminated: action.payload.terminated, // this drives your button
+                            status: action.payload.status,
+                        }
                         : activity
                 );
             })
+
+
             .addCase(activateStatus.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;

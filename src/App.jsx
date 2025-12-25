@@ -48,7 +48,7 @@ function App() {
   return (
     <Suspense fallback={<NoLoader />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/login"  />} />
 
         {/* PUBLIC ROUTES */}
         <Route element={<NotRequireAuth />}>
