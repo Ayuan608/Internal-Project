@@ -633,22 +633,23 @@ const AttendanceDashboard = () => {
   };
 
   // Debug info
-  useEffect(() => {
-    console.log("📊 DEBUG STATE:");
-    console.log("User ID:", userId);
-    console.log("Today Attendance:", todayAttendance);
-    console.log("Today Attendance smokeBreaks:", todayAttendance?.smokeBreaks);
-    console.log("Today Attendance wcBreaks:", todayAttendance?.wcBreaks);
-    console.log("Today Attendance lunchBreaks:", todayAttendance?.lunchBreaks);
-    console.log("Attendance List length:", reduxAttendanceList?.length);
-    console.log("Table Data length:", tableData?.length);
-    console.log("Is Online:", isOnline);
-    console.log("Active Timer:", activeTimer);
-    console.log("Break Counts:", breakCounts);
-  }, [userId, todayAttendance, reduxAttendanceList, tableData, isLoading, isOnline, activeTimer, breakCounts]);
+  // useEffect(() => {
+  //   console.log("📊 DEBUG STATE:");
+  //   console.log("User ID:", userId);
+  //   console.log("Today Attendance:", todayAttendance);
+  //   console.log("Today Attendance smokeBreaks:", todayAttendance?.smokeBreaks);
+  //   console.log("Today Attendance wcBreaks:", todayAttendance?.wcBreaks);
+  //   console.log("Today Attendance lunchBreaks:", todayAttendance?.lunchBreaks);
+  //   console.log("Attendance List length:", reduxAttendanceList?.length);
+  //   console.log("Table Data length:", tableData?.length);
+  //   console.log("Is Online:", isOnline);
+  //   console.log("Active Timer:", activeTimer);
+  //   console.log("Break Counts:", breakCounts);
+  // }, [userId, todayAttendance, reduxAttendanceList, tableData, isLoading, isOnline, activeTimer, breakCounts]);
 
   // ... existing state declarations
 
+  console.log("tableData", tableData)
   // Add this to your existing state declarations:
   const [wfhFormData, setWfhFormData] = useState({
     issueType: 'Internet issue',
