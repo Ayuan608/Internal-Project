@@ -288,7 +288,26 @@ export const updateDayOffStatus = createAsyncThunk(
   }
 );
 
+// =============== UPDATE ATTENDANCE (ADMIN / CHECKER) ===============
+export const updateAttendance = createAsyncThunk(
+  "attendance/updateAttendance",
+  async ({ user, shift, remarks }, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.patch(
+        `/attendance/update-attendanceData/${user}`,
+        { shift, remarks }
+      );
 
+      if (data.success) {
+        toast.success(data.message || "Attendance updated");
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to update attendance"));
+    }
+  }
+);
 // SLICE
 const attendanceSlice = createSlice({
   name: "attendance",
@@ -584,7 +603,7 @@ const attendanceSlice = createSlice({
         state.error = action.payload;
         state.success = false;
       })
-      
+
 
       .addCase(updateDayOffStatus.pending, (state) => {
         state.isLoading = true;
@@ -617,7 +636,39 @@ const attendanceSlice = createSlice({
         state.error = action.payload;
         state.success = false;
       })
+      // =============== UPDATE ATTENDANCE ===============
+      .addCase(updateAttendance.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
 
+      .addCase(updateAttendance.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.success = true;
+
+        const updatedAttendance = action.payload.attendance;
+
+
+        const index = state.allAttendance.findIndex(
+          (a) => a._id === updatedAttendance._id
+        );
+
+        if (index !== -1) {
+          state.allAttendance[index] = updatedAttendance;
+        }
+
+        if (
+          state.todayAttendance &&
+          state.todayAttendance._id === updatedAttendance._id
+        ) {
+          state.todayAttendance = updatedAttendance;
+        }
+      })
+
+      .addCase(updateAttendance.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
       // PENDING STATES FOR ALL
       .addMatcher(
         (action) => action.type.endsWith('/pending'),
@@ -628,6 +679,7 @@ const attendanceSlice = createSlice({
           state.error = null;
         }
       )
+
       .addMatcher(
         (action) => action.type.endsWith('/rejected'),
         (state, action) => {
@@ -637,6 +689,10 @@ const attendanceSlice = createSlice({
           toast.error(action.payload || "Something went wrong");
         }
       )
+
+
+
+
 
   },
 });

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Edit2, Save, X, Download, FileText, Search, Trash2 } from 'lucide-react';
-
+import { updateAttendance,getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
+import { useDispatch } from 'react-redux';
 // Department wise colors
 const DEPARTMENT_COLORS = {
   'CSR': { bg: 'bg-blue-500/20', text: 'text-blue-300', border: 'border-blue-700/30' },
@@ -83,7 +84,7 @@ export default function AttendanceTable({
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentMonthInfo, setCurrentMonthInfo] = useState(getCurrentMonthYear());
-
+  const dispatch = useDispatch();
   // Update current date every day
   useEffect(() => {
     const interval = setInterval(() => {
@@ -117,8 +118,9 @@ export default function AttendanceTable({
 
   // Check if user has edit access (Admin or SuperAdmin)
   const hasEditAccess = useMemo(() => {
-    return role === 'Admin' || role === 'SuperAdmin';
+    return role === 'Admin' || role === 'Super-Admin';
   }, [role]);
+
 
   // Convert backend pattern to frontend status
   const convertBackendPattern = (backendPattern) => {
@@ -127,12 +129,12 @@ export default function AttendanceTable({
     return backendPattern.map(code => {
       // Convert to string first
       const codeStr = code.toString();
-      
+
       // If it's already a frontend code (D, M, N, PS, RD), return as is
       if (Object.keys(FRONTEND_STATUS_MAP).includes(codeStr)) {
         return codeStr;
       }
-      
+
       // Convert backend numeric codes
       return BACKEND_TO_FRONTEND_STATUS[code] || 'D'; // Default to Day
     });
@@ -306,7 +308,15 @@ export default function AttendanceTable({
       console.log('Saving attendance data:', editData);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      onAttendanceUpdated(editData);
+      // onAttendanceUpdated(editData);
+      dispatch(
+        updateAttendance({
+          user: editData._id,     
+          shift: editData.shift,  
+          remarks: editData.remarks 
+        })
+      );
+      dispatch(getDepartmentWiseUsers())
       alert('Attendance data saved successfully!');
 
       setEditingId(null);

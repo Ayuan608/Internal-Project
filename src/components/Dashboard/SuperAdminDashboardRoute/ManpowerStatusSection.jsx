@@ -59,7 +59,10 @@ const statusColorMap = {
 const ManpowerStatusSection = () => {
   const dispatch = useDispatch();
   const { allAttendance, isLoading } = useSelector((state) => state.attendance);
-  
+    const { departmentAttendance = [],department } = useSelector(
+      (s) => s.attendance || {}
+    );
+    // console.log(departmentAttendance)
   const [selectedDept, setSelectedDept] = useState("All Departments");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [search, setSearch] = useState("");
@@ -88,9 +91,9 @@ const ManpowerStatusSection = () => {
 
   // Convert attendance data to manpower records
   const manpowerData = useMemo(() => {
-    if (!allAttendance || !Array.isArray(allAttendance)) return [];
-    
-    return allAttendance.map((record, index) => {
+    if (!departmentAttendance || !Array.isArray(departmentAttendance)) return [];
+    // console.log(departmentAttendance)
+    return departmentAttendance.map((record, index) => {
       // Map attendance status to manpower status
       let manpowerStatus = "Present";
       if (record.alert === "Absent") manpowerStatus = "Absent";
@@ -100,19 +103,19 @@ const ManpowerStatusSection = () => {
       else if (record.alert === "Suspended") manpowerStatus = "Suspended";
       else if (record.alert === "Day Off") manpowerStatus = "Day Off";
       else if (record.alert === "Present" || record.alert === "Normal") manpowerStatus = "Present";
-      
+      console.log(record)
       return {
         id: record._id || `emp-${index}`,
         date: record.date ? new Date(record.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        department: record.user?.department ? `${record.user.department} Department` : "Unknown Department",
-        name: record.user?.FullName || "Unknown Employee",
-        status: manpowerStatus,
+        department: record?.department ? `${record.department} Department` : "Unknown Department",
+        name: record?.FullName || "Unknown Employee",
+        status: record.status,
         totalViolation: record.violationCount || 0,
         totalDayOff: record.dayOffCount || 0,
         originalRecord: record
       };
     });
-  }, [allAttendance]);
+  }, [departmentAttendance]);
 
   // Filter data based on selected filters
   const filteredData = useMemo(() => {

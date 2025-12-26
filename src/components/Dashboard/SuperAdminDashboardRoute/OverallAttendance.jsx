@@ -41,7 +41,7 @@ import {
 } from 'recharts';
 import html2canvas from "html2canvas";
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllAttendance } from '../../../redux/attendenceSlice';
+import { getAllAttendance ,getDepartmentWiseUsers} from '../../../redux/attendenceSlice';
 import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
 import ManpowerStatusSection from './ManpowerStatusSection';
 
@@ -104,23 +104,26 @@ const totalLeaves =departmentAttendance.filter(
 ).length;
 
   // Fetch data on mount and when filters change
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       await dispatch(getAllAttendance({
+  //         startDate: startDate || undefined,
+  //         endDate: endDate || undefined,
+  //         department: selectedDept !== 'All' ? selectedDept : undefined,
+  //         page: 1,
+  //         limit: 100
+  //       })).unwrap();
+  //     } catch (error) {
+  //       console.error('Failed to fetch attendance data:', error);
+  //     }
+  //   };
+  //   fetchData();
+  // }, [dispatch, startDate, endDate, selectedDept]);
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await dispatch(getAllAttendance({
-          startDate: startDate || undefined,
-          endDate: endDate || undefined,
-          department: selectedDept !== 'All' ? selectedDept : undefined,
-          page: 1,
-          limit: 100
-        })).unwrap();
-      } catch (error) {
-        console.error('Failed to fetch attendance data:', error);
-      }
-    };
-    fetchData();
-  }, [dispatch, startDate, endDate, selectedDept]);
-
+    dispatch(getDepartmentWiseUsers()).catch((e) =>
+      console.error("fetch dept users err", e)
+    )  }, [dispatch]);
 
   const downloadCard = async () => {
     const card = popupRef.current;
