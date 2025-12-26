@@ -54,7 +54,9 @@ const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => {
 const AttendanceDashboard = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state?.auth?.data);
+
   const userId = user?._id;
+  console.log("userID", userId)
 
   // Redux state
   const reduxAttendanceList = useSelector((state) => state.attendance?.attendanceList) || [];
@@ -69,6 +71,9 @@ const AttendanceDashboard = () => {
   const [showWFHModal, setShowWFHModal] = useState(false);
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [showDayOffModal, setShowDayOffModal] = useState(false);
+  const [hiddenTimerType, setHiddenTimerType] = useState(null)
+
+
   const [dayOffForm, setDayOffForm] = useState({
     date: "",
     reason: "",
@@ -87,19 +92,20 @@ const AttendanceDashboard = () => {
   const [breakModal, setBreakModal] = useState({
     open: false,
     type: "",
-    start: null,
-    end: null,
+    breaks: [],
     date: null
   });
-  const openBreakDetails = (type, start, end, date) => {
+
+  const openBreakDetails = (type, breaks, date) => {
     setBreakModal({
       open: true,
       type,
-      start,
-      end,
+      breaks: breaks || [],
       date
     });
   };
+
+  console.log("breakModal", breakModal)
 
   // Update live clock
   useEffect(() => {
@@ -221,50 +227,36 @@ const AttendanceDashboard = () => {
   }, [todayAttendance]);
 
   // Check for active breaks and start timer - FIXED
+  // Update break counts from today's attendance - FIXED
   useEffect(() => {
-    if (todayAttendance) {
-      let activeBreak = null;
+    if (!todayAttendance) {
+      setActiveTimer(null);
+      setShowBreakModal(false);
+      return;
+    }
 
-      // Check smoke breaks
-      const smokeBreaks = todayAttendance.smokeBreaks || [];
-      if (smokeBreaks.length > 0) {
-        const lastSmoke = smokeBreaks[smokeBreaks.length - 1];
-        if (lastSmoke && !lastSmoke.end) {
-          activeBreak = { type: "smoke", startTime: new Date(lastSmoke.start) };
-        }
-      }
+    const findActiveBreak = (type) => {
+      const arr = todayAttendance[`${type}Breaks`] || [];
+      const active = arr.find(b => b && !b.end);
+      return active
+        ? { type, startTime: new Date(active.start) }
+        : null;
+    };
 
-      // Check WC breaks
-      const wcBreaks = todayAttendance.wcBreaks || [];
-      if (!activeBreak && wcBreaks.length > 0) {
-        const lastWc = wcBreaks[wcBreaks.length - 1];
-        if (lastWc && !lastWc.end) {
-          activeBreak = { type: "wc", startTime: new Date(lastWc.start) };
-        }
-      }
+    const active =
+      findActiveBreak("smoke") ||
+      findActiveBreak("wc") ||
+      findActiveBreak("lunch");
 
-      // Check lunch breaks
-      const lunchBreaks = todayAttendance.lunchBreaks || [];
-      if (!activeBreak && lunchBreaks.length > 0) {
-        const lastLunch = lunchBreaks[lunchBreaks.length - 1];
-        if (lastLunch && !lastLunch.end) {
-          activeBreak = { type: "lunch", startTime: new Date(lastLunch.start) };
-        }
-      }
-
-      if (activeBreak) {
-        console.log("⏰ Active break detected:", activeBreak);
-        setActiveTimer(activeBreak);
-        setShowBreakModal(true);
-      } else {
-        setActiveTimer(null);
-        setShowBreakModal(false);
-      }
+    if (active) {
+      setActiveTimer(active);
+      setShowBreakModal(true);
     } else {
       setActiveTimer(null);
       setShowBreakModal(false);
     }
   }, [todayAttendance]);
+
 
   // Timer countdown
   useEffect(() => {
@@ -356,6 +348,10 @@ const AttendanceDashboard = () => {
 
   // Handle Start Break - FIXED: WC और Lunch के लिए conditions सही की
   const handleStartBreak = async (breakType) => {
+    if (!isBreakAvailable(breakType)) {
+      toast.error("Break already active");
+      return;
+    }
     if (!userId) {
       toast.error("User ID not found");
       return;
@@ -540,24 +536,19 @@ const AttendanceDashboard = () => {
 
     const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
 
-    // Check if last break is active (no end time)
-    if (breaksArray.length > 0) {
-      const lastBreak = breaksArray[breaksArray.length - 1];
-      if (lastBreak && !lastBreak.end) {
-        return false; // Break already active
-      }
-    }
+    // ❌ If ANY break is active → block
+    if (breaksArray.some(b => b && !b.end)) return false;
 
-    // Check maximum limits - FIXED: Completed breaks count
     const maxLimits = {
       smoke: 3,
       wc: 3,
-      lunch: 2
+      lunch: 2,
     };
 
-    const completedBreaks = breaksArray.filter(b => b && b.end).length;
+    const completedBreaks = breaksArray.filter(b => b?.end).length;
     return completedBreaks < maxLimits[breakType];
   };
+
 
   // Handle day off submit
   const handleDayOffSubmit = async () => {
@@ -574,6 +565,7 @@ const AttendanceDashboard = () => {
         total += Math.round((new Date(b.end) - new Date(b.start)) / 60000);
       }
     });
+    console.log(total, "total");
     return total > 0 ? `${total}m` : "0m";
   };
 
@@ -632,22 +624,7 @@ const AttendanceDashboard = () => {
     };
   };
 
-  // Debug info
-  // useEffect(() => {
-  //   console.log("📊 DEBUG STATE:");
-  //   console.log("User ID:", userId);
-  //   console.log("Today Attendance:", todayAttendance);
-  //   console.log("Today Attendance smokeBreaks:", todayAttendance?.smokeBreaks);
-  //   console.log("Today Attendance wcBreaks:", todayAttendance?.wcBreaks);
-  //   console.log("Today Attendance lunchBreaks:", todayAttendance?.lunchBreaks);
-  //   console.log("Attendance List length:", reduxAttendanceList?.length);
-  //   console.log("Table Data length:", tableData?.length);
-  //   console.log("Is Online:", isOnline);
-  //   console.log("Active Timer:", activeTimer);
-  //   console.log("Break Counts:", breakCounts);
-  // }, [userId, todayAttendance, reduxAttendanceList, tableData, isLoading, isOnline, activeTimer, breakCounts]);
 
-  // ... existing state declarations
 
   console.log("tableData", tableData)
   // Add this to your existing state declarations:
@@ -757,8 +734,19 @@ const AttendanceDashboard = () => {
 
   // ... rest of your state
 
+  const handleTimer = () => {
+    setShowBreakModal(false)
+    setHiddenTimerType(activeTimer.type)
+  }
+
+  const handleShowTimer = () => {
+    setShowBreakModal(true)
+    setHiddenTimerType(null)
+  }
+
+
   return (
-    <div className="min-h-screen p-4 text-slate-200 bg-[#020617] bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.65)_0%,_rgba(2,6,23,1)_65%)]">
+    <div className="min-h-screen p-4 text-slate-200 bg-[#020617] ">
       <div className="mx-auto max-w-full px-5 py-6 relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-col md:flex-row">
@@ -923,7 +911,7 @@ const AttendanceDashboard = () => {
 
               <div className="mt-5 grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setShowBreakModal(false)}
+                  onClick={handleTimer}
                   className="rounded-xl px-3.5 py-2 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
                 >
                   Hide Timer
@@ -967,7 +955,7 @@ const AttendanceDashboard = () => {
                 disabled={isLoading}
                 className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm border border-emerald-600/60 bg-slate-950/70 text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all"
               >
-                <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                <RefreshCw size={16} />
                 Refresh Data
               </button>
             </div>
@@ -976,39 +964,65 @@ const AttendanceDashboard = () => {
 
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
+            <div
               onClick={() => handleStartBreak('smoke')}
               disabled={!isBreakAvailable('smoke')}
               className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('smoke')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 cursor-not-allowed"
+                ? "border border-slate-700 bg-slate-900/50 text-slate-500"
                 : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
             >
               <Coffee size={16} />
               <span>Smoke Break ({breakCounts.smoke}/3 • 5m)</span>
-            </button>
-            <button
+              {hiddenTimerType === 'smoke' && <button
+                onClick={handleShowTimer}
+                className="ms-4 rounded-xl px-2 py-1 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all text-xs"
+              >
+                Show Timer
+              </button>
+              }
+            </div>
+
+
+
+            <div
               onClick={() => handleStartBreak('wc')}
               disabled={!isBreakAvailable('wc')}
               className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('wc')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 cursor-not-allowed"
+                ? "border border-slate-700 bg-slate-900/50 text-slate-500 "
                 : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
             >
               <Droplets size={16} />
               <span>WC Break ({breakCounts.wc}/3 • 5m)</span>
-            </button>
-            <button
+              {hiddenTimerType === 'wc' && <button
+                onClick={handleShowTimer}
+                className="ms-9 rounded-xl px-3.5 py-2 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
+              >
+                Show Timer
+              </button>
+              }
+            </div>
+
+            <div
               onClick={() => handleStartBreak('lunch')}
               disabled={!isBreakAvailable('lunch')}
               className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('lunch')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 cursor-not-allowed"
+                ? "border border-slate-700 bg-slate-900/50 text-slate-500 "
                 : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
             >
               <Utensils size={16} />
               <span>Lunch Break ({breakCounts.lunch}/2 • 30m)</span>
-            </button>
+              {hiddenTimerType === 'lunch' && <button
+                onClick={handleShowTimer}
+                className="ms-9 rounded-xl px-3.5 py-2 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
+              >
+                Show Timer
+              </button>
+              }
+            </div>
+
           </div>
         </div>
 
@@ -1054,7 +1068,7 @@ const AttendanceDashboard = () => {
                 disabled={isLoading}
                 className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs border border-emerald-600/60 bg-slate-900/70 text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all"
               >
-                <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+                <RefreshCw size={14} />
                 Refresh
               </button>
             </div>
@@ -1079,7 +1093,7 @@ const AttendanceDashboard = () => {
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-slate-600 border-t-sky-500 rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-slate-600 border-t-sky-500 rounded-full"></div>
                         Loading attendance history...
                       </div>
                     </td>
@@ -1094,16 +1108,17 @@ const AttendanceDashboard = () => {
                       <td className="px-4 py-3 text-slate-200">{record.punchIn}</td>
                       <td className="px-4 py-3 text-slate-200">{record.punchOut}</td>
                       <td className="px-4 py-3 text-slate-300">
-                        {record.wcBreak !== "0m" ? (
+
+                        {record.fullRecord?.wcBreaks?.length > 0 ? (
                           <button
                             onClick={() =>
                               openBreakDetails(
                                 "WC",
-                                record.fullRecord?.wcBreaks?.[0]?.start,
-                                record.fullRecord?.wcBreaks?.[0]?.end,
+                                record.fullRecord?.wcBreaks,
                                 record.fullRecord?.date
                               )
                             }
+
                             className="px-3 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 
       border border-purple-500/30 rounded-lg text-xs transition"
                           >
@@ -1115,16 +1130,16 @@ const AttendanceDashboard = () => {
                       </td>
 
                       <td className="px-4 py-3 text-slate-300">
-                        {record.smokeBreak !== "0m" ? (
+                        {record.fullRecord?.smokeBreaks?.length > 0 ? (
                           <button
                             onClick={() =>
                               openBreakDetails(
                                 "SMOKE",
-                                record.fullRecord?.smokeBreaks?.[0]?.start,
-                                record.fullRecord?.smokeBreaks?.[0]?.end,
+                                record.fullRecord?.smokeBreaks,
                                 record.fullRecord?.date
                               )
                             }
+
                             className="px-3 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 
       border border-pink-500/30 rounded-lg text-xs transition"
                           >
@@ -1136,16 +1151,17 @@ const AttendanceDashboard = () => {
                       </td>
 
                       <td className="px-4 py-3 text-slate-300">
-                        {record.lunchBreak !== "0m" ? (
+
+                        {record.fullRecord?.lunchBreaks?.length > 0 ? (
                           <button
                             onClick={() =>
                               openBreakDetails(
                                 "LUNCH",
-                                record.fullRecord?.lunchBreaks?.[0]?.start,
-                                record.fullRecord?.lunchBreaks?.[0]?.end,
+                                record.fullRecord?.lunchBreaks,
                                 record.fullRecord?.date
                               )
                             }
+
                             className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 
       border border-blue-500/30 rounded-lg text-xs transition"
                           >
@@ -1185,133 +1201,135 @@ const AttendanceDashboard = () => {
         </div>
       </div>
       {/* WFH Issue Modal */}
-      {showWFHModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
+      {
+        showWFHModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
 
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setShowWFHModal(false)}
-          />
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => setShowWFHModal(false)}
+            />
 
-          {/* Modal Content */}
-          <div className="relative w-full sm:max-w-xl p-5 rounded-2xl bg-slate-900/80 border border-slate-700/80 shadow-[0_24px_60px_rgba(15,23,42,0.95)] backdrop-blur-2xl">
+            {/* Modal Content */}
+            <div className="relative w-full sm:max-w-xl p-5 rounded-2xl bg-slate-900/80 border border-slate-700/80 shadow-[0_24px_60px_rgba(15,23,42,0.95)] backdrop-blur-2xl">
 
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-3xl font-semibold text-slate-50">
-                  Report WFH Issue
-                </h3>
-                <p className="mt-1 text-xl text-slate-300">
-                  Log power or internet problems so your attendance has proper context.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowWFHModal(false)}
-                className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-slate-400" />
-              </button>
-            </div>
-
-            {/* Form */}
-            <div className="space-y-4">
-
-              {/* Issue Type */}
-              <div>
-                <label className="block text-base text-slate-400 mb-2">
-                  Issue Type
-                </label>
-                <select
-                  id="issueType"
-                  value={wfhFormData.issueType}
-                  onChange={handleWFHFormChange}
-                  className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-3xl font-semibold text-slate-50">
+                    Report WFH Issue
+                  </h3>
+                  <p className="mt-1 text-xl text-slate-300">
+                    Log power or internet problems so your attendance has proper context.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowWFHModal(false)}
+                  className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
                 >
-                  <option value="Internet issue">Internet issue</option>
-                  <option value="Power cut">Power cut</option>
-                  <option value="System issue">System issue</option>
-                  <option value="Personal emergency">Personal emergency</option>
-                  <option value="Network problems">Network problems</option>
-                  <option value="Software issue">Software issue</option>
-                </select>
+                  <X className="w-6 h-6 text-slate-400" />
+                </button>
               </div>
 
-              {/* Time Inputs */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Form */}
+              <div className="space-y-4">
+
+                {/* Issue Type */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
-                    Start Time
+                  <label className="block text-base text-slate-400 mb-2">
+                    Issue Type
                   </label>
-                  <input
-                    id="startTime"
-                    type="time"
-                    value={wfhFormData.startTime}
+                  <select
+                    id="issueType"
+                    value={wfhFormData.issueType}
                     onChange={handleWFHFormChange}
                     className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
-                  />
+                  >
+                    <option value="Internet issue">Internet issue</option>
+                    <option value="Power cut">Power cut</option>
+                    <option value="System issue">System issue</option>
+                    <option value="Personal emergency">Personal emergency</option>
+                    <option value="Network problems">Network problems</option>
+                    <option value="Software issue">Software issue</option>
+                  </select>
                 </div>
+
+                {/* Time Inputs */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-2">
+                      Start Time
+                    </label>
+                    <input
+                      id="startTime"
+                      type="time"
+                      value={wfhFormData.startTime}
+                      onChange={handleWFHFormChange}
+                      className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-2">
+                      End Time (optional)
+                    </label>
+                    <input
+                      id="endTime"
+                      type="time"
+                      value={wfhFormData.endTime}
+                      onChange={handleWFHFormChange}
+                      className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Note */}
                 <div>
                   <label className="block text-sm text-slate-400 mb-2">
-                    End Time (optional)
+                    Note (optional)
                   </label>
-                  <input
-                    id="endTime"
-                    type="time"
-                    value={wfhFormData.endTime}
+                  <textarea
+                    id="note"
+                    value={wfhFormData.note}
                     onChange={handleWFHFormChange}
-                    className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                    rows="3"
+                    placeholder="Example: Internet down from 3:10–3:40 PM, using mobile hotspot after that."
+                    className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 resize-none transition-all"
                   />
                 </div>
+
               </div>
 
-              {/* Note */}
-              <div>
-                <label className="block text-sm text-slate-400 mb-2">
-                  Note (optional)
-                </label>
-                <textarea
-                  id="note"
-                  value={wfhFormData.note}
-                  onChange={handleWFHFormChange}
-                  rows="3"
-                  placeholder="Example: Internet down from 3:10–3:40 PM, using mobile hotspot after that."
-                  className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-3 py-2 text-base text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 resize-none transition-all"
-                />
+              {/* Action Buttons */}
+              <div className="mt-6 grid grid-cols-3 gap-2">
+
+                <button
+                  onClick={() => setShowWFHModal(false)}
+                  className="rounded-xl px-3.5 py-2 text-base border border-slate-600 bg-slate-900/80 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleWFHSave}
+                  className="rounded-xl px-3.5 py-2 text-base font-medium bg-slate-800 text-slate-100 border border-slate-600 hover:bg-slate-700 hover:border-slate-400 transition-all flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle className="w-5 h-5" />
+                  Save Issue
+                </button>
+
+                <button
+                  onClick={handleWFHSendToTL}
+                  className="rounded-xl px-3.5 py-2 text-base font-medium bg-sky-500/90 text-slate-950 hover:bg-sky-400 transition-all"
+                >
+                  Send to Team Leader
+                </button>
+
               </div>
-
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-6 grid grid-cols-3 gap-2">
-
-              <button
-                onClick={() => setShowWFHModal(false)}
-                className="rounded-xl px-3.5 py-2 text-base border border-slate-600 bg-slate-900/80 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleWFHSave}
-                className="rounded-xl px-3.5 py-2 text-base font-medium bg-slate-800 text-slate-100 border border-slate-600 hover:bg-slate-700 hover:border-slate-400 transition-all flex items-center justify-center gap-2"
-              >
-                <AlertTriangle className="w-5 h-5" />
-                Save Issue
-              </button>
-
-              <button
-                onClick={handleWFHSendToTL}
-                className="rounded-xl px-3.5 py-2 text-base font-medium bg-sky-500/90 text-slate-950 hover:bg-sky-400 transition-all"
-              >
-                Send to Team Leader
-              </button>
-
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {
         breakModal.open && (
@@ -1348,29 +1366,48 @@ const AttendanceDashboard = () => {
                   </tr>
                 </thead>
 
+
                 <tbody>
-                  <tr className="border-t border-slate-700">
+                  {breakModal.breaks.length > 0 ? (
+                    breakModal.breaks.map((b, index) => (
+                      <tr key={index} className="border-t border-slate-700">
+                        <td className="px-4 py-3 text-sm">
+                          {breakModal.date
+                            ? new Date(breakModal.date).toLocaleDateString()
+                            : "—"}
+                        </td>
 
-                    <td className="px-4 py-3 text-sm">
-                      {breakModal.date ? new Date(breakModal.date).toLocaleDateString() : "—"}
-                    </td>
+                        <td className="px-4 py-3 text-sm">
+                          {b.start ? new Date(b.start).toLocaleTimeString() : "—"}
+                        </td>
 
-                    <td className="px-4 py-3 text-sm">
-                      {breakModal.start ? new Date(breakModal.start).toLocaleTimeString() : "—"}
-                    </td>
+                        <td className="px-4 py-3 text-sm">
+                          {b.end ? new Date(b.end).toLocaleTimeString() : "—"}
+                        </td>
 
-                    <td className="px-4 py-3 text-sm">
-                      {breakModal.end ? new Date(breakModal.end).toLocaleTimeString() : "—"}
-                    </td>
+                        <td className="px-4 py-3 text-sm text-blue-400 font-semibold">
+                          {b.start && b.end
+                            ? (() => {
+                              const diffSeconds = Math.round((new Date(b.end) - new Date(b.start)) / 1000);
+                              const minutes = Math.floor(diffSeconds / 60);
+                              const seconds = diffSeconds % 60;
+                              return `${minutes}m ${seconds}s`;
+                            })()
+                            : "—"}
+                        </td>
 
-                    <td className="px-4 py-3 text-sm text-blue-400 font-semibold">
-                      {breakModal.start && breakModal.end
-                        ? `${Math.round((new Date(breakModal.end) - new Date(breakModal.start)) / 60000)}m`
-                        : "—"}
-                    </td>
 
-                  </tr>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-6 text-center text-slate-400">
+                        No break records found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
+
               </table>
 
             </div>
@@ -1408,3 +1445,5 @@ const AttendanceDashboard = () => {
 };
 
 export default AttendanceDashboard;
+
+
