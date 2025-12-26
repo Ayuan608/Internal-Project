@@ -584,7 +584,7 @@ const attendanceSlice = createSlice({
         state.error = action.payload;
         state.success = false;
       })
-      
+
 
       .addCase(updateDayOffStatus.pending, (state) => {
         state.isLoading = true;
