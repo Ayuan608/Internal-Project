@@ -291,11 +291,11 @@ export const updateDayOffStatus = createAsyncThunk(
 // =============== UPDATE ATTENDANCE (ADMIN / CHECKER) ===============
 export const updateAttendance = createAsyncThunk(
   "attendance/updateAttendance",
-  async ({ user, shift, remarks }, { rejectWithValue }) => {
+  async ({ user,date,pattern,  remarks }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.patch(
-        `/attendance/update-attendanceData/${user}`,
-        { shift, remarks }
+        `/attendance/update-attendanceData/${user}/${date}`,
+        { pattern, remarks }
       );
 
       if (data.success) {
@@ -679,7 +679,6 @@ const attendanceSlice = createSlice({
           state.error = null;
         }
       )
-
       .addMatcher(
         (action) => action.type.endsWith('/rejected'),
         (state, action) => {
@@ -689,10 +688,6 @@ const attendanceSlice = createSlice({
           toast.error(action.payload || "Something went wrong");
         }
       )
-
-
-
-
 
   },
 });
