@@ -35,7 +35,7 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
             requestDayOff({
                 date: dayOffForm.date,
                 reason: dayOffForm.reason,
-                type: dayOffForm.type,
+                attachmentType: dayOffForm.type,
                 duration: dayOffForm.duration,
             })
         )
@@ -52,13 +52,13 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
             <div className="absolute inset-0 bg-black/70"></div>
-            
+
             <div className="relative w-full sm:max-w-2xl p-5 rounded-2xl bg-slate-900/80 border border-slate-700/80 backdrop-blur-2xl shadow-[0_24px_60px_rgba(15,23,42,0.95)]">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-slate-50">Request Day Off</h3>
-                    <button 
-                        onClick={() => setShowDayOffModal(false)} 
+                    <button
+                        onClick={() => setShowDayOffModal(false)}
                         className="text-slate-400 hover:text-white transition-colors"
                     >
                         <X size={22} />
@@ -136,11 +136,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                                         onChange={() => setDayOffForm({ ...dayOffForm, duration: "single" })}
                                         className="sr-only"
                                     />
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                        dayOffForm.duration === "single" 
-                                            ? "border-sky-500 bg-sky-500/10" 
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${dayOffForm.duration === "single"
+                                            ? "border-sky-500 bg-sky-500/10"
                                             : "border-slate-600"
-                                    }`}>
+                                        }`}>
                                         {dayOffForm.duration === "single" && (
                                             <div className="w-2.5 h-2.5 rounded-full bg-sky-500"></div>
                                         )}
@@ -158,11 +157,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                                         onChange={() => setDayOffForm({ ...dayOffForm, duration: "multiple" })}
                                         className="sr-only"
                                     />
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                        dayOffForm.duration === "multiple" 
-                                            ? "border-sky-500 bg-sky-500/10" 
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${dayOffForm.duration === "multiple"
+                                            ? "border-sky-500 bg-sky-500/10"
                                             : "border-slate-600"
-                                    }`}>
+                                        }`}>
                                         {dayOffForm.duration === "multiple" && (
                                             <div className="w-2.5 h-2.5 rounded-full bg-sky-500"></div>
                                         )}

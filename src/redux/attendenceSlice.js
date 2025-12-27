@@ -197,7 +197,7 @@ export const getDepartmentWiseUsers = createAsyncThunk(
 // =============== 6. DAY OFF REQUESTS ===============
 export const requestDayOff = createAsyncThunk(
   "attendance/requestDayOff",
-  async ({ date, reason, attachmentType = "Emergency" }, { rejectWithValue }) => {
+  async ({ date, reason, attachmentType }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.post("/attendance/request-day-off", {
         date,
@@ -244,6 +244,18 @@ export const getDayOffRequests = createAsyncThunk(
   }
 );
 
+// export const getMyDayOffRequests = createAsyncThunk(
+//   "attendance/getDayOffRequests",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const { data } = await axiosInstance.get("/attendance/day-off-requests");
+//       return data;
+//     } catch (error) {
+//       console.error("❌ Error fetching checker stats:", error);
+//       return rejectWithValue(handleError(error, "Failed to get checker stats"));
+//     }
+//   }
+// );
 // =============== 7. MANAGE DAY OFF REQUESTS ===============
 export const approveDayOffRequest = createAsyncThunk(
   "attendance/approveDayOffRequest",
