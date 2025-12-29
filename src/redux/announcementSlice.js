@@ -18,7 +18,6 @@ export const createAnnouncement = createAsyncThunk(
     'announcement/create',
     async (announcementData, { rejectWithValue }) => {
         try {
-            console.log('Sending announcement data:', announcementData);
 
             const formData = new FormData();
 
@@ -45,7 +44,6 @@ export const createAnnouncement = createAsyncThunk(
 
             const response = await axiosInstance.post('/announcement/create', formData);
 
-            console.log('Response received:', response.data);
             return response.data;
 
         } catch (error) {
@@ -66,52 +64,6 @@ export const createAnnouncement = createAsyncThunk(
 );
 
 
-// export const createAnnouncementSimple = createAsyncThunk(
-//     'announcements/createSimple',
-//     async (announcementData, { rejectWithValue }) => {
-//         try {
-//             console.log('Simple version - sending:', announcementData);
-
-//             const formData = new FormData();
-
-//             // Only essential fields
-//             formData.append('title', announcementData.title);
-//             formData.append('details', announcementData.details);
-
-//             // Simple recipients handling
-//             if (announcementData.recipients) {
-//                 formData.append('recipients', announcementData.recipients[0] || 'ALL');
-//             }
-
-//             // Simple createdBy
-//             if (announcementData.createdBy) {
-//                 formData.append('createdBy', announcementData.createdBy);
-//             }
-
-//             // Files only if they exist
-//             if (announcementData.files && announcementData.files.length > 0) {
-//                 announcementData.files.forEach(file => {
-//                     formData.append('files', file);
-//                 });
-//             }
-
-//             const response = await axiosInstance.post('/announcement/create', formData, {
-//                 headers: {
-//                     'Content-Type': 'multipart/form-data',
-//                 },
-//             });
-
-//             return response.data;
-
-//         } catch (error) {
-//             console.error('Simple version error:', error.response?.data);
-//             return rejectWithValue(
-//                 error.response?.data?.message ||
-//                 'Failed to create announcement'
-//             );
-//         }
-//     }
-// );
 
 
 
@@ -134,7 +86,6 @@ export const updateAnnouncement = createAsyncThunk(
     "announcements/update",
     async ({ id, data }, { rejectWithValue }) => {
         try {
-            console.log("data", data)
             const formData = new FormData();
 
             if (data.title) formData.append("title", data.title);
@@ -160,8 +111,6 @@ export const updateAnnouncement = createAsyncThunk(
 
             );
 
-            console.log("response", response.data)
-            // ✅ Match backend response
             return response.data;
         } catch (error) {
             return rejectWithValue(
@@ -176,7 +125,6 @@ export const createEvent = createAsyncThunk(
     'announcements/createEvent',
     async (eventData, { rejectWithValue }) => {
         try {
-            console.log('Sending event data:', eventData);
 
             const formData = new FormData();
             formData.append('title', eventData.title);
@@ -195,11 +143,9 @@ export const createEvent = createAsyncThunk(
                 formData,
             );
 
-            console.log('Create event response:', response.data);
             return response.data;
 
         } catch (error) {
-            console.error('Create event error:', error.response?.data || error.message);
             return rejectWithValue(
                 error.response?.data?.message || 'Failed to create event'
             );
@@ -213,7 +159,6 @@ export const fetchAllEvents = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get('/announcement/getAllEvents');
-            console.log('Fetched events:', response.data);
             return response.data;
         } catch (error) {
             return rejectWithValue(
@@ -229,13 +174,11 @@ export const deleteEvent = createAsyncThunk(
     "announcements/deleteEvent",
     async (eventId, { rejectWithValue }) => {
         try {
-            console.log("deleteEvent dispatched with id:", eventId);
 
             await axiosInstance.delete(
                 `/announcement/deleteEvent/${eventId}`
             );
 
-            // ✅ IMPORTANT: return the ID so reducer can remove it
             return eventId;
         } catch (error) {
             return rejectWithValue(
@@ -345,30 +288,12 @@ const announcementSlice = createSlice({
                 state.createLoading = false;
                 if (action.payload.success) {
                     const newAnnouncement = action.payload.announcement || action.payload.data || action.payload;
-                    console.log('New announcement added to state:', newAnnouncement);
                     if (newAnnouncement) {
                         state.announcements.unshift(newAnnouncement);
                     }
                 }
             })
-            // .addCase(createAnnouncement.rejected, (state, action) => {
-            //     state.createLoading = false;
-            //     state.createError = action.payload;
-            // })
-            // // Create announcement simple
-            // .addCase(createAnnouncementSimple.pending, (state) => {
-            //     state.createLoading = true;
-            //     state.createError = null;
-            // })
-            // .addCase(createAnnouncementSimple.fulfilled, (state, action) => {
-            //     state.createLoading = false;
-            //     if (action.payload.success) {
-            //         const newAnnouncement = action.payload.announcement || action.payload.data || action.payload;
-            //         if (newAnnouncement) {
-            //             state.announcements.unshift(newAnnouncement);
-            //         }
-            //     }
-            // })
+         
 
             .addCase(deleteAnnouncement.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(deleteAnnouncement.fulfilled, (state, action) => {
@@ -434,7 +359,6 @@ const announcementSlice = createSlice({
                 state.events = state.events.filter(item => item._id !== deletedId);
             })
             .addCase(deleteEvent.rejected, (state, action) => {
-                console.error("Failed to delete event:", action.payload?.message);
             })
 
             .addCase(updateEvent.pending, (state) => {

@@ -109,11 +109,9 @@ const AttendanceTable = ({ data = [] }) => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                        {employee.FullName?.charAt(0) || employee.username?.charAt(0) || 'E'}
-                      </div>
+               
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-white">
+                        <div className="text-sm font-medium capitalize text-white">
                           {employee.FullName || employee.username || 'Unknown'}
                         </div>
                         <div className="text-xs text-slate-400">
