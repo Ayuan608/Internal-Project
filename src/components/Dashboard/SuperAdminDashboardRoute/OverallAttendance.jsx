@@ -41,7 +41,7 @@ import {
 } from 'recharts';
 import html2canvas from "html2canvas";
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllAttendance ,getDepartmentWiseUsers} from '../../../redux/attendenceSlice';
+import { getAllAttendance, getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
 import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
 import ManpowerStatusSection from './ManpowerStatusSection';
 
@@ -82,26 +82,26 @@ const OverallAttendanceDashboard = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const dispatch = useDispatch();
   const { allAttendance, isLoading, pagination } = useSelector((state) => state.attendance);
-  console.log(allAttendance)
-  const { departmentAttendance = [],department } = useSelector(
+  // console.log(allAttendance)
+  const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
 
-const totalUsers= departmentAttendance.length
-const totalWorking = departmentAttendance.filter(
-  item => item.status === "working"
-).length;
-const totalAbsent = departmentAttendance.filter(
-  item => item.status === "Absent"
-).length;
-const totalBreakUsers = departmentAttendance.filter(
-  item => item.breaks?.total > 0
-).length;
+  const totalUsers = departmentAttendance.length
+  const totalWorking = departmentAttendance.filter(
+    item => item.status === "working"
+  ).length;
+  const totalAbsent = departmentAttendance.filter(
+    item => item.status === "Absent"
+  ).length;
+  const totalBreakUsers = departmentAttendance.filter(
+    item => item.breaks?.total > 0
+  ).length;
 
 
-const totalLeaves =departmentAttendance.filter(
-  item => item.dayOffRequests
-).length;
+  const totalLeaves = departmentAttendance.filter(
+    item => item.dayOffRequests
+  ).length;
 
   // Fetch data on mount and when filters change
   // useEffect(() => {
@@ -123,7 +123,8 @@ const totalLeaves =departmentAttendance.filter(
   useEffect(() => {
     dispatch(getDepartmentWiseUsers()).catch((e) =>
       console.error("fetch dept users err", e)
-    )  }, [dispatch]);
+    )
+  }, [dispatch]);
 
   const downloadCard = async () => {
     const card = popupRef.current;
@@ -166,6 +167,7 @@ const totalLeaves =departmentAttendance.filter(
       return matchesSearch && matchesDept && matchesStatus;
     });
   }, [allAttendance, searchTerm, selectedDept, selectedStatus]);
+  // console.log(filteredData)
 
   const weeklyTrendData = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -420,44 +422,44 @@ const totalLeaves =departmentAttendance.filter(
       <span className="text-sm font-medium text-gray-200">{value}</span>
     </div>
   );
-const parseWorkingHoursToSeconds = (timeStr) => {
-  if (!timeStr) return 0;
+  const parseWorkingHoursToSeconds = (timeStr) => {
+    if (!timeStr) return 0;
 
-  let hours = 0;
-  let minutes = 0;
+    let hours = 0;
+    let minutes = 0;
 
-  const hourMatch = timeStr.match(/(\d+)\s*h/);
-  const minuteMatch = timeStr.match(/(\d+)\s*m/);
+    const hourMatch = timeStr.match(/(\d+)\s*h/);
+    const minuteMatch = timeStr.match(/(\d+)\s*m/);
 
-  if (hourMatch) hours = parseInt(hourMatch[1], 10);
-  if (minuteMatch) minutes = parseInt(minuteMatch[1], 10);
+    if (hourMatch) hours = parseInt(hourMatch[1], 10);
+    if (minuteMatch) minutes = parseInt(minuteMatch[1], 10);
 
-  return hours * 3600 + minutes * 60;
-};
-const totalNetSeconds = departmentAttendance.reduce((total, item) => {
- 
-  return total + parseWorkingHoursToSeconds(item.workingHours);
-}, 0);
-// console.log(totalNetSeconds)
-// const workingStaffCount = departmentAttendance.filter(
-//   item => item.status === "working"
-// ).length;
-// console.log(workingStaffCount)
-// console.log(totalWorking)
-const avgNetSeconds =
-  totalWorking > 0 ? totalNetSeconds / totalWorking : 0;
+    return hours * 3600 + minutes * 60;
+  };
+  const totalNetSeconds = departmentAttendance.reduce((total, item) => {
+
+    return total + parseWorkingHoursToSeconds(item.workingHours);
+  }, 0);
+
+  // const workingStaffCount = departmentAttendance.filter(
+  //   item => item.status === "working"
+  // ).length;
+  // console.log(workingStaffCount)
+  // console.log(totalWorking)
+  const avgNetSeconds =
+    totalWorking > 0 ? totalNetSeconds / totalWorking : 0;
   const formatTime = (seconds) => {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
 
-  return `${hrs.toString().padStart(2, "0")}:${mins
-    .toString()
-    .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
-// console.log(avgNetSeconds)
-const avgNetWorkTime = formatTime(avgNetSeconds);
-// console.log(avgNetWorkTime)
+    return `${hrs.toString().padStart(2, "0")}:${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+  // console.log(avgNetSeconds)
+  const avgNetWorkTime = formatTime(avgNetSeconds);
+  // console.log(avgNetWorkTime)
   return (
     <div className="min-h-screen  text-white p-6">
       {/* Header Section */}
@@ -726,36 +728,36 @@ const avgNetWorkTime = formatTime(avgNetSeconds);
             </div>
             {/* Department Analytics */}
             <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 backdrop-blur">
-  <h3 className="text-lg font-semibold text-white mb-4">
-    Department Performance
-  </h3>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Department Performance
+              </h3>
 
-  <ResponsiveContainer width="100%" height={300}>
-    <BarChart data={deptAnalytics}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-      <XAxis dataKey="name" stroke="#9CA3AF" />
-      <YAxis stroke="#9CA3AF" />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={deptAnalytics}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="name" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
 
-      {/* 🔥 Tooltip fix */}
-      <Tooltip
-        cursor={{ fill: "transparent" }}   // ❌ hover white bg removed
-        contentStyle={{
-          backgroundColor: "#020617",
-          border: "1px solid #334155",
-          borderRadius: "8px",
-          color: "#fff"
-        }}
-      />
+                  {/* 🔥 Tooltip fix */}
+                  <Tooltip
+                    cursor={{ fill: "transparent" }}   // ❌ hover white bg removed
+                    contentStyle={{
+                      backgroundColor: "#020617",
+                      border: "1px solid #334155",
+                      borderRadius: "8px",
+                      color: "#fff"
+                    }}
+                  />
 
-      <Legend />
+                  <Legend />
 
-      {/* 🔥 activeBar disabled */}
-      <Bar dataKey="Present" fill={COLORS.present} activeBar={false} />
-      <Bar dataKey="Absent" fill={COLORS.absent} activeBar={false} />
-      <Bar dataKey="Late" fill={COLORS.late} activeBar={false} />
-    </BarChart>
-  </ResponsiveContainer>
-</div>
+                  {/* 🔥 activeBar disabled */}
+                  <Bar dataKey="Present" fill={COLORS.present} activeBar={false} />
+                  <Bar dataKey="Absent" fill={COLORS.absent} activeBar={false} />
+                  <Bar dataKey="Late" fill={COLORS.late} activeBar={false} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
           </div>
           <div
@@ -816,7 +818,7 @@ const avgNetWorkTime = formatTime(avgNetSeconds);
                     <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
                     <XAxis type="number" stroke="#9CA3AF" />
                     <YAxis dataKey="range" type="category" stroke="#9CA3AF" />
-                    <Tooltip   cursor={{ fill: "transparent" }} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
+                    <Tooltip cursor={{ fill: "transparent" }} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
                     <Bar dataKey="count" fill={COLORS.present} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -956,54 +958,57 @@ const avgNetWorkTime = formatTime(avgNetSeconds);
                     </td>
                   </tr>
                 ) :
-                 filteredData.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
-                      No records found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((row) => (
-                    <tr key={row._id} className="hover:bg-slate-800/30 transition">
-                      <td className="px-4 py-3 text-sm text-white font-mono w-32">
-                        {row._id?.slice(0, 8)}...
-                      </td>
-                      <td className="px-4 py-3 text-sm capitalize text-white font-medium w-48">
-                        {row?.FullName}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-40">
-                        {row?.department || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
-                        {new Date(row.date).toLocaleDateString('en-GB')}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
-                        {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : '--'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
-                        {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : '--'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-28">
-                        <span className="font-medium text-blue-300">
-                          {row.workingHours || '0'}h
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 w-40">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
-                          {calculateDynamicStatus(row)}
-                        </span>
+                  filteredData.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
+                        No records found
                       </td>
                     </tr>
-                  ))
-                )
+                  ) : (
+                    filteredData.map((row) => (
+                      <tr key={row._id} className="hover:bg-slate-800/30 transition">
+                        <td className="px-4 py-3 text-sm text-white font-mono w-32">
+                          {row._id?.slice(0, 8)}...
+                        </td>
+                        <td className="px-4 py-3 text-sm capitalize text-white font-medium w-48">
+                          {row?.FullName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-40">
+                          {row?.department || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                          {row?.date
+                            ? new Date(row.date).toLocaleDateString("en-GB")
+                            : "--"}
+                          {/* {new Date(row?.date).toLocaleDateString('en-GB')} */}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                          {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }) : '--'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                          {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }) : '--'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-28">
+                          <span className="font-medium text-blue-300">
+                            {row.workingHours || '0'}h
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 w-40">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
+                            {calculateDynamicStatus(row)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )
                 }
               </tbody>
             </table>
@@ -1128,7 +1133,10 @@ const avgNetWorkTime = formatTime(avgNetSeconds);
 
                   {/* Details */}
                   <div className="space-y-3">
-                    <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} />
+                    {/* <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} /> */}
+                    <CardRow label="Date" value={emp?.date
+                      ? new Date(emp.date).toLocaleDateString("en-GB")
+                      : "--"} />
                     <CardRow label="Punch In" value={emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
                     <CardRow label="Punch Out" value={emp.clockOut ? new Date(emp.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
 

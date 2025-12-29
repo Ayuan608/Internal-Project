@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Edit2, Save, X, Download, FileText, Search, Trash2 } from 'lucide-react';
-import { updateAttendance,getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
+import { updateAttendance, getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
 import { useDispatch } from 'react-redux';
 // Department wise colors
 const DEPARTMENT_COLORS = {
@@ -11,16 +11,26 @@ const DEPARTMENT_COLORS = {
   'default': { bg: 'bg-gray-500/20', text: 'text-gray-300', border: 'border-gray-700/30' }
 };
 
-// Backend pattern (0,1,2,3) to Frontend status mapping - FIXED
+
+// Backend → Frontend (for display)
 const BACKEND_TO_FRONTEND_STATUS = {
-  0: 'D',      // 0 → Day
-  1: 'N',      // 1 → Night
-  2: 'RD',     // 2 → Rest Day
-  3: 'D',      // 3 → Absent => Day shift
-  'M': 'M',    // M → Mid
-  'PS': 'PS',  // PS → Probation
-  'RD': 'RD'   // RD → Rest Day
+  D: 'D',
+  M: 'M',
+  N: 'N',
+  P: 'PS',
+  R: 'RD',
+  RD: 'RD'
 };
+
+// Frontend → Backend (for saving)
+const FRONTEND_TO_BACKEND_STATUS = {
+  D: 'D',
+  M: 'M',
+  N: 'N',
+  PS: 'P',
+  RD: 'R'
+};
+
 
 // Frontend status mapping - ONLY 5 STATUSES
 const FRONTEND_STATUS_MAP = {
@@ -28,31 +38,31 @@ const FRONTEND_STATUS_MAP = {
     label: 'D',
     className: 'bg-yellow-400 text-black',
     fullName: 'Day Shift',
-    backendValue: 0,  // Backend में 0 है Day
+    backendValue: 'D',
   },
   M: {
     label: 'M',
     className: 'bg-white text-black',
     fullName: 'Mid Shift',
-    backendValue: 'M', // Backend में 'M' है Mid
+    backendValue: 'M',
   },
   N: {
     label: 'N',
     className: 'bg-green-600 text-white',
     fullName: 'Night Shift',
-    backendValue: 1,  // Backend में 1 है Night
+    backendValue: 'N',
   },
   PS: {
     label: 'PS',
     className: 'bg-blue-600 text-white',
     fullName: 'Probation',
-    backendValue: 'PS', // Backend में 'PS' है Probation
+    backendValue: 'P', // Backend में 'PS' है Probation
   },
   RD: {
     label: 'RD',
     className: 'bg-red-600 text-white',
     fullName: 'Rest Day',
-    backendValue: 2,  // Backend में 2 है Rest Day
+    backendValue: "R",  // Backend में 2 है Rest Day
   },
 };
 
@@ -85,6 +95,7 @@ export default function AttendanceTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentMonthInfo, setCurrentMonthInfo] = useState(getCurrentMonthYear());
   const dispatch = useDispatch();
+
   // Update current date every day
   useEffect(() => {
     const interval = setInterval(() => {
@@ -108,8 +119,7 @@ export default function AttendanceTable({
     }
     return days;
   }, [currentMonthInfo]);
-
-  // Month label
+  
   const monthLabel = useMemo(() => {
     const { year, month } = currentMonthInfo;
     const date = new Date(year, month, 1);
@@ -124,6 +134,7 @@ export default function AttendanceTable({
 
   // Convert backend pattern to frontend status
   const convertBackendPattern = (backendPattern) => {
+  
     if (!Array.isArray(backendPattern)) return [];
 
     return backendPattern.map(code => {
@@ -136,10 +147,9 @@ export default function AttendanceTable({
       }
 
       // Convert backend numeric codes
-      return BACKEND_TO_FRONTEND_STATUS[code] || 'D'; // Default to Day
+      return FRONTEND_TO_BACKEND_STATUS[code] || 'D'; // Default to Day
     });
   };
-
   // Filter data based on search
   const filteredEmployees = useMemo(() => {
     return data.filter(emp =>
@@ -148,6 +158,7 @@ export default function AttendanceTable({
       emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [data, searchTerm]);
+
 
   // Calculate totals for an employee - FIXED
   const calculateTotals = (pattern) => {
@@ -275,22 +286,50 @@ export default function AttendanceTable({
   };
 
   // Start editing an employee
-  const handleStartEdit = (empId) => {
-    const emp = data.find(e => e._id === empId || e.id === empId);
-    if (emp) {
-      const pattern = emp.pattern || [];
-      const totals = calculateTotals(pattern);
+  // const handleStartEdit = (empId) => {
+  //   const emp = data.find(e => e._id === empId);
 
-      setEditData({
-        ...emp,
-        pattern: [...pattern],
-        ...totals,
-        remarks: emp.remarks || '',
-        schedule: emp.workingHour || '8:00 AM - 5:00 PM'
-      });
-      setEditingId(empId);
-    }
+  //   setEditData({
+  //     ...emp,
+  //     patternByDay: { ...emp.patternByDay }, // 👈 IMPORTANT
+  //     remarks: emp.remarks || '',
+  //   });
+
+  //   setEditingId(empId);
+  // };
+  const handleStartEdit = (empId) => {
+    const emp = data.find(e => e._id === empId);
+
+    const patternByDay = {};
+    (emp.pattern || []).forEach((status, index) => {
+      const day = index + 1;
+      patternByDay[day] = FRONTEND_TO_BACKEND_STATUS[status] || 'D';
+    });
+
+    setEditData({
+      _id: emp._id,
+      patternByDay,
+      remarks: emp.remarks || ''
+    });
+
+    setEditingId(empId);
   };
+  // const handleStartEdit = (empId) => {
+  //   const emp = data.find(e => e._id === empId || e.id === empId);
+  //   if (emp) {
+  //     const pattern = emp.pattern || [];
+  //     const totals = calculateTotals(pattern);
+
+  //     setEditData({
+  //       ...emp,
+  //       pattern: [...pattern],
+  //       ...totals,
+  //       remarks: emp.remarks || '',
+  //       schedule: emp.workingHour || '8:00 AM - 5:00 PM'
+  //     });
+  //     setEditingId(empId);
+  //   }
+  // };
 
   // Cancel editing
   const handleCancelEdit = () => {
@@ -299,37 +338,85 @@ export default function AttendanceTable({
     setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
   };
 
+
   // Save edited data
+  // const handleSaveEdit = async () => {
+  //   const { patternByDay, _id } = editData;
+  //   if (!editData) return;
+
+  //   const updates = Object.entries(patternByDay)
+  //     .filter(([_, value]) => value !== null);
+
+  //   for (const [day, pattern] of updates) {
+  //     await dispatch(
+  //       updateAttendance({
+  //         user: _id,
+  //         date: `${currentMonthInfo.year}-${currentMonthInfo.month + 1}-${day}`,
+  //         pattern, // "D" | "M" | "N" | "P" | "R"
+  //       })
+  //     );
+  //   }
+
+  //   dispatch(getDepartmentWiseUsers());
+  //   setEditingId(null);
+  //   setEditData(null);
+  // };
   const handleSaveEdit = async () => {
+    console.log(editData)
     if (!editData) return;
 
-    setIsSaving(true);
-    try {
-      console.log('Saving attendance data:', editData);
-      await new Promise(resolve => setTimeout(resolve, 500));
+    const { _id, patternByDay } = editData;
 
-      // onAttendanceUpdated(editData);
-      dispatch(
+    for (const [day, frontendStatus] of Object.entries(patternByDay)) {
+      const backendStatus = FRONTEND_TO_BACKEND_STATUS[frontendStatus];
+
+      await dispatch(
         updateAttendance({
-          user: editData._id,     
-          shift: editData.shift,  
-          remarks: editData.remarks 
+          user: _id,
+          date: `${currentMonthInfo.year}-${String(
+            currentMonthInfo.month + 1
+          ).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+          pattern: backendStatus
         })
       );
-      dispatch(getDepartmentWiseUsers())
-      alert('Attendance data saved successfully!');
-
-      setEditingId(null);
-      setEditData(null);
-      setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
-
-    } catch (error) {
-      console.error('Error saving attendance:', error);
-      alert('Failed to save attendance data');
-    } finally {
-      setIsSaving(false);
     }
+
+    dispatch(getDepartmentWiseUsers());
+    setEditingId(null);
+    setEditData(null);
   };
+
+  // const handleSaveEdit = async () => {
+  //   if (!editData) return;
+
+  //   setIsSaving(true);
+  //   try {
+  //     console.log('Saving attendance data:', editData);
+  //     await new Promise(resolve => setTimeout(resolve, 500));
+
+  //     // onAttendanceUpdated(editData);
+  //     dispatch(
+  //       updateAttendance({
+  //         user: editData._id,
+  //         pattern: editData.pattern,
+  //         // shift: editData.shift,
+  //         remarks: editData.remarks
+  //       })
+  //     );
+  //     dispatch(getDepartmentWiseUsers())
+  //     alert('Attendance data saved successfully!');
+
+  //     setEditingId(null);
+  //     setEditData(null);
+  //     setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
+
+  //   } catch (error) {
+  //     console.error('Error saving attendance:', error);
+  //     alert('Failed to save attendance data');
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
 
   // Delete employee
   const handleDeleteEmployee = async (empId) => {
@@ -348,42 +435,60 @@ export default function AttendanceTable({
   };
 
   // Handle day click for status change
-  const handleDayClick = (dayIndex, empId, event) => {
-    if (editingId === empId && editData && hasEditAccess) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      setShowStatusMenu({
-        show: true,
-        dayIndex,
-        empId,
-        x: rect.left,
-        y: rect.bottom + 5,
-      });
-    }
+
+  const handleDayClick = (day, empId, event) => {
+    if (!hasEditAccess || editingId !== empId) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    setShowStatusMenu({
+      show: true,
+      dayIndex: day,
+      empId,
+      x: rect.left,
+      y: rect.bottom + 5
+    });
   };
 
   // Change status for a specific day
+  // const handleStatusChange = (statusKey) => {
+  //   if (showStatusMenu.dayIndex !== null && showStatusMenu.empId === editingId && editData) {
+  //     const newPattern = [...editData.pattern];
+
+  //     // Ensure pattern length matches days shown
+  //     if (newPattern.length < daysToShow.length) {
+  //       const fillLength = daysToShow.length - newPattern.length;
+  //       newPattern.push(...Array(fillLength).fill(3)); // Fill with Absent (backend: 3)
+  //     }
+
+  //     // Convert frontend status to backend value
+  //     const frontendStatus = FRONTEND_STATUS_MAP[statusKey];
+  //     const backendValue = frontendStatus?.backendValue !== undefined
+  //       ? frontendStatus.backendValue
+  //       : 3; // Default to Absent (backend में 3)
+
+  //     newPattern[showStatusMenu.dayIndex] = backendValue;
+  //     const totals = calculateTotals(newPattern);
+  //     setEditData({ ...editData, pattern: newPattern, ...totals });
+  //   }
+  //   setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
+  // };
+
   const handleStatusChange = (statusKey) => {
-    if (showStatusMenu.dayIndex !== null && showStatusMenu.empId === editingId && editData) {
-      const newPattern = [...editData.pattern];
+    const day = showStatusMenu.dayIndex;
 
-      // Ensure pattern length matches days shown
-      if (newPattern.length < daysToShow.length) {
-        const fillLength = daysToShow.length - newPattern.length;
-        newPattern.push(...Array(fillLength).fill(3)); // Fill with Absent (backend: 3)
+    setEditData(prev => ({
+      ...prev,
+      patternByDay: {
+        ...prev.patternByDay,
+        [day]: statusKey
       }
+    }));
 
-      // Convert frontend status to backend value
-      const frontendStatus = FRONTEND_STATUS_MAP[statusKey];
-      const backendValue = frontendStatus?.backendValue !== undefined
-        ? frontendStatus.backendValue
-        : 3; // Default to Absent (backend में 3)
-
-      newPattern[showStatusMenu.dayIndex] = backendValue;
-      const totals = calculateTotals(newPattern);
-      setEditData({ ...editData, pattern: newPattern, ...totals });
-    }
-    setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
+    setShowStatusMenu({ show: false });
   };
+
+
 
   // Handle remarks change
   const handleRemarksChange = (e) => {
@@ -590,6 +695,7 @@ export default function AttendanceTable({
                   const isEditing = editingId === (emp._id || emp.id);
                   const pattern = isEditing ? editData?.pattern : (emp.pattern || []);
                   const frontendPattern = convertBackendPattern(pattern);
+             
                   const totals = calculateTotals(pattern);
                   const deptColor = getDepartmentColor(emp.department);
 
@@ -640,10 +746,11 @@ export default function AttendanceTable({
                       </td>
 
                       {/* Dynamic Day Cells for current month */}
-                      {daysToShow.map((day, dayIndex) => {
-                        const statusCode = frontendPattern[dayIndex] || 'D';
+                      {/* {daysToShow.map((day, dayIndex) => {
+                        const statusCode = frontendPattern[dayIndex];
+                        console.log(statusCode)
                         const statusInfo = FRONTEND_STATUS_MAP[statusCode] || FRONTEND_STATUS_MAP['D']; // Default to Day
-
+                        // console.log(statusInfo)
                         return (
                           <td key={dayIndex} className="px-1 py-3">
                             <div
@@ -656,7 +763,30 @@ export default function AttendanceTable({
                             </div>
                           </td>
                         );
+                      })} */}
+                      {daysToShow.map(day => {
+                        const statusCode = isEditing
+                          ? editData?.patternByDay?.[day] ??  emp.patternByDay?.[day]
+                          : emp.patternByDay?.[day] ?? 'D';
+
+                        const statusInfo = FRONTEND_STATUS_MAP[statusCode];
+console.log(statusInfo)
+                        return (
+                          <td key={day} className="px-1 py-3">
+                            <div
+                              onClick={(e) => handleDayClick(day, emp._id, e)}
+                              className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold
+          ${statusInfo?.className}
+          ${hasEditAccess && isEditing ? 'cursor-pointer hover:ring-2' : ''}
+        `}
+                            >
+                              {statusInfo?.label}
+                            </div>
+                          </td>
+                        );
                       })}
+
+          
 
                       {/* Total Columns */}
                       <td className="px-4 py-3 text-center">
@@ -797,6 +927,7 @@ export default function AttendanceTable({
           <div
             className="fixed inset-0 z-40"
             onClick={() => setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null })}
+          
           />
           <div
             className="fixed z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-2 min-w-[220px]"
