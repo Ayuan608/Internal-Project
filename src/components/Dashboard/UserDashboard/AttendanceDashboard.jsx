@@ -56,7 +56,7 @@ const AttendanceDashboard = () => {
   const user = useSelector((state) => state?.auth?.data);
 
   const userId = user?._id;
-  console.log("userID", userId)
+
 
   // Redux state
   const reduxAttendanceList = useSelector((state) => state.attendance?.attendanceList) || [];
@@ -75,9 +75,11 @@ const AttendanceDashboard = () => {
 
 
   const [dayOffForm, setDayOffForm] = useState({
-    date: "",
+    startDate: "",
+    endDate: "",
     reason: "",
-    type: "Rest Day"
+    type: "",
+    duration: "single",
   });
   const [activeTimer, setActiveTimer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -105,7 +107,43 @@ const AttendanceDashboard = () => {
     });
   };
 
-  console.log("breakModal", breakModal)
+
+  const PH_TIMEZONE = "Asia/Manila";
+
+  // Get today's date in Philippines timezone (YYYY-MM-DD)
+  const getTodayPHDate = () => {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: PH_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  };
+
+  // Format time in Philippines timezone
+  const formatTimePH = (timeString) => {
+    if (!timeString) return "-";
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) return "-";
+
+    return date.toLocaleTimeString("en-PH", {
+      timeZone: PH_TIMEZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  // Format date in Philippines timezone (DD/MM/YYYY)
+  const formatDatePH = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
+
+    return date.toLocaleDateString("en-GB", {
+      timeZone: PH_TIMEZONE,
+    });
+  };
 
   // Update live clock
   useEffect(() => {
@@ -175,11 +213,9 @@ const AttendanceDashboard = () => {
     const loadData = async () => {
       if (userId && !dataLoaded) {
         try {
-          console.log("🔄 Loading attendance data for user:", userId);
 
           // Load today's attendance
           const todayResult = await dispatch(getTodayAttendance(userId)).unwrap();
-          console.log("✅ Today attendance loaded:", todayResult);
 
           // Load attendance history
           const historyResult = await dispatch(getUserAttendance({
@@ -188,11 +224,9 @@ const AttendanceDashboard = () => {
             limit: 10
           })).unwrap();
 
-          console.log("✅ Attendance history loaded:", historyResult?.attendance?.length || 0, "records");
 
           // Load today's breaks
           const breaksResult = await dispatch(getTodayBreaks(userId)).unwrap();
-          console.log("✅ Today's breaks loaded:", breaksResult);
 
           setDataLoaded(true);
 
@@ -219,7 +253,6 @@ const AttendanceDashboard = () => {
         lunch: lunchBreaks.filter(b => b && b.end).length || 0,
       };
 
-      console.log("📊 Break counts updated:", counts);
       setBreakCounts(counts);
     } else {
       setBreakCounts({ smoke: 0, wc: 0, lunch: 0 });
@@ -267,13 +300,6 @@ const AttendanceDashboard = () => {
       const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
       const remainingSeconds = Math.max(0, breakLimit - elapsedSeconds);
 
-      console.log("⏱️ Timer started:", {
-        type: activeTimer.type,
-        startTime: activeTimer.startTime,
-        limit: breakLimit,
-        remaining: remainingSeconds
-      });
-
       setTimeLeft(remainingSeconds);
 
       const interval = setInterval(() => {
@@ -303,7 +329,6 @@ const AttendanceDashboard = () => {
         shift: "Day"
       })).unwrap();
 
-      console.log("✅ Punch in result:", result);
       toast.success("Punched in successfully!");
 
       // Refresh data - FIXED: timeout remove kiya
@@ -328,7 +353,6 @@ const AttendanceDashboard = () => {
 
     try {
       const result = await dispatch(punchOut(userId)).unwrap();
-      console.log("✅ Punch out result:", result);
 
       setShowPunchOutModal(false);
       toast.success("Punched out successfully!");
@@ -373,9 +397,7 @@ const AttendanceDashboard = () => {
     }
 
     try {
-      console.log(`🚀 Starting ${breakType} break for user:`, userId);
       const result = await dispatch(startBreak({ userId, breakType })).unwrap();
-      console.log(`✅ ${breakType} break started:`, result);
 
       toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break started`);
 
@@ -404,13 +426,11 @@ const AttendanceDashboard = () => {
     }
 
     try {
-      console.log(`⏹️ Ending ${activeTimer.type} break for user:`, userId);
       const result = await dispatch(endBreak({
         userId,
         breakType: activeTimer.type
       })).unwrap();
 
-      console.log(`✅ ${activeTimer.type} break ended:`, result);
       toast.success(`${activeTimer.type.charAt(0).toUpperCase() + activeTimer.type.slice(1)} break ended`);
 
       // Refresh data - FIXED: Immediate refresh
@@ -434,7 +454,6 @@ const AttendanceDashboard = () => {
     if (!userId) return;
 
     try {
-      console.log("🔄 Manual refresh triggered");
       toast.success("Refreshing data...");
 
       // सिर्फ एक बार Promise.all call करें
@@ -552,7 +571,6 @@ const AttendanceDashboard = () => {
 
   // Handle day off submit
   const handleDayOffSubmit = async () => {
-    console.log("Day off request:", dayOffForm);
     // Implement day off request API call here
     setShowDayOffModal(false);
     setDayOffForm({ date: "", reason: "", type: "Rest Day" });
@@ -565,48 +583,46 @@ const AttendanceDashboard = () => {
         total += Math.round((new Date(b.end) - new Date(b.start)) / 60000);
       }
     });
-    console.log(total, "total");
     return total > 0 ? `${total}m` : "0m";
   };
 
   // Get table data for attendance history - FIXED: Debug logs added
   useEffect(() => {
-    console.log("📋 Table data update triggered");
-    console.log("📋 Redux attendance list:", reduxAttendanceList);
+    const todayPH = getTodayPHDate(); // YYYY-MM-DD (PH)
 
     if (reduxAttendanceList && reduxAttendanceList.length > 0) {
-      const formattedData = reduxAttendanceList.map(record => {
-        if (!record) return null;
+      const formattedData = reduxAttendanceList
+        .filter(record => {
+          if (!record?.date) return false;
 
-        console.log("📋 Processing record:", {
+          const recordPHDate = new Intl.DateTimeFormat("en-CA", {
+            timeZone: PH_TIMEZONE,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(new Date(record.date));
+
+          return recordPHDate === todayPH;
+        })
+        .map(record => ({
           id: record._id,
-          date: record.date,
-          smokeBreaks: record.smokeBreaks,
-          wcBreaks: record.wcBreaks,
-          lunchBreaks: record.lunchBreaks
-        });
-
-        return {
-          id: record._id || record.id || Math.random().toString(),
-          date: formatDate(record.date),
-          punchIn: formatTime(record.clockIn),
-          punchOut: formatTime(record.clockOut),
+          date: formatDatePH(record.date),
+          punchIn: formatTimePH(record.clockIn),
+          punchOut: formatTimePH(record.clockOut),
           wcBreak: calculateTotalFromBreakArray(record.wcBreaks),
           smokeBreak: calculateTotalFromBreakArray(record.smokeBreaks),
           lunchBreak: calculateTotalFromBreakArray(record.lunchBreaks),
           hours: record.workingHours || "0h 00m",
           status: getRecordStatus(record),
-          fullRecord: record
-        };
-      }).filter(item => item !== null);
+          fullRecord: record,
+        }));
 
-      console.log("📋 Formatted table data:", formattedData);
       setTableData(formattedData);
     } else {
-      console.log("📋 No attendance records found");
       setTableData([]);
     }
   }, [reduxAttendanceList]);
+
 
   // Get record status for table
   const getRecordStatus = (record) => {
@@ -626,7 +642,6 @@ const AttendanceDashboard = () => {
 
 
 
-  console.log("tableData", tableData)
   // Add this to your existing state declarations:
   const [wfhFormData, setWfhFormData] = useState({
     issueType: 'Internet issue',
@@ -660,7 +675,6 @@ const AttendanceDashboard = () => {
     }
 
     try {
-      console.log('📝 Submitting WFH issue:', wfhFormData);
 
       // Dispatch the WFH issue action
       await dispatch(
@@ -703,7 +717,7 @@ const AttendanceDashboard = () => {
     }
 
     try {
-      console.log('📤 Sending WFH issue to TL:', wfhFormData);
+
 
       // Dispatch the WFH issue action (same as save, but you might want to add a flag for TL notification)
       await dispatch(
@@ -839,7 +853,7 @@ const AttendanceDashboard = () => {
           <div className="rounded-2xl bg-slate-900/70 border border-slate-700/60 backdrop-blur-xl p-4 shadow-[0_18px_45px_rgba(15,23,42,0.9)]">
             <p className="text-xs text-slate-400 uppercase tracking-wide">Today's First Login</p>
             <p className="mt-2 text-2xl font-semibold text-slate-50">
-              {formatTime(todayAttendance?.clockIn) || "—"}
+              {formatTimePH(todayAttendance?.clockIn) || "—"}
             </p>
             <p className="mt-3 text-xs text-slate-400">
               {todayAttendance?.clockIn ? "Your login time" : "Not punched in yet"}
@@ -1089,16 +1103,7 @@ const AttendanceDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {isLoading && !tableData.length ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-slate-600 border-t-sky-500 rounded-full"></div>
-                        Loading attendance history...
-                      </div>
-                    </td>
-                  </tr>
-                ) : tableData.length > 0 ? (
+                {tableData.length > 0 ? (
                   tableData.map((record, index) => (
                     <tr
                       key={record.id || index}

@@ -1,16 +1,17 @@
 import { X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { requestDayOff } from '../../redux/attendenceSlice';
+import { getDayOffRequests, requestDayOff } from '../../redux/attendenceSlice';
 import toast from 'react-hot-toast';
 
-const ShowOffDay = ({ setShowDayOffModal }) => {
+const ShowOffDay = ({ userId, setShowDayOffModal }) => {
     const dispatch = useDispatch();
 
     const [dayOffForm, setDayOffForm] = useState({
-        date: "",
+        startDate: "",
+        endDate: "",
         reason: "",
-        type: "Rest Day",
+        type: "",
         duration: "single",
     });
 
@@ -26,22 +27,28 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (!dayOffForm.date || !dayOffForm.reason) {
+        if (!dayOffForm.startDate || !dayOffForm.reason) {
             toast.error("Please fill all required fields");
             return;
         }
 
         dispatch(
             requestDayOff({
-                date: dayOffForm.date,
+                startDate: dayOffForm.startDate,
+                endDate: dayOffForm.endDate,
                 reason: dayOffForm.reason,
-                type: dayOffForm.type,
+                attachmentType: dayOffForm.type,
                 duration: dayOffForm.duration,
             })
         )
             .unwrap()
             .then(() => {
                 toast.success("Day off request submitted 🎉");
+
+
+                dispatch(getDayOffRequests({ userId }));
+
+                // Close modal
                 setShowDayOffModal(false);
             })
             .catch((err) => {
@@ -52,13 +59,13 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3">
             <div className="absolute inset-0 bg-black/70"></div>
-            
+
             <div className="relative w-full sm:max-w-2xl p-5 rounded-2xl bg-slate-900/80 border border-slate-700/80 backdrop-blur-2xl shadow-[0_24px_60px_rgba(15,23,42,0.95)]">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-slate-50">Request Day Off</h3>
-                    <button 
-                        onClick={() => setShowDayOffModal(false)} 
+                    <button
+                        onClick={() => setShowDayOffModal(false)}
                         className="text-slate-400 hover:text-white transition-colors"
                     >
                         <X size={22} />
@@ -67,27 +74,64 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
 
                 <form onSubmit={handleSubmit}>
                     {/* DATE FIELD - with custom placeholder */}
-                    <div className="mb-4">
+
+                    {dayOffForm.duration === "single" && <div className="mb-4  ">
                         <label className="block text-sm text-slate-300 mb-2">
-                            Date <span className="text-red-500">*</span>
+                            Start Date <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <input
                                 type="date"
                                 id="date-input"
-                                value={dayOffForm.date}
+                                value={dayOffForm.startDate}
                                 required
                                 min={new Date().toISOString().split("T")[0]}
-                                onChange={(e) => setDayOffForm({ ...dayOffForm, date: e.target.value })}
+                                onChange={(e) => setDayOffForm({ ...dayOffForm, startDate: e.target.value })}
                                 className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
                             />
-                            {!dayOffForm.date && (
-                                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                                    <span className="text-sm text-slate-500">mm/dd/yyyy</span>
-                                </div>
-                            )}
+
                         </div>
                     </div>
+                    }
+
+                    {dayOffForm.duration === "multiple" && <div className='flex justify-between'>
+
+                        <div className="mb-4  ">
+                            <label className="block text-sm text-slate-300 mb-2">
+                                Start Date <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    id="date-input"
+                                    value={dayOffForm.startDate}
+                                    required
+                                    min={new Date().toISOString().split("T")[0]}
+                                    onChange={(e) => setDayOffForm({ ...dayOffForm, startDate: e.target.value })}
+                                    className="w-70 rounded-xl bg-slate-950/70 border border-slate-700 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                                />
+
+                            </div>
+                        </div>
+
+                        <div className="mb-4  ">
+                            <label className="block text-sm text-slate-300 mb-2">
+                                End Date <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    id="date-input"
+                                    value={dayOffForm.endDate}
+                                    required
+                                    min={new Date().toISOString().split("T")[0]}
+                                    onChange={(e) => setDayOffForm({ ...dayOffForm, endDate: e.target.value })}
+                                    className="w-70 rounded-xl bg-slate-950/70 border border-slate-700 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                                />
+
+                            </div>
+                        </div>
+                    </div>}
 
                     {/* REASON FIELD */}
                     <div className="mb-4">
@@ -116,7 +160,7 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                             <option className="bg-slate-900/60" value="Emergency Leave">Emergency Leave</option>
                             <option className="bg-slate-900/60" value="Personal Leave">Personal Leave</option>
                         </select>
-                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <div className="absolute right-8 top-5/8 transform -translate-y-1/2 pointer-events-none">
                             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -136,11 +180,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                                         onChange={() => setDayOffForm({ ...dayOffForm, duration: "single" })}
                                         className="sr-only"
                                     />
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                        dayOffForm.duration === "single" 
-                                            ? "border-sky-500 bg-sky-500/10" 
-                                            : "border-slate-600"
-                                    }`}>
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${dayOffForm.duration === "single"
+                                        ? "border-sky-500 bg-sky-500/10"
+                                        : "border-slate-600"
+                                        }`}>
                                         {dayOffForm.duration === "single" && (
                                             <div className="w-2.5 h-2.5 rounded-full bg-sky-500"></div>
                                         )}
@@ -158,11 +201,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                                         onChange={() => setDayOffForm({ ...dayOffForm, duration: "multiple" })}
                                         className="sr-only"
                                     />
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                        dayOffForm.duration === "multiple" 
-                                            ? "border-sky-500 bg-sky-500/10" 
-                                            : "border-slate-600"
-                                    }`}>
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${dayOffForm.duration === "multiple"
+                                        ? "border-sky-500 bg-sky-500/10"
+                                        : "border-slate-600"
+                                        }`}>
                                         {dayOffForm.duration === "multiple" && (
                                             <div className="w-2.5 h-2.5 rounded-full bg-sky-500"></div>
                                         )}
@@ -195,8 +237,8 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

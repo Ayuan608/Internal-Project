@@ -197,20 +197,43 @@ export const getDepartmentWiseUsers = createAsyncThunk(
 // =============== 6. DAY OFF REQUESTS ===============
 export const requestDayOff = createAsyncThunk(
   "attendance/requestDayOff",
-  async ({ date, reason, attachmentType = "Emergency" }, { rejectWithValue }) => {
+  async (
+    { reason, startDate, endDate, duration = "single", attachmentType },
+    { rejectWithValue }
+  ) => {
     try {
-      const { data } = await axiosInstance.post("/attendance/request-day-off", {
-        date,
+      const payload = {
         reason,
-        attachmentType
-      });
-      if (data.success) toast.success(data.message || "Day off request submitted!");
+        startDate,
+        duration,
+        attachmentType,
+      };
+
+      // only send endDate if multiple
+      if (duration === "multiple") {
+        payload.endDate = endDate;
+      }
+
+      const { data } = await axiosInstance.post(
+        "/attendance/request-day-off",
+        payload
+      );
+
+      if (data.success) {
+        toast.success(data.message || "Day off request submitted!");
+      }
+
+      console.log("data", data)
       return data;
     } catch (error) {
-      return rejectWithValue(handleError(error, "Day off request failed"));
+      return rejectWithValue(
+        handleError(error, "Day off request failed")
+      );
     }
   }
 );
+
+
 // Change from requestWfhIssue to reportWfhIssue for clarity
 export const reportWfhIssue = createAsyncThunk(
   "attendance/reportWfhIssue",
@@ -230,19 +253,27 @@ export const reportWfhIssue = createAsyncThunk(
   }
 );
 
-
 export const getDayOffRequests = createAsyncThunk(
   "attendance/getDayOffRequests",
-  async (_, { rejectWithValue }) => {
+  async ({ userId } = {}, { rejectWithValue }) => {
     try {
-      const { data } = await axiosInstance.get("/attendance/day-off-requests");
+      const query = userId ? `?userId=${userId}` : "";
+      const { data } = await axiosInstance.get(
+        `/attendance/day-off-requests${query}`
+      );
+
+      console.log("Day off API data:", data);
       return data;
     } catch (error) {
-      console.error("❌ Error fetching checker stats:", error);
-      return rejectWithValue(handleError(error, "Failed to get checker stats"));
+      console.error("❌ Error fetching day off requests:", error);
+      return rejectWithValue(
+        handleError(error, "Failed to get day off requests")
+      );
     }
   }
 );
+
+
 
 // =============== 7. MANAGE DAY OFF REQUESTS ===============
 export const approveDayOffRequest = createAsyncThunk(
@@ -279,7 +310,7 @@ export const updateDayOffStatus = createAsyncThunk(
         }
       );
 
-      return res.data.updatedRequest;
+      return res.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to update leave status"
@@ -610,19 +641,16 @@ const attendanceSlice = createSlice({
         state.error = null;
       })
       .addCase(updateDayOffStatus.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.success = true;
-        const index = state.dayOffRequests.findIndex(
-          (req) => req.requestId === action.payload._id
+        const updated = action.payload;
+
+        state.dayOffRequests = state.dayOffRequests.map((req) =>
+          req.requestId === updated._id
+            ? { ...req, ...updated }
+            : req
         );
 
-        if (index !== -1) {
-          state.dayOffRequests[index] = {
-            ...state.dayOffRequests[index],
-            ...action.payload,
-            requestId: action.payload._id, // maintain consistency
-          };
-        }
+        state.isLoading = false;
+        state.success = true;
       })
 
       .addCase(getDayOffRequests.fulfilled, (state, action) => {
