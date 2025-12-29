@@ -45,7 +45,8 @@ const EmployeeDirectory = () => {
   }, [users, searchTerm, activeFilter]);
 
   const getLeaveCount = (userId) =>
-    dayOffRequests.filter((req) => req.userId === userId).length;
+    dayOffRequests.filter((req) => req.userId === userId && req.status === "PENDING").length;
+
 
 
   const formatDate = (date) => {
@@ -137,8 +138,8 @@ const EmployeeDirectory = () => {
                 </td>
                 <td
                   className={`px-6 py-4 font-medium salerywidth ${emp.salary && Number(emp.salary) < 20000
-                      ? "text-red-500"
-                      : "text-emerald-400"
+                    ? "text-red-500"
+                    : "text-emerald-400"
                     }`}
                 >
                   {emp.salary
@@ -169,9 +170,9 @@ const EmployeeDirectory = () => {
                     <Calendar size={16} />
 
                     {/* Badge */}
-                    <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 rounded-full">
+                    {getLeaveCount(emp._id) > 0 && <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 rounded-full">
                       {getLeaveCount(emp._id)}
-                    </span>
+                    </span>}
                   </button>
 
                   <button className="p-2 bg-slate-700 rounded-lg hover:bg-slate-600">
