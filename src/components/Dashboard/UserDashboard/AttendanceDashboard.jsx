@@ -680,7 +680,7 @@ const AttendanceDashboard = () => {
     }
   }, [reduxAttendanceList]);
 
-  console.log("TableData", tableData[0].fullRecord)
+  console.log("TableData", tableData)
   const calculateHours = (timeRangeString) => {
     // Split the string into start and end times
     const [startTimeStr, endTimeStr] = timeRangeString.split(' - ');
