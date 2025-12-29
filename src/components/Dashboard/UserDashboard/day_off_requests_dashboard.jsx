@@ -63,12 +63,14 @@ const DayOffRequestsPage = () => {
     date ? new Date(date).toLocaleDateString("en-IN") : "—";
 
   const leaves = dayOffRequests || [];
+  console.log(leaves, "leaves")
 
   const filteredRequests = useMemo(() => {
     if (filter === "ALL") return leaves;
     return leaves.filter((r) => r.status === filter);
   }, [filter, leaves]);
 
+  console.log("filtered", filteredRequests)
   const counters = useMemo(() => {
     const base = {
       PENDING: 0,
@@ -191,6 +193,14 @@ const DayOffRequestsPage = () => {
                             className={`h-2 w-2 rounded-full ${meta.dotClass}`}
                           />
                           {meta.label}
+                        </span>
+                      </Td>
+                      <Td>
+                        <span
+                          className="capitalize"
+                        // className={`inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs ${meta.badgeClass}`}
+                        >
+                          {r.approvedBy}
                         </span>
                       </Td>
 

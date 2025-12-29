@@ -262,7 +262,7 @@ export const getDayOffRequests = createAsyncThunk(
         `/attendance/day-off-requests${query}`
       );
 
-      console.log("Day off API data:", data);
+      // console.log("Day off API data:", data);
       return data;
     } catch (error) {
       console.error("❌ Error fetching day off requests:", error);

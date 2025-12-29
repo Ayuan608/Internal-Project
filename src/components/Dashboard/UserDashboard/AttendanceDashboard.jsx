@@ -1,5 +1,5 @@
 // src/components/AttendanceDashboard.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Coffee,
@@ -66,7 +66,9 @@ const AttendanceDashboard = () => {
   const breaksLoading = useSelector((state) => state.attendance?.breaksLoading);
 
   // Local state
-  const [currentTime, setCurrentTime] = useState(new Date());
+  // const [currentTime, setCurrentTime] = useState(new Date());
+
+
   const [showPunchOutModal, setShowPunchOutModal] = useState(false);
   const [showWFHModal, setShowWFHModal] = useState(false);
   const [showBreakModal, setShowBreakModal] = useState(false);
@@ -290,20 +292,74 @@ const AttendanceDashboard = () => {
     }
   }, [todayAttendance]);
 
+  const getPhilippinesTime = () =>
+    new Date(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: PH_TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(new Date())
+    );
 
-  // Timer countdown
+
+  // // Timer countdown
+  // useEffect(() => {
+  //   if (activeTimer) {
+  //     const breakLimit = activeTimer.type === 'lunch' ? 30 * 60 : 5 * 60;
+  //     const startTime = new Date(activeTimer.startTime).getTime();
+  //     const currentTime = Date.now();
+  //     const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+  //     const remainingSeconds = Math.max(0, breakLimit - elapsedSeconds);
+
+  //     setTimeLeft(remainingSeconds);
+
+  //     const interval = setInterval(() => {
+  //       setTimeLeft(prev => {
+  //         if (prev <= 1) {
+  //           clearInterval(interval);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [activeTimer]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(getPhilippinesTime());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
   useEffect(() => {
     if (activeTimer) {
-      const breakLimit = activeTimer.type === 'lunch' ? 30 * 60 : 5 * 60;
+      const breakLimit =
+        activeTimer.type === "lunch" ? 30 * 60 : 5 * 60;
+
       const startTime = new Date(activeTimer.startTime).getTime();
       const currentTime = Date.now();
-      const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
-      const remainingSeconds = Math.max(0, breakLimit - elapsedSeconds);
+
+      const elapsedSeconds = Math.floor(
+        (currentTime - startTime) / 1000
+      );
+
+      const remainingSeconds = Math.max(
+        0,
+        breakLimit - elapsedSeconds
+      );
 
       setTimeLeft(remainingSeconds);
 
       const interval = setInterval(() => {
-        setTimeLeft(prev => {
+        setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(interval);
             return 0;
@@ -316,6 +372,7 @@ const AttendanceDashboard = () => {
     }
   }, [activeTimer]);
 
+  const [currentTime, setCurrentTime] = useState(getPhilippinesTime());
   // Handle Punch In
   const handlePunchIn = async () => {
     if (!userId) {
@@ -623,6 +680,54 @@ const AttendanceDashboard = () => {
     }
   }, [reduxAttendanceList]);
 
+  console.log("TableData", tableData[0].fullRecord)
+  const calculateHours = (timeRangeString) => {
+    // Split the string into start and end times
+    const [startTimeStr, endTimeStr] = timeRangeString.split(' - ');
+
+    // Helper function to convert "HH:MM AM/PM" string to a Date object relative to today
+    const getTimeAsDate = (timeStr) => {
+      const date = new Date();
+      // Use an arbitrary past date to handle overnight ranges (e.g., 10 PM - 6 AM)
+      date.setFullYear(2000, 0, 1);
+
+      // Split the time and AM/PM part
+      const [time, period] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':').map(Number);
+
+      // Adjust hours for PM times
+      if (period === 'PM' && hours !== 12) {
+        hours += 12;
+      }
+      // Adjust hours for 12 AM (midnight)
+      if (period === 'AM' && hours === 12) {
+        hours = 0;
+      }
+
+      date.setHours(hours, minutes, 0, 0);
+      return date;
+    };
+
+    const startTime = getTimeAsDate(startTimeStr);
+    const endTime = getTimeAsDate(endTimeStr);
+
+    // If the end time is earlier than the start time, it means the period crosses midnight.
+    // Add a day to the end time date.
+    if (endTime < startTime) {
+      endTime.setDate(endTime.getDate() + 1);
+    }
+
+    // Calculate the difference in milliseconds and convert to hours
+    const diffInMilliseconds = endTime - startTime;
+    const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+
+    return diffInHours;
+  }
+  const timeRange = tableData[0]?.fullRecord?.actualWorkingHours;
+  console.log(timeRange)
+
+  const hours = calculateHours(timeRange);
+  console.log(hours, "hours")
 
   // Get record status for table
   const getRecordStatus = (record) => {
@@ -717,8 +822,6 @@ const AttendanceDashboard = () => {
     }
 
     try {
-
-
       // Dispatch the WFH issue action (same as save, but you might want to add a flag for TL notification)
       await dispatch(
         reportWfhIssue({
@@ -757,6 +860,68 @@ const AttendanceDashboard = () => {
     setShowBreakModal(true)
     setHiddenTimerType(null)
   }
+  const [time, setTime] = useState(0);
+  const workTimerRef = useRef(null);
+
+
+  const SHIFT_SECONDS = 8 * 60 * 60;
+
+  const formatDuration = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+
+    return `${h.toString().padStart(2, "0")}:${m
+      .toString()
+      .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const calculateRemainingWorkSeconds = (clockInISO) => {
+    if (!clockInISO) return 0;
+
+    const clockIn = new Date(clockInISO);
+
+    // shift start = SAME DAY as clock-in
+    const shiftStart = new Date(clockIn);
+    shiftStart.setHours(9, 0, 0, 0); // 9:00 AM shift
+
+    const lateSeconds = Math.max(
+      0,
+      Math.floor((clockIn - shiftStart) / 1000)
+    );
+
+    return Math.max(0, SHIFT_SECONDS - lateSeconds);
+  };
+
+
+
+
+  useEffect(() => {
+    if (!todayAttendance?.clockIn || todayAttendance?.clockOut) {
+      clearInterval(workTimerRef.current);
+      return;
+    }
+
+    const initialSeconds =
+      calculateRemainingWorkSeconds(todayAttendance.clockIn);
+
+    setTime(initialSeconds);
+
+    workTimerRef.current = setInterval(() => {
+      setTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(workTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(workTimerRef.current);
+  }, [todayAttendance?.clockIn, todayAttendance?.clockOut]);
+
+
+  // caluculating actual working hours
 
 
   return (
@@ -777,45 +942,53 @@ const AttendanceDashboard = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 justify-end mt-4 md:mt-0">
-            <CustomDatePicker />
+          <div className="flex flex-col">
+            <div className="flex flex-wrap items-center gap-2 justify-end mt-4 md:mt-0">
+              <CustomDatePicker />
 
-            {/* Punch buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handlePunchIn}
-                disabled={isOnline}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${isOnline
-                  ? "bg-slate-700 cursor-not-allowed text-slate-400"
-                  : "bg-sky-500/80 text-slate-950 hover:bg-sky-400"
-                  }`}
-              >
-                <LogIn size={16} />
-                Punch In
-              </button>
+              {/* Punch buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handlePunchIn}
+                  disabled={isOnline}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${isOnline
+                    ? "bg-slate-700 cursor-not-allowed text-slate-400"
+                    : "bg-sky-500/80 text-slate-950 hover:bg-sky-400"
+                    }`}
+                >
+                  <LogIn size={16} />
+                  Punch In
+                </button>
 
+                <button
+                  onClick={() => setShowPunchOutModal(true)}
+                  disabled={!isOnline}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!isOnline
+                    ? "bg-slate-700 cursor-not-allowed text-slate-400"
+                    : "bg-rose-500/90 text-slate-50 hover:bg-rose-400"
+                    }`}
+                >
+                  <LogOut size={16} />
+                  Punch Out
+                </button>
+
+              </div>
+
+              {/* Day off button */}
               <button
-                onClick={() => setShowPunchOutModal(true)}
-                disabled={!isOnline}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!isOnline
-                  ? "bg-slate-700 cursor-not-allowed text-slate-400"
-                  : "bg-rose-500/90 text-slate-50 hover:bg-rose-400"
-                  }`}
+                onClick={() => setShowDayOffModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm border border-sky-600/60 bg-slate-900/70 text-sky-100 hover:bg-sky-500/20 hover:border-sky-400 transition-all"
               >
-                <LogOut size={16} />
-                Punch Out
+                <CalendarPlus size={16} />
+                Request Day Off
               </button>
             </div>
-
-            {/* Day off button */}
-            <button
-              onClick={() => setShowDayOffModal(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm border border-sky-600/60 bg-slate-900/70 text-sky-100 hover:bg-sky-500/20 hover:border-sky-400 transition-all"
-            >
-              <CalendarPlus size={16} />
-              Request Day Off
-            </button>
+            <div className="flex justify-end pt-4">
+              <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
+                Time Left: <span className="font-mono">{formatDuration(time)}</span></div>
+            </div>
           </div>
+
         </div>
 
         {/* WFH Status Strip */}
