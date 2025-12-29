@@ -75,9 +75,11 @@ const AttendanceDashboard = () => {
 
 
   const [dayOffForm, setDayOffForm] = useState({
-    date: "",
+    startDate: "",
+    endDate: "",
     reason: "",
-    type: "Rest Day"
+    type: "",
+    duration: "single",
   });
   const [activeTimer, setActiveTimer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);

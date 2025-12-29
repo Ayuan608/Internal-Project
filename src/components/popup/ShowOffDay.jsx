@@ -1,10 +1,10 @@
 import { X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { requestDayOff } from '../../redux/attendenceSlice';
+import { getDayOffRequests, requestDayOff } from '../../redux/attendenceSlice';
 import toast from 'react-hot-toast';
 
-const ShowOffDay = ({ setShowDayOffModal }) => {
+const ShowOffDay = ({ userId, setShowDayOffModal }) => {
     const dispatch = useDispatch();
 
     const [dayOffForm, setDayOffForm] = useState({
@@ -32,28 +32,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
             return;
         }
 
-        if (!dayOffForm.endDate) {
-            dispatch(
-                requestDayOff({
-                    startDate: dayOffForm.startDate,
-                    endDate: dayOffForm.endDate,
-                    reason: dayOffForm.reason,
-                    attachmentType: dayOffForm.type,
-                    duration: dayOffForm.duration,
-                })
-            )
-                .unwrap()
-                .then(() => {
-                    toast.success("Day off request submitted 🎉");
-                    setShowDayOffModal(false);
-                })
-                .catch((err) => {
-                    toast.error(err?.message || "Failed to submit request");
-                });
-        }
         dispatch(
             requestDayOff({
                 startDate: dayOffForm.startDate,
+                endDate: dayOffForm.endDate,
                 reason: dayOffForm.reason,
                 attachmentType: dayOffForm.type,
                 duration: dayOffForm.duration,
@@ -62,12 +44,16 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
             .unwrap()
             .then(() => {
                 toast.success("Day off request submitted 🎉");
+
+
+                dispatch(getDayOffRequests({ userId }));
+
+                // Close modal
                 setShowDayOffModal(false);
             })
             .catch((err) => {
                 toast.error(err?.message || "Failed to submit request");
             });
-
     };
 
     return (
@@ -89,8 +75,26 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                 <form onSubmit={handleSubmit}>
                     {/* DATE FIELD - with custom placeholder */}
 
-                    <div className='flex justify-between'>
+                    {dayOffForm.duration === "single" && <div className="mb-4  ">
+                        <label className="block text-sm text-slate-300 mb-2">
+                            Start Date <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="date"
+                                id="date-input"
+                                value={dayOffForm.startDate}
+                                required
+                                min={new Date().toISOString().split("T")[0]}
+                                onChange={(e) => setDayOffForm({ ...dayOffForm, startDate: e.target.value })}
+                                className="w-full rounded-xl bg-slate-950/70 border border-slate-700 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                            />
 
+                        </div>
+                    </div>
+                    }
+
+                    {dayOffForm.duration === "multiple" && <div className='flex justify-between'>
 
                         <div className="mb-4  ">
                             <label className="block text-sm text-slate-300 mb-2">
@@ -106,13 +110,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                                     onChange={(e) => setDayOffForm({ ...dayOffForm, startDate: e.target.value })}
                                     className="w-70 rounded-xl bg-slate-950/70 border border-slate-700 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
                                 />
-                                {!dayOffForm.date && (
-                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                                        <span className="text-sm text-slate-500">mm/dd/yyyy</span>
-                                    </div>
-                                )}
+
                             </div>
                         </div>
+
                         <div className="mb-4  ">
                             <label className="block text-sm text-slate-300 mb-2">
                                 End Date <span className="text-red-500">*</span>
@@ -127,14 +128,10 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                                     onChange={(e) => setDayOffForm({ ...dayOffForm, endDate: e.target.value })}
                                     className="w-70 rounded-xl bg-slate-950/70 border border-slate-700 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
                                 />
-                                {!dayOffForm.date && (
-                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                                        <span className="text-sm text-slate-500">mm/dd/yyyy</span>
-                                    </div>
-                                )}
+
                             </div>
                         </div>
-                    </div>
+                    </div>}
 
                     {/* REASON FIELD */}
                     <div className="mb-4">
@@ -163,7 +160,7 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                             <option className="bg-slate-900/60" value="Emergency Leave">Emergency Leave</option>
                             <option className="bg-slate-900/60" value="Personal Leave">Personal Leave</option>
                         </select>
-                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <div className="absolute right-8 top-5/8 transform -translate-y-1/2 pointer-events-none">
                             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -240,8 +237,8 @@ const ShowOffDay = ({ setShowDayOffModal }) => {
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
