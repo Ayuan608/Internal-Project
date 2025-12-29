@@ -291,11 +291,18 @@ export const updateDayOffStatus = createAsyncThunk(
 // =============== UPDATE ATTENDANCE (ADMIN / CHECKER) ===============
 export const updateAttendance = createAsyncThunk(
   "attendance/updateAttendance",
-  async ({ user,date,pattern,  remarks }, { rejectWithValue }) => {
+  async ({ user, date, pattern, remarks }, { rejectWithValue }) => {
     try {
+      const url =
+        date && date !== "undefined"
+          ? `/attendance/update-attendanceData/${user}/${date}`
+          : `/attendance/update-attendanceData/${user}`;
       const { data } = await axiosInstance.patch(
-        `/attendance/update-attendanceData/${user}/${date}`,
-        { pattern, remarks }
+        url,
+        {
+          ...(pattern !== undefined && { pattern }),
+          ...(remarks !== undefined && { remarks }),
+        }
       );
 
       if (data.success) {
@@ -308,6 +315,28 @@ export const updateAttendance = createAsyncThunk(
     }
   }
 );
+
+
+// export const deleteAttendance = createAsyncThunk(
+//   "attendance/deleteAttendance",
+//   async ({ user }, { rejectWithValue }) => {
+//     try {
+//       const { data } = await axiosInstance.delete(
+//        `/attendance/delete-attendance/${user}`
+      
+//       );
+
+//       if (data.success) {
+//         toast.success(data.message || "Attendance delete");
+//       }
+
+//       return data;
+//     } catch (error) {
+//       return rejectWithValue(handleError(error, "Failed to delete attendance"));
+//     }
+//   }
+// );
+
 // SLICE
 const attendanceSlice = createSlice({
   name: "attendance",

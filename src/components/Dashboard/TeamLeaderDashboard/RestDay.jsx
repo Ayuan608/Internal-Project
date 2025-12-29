@@ -38,8 +38,8 @@ export default function AttendanceDashboard() {
   const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
-console.log(departmentAttendance,"abhishek")
-  console.log("desparetmebt",departmentAttendance)
+// console.log(departmentAttendance,"abhishek")
+//   console.log("desparetmebt",departmentAttendance)
   const { role } = useSelector((s) => s.auth || {});
   const [searchName, setSearchName] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -91,83 +91,204 @@ console.log(departmentAttendance,"abhishek")
   }, [departmentAttendance, searchName, departmentFilter, statusFilter]);
 
   // KPI calculation for selected month
-  const stats = useMemo(() => {
-    let present = 0, absent = 0, leave = 0, undertime = 0, halfday = 0;
+  //   const stats = useMemo(() => {
+  //     let present = 0, absent = 0, leave = 0, undertime = 0, halfday = 0;
+  // console.log("filteredData",filteredData)
+  //     filteredData.forEach((emp) => {
+  //       if (Array.isArray(emp.pattern) && emp.pattern.length >= 1) {
+  //         const arr = emp.pattern.slice(0, daysInSelectedMonth);
+  //         console.log(arr)
+  //         arr.forEach((p) => {
+  //           if (p === 0) present++;
+  //           else if (p === 1) present++; // Night shift is also present
+  //           else if (p === 2) leave++;
+  //           else if (p === 3) absent++;
+  //           else if (p === "U") undertime++;
+  //           else if (p === "H") halfday++;
+  //         });
+  //       } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
+  //         const records = emp.attendanceRecords;
+  //         for (let d = 1; d <= daysInSelectedMonth; d++) {
+  //           const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
+  //           const key = dd.toISOString().slice(0, 10);
+  //           const status = records[key];
+  //           if (!status) {
+  //             absent++;
+  //           } else if (status === "Present") present++;
+  //           else if (status === "Absent") absent++;
+  //           else if (status === "Leave") leave++;
+  //           else if (status === "Undertime") undertime++;
+  //           else if (status === "Half Day") halfday++;
+  //         }
+  //       } else {
+  //         if (emp.status === "Present") present++;
+  //         else if (emp.status === "Absent") absent++;
+  //         else if (emp.status === "Leave") leave++;
+  //         else if (emp.status === "Undertime") undertime++;
+  //         else if (emp.status === "Half Day") halfday++;
+  //       }
+  //     });
 
-    filteredData.forEach((emp) => {
-      if (Array.isArray(emp.pattern) && emp.pattern.length >= 1) {
-        const arr = emp.pattern.slice(0, daysInSelectedMonth);
-        arr.forEach((p) => {
-          if (p === 0) present++;
-          else if (p === 1) present++; // Night shift is also present
-          else if (p === 2) leave++;
-          else if (p === 3) absent++;
-          else if (p === "U") undertime++;
-          else if (p === "H") halfday++;
-        });
-      } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
-        const records = emp.attendanceRecords;
-        for (let d = 1; d <= daysInSelectedMonth; d++) {
-          const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
-          const key = dd.toISOString().slice(0, 10);
-          const status = records[key];
-          if (!status) {
-            absent++;
-          } else if (status === "Present") present++;
-          else if (status === "Absent") absent++;
-          else if (status === "Leave") leave++;
-          else if (status === "Undertime") undertime++;
-          else if (status === "Half Day") halfday++;
+  //     return { present, absent, leave, undertime, halfday, total: filteredData.length };
+  //   }, [filteredData, selectedMonth, daysInSelectedMonth]);
+   const hasDayOffRequest = (emp, day, selectedMonth) => {
+    if (!emp.dayOffRequests) return false;
+
+    // If array of dates (e.g. ["2025-12-10"])
+    if (Array.isArray(emp.dayOffRequests)) {
+      const dateKey = new Date(
+        selectedMonth.getFullYear(),
+        selectedMonth.getMonth(),
+        day
+      ).toISOString().slice(0, 10);
+
+      return emp.dayOffRequests.includes(dateKey);
+    }
+
+    // If object keyed by day (e.g. { "10": true })
+    if (typeof emp.dayOffRequests === "object") {
+      return Boolean(emp.dayOffRequests[day]);
+    }
+
+    return false;
+  };
+
+  const stats = useMemo(() => {
+    let present = 0;
+    let absent = 0;
+    let leave = 0;
+    let undertime = 0;
+    let halfday = 0;
+
+    filteredData.forEach(emp => {
+      const patternByDay = emp.patternByDay || {};
+
+      for (let day = 1; day <= daysInSelectedMonth; day++) {
+        const status = patternByDay[day];
+
+        // ✅ PRESENT
+        if (status === "D" || status === "M" || status === "N" || status === "PS") {
+          present++;
+          continue;
         }
-      } else {
-        if (emp.status === "Present") present++;
-        else if (emp.status === "Absent") absent++;
-        else if (emp.status === "Leave") leave++;
-        else if (emp.status === "Undertime") undertime++;
-        else if (emp.status === "Half Day") halfday++;
+
+        // ✅ REST DAY → check DayOffRequest
+        if (status === "RD") {
+          const isApprovedLeave = hasDayOffRequest(emp, day, selectedMonth);
+
+          if (isApprovedLeave) {
+            leave++;
+          } else {
+            absent++;
+          }
+          continue;
+        }
+
+        // ❌ NO STATUS → ABSENT
+        absent++;
       }
     });
 
-    return { present, absent, leave, undertime, halfday, total: filteredData.length };
-  }, [filteredData, selectedMonth, daysInSelectedMonth]);
+    return {
+      present,
+      absent,
+      leave,
+      undertime,
+      halfday,
+      total: filteredData.length,
+    };
+  }, [filteredData, daysInSelectedMonth, selectedMonth]);
+
 
   // Real attendance trend data based on actual patterns
+  // const trendData = useMemo(() => {
+  //   const arr = [];
+  //   for (let d = 1; d <= daysInSelectedMonth; d++) {
+  //     let dayPresent = 0;
+  //     let dayAbsent = 0;
+  //     let dayLeave = 0;
+  //     let dayUndertime = 0;
+
+  //     filteredData.forEach((emp) => {
+  //       if (Array.isArray(emp.pattern) && emp.pattern.length >= d) {
+  //         const status = emp.pattern[d - 1];
+  //         if (status === 0 || status === 1) dayPresent++;
+  //         else if (status === 3) dayAbsent++;
+  //         else if (status === 2) dayLeave++;
+  //         else if (status === "U") dayUndertime++;
+  //       } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
+  //         const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
+  //         const key = dd.toISOString().slice(0, 10);
+  //         const status = emp.attendanceRecords[key];
+  //         if (status === "Present") dayPresent++;
+  //         else if (status === "Absent") dayAbsent++;
+  //         else if (status === "Leave") dayLeave++;
+  //         else if (status === "Undertime") dayUndertime++;
+  //       }
+  //     });
+
+  //     arr.push({
+  //       day: d,
+  //       present: dayPresent,
+  //       absent: dayAbsent,
+  //       leave: dayLeave,
+  //       undertime: dayUndertime,
+  //     });
+  //   }
+  //   return arr;
+  // }, [filteredData, daysInSelectedMonth, selectedMonth]);
+ 
   const trendData = useMemo(() => {
     const arr = [];
-    for (let d = 1; d <= daysInSelectedMonth; d++) {
+
+    for (let day = 1; day <= daysInSelectedMonth; day++) {
       let dayPresent = 0;
       let dayAbsent = 0;
       let dayLeave = 0;
-      let dayUndertime = 0;
 
-      filteredData.forEach((emp) => {
-        if (Array.isArray(emp.pattern) && emp.pattern.length >= d) {
-          const status = emp.pattern[d - 1];
-          if (status === 0 || status === 1) dayPresent++;
-          else if (status === 3) dayAbsent++;
-          else if (status === 2) dayLeave++;
-          else if (status === "U") dayUndertime++;
-        } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
-          const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
-          const key = dd.toISOString().slice(0, 10);
-          const status = emp.attendanceRecords[key];
-          if (status === "Present") dayPresent++;
-          else if (status === "Absent") dayAbsent++;
-          else if (status === "Leave") dayLeave++;
-          else if (status === "Undertime") dayUndertime++;
+      filteredData.forEach(emp => {
+        const status = emp.patternByDay?.[day];
+        // console.log(status)
+        //  PRESENT
+        if (status === "D" || status === "M" || status === "N" || status === "PS") {
+          dayPresent++;
+          return;
         }
+
+        //  REST DAY → check dayOffRequest
+        if (status === "RD") {
+          const isApprovedLeave = hasDayOffRequest(emp, day, selectedMonth);
+
+          if (isApprovedLeave) {
+            dayLeave++;
+          } else {
+            dayAbsent++;
+          }
+          return;
+        }
+
+        //  NO STATUS → ABSENT
+        dayAbsent++;
+        // if (status === "D" || status === "M" || status === "N" ||  status === "PS") {
+        //   dayPresent++;
+        // } else if (!status) {
+        //   dayAbsent++;
+        // } else if (status === "RD") {
+        //   dayLeave++;
+        //   dayAbsent++;
+        // }
       });
 
       arr.push({
-        day: d,
+        day,
         present: dayPresent,
         absent: dayAbsent,
         leave: dayLeave,
-        undertime: dayUndertime,
       });
     }
+
     return arr;
-  }, [filteredData, daysInSelectedMonth, selectedMonth]);
+  }, [filteredData, daysInSelectedMonth]);
 
   return (
     <div className="min-h-screen text-slate-100 relative">
@@ -245,7 +366,7 @@ console.log(departmentAttendance,"abhishek")
                   <CartesianGrid strokeDasharray="3 3" opacity={0.08} />
                   <XAxis dataKey="day" tick={{ fill: "#93C5FD" }} />
                   <YAxis tick={{ fill: "#93C5FD" }} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
                     labelStyle={{ color: '#e2e8f0' }}
                   />

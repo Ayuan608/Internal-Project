@@ -17,8 +17,8 @@ const BACKEND_TO_FRONTEND_STATUS = {
   D: 'D',
   M: 'M',
   N: 'N',
-  P: 'PS',
-  R: 'RD',
+  PS: 'PS',
+  // R: 'RD',
   RD: 'RD'
 };
 
@@ -27,8 +27,8 @@ const FRONTEND_TO_BACKEND_STATUS = {
   D: 'D',
   M: 'M',
   N: 'N',
-  PS: 'P',
-  RD: 'R'
+  PS: 'PS',
+  RD: 'RD'
 };
 
 
@@ -56,13 +56,13 @@ const FRONTEND_STATUS_MAP = {
     label: 'PS',
     className: 'bg-blue-600 text-white',
     fullName: 'Probation',
-    backendValue: 'P', // Backend में 'PS' है Probation
+    backendValue: 'PS', // Backend में 'PS' है Probation
   },
   RD: {
     label: 'RD',
     className: 'bg-red-600 text-white',
     fullName: 'Rest Day',
-    backendValue: "R",  // Backend में 2 है Rest Day
+    backendValue: "RD",  // Backend में 2 है Rest Day
   },
 };
 
@@ -119,7 +119,7 @@ export default function AttendanceTable({
     }
     return days;
   }, [currentMonthInfo]);
-  
+
   const monthLabel = useMemo(() => {
     const { year, month } = currentMonthInfo;
     const date = new Date(year, month, 1);
@@ -161,16 +161,60 @@ export default function AttendanceTable({
 
 
   // Calculate totals for an employee - FIXED
-  const calculateTotals = (pattern) => {
-    const frontendPattern = convertBackendPattern(pattern);
+  // const calculateTotals = (patternByDay = {}) => {
+  //   // const frontendPattern = convertBackendPattern(pattern);
 
-    // Ensure pattern has correct length for days shown
-    const displayPattern =
-      frontendPattern.length >= daysToShow.length
-        ? frontendPattern.slice(0, daysToShow.length)
-        : [...frontendPattern, ...Array(daysToShow.length - frontendPattern.length).fill('D')];
+  //   // // Ensure pattern has correct length for days shown
+  //   // const displayPattern =
+  //   //   frontendPattern.length >= daysToShow.length
+  //   //     ? frontendPattern.slice(0, daysToShow.length)
+  //   //     : [...frontendPattern, ...Array(daysToShow.length - frontendPattern.length).fill('D')];
 
-    // Initialize totals
+  //   // Initialize totals
+  //   const totals = {
+  //     totalDayShift: 0,
+  //     totalMidShift: 0,
+  //     totalNightShift: 0,
+  //     totalProbation: 0,
+  //     totalRestDay: 0,
+  //     totalAbsent: 0,
+  //     totalLeave: 0,
+  //   };
+
+  //   // Count each status
+  //   Object.values(patternByDay).forEach(status => {
+  //     switch (status) {
+  //       case 'D':
+  //         totals.totalDayShift++;
+  //         break;
+  //       case 'M':
+  //         totals.totalMidShift++;
+  //         break;
+  //       case 'N':
+  //         totals.totalNightShift++;
+  //         break;
+  //       case 'PS':
+  //         totals.totalProbation++;
+  //         break;
+  //       case 'RD':
+  //         totals.totalRestDay++;
+  //         break;
+  //       // 'A' and 'L' को हमने frontend में D माना है (आपकी requirement के according)
+  //       case 'A':
+  //       case 'L':
+  //         totals.totalDayShift++; // Absent/Leave को Day shift में count करें
+  //         break;
+  //       default:
+  //         totals.totalDayShift++; // Default को Day shift
+  //     }
+  //   });
+
+  //   totals.totalAttendance = totals.totalDayShift + totals.totalMidShift + totals.totalNightShift;
+  //   return totals;
+  // };
+  const calculateTotals = (patternByDay = {}) => {
+    const today = currentMonthInfo.currentDay;
+
     const totals = {
       totalDayShift: 0,
       totalMidShift: 0,
@@ -179,10 +223,13 @@ export default function AttendanceTable({
       totalRestDay: 0,
       totalAbsent: 0,
       totalLeave: 0,
+      totalAttendance: 0,
     };
 
-    // Count each status
-    displayPattern.forEach(status => {
+   
+    for (let day = 1; day <= today; day++) {
+      const status = patternByDay[day];
+
       switch (status) {
         case 'D':
           totals.totalDayShift++;
@@ -199,26 +246,34 @@ export default function AttendanceTable({
         case 'RD':
           totals.totalRestDay++;
           break;
-        // 'A' and 'L' को हमने frontend में D माना है (आपकी requirement के according)
         case 'A':
+          totals.totalAbsent++;
+          break;
         case 'L':
-          totals.totalDayShift++; // Absent/Leave को Day shift में count करें
+          totals.totalLeave++;
           break;
         default:
-          totals.totalDayShift++; // Default को Day shift
+         
+          break;
       }
-    });
+    }
 
-    totals.totalAttendance = totals.totalDayShift + totals.totalMidShift + totals.totalNightShift;
+    totals.totalAttendance =
+      totals.totalDayShift +
+      totals.totalMidShift +
+      totals.totalNightShift;
+
     return totals;
   };
 
   // Calculate statistics for all employees
+
   const stats = useMemo(() => {
     let dayShift = 0, midShift = 0, nightShift = 0, probation = 0, restDay = 0, absent = 0, leave = 0, totalAttendance = 0;
 
     filteredEmployees.forEach(emp => {
-      const totals = calculateTotals(emp.pattern);
+      const totals = calculateTotals(emp.patternByDay);
+     
       dayShift += totals.totalDayShift;
       midShift += totals.totalMidShift;
       nightShift += totals.totalNightShift;
@@ -243,38 +298,74 @@ export default function AttendanceTable({
   }, [filteredEmployees, daysToShow]);
 
   // Calculate legend statistics from data
+  // const legendStats = useMemo(() => {
+  //   const stats = {
+  //     'D': { count: 0, percentage: 0 },
+  //     'M': { count: 0, percentage: 0 },
+  //     'N': { count: 0, percentage: 0 },
+  //     'PS': { count: 0, percentage: 0 },
+  //     'RD': { count: 0, percentage: 0 },
+  //   };
+
+  //   let totalStatuses = 0;
+
+  //   // Count all statuses from all employees
+  //   filteredEmployees.forEach(emp => {
+  //     const frontendPattern = convertBackendPattern(emp.pattern || []);
+  //     frontendPattern.slice(0, daysToShow.length).forEach(status => {
+  //       // सिर्फ 5 स्टेटस को ही count करें
+  //       if (stats[status]) {
+  //         stats[status].count++;
+  //         totalStatuses++;
+  //       }
+  //     });
+  //   });
+
+  //   // Calculate percentages
+  //   Object.keys(stats).forEach(key => {
+  //     stats[key].percentage = totalStatuses > 0
+  //       ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
+  //       : 0;
+  //   });
+
+  //   return stats;
+  // }, [filteredEmployees, daysToShow]);
   const legendStats = useMemo(() => {
+    const today = currentMonthInfo.currentDay;
+
     const stats = {
-      'D': { count: 0, percentage: 0 },
-      'M': { count: 0, percentage: 0 },
-      'N': { count: 0, percentage: 0 },
-      'PS': { count: 0, percentage: 0 },
-      'RD': { count: 0, percentage: 0 },
+      D: { count: 0, percentage: 0 },
+      M: { count: 0, percentage: 0 },
+      N: { count: 0, percentage: 0 },
+      PS: { count: 0, percentage: 0 },
+      RD: { count: 0, percentage: 0 },
     };
 
     let totalStatuses = 0;
 
-    // Count all statuses from all employees
     filteredEmployees.forEach(emp => {
-      const frontendPattern = convertBackendPattern(emp.pattern || []);
-      frontendPattern.slice(0, daysToShow.length).forEach(status => {
-        // सिर्फ 5 स्टेटस को ही count करें
+      const patternByDay = emp.patternByDay || {};
+
+      for (let day = 1; day <= today; day++) {
+        const status = patternByDay[day];
+
         if (stats[status]) {
           stats[status].count++;
           totalStatuses++;
         }
-      });
+      }
     });
 
     // Calculate percentages
     Object.keys(stats).forEach(key => {
-      stats[key].percentage = totalStatuses > 0
-        ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
-        : 0;
+      stats[key].percentage =
+        totalStatuses > 0
+          ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
+          : 0;
     });
 
     return stats;
-  }, [filteredEmployees, daysToShow]);
+  }, [filteredEmployees, daysToShow, currentMonthInfo.currentDay]);
 
   // Get department color
   const getDepartmentColor = (department) => {
@@ -300,6 +391,8 @@ export default function AttendanceTable({
   const handleStartEdit = (empId) => {
     const emp = data.find(e => e._id === empId);
 
+    const totals = calculateTotals(emp.patternByDay);
+  
     const patternByDay = {};
     (emp.pattern || []).forEach((status, index) => {
       const day = index + 1;
@@ -309,7 +402,8 @@ export default function AttendanceTable({
     setEditData({
       _id: emp._id,
       patternByDay,
-      remarks: emp.remarks || ''
+      remarks: emp.remarks || '',
+      ...totals
     });
 
     setEditingId(empId);
@@ -362,21 +456,59 @@ export default function AttendanceTable({
   //   setEditData(null);
   // };
   const handleSaveEdit = async () => {
-    console.log(editData)
+    // console.log(editData)
     if (!editData) return;
 
-    const { _id, patternByDay } = editData;
+    const { _id, patternByDay, remarks } = editData;
 
+   
+    const originalUser = filteredEmployees.find(
+      emp => emp._id === _id
+    );
+    // console.log(originalUser)
+    if (!originalUser) return;
+
+
+    const isRemarksChanged =
+      remarks !== (originalUser.remarks || "");
+   
+    const isPatternChanged = Object.entries(patternByDay).some(
+      ([day, status]) =>
+        status !== originalUser.patternByDay?.[day]
+    );
+   
+    if (isRemarksChanged && !isPatternChanged) {
+      await dispatch(
+        updateAttendance({
+          user: _id,
+          remarks, 
+        })
+      );
+
+      dispatch(getDepartmentWiseUsers());
+      setEditingId(null);
+      setEditData(null);
+      return;
+    }
+
+   
     for (const [day, frontendStatus] of Object.entries(patternByDay)) {
-      const backendStatus = FRONTEND_TO_BACKEND_STATUS[frontendStatus];
+      const backendStatus =
+        FRONTEND_TO_BACKEND_STATUS[frontendStatus];
+
+      
+      if (backendStatus === originalUser.patternByDay?.[day]) {
+        continue;
+      }
 
       await dispatch(
         updateAttendance({
           user: _id,
           date: `${currentMonthInfo.year}-${String(
             currentMonthInfo.month + 1
-          ).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-          pattern: backendStatus
+          ).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+          pattern: backendStatus,
+          remarks, // optional
         })
       );
     }
@@ -385,6 +517,8 @@ export default function AttendanceTable({
     setEditingId(null);
     setEditData(null);
   };
+
+
 
   // const handleSaveEdit = async () => {
   //   if (!editData) return;
@@ -419,20 +553,45 @@ export default function AttendanceTable({
   // };
 
   // Delete employee
-  const handleDeleteEmployee = async (empId) => {
-    if (!window.confirm('Are you sure you want to delete this employee?')) return;
+  // const handleDeleteEmployee = async (empId) => {
+  //   if (!window.confirm('Are you sure you want to delete this employee?')) return;
 
-    try {
-      console.log('Deleting employee:', empId);
-      await new Promise(resolve => setTimeout(resolve, 300));
+  //   try {
+  //     console.log('Deleting employee:', empId);
+  //     await new Promise(resolve => setTimeout(resolve, 300));
 
-      onEmployeeDeleted(empId);
-      alert('Employee deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-      alert('Failed to delete employee');
-    }
-  };
+  //     onEmployeeDeleted(empId);
+  //     alert('Employee deleted successfully!');
+  //   } catch (error) {
+  //     console.error('Error deleting employee:', error);
+  //     alert('Failed to delete employee');
+  //   }
+  // };
+  // const handleDeleteEmployee = async (empId) => {
+  //   if (!window.confirm('Are you sure you want to delete this employee attendance?')) {
+  //     return;
+  //   }
+
+  //   try {
+  //   
+  //     const resultAction = await dispatch(
+  //       deleteAttendance({ user: empId })
+  //     );
+
+  //    
+  //     if (deleteAttendance.rejected.match(resultAction)) {
+  //       throw new Error(resultAction.payload || "Delete failed");
+  //     }
+
+   
+  //     dispatch(getDepartmentWiseUsers());
+
+  //     alert('Attendance deleted successfully!');
+  //   } catch (error) {
+  //     console.error('Error deleting attendance:', error);
+  //     alert('Failed to delete attendance');
+  //   }
+  // };
 
   // Handle day click for status change
 
@@ -565,6 +724,8 @@ export default function AttendanceTable({
     URL.revokeObjectURL(url);
   };
 
+
+
   return (
     <div className="min-h-screen text-slate-100">
       {/* Header */}
@@ -695,8 +856,9 @@ export default function AttendanceTable({
                   const isEditing = editingId === (emp._id || emp.id);
                   const pattern = isEditing ? editData?.pattern : (emp.pattern || []);
                   const frontendPattern = convertBackendPattern(pattern);
-             
-                  const totals = calculateTotals(pattern);
+
+                  const totals = calculateTotals(emp.patternByDay);
+                  // console.log(totals)
                   const deptColor = getDepartmentColor(emp.department);
 
                   return (
@@ -764,13 +926,16 @@ export default function AttendanceTable({
                           </td>
                         );
                       })} */}
+
+
                       {daysToShow.map(day => {
                         const statusCode = isEditing
-                          ? editData?.patternByDay?.[day] ??  emp.patternByDay?.[day]
+                          ? editData?.patternByDay?.[day] ?? emp.patternByDay?.[day]
                           : emp.patternByDay?.[day] ?? 'D';
-
+                        // console.log(statusCode)
+                        // console.log(FRONTEND_STATUS_MAP)
                         const statusInfo = FRONTEND_STATUS_MAP[statusCode];
-console.log(statusInfo)
+                        // console.log(statusInfo)
                         return (
                           <td key={day} className="px-1 py-3">
                             <div
@@ -786,85 +951,85 @@ console.log(statusInfo)
                         );
                       })}
 
-          
+
 
                       {/* Total Columns */}
                       <td className="px-4 py-3 text-center">
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <input
                             type="number"
                             value={editData?.totalDayShift || 0}
                             onChange={(e) => handleManualTotalChange('totalDayShift', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-yellow-500"
                           />
-                        ) : (
-                          <span className="text-sm font-medium text-yellow-300">{totals.totalDayShift}</span>
-                        )}
+                        ) : ( */}
+                        <span className="text-sm font-medium text-yellow-300">{totals?.totalDayShift}</span>
+                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <input
                             type="number"
                             value={editData?.totalMidShift || 0}
                             onChange={(e) => handleManualTotalChange('totalMidShift', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-orange-500"
                           />
-                        ) : (
-                          <span className="text-sm font-medium text-orange-300">{totals.totalMidShift}</span>
-                        )}
+                        ) : ( */}
+                        <span className="text-sm font-medium text-orange-300">{totals?.totalMidShift}</span>
+                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <input
                             type="number"
                             value={editData?.totalNightShift || 0}
                             onChange={(e) => handleManualTotalChange('totalNightShift', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-purple-500"
                           />
-                        ) : (
-                          <span className="text-sm font-medium text-purple-300">{totals.totalNightShift}</span>
-                        )}
+                        ) : ( */}
+                        <span className="text-sm font-medium text-purple-300">{totals?.totalNightShift}</span>
+                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <input
                             type="number"
-                            value={editData?.totalProbation || 0}
+                            // value={editData?.totalProbation || 0}
                             onChange={(e) => handleManualTotalChange('totalProbation', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-blue-500"
                           />
-                        ) : (
-                          <span className="text-sm font-medium text-blue-300">{totals.totalProbation}</span>
-                        )}
+                        ) : ( */}
+                        <span className="text-sm font-medium text-blue-300">{totals?.totalProbation}</span>
+                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <input
                             type="number"
                             value={editData?.totalRestDay || 0}
                             onChange={(e) => handleManualTotalChange('totalRestDay', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-green-500"
                           />
-                        ) : (
-                          <span className="text-sm font-medium text-green-300">{totals.totalRestDay}</span>
-                        )}
+                        ) : ( */}
+                        <span className="text-sm font-medium text-green-300">{totals?.totalRestDay}</span>
+                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <input
                             type="number"
                             value={editData?.totalAttendance || 0}
                             onChange={(e) => handleManualTotalChange('totalAttendance', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-emerald-500"
                           />
-                        ) : (
-                          <span className="text-sm font-bold text-emerald-300">{totals.totalAttendance}</span>
-                        )}
+                        ) : ( */}
+                        <span className="text-sm font-bold text-emerald-300">{totals?.totalAttendance}</span>
+                        {/* )} */}
                       </td>
 
                       {/* Action Buttons - Only for Admin/SuperAdmin */}
@@ -960,7 +1125,10 @@ console.log(statusInfo)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           {Object.entries(FRONTEND_STATUS_MAP).map(([key, value]) => {
+          
+
             const stat = legendStats[key];
+       
             return (
               <div
                 key={key}
