@@ -82,7 +82,7 @@ const OverallAttendanceDashboard = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const dispatch = useDispatch();
   const { allAttendance, isLoading, pagination } = useSelector((state) => state.attendance);
-  // console.log(allAttendance)
+ 
   const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
@@ -104,22 +104,22 @@ const OverallAttendanceDashboard = () => {
   ).length;
 
   // Fetch data on mount and when filters change
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       await dispatch(getAllAttendance({
-  //         startDate: startDate || undefined,
-  //         endDate: endDate || undefined,
-  //         department: selectedDept !== 'All' ? selectedDept : undefined,
-  //         page: 1,
-  //         limit: 100
-  //       })).unwrap();
-  //     } catch (error) {
-  //       console.error('Failed to fetch attendance data:', error);
-  //     }
-  //   };
-  //   fetchData();
-  // }, [dispatch, startDate, endDate, selectedDept]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await dispatch(getAllAttendance({
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          department: selectedDept !== 'All' ? selectedDept : undefined,
+          page: 1,
+          limit: 100
+        })).unwrap();
+      } catch (error) {
+        console.error('Failed to fetch attendance data:', error);
+      }
+    };
+    fetchData();
+  }, [dispatch, startDate, endDate, selectedDept]);
   useEffect(() => {
     dispatch(getDepartmentWiseUsers()).catch((e) =>
       console.error("fetch dept users err", e)
@@ -166,19 +166,77 @@ const OverallAttendanceDashboard = () => {
       const matchesStatus = selectedStatus === 'All' || emp.alert === selectedStatus;
       return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [allAttendance, searchTerm, selectedDept, selectedStatus]);
+  }, [departmentAttendance, searchTerm, selectedDept, selectedStatus]);
   // console.log(filteredData)
+  const getCurrentWeekDates = () => {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); 
 
-  const weeklyTrendData = useMemo(() => {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days.map(day => ({
-      day,
-      present: Math.floor(Math.random() * 30) + 60,
-      absent: Math.floor(Math.random() * 10) + 5,
-      late: Math.floor(Math.random() * 8) + 2,
-      onTime: Math.floor(Math.random() * 25) + 50,
-    }));
-  }, []);
+  return Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    console.log(d)
+    return d;
+  });
+};
+
+const weeklyTrendData = useMemo(() => {
+  if (!Array.isArray(departmentAttendance)) return [];
+
+  const weekDates = getCurrentWeekDates();
+
+  return weekDates.map((dateObj) => {
+    const dayNumber = dateObj.getDate(); // 1–31
+    const dayLabel = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+
+    let present = 0;
+    let absent = 0;
+    let late = 0;
+    let onTime = 0;
+
+    departmentAttendance.forEach((emp) => {
+      const status = emp?.patternByDay?.[dayNumber];
+
+      // Present
+        if (status === "D" || status === "M" || status === "N" || status === "PS") {
+        present++;
+
+        if (emp.alert === "Late") {
+          late++;
+        } else {
+          onTime++;
+        }
+      }
+
+      // Absent
+      else if (!status || emp.alert === "Absent") {
+        absent++;
+      }
+
+     
+    });
+
+    return {
+      day: dayLabel,
+      present,
+      absent,
+      late,
+      onTime,
+    };
+  });
+}, [departmentAttendance]);
+
+  // const weeklyTrendData = useMemo(() => {
+  //   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  //   return days.map(day => ({
+  //     day,
+  //     present: Math.floor(Math.random() * 30) + 60,
+  //     absent: Math.floor(Math.random() * 10) + 5,
+  //     late: Math.floor(Math.random() * 8) + 2,
+  //     onTime: Math.floor(Math.random() * 25) + 50,
+  //   }));
+  // }, []);
 
   // Department-wise analytics from filtered data
   const deptAnalytics = useMemo(() => {
@@ -1123,30 +1181,31 @@ const OverallAttendanceDashboard = () => {
                   {/* Header */}
                   <div className="flex justify-between items-start pb-4 border-b border-slate-700/50 mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-white capitalize">{emp.user?.FullName}</h3>
-                      <p className="text-sm text-blue-300">{emp.user?.department}</p>
+                      <h3 className="text-lg font-semibold text-white capitalize">{emp?.FullName}</h3>
+                      <p className="text-sm text-blue-300">{emp?.department}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp.alert)}`}>
-                      {emp.alert}
+                    <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp?.alert)}`}>
+                      {emp?.alert}
                     </span>
                   </div>
 
                   {/* Details */}
                   <div className="space-y-3">
                     {/* <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} /> */}
+
                     <CardRow label="Date" value={emp?.date
                       ? new Date(emp.date).toLocaleDateString("en-GB")
                       : "--"} />
                     <CardRow label="Punch In" value={emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
                     <CardRow label="Punch Out" value={emp.clockOut ? new Date(emp.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
-
+                    <CardRow label="User Name" value={emp.username || 'N/A'} />
                     {/* Hours Highlight */}
                     <div className="flex justify-between items-center bg-blue-900/20 p-3 rounded-lg border border-blue-700/20 shadow-inner">
                       <span className="text-sm text-gray-300">Hours</span>
                       <span className="text-lg font-bold text-blue-400">{emp.workingHours}h</span>
                     </div>
 
-                    <CardRow label="Shift" value={emp.shift || 'N/A'} />
+                    <CardRow label="Shift" value={emp.Shift || 'N/A'} />
                   </div>
 
                   {/* Footer */}
@@ -1196,11 +1255,11 @@ const OverallAttendanceDashboard = () => {
               }}
             >
               <div>
-                <h3 className="text-lg font-semibold text-white">
-                  {selectedCard.user?.FullName}
+                <h3 className="text-lg font-semibold text-white capitalize">
+                  {selectedCard?.FullName}
                 </h3>
                 <p className="text-sm" style={{ color: "#60A5FA" }}>
-                  {selectedCard.user?.department}
+                  {selectedCard?.department}
                 </p>
               </div>
 
@@ -1217,7 +1276,9 @@ const OverallAttendanceDashboard = () => {
             <div className="space-y-3 text-gray-200">
               <CardRow
                 label="Date"
-                value={new Date(selectedCard.date).toLocaleDateString()}
+             value={selectedCard?.date
+                      ? new Date(selectedCard.date).toLocaleDateString("en-GB")
+                      : "--"} 
               />
               <CardRow
                 label="Punch In"
@@ -1242,7 +1303,7 @@ const OverallAttendanceDashboard = () => {
                 }
               />
 
-              {/* Hours Box */}
+
               <div
                 style={{
                   display: "flex",
@@ -1259,7 +1320,7 @@ const OverallAttendanceDashboard = () => {
                 </span>
               </div>
 
-              <CardRow label="Shift" value={selectedCard.shift || "N/A"} />
+              <CardRow label="Shift" value={selectedCard.Shift || "N/A"} />
             </div>
 
             {/* Footer */}
@@ -1305,7 +1366,8 @@ const OverallAttendanceDashboard = () => {
       {/* Pagination Info */}
       <div className="mt-6 flex justify-between items-center text-sm text-gray-400">
         <div>
-          Total Records: {pagination?.total || allAttendance?.length || 0}
+          {/* Total Records: {pagination?.total || allAttendance?.length || 0} */}
+          Total Records: { departmentAttendance?.length }
         </div>
         <button
           onClick={refreshData}
