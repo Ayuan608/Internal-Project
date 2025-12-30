@@ -104,7 +104,7 @@ export default function AttendanceTable({
   onEmployeeDeleted = () => { },
   onAttendanceUpdated = () => { }
 }) {
-
+ 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState(null);
   const [selectedDept, setSelectedDept] = useState("All Departments");
@@ -159,7 +159,7 @@ export default function AttendanceTable({
 
   // Convert backend pattern to frontend status
   const convertBackendPattern = (backendPattern) => {
-
+  
     if (!Array.isArray(backendPattern)) return [];
 
     return backendPattern.map(code => {
@@ -265,7 +265,7 @@ export default function AttendanceTable({
       totalAttendance: 0,
     };
 
-
+   
     for (let day = 1; day <= today; day++) {
       const status = patternByDay[day];
 
@@ -925,9 +925,9 @@ export default function AttendanceTable({
                   const totals = calculateTotals(emp.patternByDay);
                   // console.log(totals)
                   const deptColor = getDepartmentColor(emp.department);
-                  console.log(deptColor)
+                 
                   const shiftColor = getShiftColor(emp?.Shift);
-                  console.log(shiftColor)
+                 
                   return (
                     <tr key={emp._id || emp.id} className="hover:bg-slate-800/30 transition">
                       <td className="px-4 py-3 text-sm text-slate-300">{index + 1}</td>
