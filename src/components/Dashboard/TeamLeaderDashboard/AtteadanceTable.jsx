@@ -78,10 +78,11 @@ const getCurrentMonthYear = () => {
 
 export default function AttendanceTable({
   data = [],
-  role = 'TeamLeader',
+  role = 'Team-Leader',
   onEmployeeDeleted = () => { },
   onAttendanceUpdated = () => { }
 }) {
+ 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState(null);
   const [selectedDept, setSelectedDept] = useState("All Departments");
@@ -105,6 +106,7 @@ export default function AttendanceTable({
 
     return () => clearInterval(interval);
   }, []);
+
 
   // Get days in current month
   const daysInMonth = useMemo(() => {
