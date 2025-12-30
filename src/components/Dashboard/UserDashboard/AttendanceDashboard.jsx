@@ -1,5 +1,5 @@
 // src/components/AttendanceDashboard.jsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Coffee,
@@ -30,6 +30,7 @@ import AttendanceAnnouncementPopup from "../../popup/AttendanceAnnouncementPopup
 import CustomDatePicker from "../../CommonButton/CustomCalendar";
 import { toast } from "react-hot-toast";
 import { reportWfhIssue } from "../../../redux/attendenceSlice";
+import AttendancePunchReminder from "../../popup/AttendancePunchReminder";
 
 // Stats card component
 const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => {
@@ -74,6 +75,8 @@ const AttendanceDashboard = () => {
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [showDayOffModal, setShowDayOffModal] = useState(false);
   const [hiddenTimerType, setHiddenTimerType] = useState(null)
+  const [showAbsentModal, setShowAbsentModal] = useState(false);
+
 
 
   const [dayOffForm, setDayOffForm] = useState({
@@ -120,6 +123,21 @@ const AttendanceDashboard = () => {
       month: "2-digit",
       day: "2-digit",
     }).format(new Date());
+  };
+
+  const getPHNow = () => {
+    return new Date(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: PH_TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(new Date())
+    );
   };
 
   // Format time in Philippines timezone
@@ -218,6 +236,8 @@ const AttendanceDashboard = () => {
 
           // Load today's attendance
           const todayResult = await dispatch(getTodayAttendance(userId)).unwrap();
+          console.log("todayResult", todayResult.attendance.actualWorkingHours)
+          const actualWorkingHours = todayResult.attendance.actualWorkingHours
 
           // Load attendance history
           const historyResult = await dispatch(getUserAttendance({
@@ -234,7 +254,6 @@ const AttendanceDashboard = () => {
 
         } catch (error) {
           console.error("❌ Failed to load data:", error);
-          toast.error("Failed to load attendance data");
         }
       }
     };
@@ -307,30 +326,6 @@ const AttendanceDashboard = () => {
     );
 
 
-  // // Timer countdown
-  // useEffect(() => {
-  //   if (activeTimer) {
-  //     const breakLimit = activeTimer.type === 'lunch' ? 30 * 60 : 5 * 60;
-  //     const startTime = new Date(activeTimer.startTime).getTime();
-  //     const currentTime = Date.now();
-  //     const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
-  //     const remainingSeconds = Math.max(0, breakLimit - elapsedSeconds);
-
-  //     setTimeLeft(remainingSeconds);
-
-  //     const interval = setInterval(() => {
-  //       setTimeLeft(prev => {
-  //         if (prev <= 1) {
-  //           clearInterval(interval);
-  //           return 0;
-  //         }
-  //         return prev - 1;
-  //       });
-  //     }, 1000);
-
-  //     return () => clearInterval(interval);
-  //   }
-  // }, [activeTimer]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -339,6 +334,8 @@ const AttendanceDashboard = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+
   useEffect(() => {
     if (activeTimer) {
       const breakLimit =
@@ -374,6 +371,15 @@ const AttendanceDashboard = () => {
 
   const [currentTime, setCurrentTime] = useState(getPhilippinesTime());
   // Handle Punch In
+  const MISSED_MESSAGES = [
+    "You have already missed punch-in for today.",
+    "Punch-in after working hours is not allowed. You are marked absent."
+  ];
+
+  const MISSED_CODES = [
+    "MISSED_PUNCH_IN",
+    "PUNCH_AFTER_SHIFT"
+  ];
   const handlePunchIn = async () => {
     if (!userId) {
       toast.error("User ID not found");
@@ -381,25 +387,34 @@ const AttendanceDashboard = () => {
     }
 
     try {
-      const result = await dispatch(punchIn({
-        userId,
-        shift: "Day"
-      })).unwrap();
+      const result = await dispatch(
+        punchIn({ userId, shift: "Day" })
+      ).unwrap();
+
+      // ⚠️ Show modal for ANY non-normal case
+      if (
+        result?.alert === "Late" ||
+        result?.alert === "AfterShift" ||
+        result?.alert === "Absent"
+      ) {
+        setShowAbsentModal(true);
+      }
 
       toast.success("Punched in successfully!");
 
-      // Refresh data - FIXED: timeout remove kiya
       await Promise.all([
         dispatch(getTodayAttendance(userId)),
         dispatch(getUserAttendance({ userId, page: 1, limit: 10 })),
-        dispatch(getTodayBreaks(userId))
+        dispatch(getTodayBreaks(userId)),
       ]);
 
     } catch (error) {
-      console.error("❌ Punch in failed:", error);
-      toast.error(error.message || "Punch in failed");
+      toast.error("Punch in failed");
     }
   };
+
+
+
 
   // Handle Punch Out
   const handlePunchOut = async () => {
@@ -430,7 +445,7 @@ const AttendanceDashboard = () => {
   // Handle Start Break - FIXED: WC और Lunch के लिए conditions सही की
   const handleStartBreak = async (breakType) => {
     if (!isBreakAvailable(breakType)) {
-      toast.error("Break already active");
+      toast.error("You have n't any active break");
       return;
     }
     if (!userId) {
@@ -680,7 +695,10 @@ const AttendanceDashboard = () => {
     }
   }, [reduxAttendanceList]);
 
-  console.log("TableData", tableData)
+  useEffect(() => {
+    console.log("TableData updated:", tableData);
+  }, [tableData]);
+
   const calculateHours = (timeRangeString) => {
     // Split the string into start and end times
     const [startTimeStr, endTimeStr] = timeRangeString.split(' - ');
@@ -860,69 +878,96 @@ const AttendanceDashboard = () => {
     setShowBreakModal(true)
     setHiddenTimerType(null)
   }
-  const [time, setTime] = useState(0);
-  const workTimerRef = useRef(null);
-
-
-  const SHIFT_SECONDS = 8 * 60 * 60;
-
-  const formatDuration = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-
-    return `${h.toString().padStart(2, "0")}:${m
-      .toString()
-      .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
-  const calculateRemainingWorkSeconds = (clockInISO) => {
-    if (!clockInISO) return 0;
-
-    const clockIn = new Date(clockInISO);
-
-    // shift start = SAME DAY as clock-in
-    const shiftStart = new Date(clockIn);
-    shiftStart.setHours(9, 0, 0, 0); // 9:00 AM shift
-
-    const lateSeconds = Math.max(
-      0,
-      Math.floor((clockIn - shiftStart) / 1000)
-    );
-
-    return Math.max(0, SHIFT_SECONDS - lateSeconds);
-  };
 
 
 
+
+
+  // Converts "05:00 AM", "5:00 PM" → Date (today)
+  function parseTimeStringToDate(timeStr, baseDate) {
+    if (!timeStr) return null;
+
+    const clean = timeStr.replace(/\s+/g, " ").trim().toUpperCase();
+    const [time, meridian] = clean.split(" ");
+
+    let [h, m] = time.split(":").map(Number);
+
+    if (meridian === "PM" && h !== 12) h += 12;
+    if (meridian === "AM" && h === 12) h = 0;
+
+    const d = new Date(baseDate);
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
+
+  function parsePunchIn(punchIn, attendanceDate) {
+    return parseTimeStringToDate(punchIn, attendanceDate);
+  }
+
+
+  function formatDuration(seconds) {
+    const s = Math.max(0, Math.floor(seconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h}h ${m}m ${sec}s`;
+  }
+  const [now, setNow] = useState(getPHNow());
 
   useEffect(() => {
-    if (!todayAttendance?.clockIn || todayAttendance?.clockOut) {
-      clearInterval(workTimerRef.current);
-      return;
-    }
-
-    const initialSeconds =
-      calculateRemainingWorkSeconds(todayAttendance.clockIn);
-
-    setTime(initialSeconds);
-
-    workTimerRef.current = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(workTimerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
+    const interval = setInterval(() => {
+      setNow(getPHNow());
     }, 1000);
 
-    return () => clearInterval(workTimerRef.current);
-  }, [todayAttendance?.clockIn, todayAttendance?.clockOut]);
+    return () => clearInterval(interval);
+  }, []);
 
 
-  // caluculating actual working hours
+  function calculateLiveRemainingTime(
+    shiftRange,
+    punchIn,
+    attendanceDate,
+    now
+  ) {
+    if (!shiftRange?.includes(" - ")) return "0h 0m 0s";
 
+    const [startStr, endStr] = shiftRange.split(" - ");
+
+    const shiftStart = parseTimeStringToDate(startStr, attendanceDate);
+    let shiftEnd = parseTimeStringToDate(endStr, attendanceDate);
+
+    if (shiftEnd <= shiftStart) {
+      shiftEnd.setDate(shiftEnd.getDate() + 1);
+    }
+
+    const clockIn = parsePunchIn(punchIn, attendanceDate);
+    if (!clockIn) return "0h 0m 0s";
+
+    const effectiveStart = new Date(
+      Math.max(shiftStart.getTime(), clockIn.getTime())
+    );
+
+    if (now < effectiveStart) {
+      return formatDuration((shiftEnd - effectiveStart) / 1000);
+    }
+
+    if (now >= shiftEnd) return "0h 0m 0s";
+
+    return formatDuration((shiftEnd - now) / 1000);
+  }
+
+
+
+  const liveTimeLeft = useMemo(() => {
+    if (!tableData?.[0]?.fullRecord?.actualWorkingHours) return "—";
+
+    return calculateLiveRemainingTime(
+      tableData[0].fullRecord.actualWorkingHours,
+      tableData[0].punchIn,
+      tableData[0].fullRecord.date,
+      now
+    );
+  }, [now, tableData]);
 
   return (
     <div className="min-h-screen p-4 text-slate-200 bg-[#020617] ">
@@ -984,8 +1029,15 @@ const AttendanceDashboard = () => {
               </button>
             </div>
             <div className="flex justify-end pt-4">
-              <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
-                Time Left: <span className="font-mono">{formatDuration(time)}</span></div>
+              {liveTimeLeft ? <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
+                Time Left:
+                <span className="font-mono">{liveTimeLeft}</span>
+
+              </div> : <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
+                Time Left:
+                <span className="font-mono">-</span>
+
+              </div>}
             </div>
           </div>
 
@@ -1604,6 +1656,12 @@ const AttendanceDashboard = () => {
           />
         )
       }
+
+      <AttendancePunchReminder
+        open={showAbsentModal}
+        onClose={() => setShowAbsentModal(false)}
+      />
+
 
       {/* Announcement Popup (simplified) */}
       <AttendanceAnnouncementPopup
