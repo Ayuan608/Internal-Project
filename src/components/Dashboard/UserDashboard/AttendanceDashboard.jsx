@@ -175,6 +175,8 @@ const AttendanceDashboard = () => {
 
   // Check if user is online (has punched in but not out)
   const isOnline = todayAttendance?.clockIn && !todayAttendance?.clockOut;
+  const canPunchIn = !todayAttendance?.clockIn;
+  const canPunchOut = todayAttendance?.clockIn && !todayAttendance?.clockOut;
 
   // Format time for display
   const formatTime = (timeString) => {
@@ -453,10 +455,11 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    if (!isOnline) {
+    if (!todayAttendance?.clockIn) {
       toast.error("Please punch in first to take a break");
       return;
     }
+
 
     // Check if break is already active - FIXED: Array based check
     const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
@@ -623,9 +626,10 @@ const AttendanceDashboard = () => {
 
   // Check break availability - FIXED
   const isBreakAvailable = (breakType) => {
-    if (!isOnline) return false;
+    if (!todayAttendance?.clockIn || todayAttendance?.clockOut) return false;
 
     const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
+
 
     // ❌ If ANY break is active → block
     if (breaksArray.some(b => b && !b.end)) return false;
@@ -995,8 +999,8 @@ const AttendanceDashboard = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handlePunchIn}
-                  disabled={isOnline}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${isOnline
+                  disabled={!canPunchIn}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!canPunchIn
                     ? "bg-slate-700 cursor-not-allowed text-slate-400"
                     : "bg-sky-500/80 text-slate-950 hover:bg-sky-400"
                     }`}
@@ -1005,10 +1009,12 @@ const AttendanceDashboard = () => {
                   Punch In
                 </button>
 
+
                 <button
                   onClick={() => setShowPunchOutModal(true)}
-                  disabled={!isOnline}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!isOnline
+                  disabled={!canPunchOut}
+
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!canPunchOut
                     ? "bg-slate-700 cursor-not-allowed text-slate-400"
                     : "bg-rose-500/90 text-slate-50 hover:bg-rose-400"
                     }`}
