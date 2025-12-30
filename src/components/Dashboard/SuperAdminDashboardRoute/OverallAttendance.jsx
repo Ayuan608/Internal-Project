@@ -1007,15 +1007,16 @@ const weeklyTrendData = useMemo(() => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/30">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center">
-                      <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    </td>
-                  </tr>
-                ) :
+                {
+                // isLoading ? (
+                //   <tr>
+                //     <td colSpan="8" className="px-4 py-8 text-center">
+                //       <div className="flex justify-center">
+                //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                //       </div>
+                //     </td>
+                //   </tr>
+                // ) :
                   filteredData.length === 0 ? (
                     <tr>
                       <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
@@ -1162,11 +1163,13 @@ const weeklyTrendData = useMemo(() => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {/* Loading */}
-            {isLoading ? (
-              <div className="col-span-full flex justify-center py-10">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-              </div>
-            ) : filteredData.length === 0 ? (
+            {
+            // isLoading ? (
+            //   <div className="col-span-full flex justify-center py-10">
+            //     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+            //   </div>
+            // ) :
+             filteredData.length === 0 ? (
               <div className="col-span-full text-center text-gray-400 py-10">
                 No records found
               </div>
