@@ -680,7 +680,7 @@ const AttendanceDashboard = () => {
     }
   }, [reduxAttendanceList]);
 
-  console.log("TableData", tableData[0].fullRecord)
+  console.log("TableData", tableData)
   const calculateHours = (timeRangeString) => {
     // Split the string into start and end times
     const [startTimeStr, endTimeStr] = timeRangeString.split(' - ');
@@ -723,11 +723,11 @@ const AttendanceDashboard = () => {
 
     return diffInHours;
   }
-  const timeRange = tableData[0]?.fullRecord?.actualWorkingHours;
-  console.log(timeRange)
+  // const timeRange = tableData[0]?.fullRecord?.actualWorkingHours;
+  // console.log(timeRange)
 
-  const hours = calculateHours(timeRange);
-  console.log(hours, "hours")
+  // const hours = calculateHours(timeRange);
+  // console.log(hours, "hours")
 
   // Get record status for table
   const getRecordStatus = (record) => {
