@@ -191,6 +191,7 @@ export const deleteUser = createAsyncThunk("user/deleteUser", async (userId, { r
 export const getUserData = createAsyncThunk("/user/details", async () => {
   try {
     const res = await axiosInstance.get("/user/me");
+    console.log(res, "res")
     return res?.data;
   } catch (error) {
     toast.error(error.message);
@@ -202,6 +203,7 @@ export const getAllUsers = createAsyncThunk(
     try {
       const response = await axiosInstance.get("/user/all");
       return response.data.users;
+
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch users"

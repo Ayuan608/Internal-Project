@@ -35,7 +35,7 @@ export const punchIn = createAsyncThunk(
   async ({ userId, shift = "MORNING" }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.post(`/attendance/punch-in/${userId}`, { shift });
-      if (data.success) toast.success(data.message || "Punched in!");
+
       return data;
     } catch (error) {
       return rejectWithValue(handleError(error, "Punch in failed"));
@@ -125,7 +125,8 @@ export const getUserAttendance = createAsyncThunk(
       const { data } = await axiosInstance.get(`/attendance/user/${userId}?${params}`);
       return data;
     } catch (error) {
-      return rejectWithValue(handleError(error, "Failed to get attendance"));
+      // ❌ Ignore backend completely
+      return rejectWithValue("Unable to load attendance. Please try again.");
     }
   }
 );
@@ -155,7 +156,8 @@ export const getAllAttendance = createAsyncThunk(
       return response.data;
     } catch (error) {
       console.error("❌ Error in getAllAttendance:", error);
-      return rejectWithValue(handleError(error, "Failed to get all attendance"));
+      // ❌ Ignore backend completely
+      return rejectWithValue("Unable to load attendance. Please try again.");
     }
   }
 );
