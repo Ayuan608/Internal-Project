@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Edit2, Save, X, Download, FileText, Search, Trash2 } from 'lucide-react';
+import { Edit2, Save, X, Download, FileText, Search, Trash2, Filter } from 'lucide-react';
 import { updateAttendance, getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
 import { useDispatch } from 'react-redux';
 // Department wise colors
@@ -84,6 +84,7 @@ export default function AttendanceTable({
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [selectedDept, setSelectedDept] = useState("All Departments");
   const [showStatusMenu, setShowStatusMenu] = useState({
     show: false,
     dayIndex: null,
@@ -151,13 +152,27 @@ export default function AttendanceTable({
     });
   };
   // Filter data based on search
+  // const filteredEmployees = useMemo(() => {
+  //   return data.filter(emp =>
+  //     emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
+  //   );
+  // }, [data, searchTerm]);
   const filteredEmployees = useMemo(() => {
-    return data.filter(emp =>
-      emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [data, searchTerm]);
+    return data.filter(emp => {
+      const matchesSearch =
+        emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.department?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesDept =
+        selectedDept === "All Departments" ||
+        emp.department === selectedDept;
+
+      return matchesSearch && matchesDept;
+    });
+  }, [data, searchTerm, selectedDept]);
 
 
   // Calculate totals for an employee - FIXED
@@ -377,17 +392,6 @@ export default function AttendanceTable({
   };
 
   // Start editing an employee
-  // const handleStartEdit = (empId) => {
-  //   const emp = data.find(e => e._id === empId);
-
-  //   setEditData({
-  //     ...emp,
-  //     patternByDay: { ...emp.patternByDay }, // 👈 IMPORTANT
-  //     remarks: emp.remarks || '',
-  //   });
-
-  //   setEditingId(empId);
-  // };
   const handleStartEdit = (empId) => {
     const emp = data.find(e => e._id === empId);
 
@@ -583,7 +587,7 @@ export default function AttendanceTable({
   //       throw new Error(resultAction.payload || "Delete failed");
   //     }
 
-   
+
   //     dispatch(getDepartmentWiseUsers());
 
   //     alert('Attendance deleted successfully!');
@@ -723,6 +727,18 @@ export default function AttendanceTable({
     link.click();
     URL.revokeObjectURL(url);
   };
+  const departmentOptions = useMemo(() => {
+    const set = new Set();
+
+    filteredEmployees.forEach(emp => {
+      if (emp.department) {
+        set.add(emp.department);
+      }
+    });
+
+    return ["All Departments", ...Array.from(set)];
+  }, [filteredEmployees]);
+
 
 
 
@@ -805,6 +821,23 @@ export default function AttendanceTable({
               className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
             />
           </div>
+
+          <div className="relative p-1">
+            <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            <select
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(e.target.value)}
+              className="h-9 rounded-lg border border-slate-700 bg-slate-900/80 pl-6 pr-3 text-xs text-slate-200 outline-none ring-0 focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+            >
+
+              {departmentOptions.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="text-sm text-slate-400 whitespace-nowrap">
             Showing {filteredEmployees.length} of {data.length} employees
           </div>
