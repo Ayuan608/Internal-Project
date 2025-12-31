@@ -18,7 +18,7 @@ const BreakHistoryChart = ({ breakData }) => {
         );
     }
 
-  
+
     const getBreakColor = (type) => {
         switch (type) {
             case 'smoke': return '#f59e0b'; // Amber
@@ -129,9 +129,10 @@ const BreakHistoryChart = ({ breakData }) => {
                             }}
                         />
                         <Tooltip
+                            cursor={{ fill: "transparent" }}
                             contentStyle={{
-                                backgroundColor: '#0f172a',
-                                color:'white',
+                                // backgroundColor: '#0f172a',
+                                color: 'white',
                                 borderColor: '#334155',
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'

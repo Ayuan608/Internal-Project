@@ -1,5 +1,5 @@
 // src/components/AttendanceDashboard.jsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Coffee,
@@ -30,6 +30,7 @@ import AttendanceAnnouncementPopup from "../../popup/AttendanceAnnouncementPopup
 import CustomDatePicker from "../../CommonButton/CustomCalendar";
 import { toast } from "react-hot-toast";
 import { reportWfhIssue } from "../../../redux/attendenceSlice";
+import AttendancePunchReminder from "../../popup/AttendancePunchReminder";
 
 // Stats card component
 const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => {
@@ -74,6 +75,9 @@ const AttendanceDashboard = () => {
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [showDayOffModal, setShowDayOffModal] = useState(false);
   const [hiddenTimerType, setHiddenTimerType] = useState(null)
+  const [showAbsentModal, setShowAbsentModal] = useState(false);
+  const [liveWorkingTime, setLiveWorkingTime] = useState("0h 0m 0s");
+
 
 
   const [dayOffForm, setDayOffForm] = useState({
@@ -122,6 +126,21 @@ const AttendanceDashboard = () => {
     }).format(new Date());
   };
 
+  const getPHNow = () => {
+    return new Date(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: PH_TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(new Date())
+    );
+  };
+
   // Format time in Philippines timezone
   const formatTimePH = (timeString) => {
     if (!timeString) return "-";
@@ -157,6 +176,8 @@ const AttendanceDashboard = () => {
 
   // Check if user is online (has punched in but not out)
   const isOnline = todayAttendance?.clockIn && !todayAttendance?.clockOut;
+  const canPunchIn = !todayAttendance?.clockIn;
+  const canPunchOut = todayAttendance?.clockIn && !todayAttendance?.clockOut;
 
   // Format time for display
   const formatTime = (timeString) => {
@@ -218,8 +239,10 @@ const AttendanceDashboard = () => {
 
           // Load today's attendance
           const todayResult = await dispatch(getTodayAttendance(userId)).unwrap();
+          console.log("todayResult", todayResult.attendance.actualWorkingHours)
 
-          // Load attendance history
+
+
           const historyResult = await dispatch(getUserAttendance({
             userId,
             page: 1,
@@ -227,14 +250,12 @@ const AttendanceDashboard = () => {
           })).unwrap();
 
 
-          // Load today's breaks
           const breaksResult = await dispatch(getTodayBreaks(userId)).unwrap();
 
           setDataLoaded(true);
 
         } catch (error) {
           console.error("❌ Failed to load data:", error);
-          toast.error("Failed to load attendance data");
         }
       }
     };
@@ -307,30 +328,6 @@ const AttendanceDashboard = () => {
     );
 
 
-  // // Timer countdown
-  // useEffect(() => {
-  //   if (activeTimer) {
-  //     const breakLimit = activeTimer.type === 'lunch' ? 30 * 60 : 5 * 60;
-  //     const startTime = new Date(activeTimer.startTime).getTime();
-  //     const currentTime = Date.now();
-  //     const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
-  //     const remainingSeconds = Math.max(0, breakLimit - elapsedSeconds);
-
-  //     setTimeLeft(remainingSeconds);
-
-  //     const interval = setInterval(() => {
-  //       setTimeLeft(prev => {
-  //         if (prev <= 1) {
-  //           clearInterval(interval);
-  //           return 0;
-  //         }
-  //         return prev - 1;
-  //       });
-  //     }, 1000);
-
-  //     return () => clearInterval(interval);
-  //   }
-  // }, [activeTimer]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -339,6 +336,8 @@ const AttendanceDashboard = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+
   useEffect(() => {
     if (activeTimer) {
       const breakLimit =
@@ -374,6 +373,15 @@ const AttendanceDashboard = () => {
 
   const [currentTime, setCurrentTime] = useState(getPhilippinesTime());
   // Handle Punch In
+  const MISSED_MESSAGES = [
+    "You have already missed punch-in for today.",
+    "Punch-in after working hours is not allowed. You are marked absent."
+  ];
+
+  const MISSED_CODES = [
+    "MISSED_PUNCH_IN",
+    "PUNCH_AFTER_SHIFT"
+  ];
   const handlePunchIn = async () => {
     if (!userId) {
       toast.error("User ID not found");
@@ -381,25 +389,34 @@ const AttendanceDashboard = () => {
     }
 
     try {
-      const result = await dispatch(punchIn({
-        userId,
-        shift: "Day"
-      })).unwrap();
+      const result = await dispatch(
+        punchIn({ userId, shift: "Day" })
+      ).unwrap();
+
+      // ⚠️ Show modal for ANY non-normal case
+      if (
+        result?.alert === "Late" ||
+        result?.alert === "AfterShift" ||
+        result?.alert === "Absent"
+      ) {
+        setShowAbsentModal(true);
+      }
 
       toast.success("Punched in successfully!");
 
-      // Refresh data - FIXED: timeout remove kiya
       await Promise.all([
         dispatch(getTodayAttendance(userId)),
         dispatch(getUserAttendance({ userId, page: 1, limit: 10 })),
-        dispatch(getTodayBreaks(userId))
+        dispatch(getTodayBreaks(userId)),
       ]);
 
     } catch (error) {
-      console.error("❌ Punch in failed:", error);
-      toast.error(error.message || "Punch in failed");
+      toast.error("Punch in failed");
     }
   };
+
+
+
 
   // Handle Punch Out
   const handlePunchOut = async () => {
@@ -429,8 +446,12 @@ const AttendanceDashboard = () => {
 
   // Handle Start Break - FIXED: WC और Lunch के लिए conditions सही की
   const handleStartBreak = async (breakType) => {
+    if (hasAnyActiveBreak()) {
+      toast.error("Finish current break first");
+      return;
+    }
     if (!isBreakAvailable(breakType)) {
-      toast.error("Break already active");
+      toast.error("You have n't any active break");
       return;
     }
     if (!userId) {
@@ -438,10 +459,11 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    if (!isOnline) {
+    if (!todayAttendance?.clockIn) {
       toast.error("Please punch in first to take a break");
       return;
     }
+
 
     // Check if break is already active - FIXED: Array based check
     const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
@@ -458,6 +480,10 @@ const AttendanceDashboard = () => {
 
       toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break started`);
 
+      setActiveTimer({
+        type: breakType,      // "smoke"
+        startTime: Date.now()
+      });
       // Refresh data - FIXED: Immediate refresh without timeout
       await Promise.all([
         dispatch(getTodayBreaks(userId)),
@@ -558,46 +584,37 @@ const AttendanceDashboard = () => {
 
   // Calculate total break time today - FIXED: Array based calculation
   const calculateTotalBreakTime = () => {
-    let totalMinutes = 0;
+    if (!todayAttendance) return "0h 0m 0s";
 
-    // Smoke breaks
-    const smokeBreaks = todayAttendance?.smokeBreaks || [];
-    smokeBreaks.forEach(breakItem => {
-      if (breakItem.start && breakItem.end) {
-        const start = new Date(breakItem.start);
-        const end = new Date(breakItem.end);
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          totalMinutes += Math.round((end - start) / 60000);
+    const now = Date.now(); // 🔥 SIMPLE
+
+    const calcSeconds = (breaks = []) =>
+      breaks.reduce((total, b) => {
+        if (!b?.start) return total;
+
+        const start = new Date(b.start).getTime();
+        const end = b.end ? new Date(b.end).getTime() : now;
+
+        if (end > start) {
+          return total + Math.floor((end - start) / 1000);
         }
-      }
-    });
+        return total;
+      }, 0);
 
-    // WC breaks
-    const wcBreaks = todayAttendance?.wcBreaks || [];
-    wcBreaks.forEach(breakItem => {
-      if (breakItem.start && breakItem.end) {
-        const start = new Date(breakItem.start);
-        const end = new Date(breakItem.end);
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          totalMinutes += Math.round((end - start) / 60000);
-        }
-      }
-    });
+    const totalSeconds =
+      calcSeconds(todayAttendance.smokeBreaks) +
+      calcSeconds(todayAttendance.wcBreaks) +
+      calcSeconds(todayAttendance.lunchBreaks);
 
-    // Lunch breaks
-    const lunchBreaks = todayAttendance?.lunchBreaks || [];
-    lunchBreaks.forEach(breakItem => {
-      if (breakItem.start && breakItem.end) {
-        const start = new Date(breakItem.start);
-        const end = new Date(breakItem.end);
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          totalMinutes += Math.round((end - start) / 60000);
-        }
-      }
-    });
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
 
-    return totalMinutes > 0 ? `${totalMinutes}m` : "0m";
+    return `${h}h ${m}m ${s}s`;
   };
+
+
+
 
   // Get status text
   const getStatusText = () => {
@@ -608,12 +625,12 @@ const AttendanceDashboard = () => {
 
   // Check break availability - FIXED
   const isBreakAvailable = (breakType) => {
-    if (!isOnline) return false;
+    if (!todayAttendance?.clockIn || todayAttendance?.clockOut) return false;
+
+    // ❌ If ANY break is active → block all
+    if (hasAnyActiveBreak()) return false;
 
     const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
-
-    // ❌ If ANY break is active → block
-    if (breaksArray.some(b => b && !b.end)) return false;
 
     const maxLimits = {
       smoke: 3,
@@ -624,6 +641,7 @@ const AttendanceDashboard = () => {
     const completedBreaks = breaksArray.filter(b => b?.end).length;
     return completedBreaks < maxLimits[breakType];
   };
+
 
 
   // Handle day off submit
@@ -680,54 +698,11 @@ const AttendanceDashboard = () => {
     }
   }, [reduxAttendanceList]);
 
-  console.log("TableData", tableData)
-  const calculateHours = (timeRangeString) => {
-    // Split the string into start and end times
-    const [startTimeStr, endTimeStr] = timeRangeString.split(' - ');
+  useEffect(() => {
+    console.log("TableData updated:", tableData);
+  }, [tableData]);
 
-    // Helper function to convert "HH:MM AM/PM" string to a Date object relative to today
-    const getTimeAsDate = (timeStr) => {
-      const date = new Date();
-      // Use an arbitrary past date to handle overnight ranges (e.g., 10 PM - 6 AM)
-      date.setFullYear(2000, 0, 1);
 
-      // Split the time and AM/PM part
-      const [time, period] = timeStr.split(' ');
-      let [hours, minutes] = time.split(':').map(Number);
-
-      // Adjust hours for PM times
-      if (period === 'PM' && hours !== 12) {
-        hours += 12;
-      }
-      // Adjust hours for 12 AM (midnight)
-      if (period === 'AM' && hours === 12) {
-        hours = 0;
-      }
-
-      date.setHours(hours, minutes, 0, 0);
-      return date;
-    };
-
-    const startTime = getTimeAsDate(startTimeStr);
-    const endTime = getTimeAsDate(endTimeStr);
-
-    // If the end time is earlier than the start time, it means the period crosses midnight.
-    // Add a day to the end time date.
-    if (endTime < startTime) {
-      endTime.setDate(endTime.getDate() + 1);
-    }
-
-    // Calculate the difference in milliseconds and convert to hours
-    const diffInMilliseconds = endTime - startTime;
-    const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
-
-    return diffInHours;
-  }
-  // const timeRange = tableData[0]?.fullRecord?.actualWorkingHours;
-  // console.log(timeRange)
-
-  // const hours = calculateHours(timeRange);
-  // console.log(hours, "hours")
 
   // Get record status for table
   const getRecordStatus = (record) => {
@@ -860,69 +835,86 @@ const AttendanceDashboard = () => {
     setShowBreakModal(true)
     setHiddenTimerType(null)
   }
-  const [time, setTime] = useState(0);
-  const workTimerRef = useRef(null);
 
 
-  const SHIFT_SECONDS = 8 * 60 * 60;
 
-  const formatDuration = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
 
-    return `${h.toString().padStart(2, "0")}:${m
-      .toString()
-      .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+
+  // Converts "05:00 AM", "5:00 PM" → Date (today)
+
+  const [now, setNow] = useState(getPHNow());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(getPHNow());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+
+  const hasAnyActiveBreak = () => {
+    if (!todayAttendance) return false;
+
+    const allBreaks = [
+      ...(todayAttendance.smokeBreaks || []),
+      ...(todayAttendance.wcBreaks || []),
+      ...(todayAttendance.lunchBreaks || []),
+    ];
+
+    return allBreaks.some(b => b && !b.end);
   };
-
-  const calculateRemainingWorkSeconds = (clockInISO) => {
-    if (!clockInISO) return 0;
-
-    const clockIn = new Date(clockInISO);
-
-    // shift start = SAME DAY as clock-in
-    const shiftStart = new Date(clockIn);
-    shiftStart.setHours(9, 0, 0, 0); // 9:00 AM shift
-
-    const lateSeconds = Math.max(
-      0,
-      Math.floor((clockIn - shiftStart) / 1000)
-    );
-
-    return Math.max(0, SHIFT_SECONDS - lateSeconds);
-  };
-
-
 
 
   useEffect(() => {
-    if (!todayAttendance?.clockIn || todayAttendance?.clockOut) {
-      clearInterval(workTimerRef.current);
+    if (!todayAttendance?.clockIn) {
+      setLiveWorkingTime("0h 0m 0s");
       return;
     }
 
-    const initialSeconds =
-      calculateRemainingWorkSeconds(todayAttendance.clockIn);
+    const start = new Date(todayAttendance.clockIn).getTime();
 
-    setTime(initialSeconds);
+    const interval = setInterval(() => {
+      const end = todayAttendance.clockOut
+        ? new Date(todayAttendance.clockOut).getTime()
+        : Date.now();
 
-    workTimerRef.current = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(workTimerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const diff = Math.max(0, end - start);
+      const sec = Math.floor(diff / 1000);
+
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+
+      setLiveWorkingTime(`${h}h ${m}m ${s}s`);
     }, 1000);
 
-    return () => clearInterval(workTimerRef.current);
+    return () => clearInterval(interval);
   }, [todayAttendance?.clockIn, todayAttendance?.clockOut]);
 
+  useEffect(() => {
+    console.log("ACTIVE TIMER:", activeTimer);
+  }, [activeTimer]);
 
-  // caluculating actual working hours
 
+  useEffect(() => {
+    if (!todayAttendance) return;
+
+    const smoke = todayAttendance.smokeBreaks?.find(b => !b.end);
+    const wc = todayAttendance.wcBreaks?.find(b => !b.end);
+    const lunch = todayAttendance.lunchBreaks?.find(b => !b.end);
+
+    if (smoke) {
+      setActiveTimer({ type: "smoke", startTime: smoke.start });
+    } else if (wc) {
+      setActiveTimer({ type: "wc", startTime: wc.start });
+    } else if (lunch) {
+      setActiveTimer({ type: "lunch", startTime: lunch.start });
+    } else {
+      setActiveTimer(null);
+    }
+  }, [todayAttendance]);
 
   return (
     <div className="min-h-screen p-4 text-slate-200 bg-[#020617] ">
@@ -950,8 +942,8 @@ const AttendanceDashboard = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handlePunchIn}
-                  disabled={isOnline}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${isOnline
+                  disabled={!canPunchIn}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!canPunchIn
                     ? "bg-slate-700 cursor-not-allowed text-slate-400"
                     : "bg-sky-500/80 text-slate-950 hover:bg-sky-400"
                     }`}
@@ -960,10 +952,12 @@ const AttendanceDashboard = () => {
                   Punch In
                 </button>
 
+
                 <button
                   onClick={() => setShowPunchOutModal(true)}
-                  disabled={!isOnline}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!isOnline
+                  disabled={!canPunchOut}
+
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!canPunchOut
                     ? "bg-slate-700 cursor-not-allowed text-slate-400"
                     : "bg-rose-500/90 text-slate-50 hover:bg-rose-400"
                     }`}
@@ -984,9 +978,15 @@ const AttendanceDashboard = () => {
               </button>
             </div>
             <div className="flex justify-end pt-4">
-              <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
-                Time Left: <span className="font-mono">{formatDuration(time)}</span></div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock size={14} />
+                <span className="text-slate-400">Working Time:</span>
+                <span className="font-mono text-slate-100">
+                  {liveWorkingTime}
+                </span>
+              </div>
             </div>
+
           </div>
 
         </div>
@@ -1019,7 +1019,7 @@ const AttendanceDashboard = () => {
           <StatCard
             icon={Clock}
             title="Today – Logged Hours"
-            value={calculateTodayWorkedHours()}
+            value={liveWorkingTime}
             subtitle={getStatusText()}
             color="blue"
           />
@@ -1085,8 +1085,13 @@ const AttendanceDashboard = () => {
               </p>
 
               <div className="mt-4 flex flex-col items-center gap-1">
-                <div className={`text-4xl font-mono font-semibold ${timeLeft > 60 ? 'text-slate-50' : 'text-amber-400'
-                  }`}>
+                <div className={`text-4xl font-mono font-semibold ${timeLeft <= 30
+                  ? "text-red-500"
+                  : timeLeft <= 60
+                    ? "text-amber-400"
+                    : "text-slate-50"
+                  }`}
+                >
                   {formatBreakTimer(timeLeft)}
                 </div>
                 {timeLeft <= 0 && (
@@ -1152,39 +1157,52 @@ const AttendanceDashboard = () => {
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div
-              onClick={() => handleStartBreak('smoke')}
-              disabled={!isBreakAvailable('smoke')}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('smoke')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500"
-                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+              onClick={() => isBreakAvailable('smoke') && handleStartBreak('smoke')}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all
+  ${activeTimer?.type === 'smoke'
+                  ? "border border-amber-400/70 bg-yellow-600 text-slate-900 "
+                  : !isBreakAvailable('smoke')
+                    ? "border border-slate-700 bg-slate-900/50 text-slate-500"
+                    : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
+
             >
-              <Coffee size={16} />
-              <span>Smoke Break ({breakCounts.smoke}/3 • 5m)</span>
-              {hiddenTimerType === 'smoke' && <button
-                onClick={handleShowTimer}
-                className="ms-4 rounded-xl px-2 py-1 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all text-xs"
-              >
-                Show Timer
-              </button>
-              }
+              <Coffee size={16} color={activeTimer?.type === 'smoke' ? "white" : "gray"} />
+              < span > Smoke Break ({breakCounts.smoke}/3 • 5m) </span >
+
+              {hiddenTimerType === 'smoke' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowTimer();
+                  }}
+                  className="ms-4 rounded-xl px-2 py-1 text-xs border bg-amber-500/25 text-black border border-amber-400/70"
+                >
+                  Show Timer
+                </button>
+              )}
             </div>
+
 
 
 
             <div
               onClick={() => handleStartBreak('wc')}
               disabled={!isBreakAvailable('wc')}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('wc')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 "
-                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all
+              ${activeTimer?.type === 'wc'
+                  ? "border border-amber-400/70 bg-yellow-600 text-slate-900 "
+                  : !isBreakAvailable('wc')
+                    ? "border border-slate-700 bg-slate-900/50 text-slate-500"
+                    : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
+
             >
-              <Droplets size={16} />
+              <Droplets size={16} color={activeTimer?.type === 'wc' ? "white" : "gray"} />
               <span>WC Break ({breakCounts.wc}/3 • 5m)</span>
               {hiddenTimerType === 'wc' && <button
                 onClick={handleShowTimer}
-                className="ms-9 rounded-xl px-3.5 py-2 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all"
+                className="ms-4 rounded-xl px-2 py-1 text-xs border bg-amber-500/25 text-black border border-amber-400/70"
               >
                 Show Timer
               </button>
@@ -1194,12 +1212,16 @@ const AttendanceDashboard = () => {
             <div
               onClick={() => handleStartBreak('lunch')}
               disabled={!isBreakAvailable('lunch')}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('lunch')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 "
-                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all
+  ${activeTimer?.type === 'lunch'
+                  ? "border border-amber-400/70 bg-yellow-600 text-slate-900 "
+                  : !isBreakAvailable('lunch')
+                    ? "border border-slate-700 bg-slate-900/50 text-slate-500"
+                    : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
+
             >
-              <Utensils size={16} />
+              <Utensils size={16} color={activeTimer?.type === 'lunch' ? "white" : "gray"} />
               <span>Lunch Break ({breakCounts.lunch}/2 • 30m)</span>
               {hiddenTimerType === 'lunch' && <button
                 onClick={handleShowTimer}
@@ -1211,6 +1233,7 @@ const AttendanceDashboard = () => {
             </div>
 
           </div>
+
         </div>
 
         {/* Debug Info */}
@@ -1350,7 +1373,7 @@ const AttendanceDashboard = () => {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 text-slate-200 font-semibold">{record.hours}</td>
+                      <td className="px-4 py-3 text-slate-200 font-semibold">{liveWorkingTime}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-md text-[11px] font-medium ${record.status.class}`}>
                           {record.status.text}
@@ -1604,6 +1627,12 @@ const AttendanceDashboard = () => {
           />
         )
       }
+
+      <AttendancePunchReminder
+        open={showAbsentModal}
+        onClose={() => setShowAbsentModal(false)}
+      />
+
 
       {/* Announcement Popup (simplified) */}
       <AttendanceAnnouncementPopup

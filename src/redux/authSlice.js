@@ -202,6 +202,7 @@ export const getAllUsers = createAsyncThunk(
     try {
       const response = await axiosInstance.get("/user/all");
       return response.data.users;
+
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch users"
