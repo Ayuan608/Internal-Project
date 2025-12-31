@@ -258,27 +258,26 @@ const activitySlice = createSlice({
             .addCase(activateStatus.fulfilled, (state, action) => {
                 if (!action.payload?._id) return;
 
-                state.activities = state.activities.map((activity) =>
-                    activity?.userId === action.payload._id ||
-                        activity?.userId?._id === action.payload._id
+                state.activities = state.activities.map((activity) => {
+                    if (!activity || !activity.userId) return activity;
+
+                    return activity.userId === action.payload._id ||
+                        activity.userId?._id === action.payload._id
                         ? {
                             ...activity,
                             terminated: action.payload.terminated,
                             status: action.payload.status,
                         }
-                        : activity
-                );
+                        : activity;
+                });
             })
-
-
-
             .addCase(activateStatus.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });
 
 
-},
+    },
 });
 
 export default activitySlice.reducer;
