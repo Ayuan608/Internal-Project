@@ -23,15 +23,15 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
 
+          set -e
           cd /www/wwwroot
 
-          git clone https://github.com/Ayuan608/Internal-Project.git
+          rm -rf Internal-Project
 
+          git clone git@github.com:Ayuan608/Internal-Project.git
           cd Internal-Project
 
           npm install
-
           npm run build
-
 
           EOF
