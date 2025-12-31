@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Activity, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
+import { Activity as ActivityIcon, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { DepartmentGoalChart } from './ChartComponents';
 import { fetchCombinedDepartmentsHistory, loadFromCache } from '../../redux/combinedQuotaSlice';
 
@@ -295,14 +295,14 @@ export const PerformanceTrendCard = ({
                     <div className="flex flex-col">
                         <span className="text-xl text-gray-400">{monthName}</span>
                         <h3 className="text-2xl font-bold flex items-center gap-2">
-                            <Activity className="text-blue-400" />
+                            <ActivityIcon className="text-blue-400" />
                             Monthly Performance
                         </h3>
                     </div>
 
                     {/* RIGHT: 3 CARDS — CLICKABLE & COLORED */}
                     <div className="flex gap-3">
-                    
+
                         {/* CSR CARD */}
                         <button
                             onClick={() => setSelectedDept("csr")}

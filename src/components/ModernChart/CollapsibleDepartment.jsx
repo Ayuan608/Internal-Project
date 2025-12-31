@@ -10,7 +10,7 @@ import {
   Clock,
   TrendingUp,
   AlertTriangle,
-  Activity,
+Activity as ActivityIcon,
   DollarSign,
   TrendingDown,
   Database,
@@ -479,7 +479,7 @@ export const CollapsibleDepartment = ({
         title: "Feedback/livechecking",
         value: depositMetricsData.totalLiveChecks?.toLocaleString() || "0",
         change: "+9.2%",
-        icon: Activity,
+        icon: ActivityIcon,
         color: "from-blue-500 to-indigo-500",
         comparisonData: getComparisonData(depositMetricsData.totalLiveChecks, "Live Check", "deposit")
       },
@@ -511,7 +511,7 @@ export const CollapsibleDepartment = ({
         title: "Paycheck Daily records CB",
         value: depositMetricsData.totalRecords?.toLocaleString() || "0",
         change: "+7.5%",
-        icon: Activity,
+        icon: ActivityIcon,
         color: "from-cyan-500 to-blue-500",
         comparisonData: getComparisonData(depositMetricsData.totalRecords, "Paycheck Daily records", "deposit")
       },
@@ -570,7 +570,7 @@ export const CollapsibleDepartment = ({
         title: "Total Amount process",
         value: withdrawMetricsData.totalProcessingAmount?.toLocaleString() || "$0",
         change: "+8.7%",
-        icon: Activity,
+        icon: ActivityIcon,
         color: "from-indigo-500 to-purple-500",
         comparisonData: getComparisonData(withdrawMetricsData.totalProcessingAmount, "Total Amount process", "withdrawal")
       },
