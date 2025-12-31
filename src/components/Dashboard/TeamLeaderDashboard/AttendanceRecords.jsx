@@ -1,6 +1,6 @@
 import { AlertCircle, CheckCircle, Search, Calendar, Clock, Users, TrendingUp, XCircle, Coffee, LogOut, LogIn, FileText, PlusCircle, X, Send, Upload } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllAttendance, getDepartmentWiseUsers } from "./../../../redux/attendenceSlice";
+import { getAllAttendance, getDepartmentWiseUsers,getDepartmentWiseUsersCalender } from "./../../../redux/attendenceSlice";
 import { useEffect, useState, useMemo } from "react";
 import { sendCaseMail } from "../../../redux/statSlice";
 import { motion } from "framer-motion";
@@ -58,6 +58,16 @@ const AttendanceRecords = () => {
             console.error("fetch dept users err", e)
         )
     }, [dispatch]);
+useEffect(() => {
+  if (!selectedDate) return;
+
+  dispatch(
+    getDepartmentWiseUsersCalender({
+      date: selectedDate,
+    })
+  );
+}, [dispatch, selectedDate]);
+
     // const calculateDuration = (start, end) => {
     //     if (!start || !end) return "Active";
 

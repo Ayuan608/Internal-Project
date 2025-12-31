@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, Users, UserCheck, UserX, Search } from "lucide-react";
-import { getDepartmentWiseUsers } from "../../../redux/attendenceSlice";
+import { getDepartmentWiseUsers, getDepartmentWiseUsersCalender } from "../../../redux/attendenceSlice";
 import {
   ResponsiveContainer,
   PieChart,
@@ -38,8 +38,8 @@ export default function AttendanceDashboard() {
   const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
-// console.log(departmentAttendance,"abhishek")
-//   console.log("desparetmebt",departmentAttendance)
+  // console.log(departmentAttendance,"abhishek")
+  //   console.log("desparetmebt",departmentAttendance)
   const { role } = useSelector((s) => s.auth || {});
   const [searchName, setSearchName] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -55,6 +55,8 @@ export default function AttendanceDashboard() {
       console.error("fetch dept users err", e)
     );
   }, [dispatch]);
+
+
 
   // months utilities
   const daysInSelectedMonth = useMemo(() => {
@@ -75,6 +77,18 @@ export default function AttendanceDashboard() {
     setSelectedMonth(
       (s) => new Date(s.getFullYear(), s.getMonth() + 1, 1)
     );
+  const getMonthParam = (date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  };
+  useEffect(() => {
+    const month = getMonthParam(selectedMonth);
+
+    dispatch(
+      getDepartmentWiseUsersCalender({
+        month,
+      })
+    );
+  }, [dispatch, selectedMonth]);
 
   // filtered data
   const filteredData = useMemo(() => {
@@ -130,7 +144,7 @@ export default function AttendanceDashboard() {
 
   //     return { present, absent, leave, undertime, halfday, total: filteredData.length };
   //   }, [filteredData, selectedMonth, daysInSelectedMonth]);
-   const hasDayOffRequest = (emp, day, selectedMonth) => {
+  const hasDayOffRequest = (emp, day, selectedMonth) => {
     if (!emp.dayOffRequests) return false;
 
     if (Array.isArray(emp.dayOffRequests)) {
@@ -206,7 +220,7 @@ export default function AttendanceDashboard() {
 
       filteredData.forEach(emp => {
         const status = emp.patternByDay?.[day];
-        
+
         if (status === "D" || status === "M" || status === "N" || status === "PS") {
           dayPresent++;
           return;
@@ -224,7 +238,7 @@ export default function AttendanceDashboard() {
         }
 
         dayAbsent++;
-   
+
       });
 
       arr.push({

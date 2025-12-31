@@ -195,6 +195,38 @@ export const getDepartmentWiseUsers = createAsyncThunk(
     }
   }
 );
+// export const getDepartmentWiseUsersCalender = createAsyncThunk(
+//   "attendance/get-department-wise-Calender",
+//   async ({ date }, { rejectWithValue }) => {
+//     try {
+//       const query = date ? `?date=${date}` : "";
+//       const { data } = await axiosInstance.get(
+//         `/attendance/get-department-wise-Calender${query}`
+//       );
+//       return data;
+//     } catch (err) {
+//       return rejectWithValue(err.response?.data);
+//     }
+//   }
+// );
+export const getDepartmentWiseUsersCalender = createAsyncThunk(
+  "attendance/get-department-wise-Calender",
+  async ({ date, month }, { rejectWithValue }) => {
+    try {
+      let query = "";
+
+      if (date) query = `?date=${date}`;
+      else if (month) query = `?month=${month}`;
+
+      const { data } = await axiosInstance.get(
+        `/attendance/get-department-wise-Calender${query}`
+      );
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
 
 // =============== 6. DAY OFF REQUESTS ===============
 export const requestDayOff = createAsyncThunk(
@@ -350,25 +382,25 @@ export const updateAttendance = createAsyncThunk(
 );
 
 
-// export const deleteAttendance = createAsyncThunk(
-//   "attendance/deleteAttendance",
-//   async ({ user }, { rejectWithValue }) => {
-//     try {
-//       const { data } = await axiosInstance.delete(
-//        `/attendance/delete-attendance/${user}`
-      
-//       );
+export const deleteAttendance = createAsyncThunk(
+  "attendance/deleteAttendance",
+  async ({ user }, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.delete(
+       `/attendance/delete-attendance/${user}`
 
-//       if (data.success) {
-//         toast.success(data.message || "Attendance delete");
-//       }
+      );
 
-//       return data;
-//     } catch (error) {
-//       return rejectWithValue(handleError(error, "Failed to delete attendance"));
-//     }
-//   }
-// );
+      if (data.success) {
+        toast.success(data.message || "Attendance delete");
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(handleError(error, "Failed to delete attendance"));
+    }
+  }
+);
 
 // SLICE
 const attendanceSlice = createSlice({
@@ -728,6 +760,12 @@ const attendanceSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
+
+     
+      .addCase(getDepartmentWiseUsersCalender.fulfilled, (state, action) => {
+        state.departmentAttendance = action.payload.users;
+      })
+
       // PENDING STATES FOR ALL
       .addMatcher(
         (action) => action.type.endsWith('/pending'),
