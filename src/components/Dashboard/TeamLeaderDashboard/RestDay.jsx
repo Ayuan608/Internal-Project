@@ -90,7 +90,6 @@ export default function AttendanceDashboard() {
       });
   }, [departmentAttendance, searchName, departmentFilter, statusFilter]);
 
-  // KPI calculation for selected month
   //   const stats = useMemo(() => {
   //     let present = 0, absent = 0, leave = 0, undertime = 0, halfday = 0;
   // console.log("filteredData",filteredData)
@@ -134,7 +133,6 @@ export default function AttendanceDashboard() {
    const hasDayOffRequest = (emp, day, selectedMonth) => {
     if (!emp.dayOffRequests) return false;
 
-    // If array of dates (e.g. ["2025-12-10"])
     if (Array.isArray(emp.dayOffRequests)) {
       const dateKey = new Date(
         selectedMonth.getFullYear(),
@@ -145,7 +143,6 @@ export default function AttendanceDashboard() {
       return emp.dayOffRequests.includes(dateKey);
     }
 
-    // If object keyed by day (e.g. { "10": true })
     if (typeof emp.dayOffRequests === "object") {
       return Boolean(emp.dayOffRequests[day]);
     }
@@ -172,7 +169,6 @@ export default function AttendanceDashboard() {
           continue;
         }
 
-        // ✅ REST DAY → check DayOffRequest
         if (status === "RD") {
           const isApprovedLeave = hasDayOffRequest(emp, day, selectedMonth);
 
@@ -200,44 +196,6 @@ export default function AttendanceDashboard() {
   }, [filteredData, daysInSelectedMonth, selectedMonth]);
 
 
-  // Real attendance trend data based on actual patterns
-  // const trendData = useMemo(() => {
-  //   const arr = [];
-  //   for (let d = 1; d <= daysInSelectedMonth; d++) {
-  //     let dayPresent = 0;
-  //     let dayAbsent = 0;
-  //     let dayLeave = 0;
-  //     let dayUndertime = 0;
-
-  //     filteredData.forEach((emp) => {
-  //       if (Array.isArray(emp.pattern) && emp.pattern.length >= d) {
-  //         const status = emp.pattern[d - 1];
-  //         if (status === 0 || status === 1) dayPresent++;
-  //         else if (status === 3) dayAbsent++;
-  //         else if (status === 2) dayLeave++;
-  //         else if (status === "U") dayUndertime++;
-  //       } else if (emp.attendanceRecords && typeof emp.attendanceRecords === "object") {
-  //         const dd = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), d);
-  //         const key = dd.toISOString().slice(0, 10);
-  //         const status = emp.attendanceRecords[key];
-  //         if (status === "Present") dayPresent++;
-  //         else if (status === "Absent") dayAbsent++;
-  //         else if (status === "Leave") dayLeave++;
-  //         else if (status === "Undertime") dayUndertime++;
-  //       }
-  //     });
-
-  //     arr.push({
-  //       day: d,
-  //       present: dayPresent,
-  //       absent: dayAbsent,
-  //       leave: dayLeave,
-  //       undertime: dayUndertime,
-  //     });
-  //   }
-  //   return arr;
-  // }, [filteredData, daysInSelectedMonth, selectedMonth]);
- 
   const trendData = useMemo(() => {
     const arr = [];
 
@@ -248,14 +206,12 @@ export default function AttendanceDashboard() {
 
       filteredData.forEach(emp => {
         const status = emp.patternByDay?.[day];
-        // console.log(status)
-        //  PRESENT
+        
         if (status === "D" || status === "M" || status === "N" || status === "PS") {
           dayPresent++;
           return;
         }
 
-        //  REST DAY → check dayOffRequest
         if (status === "RD") {
           const isApprovedLeave = hasDayOffRequest(emp, day, selectedMonth);
 
@@ -267,16 +223,8 @@ export default function AttendanceDashboard() {
           return;
         }
 
-        //  NO STATUS → ABSENT
         dayAbsent++;
-        // if (status === "D" || status === "M" || status === "N" ||  status === "PS") {
-        //   dayPresent++;
-        // } else if (!status) {
-        //   dayAbsent++;
-        // } else if (status === "RD") {
-        //   dayLeave++;
-        //   dayAbsent++;
-        // }
+   
       });
 
       arr.push({
