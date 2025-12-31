@@ -10,6 +10,9 @@ import activitySliceReducer from './activitylogSlice'
 import employeeOfMonthReducer from './employeeOfMonthSlice'
 import statSliceReducer from './statSlice'
 import auditTrailSliceReducer from './auditTrailSlice'
+import fileSliceReducer from './FileSlice'
+import quotaSliceReducer from './quotaSlice'
+
 const store = configureStore({
     reducer: {
         stat: statSliceReducer,
@@ -18,6 +21,8 @@ const store = configureStore({
         report: reportSliceReducer,
         activity: activitySliceReducer,
         sheet: sheetSliceReducer,
+        file: fileSliceReducer,
+        quota: quotaSliceReducer,
         notifications: notificationSliceReducer,
         announcements: announcementSliceReducer,
         combinedQuota: combinedQuotaReducer,

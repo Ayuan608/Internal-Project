@@ -41,7 +41,7 @@ import {
 } from 'recharts';
 import html2canvas from "html2canvas";
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllAttendance } from '../../../redux/attendenceSlice';
+import { getAllAttendance, getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
 import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
 import ManpowerStatusSection from './ManpowerStatusSection';
 
@@ -61,6 +61,7 @@ const departments = [
 ];
 
 const OverallAttendanceDashboard = () => {
+  //  data = [],
   const popupRef = useRef();
   const [viewMode, setViewMode] = useState(() => {
     const savedViewMode = localStorage.getItem('attendanceDashboardViewMode');
@@ -81,6 +82,26 @@ const OverallAttendanceDashboard = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const dispatch = useDispatch();
   const { allAttendance, isLoading, pagination } = useSelector((state) => state.attendance);
+ 
+  const { departmentAttendance = [], department } = useSelector(
+    (s) => s.attendance || {}
+  );
+
+  const totalUsers = departmentAttendance.length
+  const totalWorking = departmentAttendance.filter(
+    item => item.status === "working"
+  ).length;
+  const totalAbsent = departmentAttendance.filter(
+    item => item.status === "Absent"
+  ).length;
+  const totalBreakUsers = departmentAttendance.filter(
+    item => item.breaks?.total > 0
+  ).length;
+
+
+  const totalLeaves = departmentAttendance.filter(
+    item => item.dayOffRequests
+  ).length;
 
   // Fetch data on mount and when filters change
   useEffect(() => {
@@ -99,7 +120,11 @@ const OverallAttendanceDashboard = () => {
     };
     fetchData();
   }, [dispatch, startDate, endDate, selectedDept]);
-
+  useEffect(() => {
+    dispatch(getDepartmentWiseUsers()).catch((e) =>
+      console.error("fetch dept users err", e)
+    )
+  }, [dispatch]);
 
   const downloadCard = async () => {
     const card = popupRef.current;
@@ -133,26 +158,85 @@ const OverallAttendanceDashboard = () => {
 
   // Filter data based on search and filters
   const filteredData = useMemo(() => {
-    if (!allAttendance) return [];
-    return allAttendance.filter(emp => {
-      const matchesSearch = emp.user?.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    if (!departmentAttendance) return [];
+    return departmentAttendance.filter(emp => {
+      const matchesSearch = emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp._id?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDept = selectedDept === 'All' || emp.user?.department === selectedDept;
+      const matchesDept = selectedDept === 'All' || emp.department === selectedDept;
       const matchesStatus = selectedStatus === 'All' || emp.alert === selectedStatus;
       return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [allAttendance, searchTerm, selectedDept, selectedStatus]);
+  }, [departmentAttendance, searchTerm, selectedDept, selectedStatus]);
+  // console.log(filteredData)
+  const getCurrentWeekDates = () => {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); 
 
-  const weeklyTrendData = useMemo(() => {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days.map(day => ({
-      day,
-      present: Math.floor(Math.random() * 30) + 60,
-      absent: Math.floor(Math.random() * 10) + 5,
-      late: Math.floor(Math.random() * 8) + 2,
-      onTime: Math.floor(Math.random() * 25) + 50,
-    }));
-  }, []);
+  return Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    console.log(d)
+    return d;
+  });
+};
+
+const weeklyTrendData = useMemo(() => {
+  if (!Array.isArray(departmentAttendance)) return [];
+
+  const weekDates = getCurrentWeekDates();
+
+  return weekDates.map((dateObj) => {
+    const dayNumber = dateObj.getDate(); // 1–31
+    const dayLabel = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+
+    let present = 0;
+    let absent = 0;
+    let late = 0;
+    let onTime = 0;
+
+    departmentAttendance.forEach((emp) => {
+      const status = emp?.patternByDay?.[dayNumber];
+
+      // Present
+        if (status === "D" || status === "M" || status === "N" || status === "PS") {
+        present++;
+
+        if (emp.alert === "Late") {
+          late++;
+        } else {
+          onTime++;
+        }
+      }
+
+      // Absent
+      else if (!status || emp.alert === "Absent") {
+        absent++;
+      }
+
+     
+    });
+
+    return {
+      day: dayLabel,
+      present,
+      absent,
+      late,
+      onTime,
+    };
+  });
+}, [departmentAttendance]);
+
+  // const weeklyTrendData = useMemo(() => {
+  //   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  //   return days.map(day => ({
+  //     day,
+  //     present: Math.floor(Math.random() * 30) + 60,
+  //     absent: Math.floor(Math.random() * 10) + 5,
+  //     late: Math.floor(Math.random() * 8) + 2,
+  //     onTime: Math.floor(Math.random() * 25) + 50,
+  //   }));
+  // }, []);
 
   // Department-wise analytics from filtered data
   const deptAnalytics = useMemo(() => {
@@ -179,6 +263,7 @@ const OverallAttendanceDashboard = () => {
     }
 
     const total = allAttendance.length;
+
     const present = allAttendance.filter(e => e.alert === 'Present' || e.alert === 'Normal').length;
     const absent = allAttendance.filter(e => e.alert === 'Absent').length;
     const late = allAttendance.filter(e => e.alert === 'Late').length;
@@ -395,7 +480,44 @@ const OverallAttendanceDashboard = () => {
       <span className="text-sm font-medium text-gray-200">{value}</span>
     </div>
   );
+  const parseWorkingHoursToSeconds = (timeStr) => {
+    if (!timeStr) return 0;
 
+    let hours = 0;
+    let minutes = 0;
+
+    const hourMatch = timeStr.match(/(\d+)\s*h/);
+    const minuteMatch = timeStr.match(/(\d+)\s*m/);
+
+    if (hourMatch) hours = parseInt(hourMatch[1], 10);
+    if (minuteMatch) minutes = parseInt(minuteMatch[1], 10);
+
+    return hours * 3600 + minutes * 60;
+  };
+  const totalNetSeconds = departmentAttendance.reduce((total, item) => {
+
+    return total + parseWorkingHoursToSeconds(item.workingHours);
+  }, 0);
+
+  // const workingStaffCount = departmentAttendance.filter(
+  //   item => item.status === "working"
+  // ).length;
+  // console.log(workingStaffCount)
+  // console.log(totalWorking)
+  const avgNetSeconds =
+    totalWorking > 0 ? totalNetSeconds / totalWorking : 0;
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${hrs.toString().padStart(2, "0")}:${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+  // console.log(avgNetSeconds)
+  const avgNetWorkTime = formatTime(avgNetSeconds);
+  // console.log(avgNetWorkTime)
   return (
     <div className="min-h-screen  text-white p-6">
       {/* Header Section */}
@@ -456,7 +578,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-300 mb-1">TOTAL STAFF</p>
-                <p className="text-3xl font-bold text-gray-100">57</p>
+                <p className="text-3xl font-bold text-gray-100">{totalUsers}</p>
                 <p className="text-xs text-gray-400 mt-2">All registered agents</p>
               </div>
               <Users className="w-10 h-10 text-gray-500/60" />
@@ -468,7 +590,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-300 mb-1">WORKING</p>
-                <p className="text-3xl font-bold text-green-100">18</p>
+                <p className="text-3xl font-bold text-green-100">{totalWorking}</p>
                 <p className="text-xs text-green-400 mt-2">Currently on duty</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -482,7 +604,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-yellow-300 mb-1">ON BREAK</p>
-                <p className="text-3xl font-bold text-yellow-100">4</p>
+                <p className="text-3xl font-bold text-yellow-100">{totalBreakUsers}</p>
                 <p className="text-xs text-yellow-400 mt-2">Any break type</p>
               </div>
               <Clock className="w-10 h-10 text-yellow-500/60" />
@@ -494,7 +616,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-300 mb-1">LEAVE</p>
-                <p className="text-3xl font-bold text-blue-100">0</p>
+                <p className="text-3xl font-bold text-blue-100">{totalLeaves}</p>
                 <p className="text-xs text-blue-400 mt-2">Approved some today</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -508,7 +630,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-red-300 mb-1">ABSENT</p>
-                <p className="text-3xl font-bold text-red-100">9</p>
+                <p className="text-3xl font-bold text-red-100">{totalAbsent}</p>
                 <p className="text-xs text-red-400 mt-2">Marked as absent</p>
               </div>
               <AlertCircle className="w-10 h-10 text-red-500/60" />
@@ -520,7 +642,7 @@ const OverallAttendanceDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-300 mb-1">AVG NET WORK</p>
-                <p className="text-3xl font-bold text-purple-100">00:00:00</p>
+                <p className="text-3xl font-bold text-purple-100">{avgNetWorkTime}</p>
                 <p className="text-xs text-purple-400 mt-2">Per staff today</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
@@ -664,20 +786,37 @@ const OverallAttendanceDashboard = () => {
             </div>
             {/* Department Analytics */}
             <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-lg font-semibold text-white mb-4">Department Performance</h3>
-              <ResponsiveContainer style={{ background: "transparent" }} width="100%" height={300}>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Department Performance
+              </h3>
+
+              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={deptAnalytics}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis dataKey="name" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
+
+                  {/* 🔥 Tooltip fix */}
+                  <Tooltip
+                    cursor={{ fill: "transparent" }}   // ❌ hover white bg removed
+                    contentStyle={{
+                      backgroundColor: "#020617",
+                      border: "1px solid #334155",
+                      borderRadius: "8px",
+                      color: "#fff"
+                    }}
+                  />
+
                   <Legend />
-                  <Bar dataKey="Present" fill={COLORS.present} />
-                  <Bar dataKey="Absent" fill={COLORS.absent} />
-                  <Bar dataKey="Late" fill={COLORS.late} />
+
+                  {/* 🔥 activeBar disabled */}
+                  <Bar dataKey="Present" fill={COLORS.present} activeBar={false} />
+                  <Bar dataKey="Absent" fill={COLORS.absent} activeBar={false} />
+                  <Bar dataKey="Late" fill={COLORS.late} activeBar={false} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+
           </div>
           <div
             className={`transition-all duration-500 overflow-hidden ${showCharts ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
@@ -737,7 +876,7 @@ const OverallAttendanceDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#404860" />
                     <XAxis type="number" stroke="#9CA3AF" />
                     <YAxis dataKey="range" type="category" stroke="#9CA3AF" />
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
+                    <Tooltip cursor={{ fill: "transparent" }} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #404860' }} />
                     <Bar dataKey="count" fill={COLORS.present} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -868,62 +1007,68 @@ const OverallAttendanceDashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/30">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center">
-                      <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredData.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
-                      No records found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((row) => (
-                    <tr key={row._id} className="hover:bg-slate-800/30 transition">
-                      <td className="px-4 py-3 text-sm text-white font-mono w-32">
-                        {row._id?.slice(0, 8)}...
-                      </td>
-                      <td className="px-4 py-3 text-sm capitalize text-white font-medium w-48">
-                        {row.user?.FullName}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-40">
-                        {row.user?.department || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
-                        {new Date(row.date).toLocaleDateString('en-GB')}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
-                        {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : '--'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-32">
-                        {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : '--'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300 w-28">
-                        <span className="font-medium text-blue-300">
-                          {row.workingHours || '0'}h
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 w-40">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
-                          {calculateDynamicStatus(row)}
-                        </span>
+                {
+                // isLoading ? (
+                //   <tr>
+                //     <td colSpan="8" className="px-4 py-8 text-center">
+                //       <div className="flex justify-center">
+                //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                //       </div>
+                //     </td>
+                //   </tr>
+                // ) :
+                  filteredData.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
+                        No records found
                       </td>
                     </tr>
-                  ))
-                )}
+                  ) : (
+                    filteredData.map((row) => (
+                      <tr key={row._id} className="hover:bg-slate-800/30 transition">
+                        <td className="px-4 py-3 text-sm text-white font-mono w-32">
+                          {row._id?.slice(0, 8)}...
+                        </td>
+                        <td className="px-4 py-3 text-sm capitalize text-white font-medium w-48">
+                          {row?.FullName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-40">
+                          {row?.department || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                          {row?.date
+                            ? new Date(row.date).toLocaleDateString("en-GB")
+                            : "--"}
+                          {/* {new Date(row?.date).toLocaleDateString('en-GB')} */}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                          {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }) : '--'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-32">
+                          {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }) : '--'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 w-28">
+                          <span className="font-medium text-blue-300">
+                            {row.workingHours || '0'}h
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 w-40">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(calculateDynamicStatus(row))}`}>
+                            {calculateDynamicStatus(row)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                }
               </tbody>
             </table>
           </div>
@@ -1018,11 +1163,13 @@ const OverallAttendanceDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {/* Loading */}
-            {isLoading ? (
-              <div className="col-span-full flex justify-center py-10">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-              </div>
-            ) : filteredData.length === 0 ? (
+            {
+            // isLoading ? (
+            //   <div className="col-span-full flex justify-center py-10">
+            //     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+            //   </div>
+            // ) :
+             filteredData.length === 0 ? (
               <div className="col-span-full text-center text-gray-400 py-10">
                 No records found
               </div>
@@ -1037,27 +1184,31 @@ const OverallAttendanceDashboard = () => {
                   {/* Header */}
                   <div className="flex justify-between items-start pb-4 border-b border-slate-700/50 mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-white capitalize">{emp.user?.FullName}</h3>
-                      <p className="text-sm text-blue-300">{emp.user?.department}</p>
+                      <h3 className="text-lg font-semibold text-white capitalize">{emp?.FullName}</h3>
+                      <p className="text-sm text-blue-300">{emp?.department}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp.alert)}`}>
-                      {emp.alert}
+                    <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp?.alert)}`}>
+                      {emp?.alert}
                     </span>
                   </div>
 
                   {/* Details */}
                   <div className="space-y-3">
-                    <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} />
+                    {/* <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} /> */}
+
+                    <CardRow label="Date" value={emp?.date
+                      ? new Date(emp.date).toLocaleDateString("en-GB")
+                      : "--"} />
                     <CardRow label="Punch In" value={emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
                     <CardRow label="Punch Out" value={emp.clockOut ? new Date(emp.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
-
+                    <CardRow label="User Name" value={emp.username || 'N/A'} />
                     {/* Hours Highlight */}
                     <div className="flex justify-between items-center bg-blue-900/20 p-3 rounded-lg border border-blue-700/20 shadow-inner">
                       <span className="text-sm text-gray-300">Hours</span>
                       <span className="text-lg font-bold text-blue-400">{emp.workingHours}h</span>
                     </div>
 
-                    <CardRow label="Shift" value={emp.shift || 'N/A'} />
+                    <CardRow label="Shift" value={emp.Shift || 'N/A'} />
                   </div>
 
                   {/* Footer */}
@@ -1107,11 +1258,11 @@ const OverallAttendanceDashboard = () => {
               }}
             >
               <div>
-                <h3 className="text-lg font-semibold text-white">
-                  {selectedCard.user?.FullName}
+                <h3 className="text-lg font-semibold text-white capitalize">
+                  {selectedCard?.FullName}
                 </h3>
                 <p className="text-sm" style={{ color: "#60A5FA" }}>
-                  {selectedCard.user?.department}
+                  {selectedCard?.department}
                 </p>
               </div>
 
@@ -1128,7 +1279,9 @@ const OverallAttendanceDashboard = () => {
             <div className="space-y-3 text-gray-200">
               <CardRow
                 label="Date"
-                value={new Date(selectedCard.date).toLocaleDateString()}
+             value={selectedCard?.date
+                      ? new Date(selectedCard.date).toLocaleDateString("en-GB")
+                      : "--"} 
               />
               <CardRow
                 label="Punch In"
@@ -1153,7 +1306,7 @@ const OverallAttendanceDashboard = () => {
                 }
               />
 
-              {/* Hours Box */}
+
               <div
                 style={{
                   display: "flex",
@@ -1170,7 +1323,7 @@ const OverallAttendanceDashboard = () => {
                 </span>
               </div>
 
-              <CardRow label="Shift" value={selectedCard.shift || "N/A"} />
+              <CardRow label="Shift" value={selectedCard.Shift || "N/A"} />
             </div>
 
             {/* Footer */}
@@ -1216,7 +1369,8 @@ const OverallAttendanceDashboard = () => {
       {/* Pagination Info */}
       <div className="mt-6 flex justify-between items-center text-sm text-gray-400">
         <div>
-          Total Records: {pagination?.total || allAttendance?.length || 0}
+          {/* Total Records: {pagination?.total || allAttendance?.length || 0} */}
+          Total Records: { departmentAttendance?.length }
         </div>
         <button
           onClick={refreshData}

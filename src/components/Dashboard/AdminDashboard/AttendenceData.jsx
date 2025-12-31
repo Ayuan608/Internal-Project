@@ -109,7 +109,6 @@ function AttendanceData({ view = "daily", data = [] }) {
       </div>
 
 
-
       {/* Late Arrivals */}
       <div className="relative bg-[rgba(234,179,8,0.05)] rounded-lg p-4 border-l-4 border-yellow-400/80 shadow-sm">
         <p className="text-xs text-slate-300 mb-1 uppercase tracking-wider">

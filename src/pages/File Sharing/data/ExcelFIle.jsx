@@ -1,40 +1,59 @@
-import React, { useState, useEffect } from "react";
-import Spreadsheet from "react-spreadsheet";
+import React, { useRef } from "react";
+import {
+  SpreadsheetComponent,
+  SheetsDirective,
+  SheetDirective,
+  RangesDirective,
+  RangeDirective,
+  ColumnsDirective,
+  ColumnDirective,
+  Inject,
+  Edit,
+  Selection,
+  Clipboard,
+  Open
+} from "@syncfusion/ej2-react-spreadsheet";
 
-function SpreadsheetEditor({ fileData }) {
+function ExcelFile() {
+  const spreadsheetRef = useRef(null);
 
-    const getInitialGrid = () => {
-        const rowCount = Math.floor(window.innerHeight / 35);
-        const colCount = Math.floor(window.innerWidth / 120);
+  return (
+    <div className="w-full h-full rounded-lg overflow-hidden border border-white/10">
+      <SpreadsheetComponent
+        ref={spreadsheetRef}
+        height="100%"
+        width="100%"
+        allowEditing={true}
+        allowOpen={true}
+        allowSave={true}
+        showRibbon={true}       // ✅ toolbar yahi se aata hai
+        showFormulaBar={true}
+      >
+        <Inject
+          services={[
+            Edit,
+            Selection,
+            Clipboard,
+            Open
+          ]}
+        />
 
-        return Array.from({ length: rowCount }, () =>
-            Array.from({ length: colCount }, () => ({ value: "" }))
-        );
-    };
+        <SheetsDirective>
+          <SheetDirective name="Sheet1">
+            <RangesDirective>
+              <RangeDirective dataSource={[]} />
+            </RangesDirective>
 
-    const [data, setData] = useState(getInitialGrid());
-
-    useEffect(() => {
-        const handleResize = () => {
-            setData(getInitialGrid());
-        };
-        window.addEventListener("resize", handleResize);
-
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
-    return (
-        <div className="w-full h-full  flex flex-col rounded-lg overflow-hidden">
-
-
-
-            <div className="flex-1 overflow-auto bg-[rgba(59,130,246,0.03)] p-2">
-                <div className="dark-spreadsheet w-full h-full">
-                    <Spreadsheet data={data} onChange={setData} />
-                </div>
-            </div>
-        </div>
-    );
+            <ColumnsDirective>
+              <ColumnDirective width={120} />
+              <ColumnDirective width={120} />
+              <ColumnDirective width={120} />
+            </ColumnsDirective>
+          </SheetDirective>
+        </SheetsDirective>
+      </SpreadsheetComponent>
+    </div>
+  );
 }
 
-export default SpreadsheetEditor;
+export default ExcelFile;

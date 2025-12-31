@@ -59,7 +59,10 @@ const statusColorMap = {
 const ManpowerStatusSection = () => {
   const dispatch = useDispatch();
   const { allAttendance, isLoading } = useSelector((state) => state.attendance);
-  
+  const { departmentAttendance = [], department } = useSelector(
+    (s) => s.attendance || {}
+  );
+
   const [selectedDept, setSelectedDept] = useState("All Departments");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [search, setSearch] = useState("");
@@ -73,8 +76,8 @@ const ManpowerStatusSection = () => {
         await dispatch(getAllAttendance({
           startDate: dateFrom || undefined,
           endDate: dateTo || undefined,
-          department: selectedDept !== "All Departments" 
-            ? selectedDept.replace(" Department", "") 
+          department: selectedDept !== "All Departments"
+            ? selectedDept.replace(" Department", "")
             : undefined,
           page: 1,
           limit: 100
@@ -86,11 +89,67 @@ const ManpowerStatusSection = () => {
     fetchData();
   }, [dispatch, dateFrom, dateTo, selectedDept]);
 
+  const parseTime = (timeStr) => {
+    const [time, modifier] = timeStr.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (modifier === "PM" && hours !== 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    return { hours, minutes };
+  };
+  //calculate shift over
+  const isShiftOver = (workingHour) => {
+ 
+    if (!workingHour) return false;
+
+    const [, endTime] = workingHour.split(" - ");
+    if (!endTime) return false;
+
+    const now = new Date();
+    const shiftEnd = new Date(now);
+
+    const [time, modifier] = endTime.trim().split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (modifier === "PM" && hours !== 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    shiftEnd.setHours(hours, minutes, 0, 0);
+
+    return now > shiftEnd;
+  };
+  //calculate is shift started
+  const isShiftStarted = (workingHour) => {
+    if (!workingHour) return false;
+
+    const [start] = workingHour.split(" - ");
+    const { hours, minutes } = parseTime(start.trim());
+
+    const now = new Date();
+    const shiftStart = new Date(now);
+    shiftStart.setHours(hours, minutes, 0, 0);
+
+    return now >= shiftStart;
+  };
+
+
+  const isToday = (date) => {
+    if (!date) return false;
+    const d = new Date(date);
+    const now = new Date();
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    );
+  };
+  
   // Convert attendance data to manpower records
   const manpowerData = useMemo(() => {
-    if (!allAttendance || !Array.isArray(allAttendance)) return [];
-    
-    return allAttendance.map((record, index) => {
+    if (!departmentAttendance || !Array.isArray(departmentAttendance)) return [];
+
+    return departmentAttendance.map((record, index) => {
       // Map attendance status to manpower status
       let manpowerStatus = "Present";
       if (record.alert === "Absent") manpowerStatus = "Absent";
@@ -100,19 +159,60 @@ const ManpowerStatusSection = () => {
       else if (record.alert === "Suspended") manpowerStatus = "Suspended";
       else if (record.alert === "Day Off") manpowerStatus = "Day Off";
       else if (record.alert === "Present" || record.alert === "Normal") manpowerStatus = "Present";
+  
+
+      const hasClockIn = Boolean(record.clockIn);
+      const hasClockOut = Boolean(record.clockOut);
+      const shiftEnded = isShiftOver(record.workingHour);
+
+      // ✅ EXACT violation rule
+      const totalViolation =
+        hasClockIn && !hasClockOut && shiftEnded ? 1 : 0;
+
+
+      // ✅ day off rule
+      const hasTodayDayOff =
+        !hasClockIn
+        ||
+        Array.isArray(record.dayOffRequests) ||
+        record.dayOffRequests.some(req => isToday(req.date));
       
+
+      const totalDayOff = hasTodayDayOff ? 1 : 0;
+      // const hasTodayDayOffRequest =
+      //   Array.isArray(record.dayOffRequests) &&
+      //   record.dayOffRequests.some(req => isToday(req.date));
+
+      // const totalDayOff =
+      //   !hasClockIn && !hasTodayDayOffRequest ? 1 : 0;
+
+      // LATE
+      const totalLate =
+        isToday(record.date) &&
+          !hasClockIn &&
+          isShiftStarted(record.workingHour) ? 1 : 0;
+
+      // STATUS OVERRIDE
+      let status = record.alert || "Present";
+      if (totalDayOff) status = "Day Off";
+      else if (totalLate) status = "Late";
+
+
+    
       return {
         id: record._id || `emp-${index}`,
         date: record.date ? new Date(record.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        department: record.user?.department ? `${record.user.department} Department` : "Unknown Department",
-        name: record.user?.FullName || "Unknown Employee",
-        status: manpowerStatus,
-        totalViolation: record.violationCount || 0,
-        totalDayOff: record.dayOffCount || 0,
+        department: record?.department ? `${record.department} Department` : "Unknown Department",
+        name: record?.FullName || "Unknown Employee",
+        status: record.status,
+        totalViolation: totalViolation,
+        totalDayOff: totalDayOff,
+        totalLate:totalLate,
         originalRecord: record
       };
     });
-  }, [allAttendance]);
+  }, [departmentAttendance]);
+
 
   // Filter data based on selected filters
   const filteredData = useMemo(() => {
@@ -130,9 +230,9 @@ const ManpowerStatusSection = () => {
       const matchSearch = !q
         ? true
         : [row.name, row.status, row.department]
-            .join(" ")
-            .toLowerCase()
-            .includes(q);
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
 
       // Date filter (inclusive)
       let matchDate = true;
@@ -143,6 +243,10 @@ const ManpowerStatusSection = () => {
     });
   }, [manpowerData, selectedDept, statusFilter, search, dateFrom, dateTo]);
 
+
+  const absentCount = filteredData.filter(r => r.status === "Absent").length;
+const lateCount = filteredData.filter(r => r.status === "Late").length;
+const dayOffCount = filteredData.filter(r => r.totalDayOff === 1).length;
   const handleExport = () => {
     const header = [
       "Date",
@@ -304,7 +408,7 @@ const ManpowerStatusSection = () => {
           <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
             <p className="text-xs text-slate-400">Day Off</p>
             <p className="text-2xl font-bold text-emerald-400">
-              {filteredData.filter(r => r.status === "Day Off").length}
+              {dayOffCount}
             </p>
           </div>
         </div>

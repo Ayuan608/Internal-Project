@@ -370,7 +370,34 @@ export const updateUserShift = createAsyncThunk(
   }
 );
 
-
+export const requestAccountDeletion = createAsyncThunk(
+  'auth/requestAccountDeletion',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post('/users/request-deletion');
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to request account deletion'
+      );
+    }
+  }
+);
+export const deleteAccount = createAsyncThunk(
+  'auth/deleteAccount',
+  async ({ password, confirmationToken }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.delete('/users/delete-account', {
+        data: { password, confirmationToken }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to delete account'
+      );
+    }
+  }
+);
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -508,8 +535,51 @@ const authSlice = createSlice({
       })
       .addCase(updateUserShift.rejected, (state, action) => {
         toast.error(action.payload || "Shift update failed!");
-      });
+      })
+      .addCase(requestAccountDeletion.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+      })
+      .addCase(requestAccountDeletion.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.deleteRequested = true;
+        state.message = action.payload.message;
+        // Store token in development only
+        if (action.payload.data?.token) {
+          state.deleteToken = action.payload.data.token;
+        }
+      })
+      .addCase(requestAccountDeletion.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload || 'Something went wrong';
+      })
 
+      // Delete Account
+      .addCase(deleteAccount.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+      })
+      .addCase(deleteAccount.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.user = null;
+        state.deleteRequested = false;
+        state.deleteToken = null;
+        state.message = action.payload.message;
+
+        // Clear local storage
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      })
+      .addCase(deleteAccount.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload || 'Failed to delete account';
+      });
 
   },
 });

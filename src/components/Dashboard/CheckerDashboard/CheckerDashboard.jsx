@@ -1,11 +1,11 @@
 // src/components/Dashboard/CheckerDashboard/CheckerDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './UI/Tabs';
-import { 
-  BarChart3, 
-  Calendar, 
-  Users, 
-  Clock, 
+import {
+  BarChart3,
+  Calendar,
+  Users,
+  Clock,
   Download,
   TrendingUp,
   AlertCircle,
@@ -28,16 +28,17 @@ import MonthlyBreakdown from './MonthlyBreakdown';
 import BreakAnalytics from './BreakAnalytics';
 import AttendanceChart from './AttendanceChart';
 import AttendanceTable from './AttendanceTable';
+import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
 
 const CheckerDashboard = () => {
   const dispatch = useDispatch();
-  const { 
-    departmentAttendance = [], 
+  const {
+    departmentAttendance = [],
     isLoading,
     department,
-    departmentCount 
+    departmentCount
   } = useSelector((state) => state.attendance);
-  
+
   console.log("✅ Checker data loaded:", {
     recordCount: departmentAttendance.length,
     department,
@@ -71,18 +72,18 @@ const CheckerDashboard = () => {
       };
     }
 
-    const presentToday = departmentAttendance.filter(user => 
+    const presentToday = departmentAttendance.filter(user =>
       user.status === "Present" || user.clockIn
     ).length;
-    
-    const absentToday = departmentAttendance.filter(user => 
+
+    const absentToday = departmentAttendance.filter(user =>
       user.status === "Absent" || !user.clockIn
     ).length;
-    
-    const lateToday = departmentAttendance.filter(user => 
+
+    const lateToday = departmentAttendance.filter(user =>
       user.alert === "Late" || user.alert === "Missed Punch"
     ).length;
-    
+
     const totalBreaks = departmentAttendance.reduce((sum, user) => {
       const breaks = user.breaks || {};
       return sum + (breaks.smoke || 0) + (breaks.wc || 0) + (breaks.lunch || 0);
@@ -101,19 +102,19 @@ const CheckerDashboard = () => {
 
   // Get unique departments
   const departments = ['all', ...new Set(departmentAttendance.map(user => user.department).filter(Boolean))];
-  
+
   // Filter data
   const filteredData = departmentAttendance.filter(user => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       user.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.department?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesDepartment = filterDepartment === 'all' || 
+
+    const matchesDepartment = filterDepartment === 'all' ||
       user.department === filterDepartment;
-    
-    const matchesStatus = filterStatus === 'all' || 
+
+    const matchesStatus = filterStatus === 'all' ||
       user.status === filterStatus;
-    
+
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
@@ -173,19 +174,9 @@ const CheckerDashboard = () => {
     }
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen  p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading Checker Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#020617]  p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -198,7 +189,7 @@ const CheckerDashboard = () => {
               {department || 'All Departments'} • {filteredData.length} employees
             </p>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => dispatch(getDepartmentWiseUsers())}
@@ -207,7 +198,7 @@ const CheckerDashboard = () => {
               <RefreshCw size={16} />
               Refresh
             </button>
-            
+
             <div className="flex items-center gap-2">
               <input
                 type="date"
@@ -223,7 +214,7 @@ const CheckerDashboard = () => {
                 className="px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-white"
               />
             </div>
-            
+
             <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium text-white transition-colors">
               <Download size={16} />
               Export
@@ -245,7 +236,7 @@ const CheckerDashboard = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex gap-3">
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={16} />
@@ -260,7 +251,7 @@ const CheckerDashboard = () => {
                 ))}
               </select>
             </div>
-            
+
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -316,7 +307,7 @@ const CheckerDashboard = () => {
       </div>
 
       {/* Main Content with Tabs */}
-      <div className="bg-slate-900/30 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden">
+      <div className=" backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="border-b border-slate-700/50">
             <TabsList className="bg-transparent p-4">
@@ -339,6 +330,10 @@ const CheckerDashboard = () => {
               <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-800">
                 <TrendingUp size={18} className="mr-2" />
                 Analytics
+              </TabsTrigger>
+              <TabsTrigger value="overallAttandance" className="data-[state=active]:bg-slate-800">
+                <TrendingUp size={18} className="mr-2" />
+                Overall Attandance
               </TabsTrigger>
             </TabsList>
           </div>
@@ -374,6 +369,10 @@ const CheckerDashboard = () => {
             <TabsContent value="analytics" className="mt-0">
               <BreakAnalytics allAttendance={filteredData} detailed={true} />
             </TabsContent>
+            <TabsContent value="overallAttandance" className="mt-0">
+              <AttendanceDashboard allAttendance={filteredData} detailed={true} />
+            </TabsContent>
+
           </div>
         </Tabs>
       </div>

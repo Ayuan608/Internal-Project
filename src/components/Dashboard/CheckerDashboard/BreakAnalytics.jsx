@@ -263,7 +263,7 @@ const BreakAnalytics = ({ detailed = false }) => {
                     stroke="#94a3b8"
                     fontSize={12}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip cursor={{ fill: "transparent" }}  content={<CustomTooltip />} />
                   <Legend />
                   <Bar dataKey="smoke" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="wc" fill="#3b82f6" radius={[4, 4, 0, 0]} />

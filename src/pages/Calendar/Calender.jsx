@@ -51,7 +51,6 @@ function CalendarPage() {
     const defaultDate = useMemo(() => selectedDate, [selectedDate]);
     useEffect(() => {
         dispatch(fetchAllEvents()).then(res => {
-            console.log("event fetched successfully");
         });
     }, [dispatch]);
 
@@ -60,13 +59,10 @@ function CalendarPage() {
         const file = e.target.files[0];
         if (file) {
             setAttachment(file);
-            console.log(file, "file uploaded");
-            setNewEvent(prev => ({ ...prev, files: [file] }));
             console.log(newEvent.files, "newEvent files");
         }
     }, []);
     useEffect(() => {
-        console.log("Updated newEvent.files:", newEvent.files);
     }, [newEvent.files]);
 
 
@@ -128,7 +124,6 @@ function CalendarPage() {
         else {
             setShowModal(false);
             const id = event?._id;
-            console.log(id, "id")
             if (!id) return console.error("Event ID is undefined!");
 
             if (window.confirm("Are you sure you want to delete this event?")) {
@@ -138,18 +133,19 @@ function CalendarPage() {
                         toast.success("Event deleted successfully")
                     )
                     .catch((err) => {
-                        console.error("Failed to delete event:", err)
                         toast.error("You haven't access to delete event")
                     });
             }
         }
     }, [dispatch, mode]);
     const handleView = useCallback((event) => {
+        if (!event || !event.title) return; 
+
         setMode("edit");
-        setActiveEventId(event.id); // 🔑 CRITICAL
+        setActiveEventId(event.id);
 
         setNewEvent({
-            title: event.title || "",
+            title: event.title,
             startDate: new Date(event.start),
             endDate: new Date(event.end),
             notes: event.notes || "",
@@ -261,18 +257,21 @@ function CalendarPage() {
                     views={[Views.MONTH]}
                     style={{ height: "90vh" }}
                     selectable
-                    // onSelectSlot={handleSelectSlot}
                     onSelectSlot={(slotInfo) => {
-                        const now = new Date();
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
 
-                        // Prevent creating events in the past
-                        if (slotInfo.start < now) {
-                            toast.error("You cannot create an event in the past");
+                        const selectedDate = new Date(slotInfo.start);
+                        selectedDate.setHours(0, 0, 0, 0);
+
+                        if (selectedDate < today) {
+                            toast.error("You cannot create an event before today");
                             return;
                         }
 
                         handleSelectSlot(slotInfo);
                     }}
+
                     onSelectEvent={handleView}
                     onNavigate={setSelectedDate}
                     popup
