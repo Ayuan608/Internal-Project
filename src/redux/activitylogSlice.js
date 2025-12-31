@@ -170,7 +170,9 @@ const activitySlice = createSlice({
             })
             .addCase(getAllActivities.fulfilled, (state, action) => {
                 state.loading = false;
-                state.activities = action.payload;
+                state.activities = Array.isArray(action.payload)
+                    ? action.payload
+                    : [];
             })
             .addCase(getAllActivities.rejected, (state, action) => {
                 state.loading = false;
@@ -183,8 +185,12 @@ const activitySlice = createSlice({
             })
             .addCase(recordLogin.fulfilled, (state, action) => {
                 state.loading = false;
-                state.activities.unshift(action.payload);
+
+                if (action.payload) {
+                    state.activities.unshift(action.payload);
+                }
             })
+
             .addCase(recordLogin.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
