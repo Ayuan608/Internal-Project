@@ -19,7 +19,7 @@ function ExcelFIle() {
                 <Search className="absolute left-3 top-2.5 w-5 h-5 text-white" />
             </div>
             <h1 className='text-xl text-white mb-4 font-semibold'>Create new Docs File</h1>
-            <div className="w-[230px] h-[200px] flex flex-col items-center bg-[#222c432b] rounded-xl p-3 ">
+            <div className="w-57.5 h-50 flex flex-col items-center bg-[#222c432b] rounded-xl p-3 ">
                 <div className="group relative h-full w-full border-2 border-dashed border-[#21A366] rounded-lg overflow-hidden cursor-pointer transition-all">
 
                     <div className="flex items-center justify-center w-full h-full">

@@ -13,7 +13,10 @@ import { activateStatus, getAllActivities, recordLogin, terminateSession } from 
 
 const ActivityLogs = () => {
   const dispatch = useDispatch();
-  const { activities } = useSelector((state) => state.activity);
+  const activities = useSelector(
+    (state) => state.activity?.activities || []
+  );
+
   const [filter, setFilter] = useState("all");
 
 
@@ -23,7 +26,7 @@ const ActivityLogs = () => {
       dispatch(getAllActivities());
     }, 30000);
     return () => clearInterval(interval);
-  }, [dispatch, filter]);
+  }, [dispatch]);
 
 
 
