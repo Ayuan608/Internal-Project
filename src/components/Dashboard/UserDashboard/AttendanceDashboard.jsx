@@ -446,6 +446,10 @@ const AttendanceDashboard = () => {
 
   // Handle Start Break - FIXED: WC और Lunch के लिए conditions सही की
   const handleStartBreak = async (breakType) => {
+      if (hasAnyActiveBreak()) {
+    toast.error("Finish current break first");
+    return;
+  }
     if (!isBreakAvailable(breakType)) {
       toast.error("You have n't any active break");
       return;
@@ -628,11 +632,10 @@ const AttendanceDashboard = () => {
   const isBreakAvailable = (breakType) => {
     if (!todayAttendance?.clockIn || todayAttendance?.clockOut) return false;
 
+    // ❌ If ANY break is active → block all
+    if (hasAnyActiveBreak()) return false;
+
     const breaksArray = todayAttendance?.[`${breakType}Breaks`] || [];
-
-
-    // ❌ If ANY break is active → block
-    if (breaksArray.some(b => b && !b.end)) return false;
 
     const maxLimits = {
       smoke: 3,
@@ -643,6 +646,7 @@ const AttendanceDashboard = () => {
     const completedBreaks = breaksArray.filter(b => b?.end).length;
     return completedBreaks < maxLimits[breakType];
   };
+
 
 
   // Handle day off submit
@@ -972,6 +976,19 @@ const AttendanceDashboard = () => {
       now
     );
   }, [now, tableData]);
+
+  const hasAnyActiveBreak = () => {
+    if (!todayAttendance) return false;
+
+    const allBreaks = [
+      ...(todayAttendance.smokeBreaks || []),
+      ...(todayAttendance.wcBreaks || []),
+      ...(todayAttendance.lunchBreaks || []),
+    ];
+
+    return allBreaks.some(b => b && !b.end);
+  };
+
 
   return (
     <div className="min-h-screen p-4 text-slate-200 bg-[#020617] ">
