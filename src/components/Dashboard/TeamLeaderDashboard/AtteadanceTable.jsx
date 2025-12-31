@@ -118,6 +118,8 @@ export default function AttendanceTable({
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentMonthInfo, setCurrentMonthInfo] = useState(getCurrentMonthYear());
+   const isRoleAccess =
+        role === "Super-Admin" || role === "Admin";
   const dispatch = useDispatch();
 
   // Update current date every day
@@ -852,9 +854,9 @@ export default function AttendanceTable({
               className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
             />
           </div>
-
+ {isRoleAccess && (
           <div className="relative p-1">
-            <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            {/* <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" /> */}
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
@@ -868,7 +870,7 @@ export default function AttendanceTable({
               ))}
             </select>
           </div>
-
+ )}
           <div className="text-sm text-slate-400 whitespace-nowrap">
             Showing {filteredEmployees.length} of {data.length} employees
           </div>
@@ -1173,7 +1175,7 @@ export default function AttendanceTable({
             style={{ left: showStatusMenu.x, top: showStatusMenu.y }}
           >
             <div className="text-xs font-semibold text-slate-300 px-3 py-2 mb-1 border-b border-slate-700">
-              Select Status - Day {showStatusMenu.dayIndex + 1}
+              Select Status - Day {showStatusMenu.dayIndex}
             </div>
             {Object.entries(FRONTEND_STATUS_MAP).map(([key, value]) => (
               <button
