@@ -1,9 +1,10 @@
 // src/components/Dashboard/CheckerDashboard/MonthlyBreakdown.jsx
-import React, { useState, useEffect } from 'react';
-import { 
-  Calendar, 
-  Users, 
-  TrendingUp, 
+import React, { useState, useEffect, useMemo } from 'react';
+
+import {
+  Calendar,
+  Users,
+  TrendingUp,
   TrendingDown,
   Download,
   Filter,
@@ -13,16 +14,17 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
-import { getAllAttendance, getAttendanceStats } from '../../../redux/attendenceSlice';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { getAllAttendance, getAttendanceStats } from '../../../redux/attendenceSlice';
 
-const MonthlyBreakdown = () => {
-  const dispatch = useDispatch();
-  const { allAttendance, isLoading } = useSelector((state) => state.attendance);
-  
+const MonthlyBreakdown = ({ allAttendance }) => {
+  console.log("allAttendanceghfh fileterddes", allAttendance)
+  // const dispatch = useDispatch();
+  // const { allAttendance, isLoading } = useSelector((state) => state.attendance);
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [viewType, setViewType] = useState('attendance'); // attendance, breaks, patterns
+  const [viewType, setViewType] = useState('attendance');
 
   // Format month for display
   const formatMonth = (date) => {
@@ -55,12 +57,25 @@ const MonthlyBreakdown = () => {
   const calculateMonthlyStats = () => {
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-    
-    const monthAttendance = allAttendance.filter(record => {
-      const recordDate = new Date(record.date);
-      return recordDate >= monthStart && recordDate <= monthEnd;
+
+    const monthAttendance = (allAttendance || []).filter(record => {
+
+      const recordDate = new Date(
+        record.date || record.createdAt || record.attendanceDate
+      );
+
+      const matchMonth =
+        recordDate >= monthStart && recordDate <= monthEnd;
+
+      const matchDepartment =
+        selectedDepartment === "all" ||
+        record.user?.department === selectedDepartment;
+
+      return matchMonth && matchDepartment;
     });
 
+
+    console.log("monthAttendance", monthAttendance)
     const stats = {
       totalDays: getDaysInMonth(currentMonth),
       workingDays: 0,
@@ -73,7 +88,7 @@ const MonthlyBreakdown = () => {
 
     // Process attendance data
     const employeeMap = {};
-    
+
     monthAttendance.forEach(record => {
       const employeeId = record.user?._id;
       if (!employeeMap[employeeId]) {
@@ -88,12 +103,12 @@ const MonthlyBreakdown = () => {
       if (record.clockIn) {
         employeeMap[employeeId].present++;
         stats.presentDays++;
-        
+
         // Check for late arrival
         const punchIn = new Date(record.clockIn);
         const lateThreshold = new Date(punchIn);
         lateThreshold.setHours(10, 30, 0, 0);
-        
+
         if (punchIn > lateThreshold) {
           employeeMap[employeeId].late++;
           stats.lateArrivals++;
@@ -104,32 +119,54 @@ const MonthlyBreakdown = () => {
       }
 
       // Count breaks
-      const breakCount = 
-        (record.smokeBreaks?.length || 0) + 
-        (record.wcBreaks?.length || 0) + 
+      const breakCount =
+        (record.smokeBreaks?.length || 0) +
+        (record.wcBreaks?.length || 0) +
         (record.lunchBreaks?.length || 0);
-      
+
       employeeMap[employeeId].breaks += breakCount;
       stats.totalBreaks += breakCount;
     });
 
     // Calculate working days (assuming 5-day work week)
     stats.workingDays = Math.floor(stats.totalDays * 5 / 7);
-    
+
     // Calculate average breaks per day
     const totalEmployees = Object.keys(employeeMap).length;
-    stats.avgBreakTime = totalEmployees > 0 ? Math.round(stats.totalBreaks / stats.workingDays) : 0;
+    stats.avgBreakTime =
+      totalEmployees > 0 && stats.workingDays > 0
+        ? Math.round(stats.totalBreaks / stats.workingDays)
+        : 0;
+
 
     return { stats, employeeMap };
   };
 
-  const { stats, employeeMap } = calculateMonthlyStats();
+  const { stats, employeeMap } = useMemo(() => {
+
+    if (!Array.isArray(allAttendance) || allAttendance.length === 0) {
+      return {
+        stats: {
+          totalDays: 0,
+          workingDays: 0,
+          presentDays: 0,
+          absentDays: 0,
+          lateArrivals: 0,
+          totalBreaks: 0,
+          avgBreakTime: 0,
+        },
+        employeeMap: {},
+      };
+    }
+
+    return calculateMonthlyStats();
+  }, [allAttendance, currentMonth, selectedDepartment]);
 
   // Generate calendar days
   const generateCalendarDays = () => {
     const daysInMonth = getDaysInMonth(currentMonth);
     const days = [];
-    
+
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         date: i,
@@ -137,7 +174,7 @@ const MonthlyBreakdown = () => {
         isWeekend: [0, 6].includes(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i).getDay())
       });
     }
-    
+
     return days;
   };
 
@@ -174,6 +211,11 @@ const MonthlyBreakdown = () => {
       change: '+8%'
     }
   ];
+  console.log("MonthlyBreakdown render", {
+    allAttendanceLength: allAttendance?.length,
+    viewType,
+    currentMonth
+  });
 
   return (
     <div className="space-y-6">
@@ -188,41 +230,38 @@ const MonthlyBreakdown = () => {
             Attendance patterns and analytics for {formatMonth(currentMonth)}
           </p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-800/50 border border-slate-700/50 rounded-lg p-1">
             <button
               onClick={() => setViewType('attendance')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewType === 'attendance' 
-                  ? 'bg-indigo-600 text-white' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewType === 'attendance'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               Attendance
             </button>
             <button
               onClick={() => setViewType('breaks')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewType === 'breaks' 
-                  ? 'bg-indigo-600 text-white' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewType === 'breaks'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               Breaks
             </button>
             <button
               onClick={() => setViewType('patterns')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewType === 'patterns' 
-                  ? 'bg-indigo-600 text-white' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewType === 'patterns'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               Patterns
             </button>
           </div>
-          
+
           <select
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
@@ -234,7 +273,7 @@ const MonthlyBreakdown = () => {
             <option value="Deposit">Deposit</option>
             <option value="Admin">Admin</option>
           </select>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={prevMonth}
@@ -249,7 +288,7 @@ const MonthlyBreakdown = () => {
               <ChevronRight size={18} />
             </button>
           </div>
-          
+
           <button className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white hover:bg-slate-700/50 transition-colors">
             <Download size={16} />
             Export
@@ -268,11 +307,10 @@ const MonthlyBreakdown = () => {
               <div className={`p-2 rounded-lg ${stat.color}`}>
                 {stat.icon}
               </div>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                stat.change.startsWith('+') 
-                  ? 'bg-emerald-500/10 text-emerald-400' 
-                  : 'bg-red-500/10 text-red-400'
-              }`}>
+              <span className={`text-xs font-medium px-2 py-1 rounded-full ${stat.change.startsWith('+')
+                ? 'bg-emerald-500/10 text-emerald-400'
+                : 'bg-red-500/10 text-red-400'
+                }`}>
                 {stat.change}
               </span>
             </div>
@@ -287,74 +325,78 @@ const MonthlyBreakdown = () => {
       </div>
 
       {/* Calendar View */}
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-slate-700/50">
-          <h3 className="text-lg font-semibold text-white mb-2">Monthly Calendar View</h3>
-          <p className="text-sm text-slate-400">Day-by-day attendance and break patterns</p>
-        </div>
-        
-        <div className="p-4">
-          {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-slate-400 py-2">
-                {day}
-              </div>
-            ))}
+      {viewType === "attendance" && (
+        <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden">
+
+          <div className="p-4 border-b border-slate-700/50">
+            <h3 className="text-lg font-semibold text-white mb-2">Monthly Calendar View</h3>
+            <p className="text-sm text-slate-400">Day-by-day attendance and break patterns</p>
           </div>
-          
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2">
-            {calendarDays.map(day => {
-              // Simulate attendance data for each day
-              const isPresent = Math.random() > 0.3;
-              const hasLate = isPresent && Math.random() > 0.7;
-              const breakCount = Math.floor(Math.random() * 5);
-              
-              return (
-                <div
-                  key={day.date}
-                  className={`min-h-24 p-2 rounded-lg border ${
-                    day.isWeekend
+
+          <div className="p-4">
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-sm font-medium text-slate-400 py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map(day => {
+                // Simulate attendance data for each day
+                const isPresent = !day.isWeekend;
+                const hasLate = false;
+                const breakCount = 0;
+
+                return (
+                  <div
+                    key={day.date}
+                    className={`min-h-24 p-2 rounded-lg border ${day.isWeekend
                       ? 'bg-slate-800/20 border-slate-700/30'
                       : 'bg-slate-800/10 border-slate-700/50'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className={`text-sm font-medium ${
-                      day.isWeekend ? 'text-red-400' : 'text-white'
-                    }`}>
-                      {day.date}
-                    </span>
-                    {isPresent && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                        ✓
+                      }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`text-sm font-medium ${day.isWeekend ? 'text-red-400' : 'text-white'
+                        }`}>
+                        {day.date}
                       </span>
-                    )}
-                  </div>
-                  
-                  {isPresent ? (
-                    <div className="space-y-1">
-                      <div className="text-xs text-slate-400">
-                        {breakCount} breaks
-                      </div>
-                      {hasLate && (
-                        <div className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
-                          Late
-                        </div>
+                      {isPresent && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                          ✓
+                        </span>
                       )}
                     </div>
-                  ) : (
-                    <div className="text-xs text-slate-500 mt-4">
-                      -
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {isPresent ? (
+                      <div className="space-y-1">
+                        <div className="text-xs text-slate-400">
+                          {breakCount} breaks
+                        </div>
+                        {hasLate && (
+                          <div className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
+                            Late
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 mt-4">
+                        -
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+
+      )
+      }
+
 
       {/* Department Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -364,7 +406,7 @@ const MonthlyBreakdown = () => {
             {['CSR', 'Withdrawal', 'Deposit', 'Admin'].map(dept => {
               const attendanceRate = Math.floor(Math.random() * 20) + 80;
               const breakCount = Math.floor(Math.random() * 50) + 20;
-              
+
               return (
                 <div key={dept} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
                   <div>
@@ -380,7 +422,7 @@ const MonthlyBreakdown = () => {
             })}
           </div>
         </div>
-        
+
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Attendance Trend</h3>
           <div className="space-y-4">
@@ -388,7 +430,7 @@ const MonthlyBreakdown = () => {
               const weekNumber = i + 1;
               const attendance = Math.floor(Math.random() * 20) + 80;
               const breaks = Math.floor(Math.random() * 30) + 10;
-              
+
               return (
                 <div key={weekNumber} className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -396,7 +438,7 @@ const MonthlyBreakdown = () => {
                     <span className="text-white font-medium">{attendance}%</span>
                   </div>
                   <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-emerald-500 rounded-full"
                       style={{ width: `${attendance}%` }}
                     />
@@ -434,7 +476,7 @@ const MonthlyBreakdown = () => {
           <span className="text-slate-300">Weekend/Holiday</span>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
