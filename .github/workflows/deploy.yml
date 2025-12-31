@@ -24,14 +24,11 @@ jobs:
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
 
           set -e
-          cd /www/wwwroot
-
-          rm -rf Internal-Project
-
-          git clone git@github.com:Ayuan608/Internal-Project.git
-          cd Internal-Project
-
+          cd /www/wwwroot/Internal-Project
+          git fetch origin
+          git reset --hard origin/main
+          git clean -fd
           npm install
           npm run build
-
+          echo "✅ Deploy successful"
           EOF
