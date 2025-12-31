@@ -885,8 +885,8 @@ export default function AttendanceTable({
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Username</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Department</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Shift</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Schedule</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Shift</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Remarks</th>
 
                 {/* Dynamic Day Headers - Current Month Days */}

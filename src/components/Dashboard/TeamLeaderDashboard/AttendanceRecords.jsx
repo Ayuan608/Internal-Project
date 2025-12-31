@@ -1,14 +1,14 @@
 import { AlertCircle, CheckCircle, Search, Calendar, Clock, Users, TrendingUp, XCircle, Coffee, LogOut, LogIn, FileText, PlusCircle, X, Send, Upload } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllAttendance, getDepartmentWiseUsers } from "./../../../redux/attendenceSlice";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { sendCaseMail } from "../../../redux/statSlice";
 import { motion } from "framer-motion";
 const AttendanceRecords = () => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedDepartment, setSelectedDepartment] = useState("All");
+    const [selectedDepartment, setSelectedDepartment] = useState("All Department");
     const [selectedRole, setSelectedRole] = useState("All");
     const [selectedPeriod, setSelectedPeriod] = useState('daily');
     const dispatch = useDispatch();
@@ -16,6 +16,10 @@ const AttendanceRecords = () => {
     const { allAttendance } = useSelector((state) => state.attendance);
     const [expandedRow, setExpandedRow] = useState(null);
     const { loading: caseLoading } = useSelector((state) => state.stat); // Get loading state
+    const role = useSelector((state) => state.auth?.role);
+
+    const isRoleAccess =
+        role === "Super-Admin" || role === "Admin";
     const attendanceData = allAttendance || [];
     const [breakModal, setBreakModal] = useState({
         open: false,
@@ -28,9 +32,18 @@ const AttendanceRecords = () => {
     const { departmentAttendance = [], department } = useSelector(
         (s) => s.attendance || {}
     );
-   
+    const [, forceUpdate] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            forceUpdate(v => v + 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
     const openBreakDetails = (type, breaks) => {
-    
+
         setBreakModal({
             open: true,
             type,
@@ -101,7 +114,7 @@ const AttendanceRecords = () => {
                         startDate: startDate || undefined,
                         endDate: endDate || undefined,
                         department:
-                            selectedDepartment !== "All" ? selectedDepartment : undefined,
+                            selectedDepartment !== "All Department" ? selectedDepartment : undefined,
                         role: selectedRole !== "All" ? selectedRole : undefined,
                         page: 1,
                         limit: 100,
@@ -137,21 +150,43 @@ const AttendanceRecords = () => {
 
 
     // 🔍 Filter Data by Search
+    // const filteredData = departmentAttendance.filter((record) => {
+    //     const name = record.user?.FullName?.toLowerCase() || "";
+    //     const department = record.user?.department?.toLowerCase() || "";
+    //     const role = record.user?.role?.toLowerCase() || "";
+    //     const search = searchTerm.toLowerCase();
+
+    //     return (
+    //         (name.includes(search) ||
+    //             department.includes(search) ||
+    //             role.includes(search)) &&
+    //         (selectedDepartment === "All" ||
+    //             record.user?.department === selectedDepartment) &&
+    //         (selectedRole === "All" || record.user?.role === selectedRole)
+    //     );
+    // });
     const filteredData = departmentAttendance.filter((record) => {
-        const name = record.user?.FullName?.toLowerCase() || "";
-        const department = record.user?.department?.toLowerCase() || "";
-        const role = record.user?.role?.toLowerCase() || "";
+        const name = record.FullName?.toLowerCase() || "";
+        const department = record.department?.toLowerCase() || "";
+        const role = record.role?.toLowerCase() || "";
         const search = searchTerm.toLowerCase();
 
-        return (
-            (name.includes(search) ||
-                department.includes(search) ||
-                role.includes(search)) &&
-            (selectedDepartment === "All" ||
-                record.user?.department === selectedDepartment) &&
-            (selectedRole === "All" || record.user?.role === selectedRole)
-        );
+        const matchesSearch =
+            name.includes(search) ||
+            department.includes(search) ||
+            role.includes(search);
+
+        const matchesDepartment =
+            selectedDepartment === "All Department" ||
+            record.department === selectedDepartment;
+
+        const matchesRole =
+            selectedRole === "All" ||
+            record.role === selectedRole;
+
+        return matchesSearch && matchesDepartment && matchesRole;
     });
+
 
     const processedData = filteredData.map((r) => {
         let updatedAlert = r.alert;
@@ -169,6 +204,18 @@ const AttendanceRecords = () => {
             alert: updatedAlert
         };
     });
+
+    const departmentOptions = useMemo(() => {
+        const set = new Set();
+   
+        filteredData.forEach(emp => {
+            if (emp?.department) {
+                set.add(emp?.department);
+            }
+        });
+
+        return ["All Department", ...Array.from(set)];
+    }, [filteredData]);
   
     // Calculate metrics
     const calculateMetrics = () => {
@@ -206,8 +253,8 @@ const AttendanceRecords = () => {
 
     const generateCaseContent = (caseType, record) => {
         const date = new Date(record.date).toLocaleDateString();
-        const name = record.user?.FullName;
-        const role = record.user?.role;
+        const name = record?.FullName;
+        const role = record?.role;
 
         const templates = {
             "Missed Punch-In": `Dear ${role} - ${name},
@@ -308,13 +355,13 @@ Team Leader`
             alert("Please select a case type!");
             return;
         }
-
+     
         // Initialize case template data
         setCaseFormData({
-            title: `${selectedCase} - ${selectedRecord.user?.FullName}`,
+            title: `${selectedCase} - ${selectedRecord?.FullName}`,
             nature: selectedCase,
             from: 'Team Leader',
-            to: `${selectedRecord.user?.role} - ${selectedRecord.user?.FullName}`,
+            to: `${selectedRecord?.role} - ${selectedRecord?.FullName}`,
             content: generateCaseContent(selectedCase, selectedRecord)
         });
 
@@ -333,7 +380,7 @@ Team Leader`
                 title: caseFormData.title,
                 nature: caseFormData.nature,
                 content: caseFormData.content,
-                recipientId: selectedRecord?.user?._id
+                recipientId: selectedRecord?._id
             })).unwrap();
 
             // Close modal and reset form
@@ -369,6 +416,7 @@ Team Leader`
             new Date(r.date).toLocaleDateString(),
             r.user?.FullName,
             r.user?.department,
+            r.workingHour,
             r.shift,
             r.clockIn ? new Date(r.clockIn).toLocaleTimeString() : "Not Punched In",
             r.clockOut ? new Date(r.clockOut).toLocaleTimeString() : "Not Punched Out",
@@ -387,6 +435,77 @@ Team Leader`
         document.body.appendChild(link);
         link.click();
     };
+    const DEPARTMENT_COLORS = {
+        'CSR': { bg: 'bg-blue-500/20', text: 'text-blue-300', border: 'border-blue-700/30' },
+        'Withdraw': { bg: 'bg-green-500/20', text: 'text-green-300', border: 'border-green-700/30' },
+        'Deposit': { bg: 'bg-purple-500/20', text: 'text-purple-300', border: 'border-purple-700/30' },
+        'Marketing': { bg: 'bg-pink-500/20', text: 'text-pink-300', border: 'border-pink-700/30' },
+        'default': { bg: 'bg-gray-500/20', text: 'text-gray-300', border: 'border-gray-700/30' }
+    };
+
+    const Shift_COLORS = {
+        Day: {
+            bg: 'bg-yellow-500/20',
+            text: 'text-yellow-300',
+            border: 'border-yellow-700/30',
+        },
+        Night: {
+            bg: 'bg-green-500/20',
+            text: 'text-green-300',
+            border: 'border-green-700/30',
+        },
+        Mid: {
+            bg: 'bg-gray-500/20',
+            text: 'text-gray-300',
+            border: 'border-gray-700/30',
+        },
+        default: {
+            bg: 'bg-slate-500/20',
+            text: 'text-slate-300',
+            border: 'border-slate-700/30',
+        },
+    };
+    const getDepartmentColor = (department) => {
+        const dept = department || '';
+        const deptKey = Object.keys(DEPARTMENT_COLORS).find(key =>
+            dept.toLowerCase().includes(key.toLowerCase())
+        );
+        return DEPARTMENT_COLORS[deptKey] || DEPARTMENT_COLORS.default;
+    };
+    const getShiftColor = (Shift) => {
+        const shift = Shift || '';
+        const shiftKey = Object.keys(Shift_COLORS).find(key =>
+            shift.toLowerCase().includes(key.toLowerCase())
+        );
+        return Shift_COLORS[shiftKey] || Shift_COLORS.default;
+    };
+
+    const getWorkingHours = (clockIn, clockOut, workingHoursFromDB) => {
+        // No clock-in
+        if (!clockIn) return "0h 0m 0s";
+
+        // Clock-in + Clock-out → use DB value, but ensure seconds
+        // Clock-in + Clock-out → ALWAYS use DB value (already has seconds)
+        if (clockIn && clockOut) {
+            return workingHoursFromDB || "0h 0m 0s";
+        }
+        // Clock-in only → live calculation
+        const start = new Date(clockIn);
+        const now = new Date();
+
+        let diffSeconds = Math.floor((now - start) / 1000);
+        diffSeconds = Math.max(0, diffSeconds);
+
+        const hours = Math.floor(diffSeconds / 3600);
+        diffSeconds %= 3600;
+
+        const minutes = Math.floor(diffSeconds / 60);
+        const seconds = diffSeconds % 60;
+
+        return `${hours}h ${minutes}m ${seconds}s`;
+    };
+
+
 
     const metrics = calculateMetrics();
 
@@ -527,17 +646,20 @@ Team Leader`
                                 />
                             </div>
 
-                            <select
-                                value={selectedDepartment}
-                                onChange={(e) => setSelectedDepartment(e.target.value)}
-                                className="px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white text-sm"
-                            >
-                                <option className="bg-slate-900" value="All">All Departments</option>
-                                <option className="bg-slate-900" value="CSR">CSR</option>
-                                <option className="bg-slate-900" value="Deposit">Deposit</option>
-                                <option className="bg-slate-900" value="Withdraw">Withdraw</option>
-                                <option className="bg-slate-900" value="Marketing">Marketing</option>
-                            </select>
+                         
+                            {isRoleAccess && (
+                                <select
+                                    value={selectedDepartment}
+                                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                                    className="h-9 rounded-lg border border-slate-700 bg-slate-900/80 pl-6 pr-3 text-xs text-slate-200 outline-none ring-0 focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                                >
+                                    {departmentOptions.map((dept) => (
+                                        <option key={dept} value={dept}>
+                                            {dept}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
 
                             {/* Search Input */}
                             <div className="relative">
@@ -595,168 +717,193 @@ Team Leader`
                             <tbody className="divide-y divide-slate-700/30">
                                 {processedData.length > 0 ? (
 
-                                    processedData.map((record, index) => (
+                                    processedData.map((record, index) => {
+                                        const deptColor = getDepartmentColor(record?.department);
 
-                                        <tr
-                                            key={index}
-                                            className="hover:bg-slate-800/30 transition-colors duration-200"
-                                        >
-                                            {/* DATE */}
+                                        const shiftColor = getShiftColor(record?.Shift);
+                                        return (
+                                            <tr
+                                                key={index}
+                                                className="hover:bg-slate-800/30 transition-colors duration-200"
+                                            >
+                                                {/* DATE */}
 
-                                            <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
-                                                {/* {new Date(record.date).toLocaleDateString()} */}
-                                                {record?.date
-                                                    ? new Date(record?.date).toLocaleDateString("en-GB")
-                                                    : "--"}
-                                            </td>
+                                                <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
+                                                    {/* {new Date(record.date).toLocaleDateString()} */}
+                                                    {record?.date
+                                                        ? new Date(record?.date).toLocaleDateString("en-GB")
+                                                        : "--"}
+                                                </td>
 
-                                            {/* NAME */}
-                                            <td className="px-6 py-4 text-sm capitalize text-white font-medium whitespace-nowrap">
-                                                {record?.FullName}
-                                            </td>
+                                                {/* NAME */}
+                                                <td className="px-6 py-4 text-sm capitalize text-white font-medium whitespace-nowrap">
+                                                    {record?.FullName}
+                                                </td>
 
-                                            {/* DEPARTMENT */}
-                                            <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
-                                                {record?.department || "N/A"}
-                                            </td>
-
-                                            {/* SHIFT */}
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-semibold border border-blue-500/30">
-                                                    {record?.Shift}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-semibold border border-blue-500/30">
-                                                    {record?.workingHours}
-                                                </span>
-                                            </td>
-
-                                            {/* CLOCK IN */}
-                                            <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
-                                                {record.clockIn ? (
-                                                    new Date(record.clockIn).toLocaleTimeString()
-                                                ) : (
-                                                    <span className="text-red-400 font-semibold">
-                                                        Not Punched In
+                                                {/* DEPARTMENT */}
+                                                <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap ">
+                                                    <span className={`px-3 py-1.5 rounded text-sm text-slate-300 whitespace-nowrap ${deptColor.bg} ${deptColor.text} border ${deptColor.border}`}>
+                                                        {record?.department || "N/A"}
                                                     </span>
-                                                )}
-                                            </td>
+                                                </td>
 
-                                            {/* CLOCK OUT */}
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                {record.clockOut ? (
-                                                    <span className="text-slate-300">
-                                                        {new Date(record.clockOut).toLocaleTimeString()}
+                                                {/* SHIFT */}
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap" >
+                                                    <span className={`px-3 py-1.5 rounded text-sm text-slate-300 whitespace-nowrap ${shiftColor.bg} ${shiftColor.text} border ${shiftColor.border}`}>
+                                                        {record?.Shift}
                                                     </span>
-                                                ) : (
-                                                    <span className="text-orange-400 font-semibold">
-                                                        Not Punched Out
+                                                </td>
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                    <span className="px-3 py-1.5 text-slate-300  rounded-lg text-xs font-semibold ">
+                                                        {record?.workingHour}
                                                     </span>
-                                                )}
-                                            </td>
+                                                </td>
 
-                                            {/* TOTAL MINUTES */}
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                <span
-                                                    className={`font-bold ${parseFloat(record.workingHours) < 6
-                                                        ? "text-yellow-400"
-                                                        : "text-green-400"
-                                                        }`}
-                                                >
-                                                    {record.workingHours}
-                                                </span>
-                                            </td>
+                                                {/* CLOCK IN */}
+                                                <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
+                                                    {record.clockIn ? (
+                                                        new Date(record.clockIn).toLocaleTimeString()
+                                                    ) : (
+                                                        <span className="text-red-400 font-semibold">
+                                                            Not Punched In
+                                                        </span>
+                                                    )}
+                                                </td>
 
-                                            {/* WC COLUMN */}
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap text-purple-300">
-                                                <button
-                                                    onClick={() =>
-                                                        openBreakDetails(
-                                                            "WC",
-                                                            record.wcBreaks,
-                                                            record.date
-                                                        )
-                                                        // openBreakDetails("WC", record?.wcBreaks?.start, record?.wcBreaks?.end, record?.date)
-                                                    }
-                                                    className="px-3 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 
-    border border-purple-500/30 rounded-lg text-xs transition"
-                                                >
-                                                    See Details
-                                                </button>
+                                                {/* CLOCK OUT */}
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                    {record.clockOut ? (
+                                                        <span className="text-slate-300">
+                                                            {new Date(record.clockOut).toLocaleTimeString()}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-orange-400 font-semibold">
+                                                            Not Punched Out
+                                                        </span>
+                                                    )}
+                                                </td>
 
-                                            </td>
-
-
-
-                                            {/* SMOKE COLUMN */}
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap text-pink-300">
-                                                <button
-                                                    onClick={() =>
-                                                        openBreakDetails(
-                                                            "SMOKE",
-                                                            record.smokeBreaks,
-                                                            record.date
-                                                        )
-                                                        // openBreakDetails("SMOKE", record?.smokeBreaks?.start, record?.smokeBreaks?.end, record?.date)
-                                                    }
-                                                    className="px-3 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 
-    border border-pink-500/30 rounded-lg text-xs transition"
-                                                >
-                                                    See Details
-                                                </button>
-
-                                            </td>
-
-
-                                            {/* LUNCH / BREAK COLUMN */}
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap text-blue-300">
-                                                <button
-                                                    onClick={() =>
-                                                        openBreakDetails(
-                                                            "LUNCH",
-                                                            record.lunchBreaks,
-                                                            record.date
-                                                        )
-                                                        //     openBreakDetails("LUNCH", record?.lunchBreaks?.start, record?.lunchBreaks?.end, record?.date)
-                                                    }
-                                                    className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 
-    border border-blue-500/30 rounded-lg text-xs transition"
-                                                >
-                                                    See Details
-                                                </button>
-
-                                            </td>
-
-
-
-                                            {/* STATUS + REPORT BUTTON */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    {/* STATUS BADGE */}
-                                                    <div
-                                                        className={`flex items-center gap-2 px-3 h-8 rounded-lg text-xs font-bold border ${getStatusColor(
-                                                            record.alert
-                                                        )}`}
+                                                {/* TOTAL MINUTES */}
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                    <span
+                                                        className={`font-bold ${parseInt(
+                                                            getWorkingHours(
+                                                                record.clockIn,
+                                                                record.clockOut,
+                                                                record.workingHours
+                                                            )
+                                                        ) < 6
+                                                            ? "text-yellow-400"
+                                                            : "text-green-400"
+                                                            }`}
                                                     >
-                                                        {getStatusIcon(record.alert)}
-                                                        <span>{record.alert}</span>
-                                                    </div>
+                                                        {getWorkingHours(
+                                                            record.clockIn,
+                                                            record.clockOut,
+                                                            record.workingHours
+                                                        )}
+                                                    </span>
+                                                    {/* <span
+                                                        className={`font-bold ${parseFloat(record.workingHours) < 6
+                                                            ? "text-yellow-400"
+                                                            : "text-green-400"
+                                                            }`}
+                                                    >
+                                                        {record.workingHours}
+                                                    </span> */}
+                                                </td>
 
-                                                    {/* REPORT BUTTON */}
+                                                {/* WC COLUMN */}
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-purple-300">
                                                     <button
-                                                        onClick={() => handleFileClick(record)}
-                                                        className="flex items-center gap-1 px-3 h-8 rounded-lg bg-gradient-to-r 
+                                                        onClick={() =>
+                                                            openBreakDetails(
+                                                                "WC",
+                                                                record.wcBreaks,
+                                                                record.date
+                                                            )
+                                                            // openBreakDetails("WC", record?.wcBreaks?.start, record?.wcBreaks?.end, record?.date)
+                                                        }
+                                                        className="px-3 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 
+    border border-purple-500/30 rounded-lg text-xs transition"
+                                                    >
+                                                        See Details
+                                                    </button>
+
+                                                </td>
+
+
+
+                                                {/* SMOKE COLUMN */}
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-pink-300">
+                                                    <button
+                                                        onClick={() =>
+                                                            openBreakDetails(
+                                                                "SMOKE",
+                                                                record.smokeBreaks,
+                                                                record.date
+                                                            )
+                                                            // openBreakDetails("SMOKE", record?.smokeBreaks?.start, record?.smokeBreaks?.end, record?.date)
+                                                        }
+                                                        className="px-3 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 
+    border border-pink-500/30 rounded-lg text-xs transition"
+                                                    >
+                                                        See Details
+                                                    </button>
+
+                                                </td>
+
+
+                                                {/* LUNCH / BREAK COLUMN */}
+                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-blue-300">
+                                                    <button
+                                                        onClick={() =>
+                                                            openBreakDetails(
+                                                                "LUNCH",
+                                                                record.lunchBreaks,
+                                                                record.date
+                                                            )
+                                                            //     openBreakDetails("LUNCH", record?.lunchBreaks?.start, record?.lunchBreaks?.end, record?.date)
+                                                        }
+                                                        className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 
+    border border-blue-500/30 rounded-lg text-xs transition"
+                                                    >
+                                                        See Details
+                                                    </button>
+
+                                                </td>
+
+
+
+                                                {/* STATUS + REPORT BUTTON */}
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* STATUS BADGE */}
+                                                        <div
+                                                            className={`flex items-center gap-2 px-3 h-8 rounded-lg text-xs font-bold border ${getStatusColor(
+                                                                record.alert
+                                                            )}`}
+                                                        >
+                                                            {getStatusIcon(record.alert)}
+                                                            <span>{record.alert}</span>
+                                                        </div>
+
+                                                        {/* REPORT BUTTON */}
+                                                        <button
+                                                            onClick={() => handleFileClick(record)}
+                                                            className="flex items-center gap-1 px-3 h-8 rounded-lg bg-gradient-to-r 
                                         from-yellow-400 to-amber-500 text-black text-xs font-semibold 
                                         hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
-                                                    >
-                                                        <FileText size={16} />
-                                                        <span>Report</span>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                        >
+                                                            <FileText size={16} />
+                                                            <span>Report</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>)
+
+                                    }
+                                    )
                                 ) : (
                                     <tr>
                                         <td
@@ -912,7 +1059,7 @@ Team Leader`
                     <div className="bg-[rgba(59,130,246,0.03)] backdrop-blur-md text-white rounded-xl shadow-2xl p-6 w-full max-w-md border border-gray-800">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-semibold">
-                                Create Case - {selectedRecord?.user?.FullName}
+                                Create Case - {selectedRecord?.FullName}
                             </h2>
                             <button
                                 onClick={() => setIsFilingModalOpen(false)}
