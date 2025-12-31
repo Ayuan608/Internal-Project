@@ -1,11 +1,11 @@
 // src/components/Dashboard/CheckerDashboard/WCBreakHistory.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  Coffee, 
-  Utensils, 
+import {
+  Search,
+  Filter,
+  Download,
+  Coffee,
+  Utensils,
   Droplets,
   Clock,
   AlertCircle,
@@ -13,12 +13,13 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllAttendance } from '../../../redux/attendenceSlice';
+// import { getAllAttendance } from '../../../redux/attendenceSlice';
 
-const WCBreakHistory = ({ detailed = false }) => {
-  const dispatch = useDispatch();
-  const { allAttendance, isLoading } = useSelector((state) => state.attendance);
-  
+const WCBreakHistory = ({ allAttendance, detailed = false }) => {
+  console.log("attendences", allAttendance)
+  // const dispatch = useDispatch();
+  // const { allAttendance, isLoading } = useSelector((state) => state.attendance);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBreakType, setFilterBreakType] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -37,7 +38,7 @@ const WCBreakHistory = ({ detailed = false }) => {
 
   const processBreakData = (attendance) => {
     const breaks = [];
-    
+
     attendance.forEach(record => {
       const employeeBreaks = [
         ...(record.smokeBreaks || []).map(b => ({
@@ -62,10 +63,10 @@ const WCBreakHistory = ({ detailed = false }) => {
           date: record.date
         }))
       ];
-      
+
       breaks.push(...employeeBreaks);
     });
-    
+
     return breaks;
   };
 
@@ -96,18 +97,20 @@ const WCBreakHistory = ({ detailed = false }) => {
   };
 
   const filteredBreaks = breakData.filter(breakItem => {
-    const matchesSearch = 
+    const matchesSearch =
       breakItem.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       breakItem.department?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesBreakType = 
+
+    const matchesBreakType =
       filterBreakType === 'all' || breakItem.type === filterBreakType;
-    
-    const matchesDepartment = 
+
+    const matchesDepartment =
       filterDepartment === 'all' || breakItem.department === filterDepartment;
-    
+
     return matchesSearch && matchesBreakType && matchesDepartment;
   });
+
+  console.log("filteredBreaks", filteredBreaks)
 
   const toggleRow = (id) => {
     setExpandedRows(prev => ({
@@ -151,7 +154,7 @@ const WCBreakHistory = ({ detailed = false }) => {
             Track all break activities across departments
           </p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
@@ -163,7 +166,7 @@ const WCBreakHistory = ({ detailed = false }) => {
               className="pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 w-full md:w-64"
             />
           </div>
-          
+
           <select
             value={filterBreakType}
             onChange={(e) => setFilterBreakType(e.target.value)}
@@ -174,7 +177,7 @@ const WCBreakHistory = ({ detailed = false }) => {
             <option value="wc">WC</option>
             <option value="lunch">Lunch</option>
           </select>
-          
+
           <select
             value={filterDepartment}
             onChange={(e) => setFilterDepartment(e.target.value)}
@@ -185,7 +188,7 @@ const WCBreakHistory = ({ detailed = false }) => {
             <option value="Withdrawal">Withdrawal</option>
             <option value="Deposit">Deposit</option>
           </select>
-          
+
           {detailed && (
             <button className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-white hover:bg-slate-700/50 transition-colors">
               <Download size={16} />
@@ -209,7 +212,7 @@ const WCBreakHistory = ({ detailed = false }) => {
             Total time: {stats.smoke.totalTime}m
           </div>
         </div>
-        
+
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -222,7 +225,7 @@ const WCBreakHistory = ({ detailed = false }) => {
             Total time: {stats.wc.totalTime}m
           </div>
         </div>
-        
+
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -272,7 +275,7 @@ const WCBreakHistory = ({ detailed = false }) => {
               {filteredBreaks.length > 0 ? (
                 filteredBreaks.map((breakItem, index) => (
                   <React.Fragment key={index}>
-                    <tr 
+                    <tr
                       className="hover:bg-slate-700/30 transition-colors cursor-pointer"
                       onClick={() => toggleRow(index)}
                     >
@@ -303,7 +306,7 @@ const WCBreakHistory = ({ detailed = false }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                        {breakItem.start 
+                        {breakItem.start
                           ? new Date(breakItem.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                           : 'N/A'
                         }
@@ -320,11 +323,10 @@ const WCBreakHistory = ({ detailed = false }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                          breakItem.end 
-                            ? 'bg-emerald-500/10 text-emerald-400' 
-                            : 'bg-amber-500/10 text-amber-400'
-                        }`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${breakItem.end
+                          ? 'bg-emerald-500/10 text-emerald-400'
+                          : 'bg-amber-500/10 text-amber-400'
+                          }`}>
                           {breakItem.end ? 'Completed' : 'Active'}
                         </span>
                       </td>
@@ -334,7 +336,7 @@ const WCBreakHistory = ({ detailed = false }) => {
                         </td>
                       )}
                     </tr>
-                    
+
                     {expandedRows[index] && (
                       <tr className="bg-slate-800/20">
                         <td colSpan={detailed ? 7 : 6} className="px-6 py-4">
