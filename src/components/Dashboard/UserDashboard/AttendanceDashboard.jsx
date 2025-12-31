@@ -76,6 +76,7 @@ const AttendanceDashboard = () => {
   const [showDayOffModal, setShowDayOffModal] = useState(false);
   const [hiddenTimerType, setHiddenTimerType] = useState(null)
   const [showAbsentModal, setShowAbsentModal] = useState(false);
+  const [liveWorkingTime, setLiveWorkingTime] = useState("0h 0m 0s");
 
 
 
@@ -480,6 +481,10 @@ const AttendanceDashboard = () => {
 
       toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break started`);
 
+      setActiveTimer({
+        type: breakType,      // "smoke"
+        startTime: Date.now()
+      });
       // Refresh data - FIXED: Immediate refresh without timeout
       await Promise.all([
         dispatch(getTodayBreaks(userId)),
@@ -892,34 +897,7 @@ const AttendanceDashboard = () => {
 
 
   // Converts "05:00 AM", "5:00 PM" → Date (today)
-  function parseTimeStringToDate(timeStr, baseDate) {
-    if (!timeStr) return null;
 
-    const clean = timeStr.replace(/\s+/g, " ").trim().toUpperCase();
-    const [time, meridian] = clean.split(" ");
-
-    let [h, m] = time.split(":").map(Number);
-
-    if (meridian === "PM" && h !== 12) h += 12;
-    if (meridian === "AM" && h === 12) h = 0;
-
-    const d = new Date(baseDate);
-    d.setHours(h, m, 0, 0);
-    return d;
-  }
-
-  function parsePunchIn(punchIn, attendanceDate) {
-    return parseTimeStringToDate(punchIn, attendanceDate);
-  }
-
-
-  function formatDuration(seconds) {
-    const s = Math.max(0, Math.floor(seconds));
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    return `${h}h ${m}m ${sec}s`;
-  }
   const [now, setNow] = useState(getPHNow());
 
   useEffect(() => {
@@ -931,51 +909,6 @@ const AttendanceDashboard = () => {
   }, []);
 
 
-  function calculateLiveRemainingTime(
-    shiftRange,
-    punchIn,
-    attendanceDate,
-    now
-  ) {
-    if (!shiftRange?.includes(" - ")) return "0h 0m 0s";
-
-    const [startStr, endStr] = shiftRange.split(" - ");
-
-    const shiftStart = parseTimeStringToDate(startStr, attendanceDate);
-    let shiftEnd = parseTimeStringToDate(endStr, attendanceDate);
-
-    if (shiftEnd <= shiftStart) {
-      shiftEnd.setDate(shiftEnd.getDate() + 1);
-    }
-
-    const clockIn = parsePunchIn(punchIn, attendanceDate);
-    if (!clockIn) return "0h 0m 0s";
-
-    const effectiveStart = new Date(
-      Math.max(shiftStart.getTime(), clockIn.getTime())
-    );
-
-    if (now < effectiveStart) {
-      return formatDuration((shiftEnd - effectiveStart) / 1000);
-    }
-
-    if (now >= shiftEnd) return "0h 0m 0s";
-
-    return formatDuration((shiftEnd - now) / 1000);
-  }
-
-
-
-  const liveTimeLeft = useMemo(() => {
-    if (!tableData?.[0]?.fullRecord?.actualWorkingHours) return "—";
-
-    return calculateLiveRemainingTime(
-      tableData[0].fullRecord.actualWorkingHours,
-      tableData[0].punchIn,
-      tableData[0].fullRecord.date,
-      now
-    );
-  }, [now, tableData]);
 
   const hasAnyActiveBreak = () => {
     if (!todayAttendance) return false;
@@ -989,6 +922,55 @@ const AttendanceDashboard = () => {
     return allBreaks.some(b => b && !b.end);
   };
 
+
+  useEffect(() => {
+    if (!todayAttendance?.clockIn) {
+      setLiveWorkingTime("0h 0m 0s");
+      return;
+    }
+
+    const start = new Date(todayAttendance.clockIn).getTime();
+
+    const interval = setInterval(() => {
+      const end = todayAttendance.clockOut
+        ? new Date(todayAttendance.clockOut).getTime()
+        : Date.now();
+
+      const diff = Math.max(0, end - start);
+      const sec = Math.floor(diff / 1000);
+
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+
+      setLiveWorkingTime(`${h}h ${m}m ${s}s`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [todayAttendance?.clockIn, todayAttendance?.clockOut]);
+
+  useEffect(() => {
+    console.log("ACTIVE TIMER:", activeTimer);
+  }, [activeTimer]);
+
+
+  useEffect(() => {
+    if (!todayAttendance) return;
+
+    const smoke = todayAttendance.smokeBreaks?.find(b => !b.end);
+    const wc = todayAttendance.wcBreaks?.find(b => !b.end);
+    const lunch = todayAttendance.lunchBreaks?.find(b => !b.end);
+
+    if (smoke) {
+      setActiveTimer({ type: "smoke", startTime: smoke.start });
+    } else if (wc) {
+      setActiveTimer({ type: "wc", startTime: wc.start });
+    } else if (lunch) {
+      setActiveTimer({ type: "lunch", startTime: lunch.start });
+    } else {
+      setActiveTimer(null);
+    }
+  }, [todayAttendance]);
 
   return (
     <div className="min-h-screen p-4 text-slate-200 bg-[#020617] ">
@@ -1052,15 +1034,15 @@ const AttendanceDashboard = () => {
               </button>
             </div>
             <div className="flex justify-end pt-4">
-              {liveTimeLeft ? <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
-                Time Left:
-                <span className="font-mono">{liveTimeLeft}</span>
-              </div> : <div className='flex justify-center items-baseline-last gap-2'>
-                <Clock size={12} />
-                Time Left:
-                <span className="font-mono">-</span>
-              </div>}
+              <div className="flex items-center gap-2 text-sm">
+                <Clock size={14} />
+                <span className="text-slate-400">Working Time:</span>
+                <span className="font-mono text-slate-100">
+                  {liveWorkingTime}
+                </span>
+              </div>
             </div>
+
           </div>
 
         </div>
@@ -1226,33 +1208,46 @@ const AttendanceDashboard = () => {
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div
-              onClick={() => handleStartBreak('smoke')}
-              disabled={!isBreakAvailable('smoke')}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('smoke')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500"
-                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+              onClick={() => isBreakAvailable('smoke') && handleStartBreak('smoke')}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all
+  ${activeTimer?.type === 'smoke'
+                  ? "border border-yellow-600 bg-yellow-600 text-slate-900"
+                  : !isBreakAvailable('smoke')
+                    ? "border border-slate-700 bg-slate-900/50 text-slate-500"
+                    : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
+
             >
               <Coffee size={16} />
               <span>Smoke Break ({breakCounts.smoke}/3 • 5m)</span>
-              {hiddenTimerType === 'smoke' && <button
-                onClick={handleShowTimer}
-                className="ms-4 rounded-xl px-2 py-1 text-sm border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:border-slate-400 transition-all text-xs"
-              >
-                Show Timer
-              </button>
-              }
+
+              {hiddenTimerType === 'smoke' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowTimer();
+                  }}
+                  className="ms-4 rounded-xl px-2 py-1 text-xs border border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                >
+                  Show Timer
+                </button>
+              )}
             </div>
+
 
 
 
             <div
               onClick={() => handleStartBreak('wc')}
               disabled={!isBreakAvailable('wc')}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('wc')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 "
-                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all
+  ${activeTimer?.type === 'wc'
+                  ? "border border-yellow-600 bg-yellow-600 text-slate-900"
+                  : !isBreakAvailable('wc')
+                    ? "border border-slate-700 bg-slate-900/50 text-slate-500"
+                    : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
+
             >
               <Droplets size={16} />
               <span>WC Break ({breakCounts.wc}/3 • 5m)</span>
@@ -1268,10 +1263,14 @@ const AttendanceDashboard = () => {
             <div
               onClick={() => handleStartBreak('lunch')}
               disabled={!isBreakAvailable('lunch')}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all ${!isBreakAvailable('lunch')
-                ? "border border-slate-700 bg-slate-900/50 text-slate-500 "
-                : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all
+  ${activeTimer?.type === 'lunch'
+                  ? "border border-yellow-600 bg-yellow-600 text-slate-900"
+                  : !isBreakAvailable('lunch')
+                    ? "border border-slate-700 bg-slate-900/50 text-slate-500"
+                    : "border border-slate-700 bg-slate-950/70 text-slate-100 hover:bg-slate-800 hover:border-slate-500"
                 }`}
+
             >
               <Utensils size={16} />
               <span>Lunch Break ({breakCounts.lunch}/2 • 30m)</span>
@@ -1285,6 +1284,7 @@ const AttendanceDashboard = () => {
             </div>
 
           </div>
+
         </div>
 
         {/* Debug Info */}
