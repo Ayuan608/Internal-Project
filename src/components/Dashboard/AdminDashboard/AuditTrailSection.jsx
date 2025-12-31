@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { 
-  Download, Search, Filter, Calendar, User, Settings, FileText, 
-  Shield, AlertCircle, CheckCircle, XCircle, Clock, Mail, Users, 
+import {
+  Download, Search, Filter, Calendar, User, Settings, FileText,
+  Shield, AlertCircle, CheckCircle, XCircle, Clock, Mail, Users,
   FileUp, FileDown, Bell, Key,
-  WifiOff, Stethoscope, Home, Building, Database, Upload, 
+  WifiOff, Stethoscope, Home, Building, Database, Upload,
   Trash2, Edit, Send, Eye, FileCheck, CalendarDays
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,10 +19,10 @@ const AuditTrailSection = () => {
   const [departmentFilter, setDepartmentFilter] = useState("All Departments");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Get data from Redux - Dynamic from backend
   const { auditTrails = [], loading = false } = useSelector(state => state.auditTrail || {});
-
+  console.log(auditTrails)
   useEffect(() => {
     dispatch(getAuditTrail());
   }, [dispatch]);
@@ -39,7 +39,7 @@ const AuditTrailSection = () => {
   // Extract all unique event types from backend data
   const eventTypeOptions = useMemo(() => {
     if (!auditTrails || auditTrails.length === 0) return ["All Events"];
-    const events = new Set(auditTrails.map(log => 
+    const events = new Set(auditTrails.map(log =>
       log.eventType || log.details || log.action || "Unknown"
     ));
     return ["All Events", ...Array.from(events).sort()];
@@ -48,7 +48,7 @@ const AuditTrailSection = () => {
   // Extract all unique departments from backend data
   const departmentOptions = useMemo(() => {
     if (!auditTrails || auditTrails.length === 0) return ["All Departments"];
-    const depts = new Set(auditTrails.map(log => 
+    const depts = new Set(auditTrails.map(log =>
       log.department || log.actorRole || log.role || "Unknown"
     ));
     return ["All Departments", ...Array.from(depts).sort()];
@@ -57,7 +57,7 @@ const AuditTrailSection = () => {
   // Extract all unique users from backend data
   const actorOptions = useMemo(() => {
     if (!auditTrails || auditTrails.length === 0) return ["All Users"];
-    const users = new Set(auditTrails.map(log => 
+    const users = new Set(auditTrails.map(log =>
       log.userName || log.actorName || log.user || "Unknown"
     ));
     return ["All Users", ...Array.from(users).sort()];
@@ -69,7 +69,7 @@ const AuditTrailSection = () => {
     try {
       const date = new Date(timestamp);
       if (isNaN(date.getTime())) return timestamp;
-      
+
       // Convert to Philippines time (UTC+8)
       const phTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
       return phTime.toISOString().replace('T', ' ').slice(0, 19);
@@ -82,7 +82,7 @@ const AuditTrailSection = () => {
   const getEventConfig = (eventType, module) => {
     const eventStr = String(eventType || "").toLowerCase();
     const moduleStr = String(module || "").toLowerCase();
-    
+
     // Priority: Specific event types first
     if (eventStr.includes("sick") || eventStr.includes("medical")) {
       return {
@@ -92,7 +92,7 @@ const AuditTrailSection = () => {
         typeLabel: "Sick Leave"
       };
     }
-    
+
     if (eventStr.includes("internet") || eventStr.includes("network") || eventStr.includes("wifi")) {
       return {
         icon: <WifiOff className="h-4 w-4" />,
@@ -101,7 +101,7 @@ const AuditTrailSection = () => {
         typeLabel: "Internet Issue"
       };
     }
-    
+
     if (eventStr.includes("warning") || eventStr.includes("letter")) {
       return {
         icon: <AlertCircle className="h-4 w-4" />,
@@ -110,7 +110,7 @@ const AuditTrailSection = () => {
         typeLabel: "Warning Letter"
       };
     }
-    
+
     if (eventStr.includes("dayoff") || eventStr.includes("leave") || eventStr.includes("vacation")) {
       return {
         icon: <Sun className="h-4 w-4" />,
@@ -119,7 +119,7 @@ const AuditTrailSection = () => {
         typeLabel: "Day Off"
       };
     }
-    
+
     if (eventStr.includes("shift") || eventStr.includes("schedule")) {
       return {
         icon: <Shift className="h-4 w-4" />,
@@ -128,7 +128,7 @@ const AuditTrailSection = () => {
         typeLabel: "Shift Change"
       };
     }
-    
+
     if (eventStr.includes("export") || eventStr.includes("download")) {
       return {
         icon: <Download className="h-4 w-4" />,
@@ -137,7 +137,7 @@ const AuditTrailSection = () => {
         typeLabel: "Export"
       };
     }
-    
+
     if (eventStr.includes("delete") || eventStr.includes("remove")) {
       return {
         icon: <Trash2 className="h-4 w-4" />,
@@ -146,7 +146,7 @@ const AuditTrailSection = () => {
         typeLabel: "Deletion"
       };
     }
-    
+
     if (eventStr.includes("create") || eventStr.includes("add")) {
       return {
         icon: <FileUp className="h-4 w-4" />,
@@ -155,7 +155,7 @@ const AuditTrailSection = () => {
         typeLabel: "Creation"
       };
     }
-    
+
     if (eventStr.includes("update") || eventStr.includes("edit")) {
       return {
         icon: <Edit className="h-4 w-4" />,
@@ -164,7 +164,7 @@ const AuditTrailSection = () => {
         typeLabel: "Update"
       };
     }
-    
+
     if (eventStr.includes("report") || moduleStr.includes("report")) {
       return {
         icon: <ReportMedical className="h-4 w-4" />,
@@ -173,7 +173,7 @@ const AuditTrailSection = () => {
         typeLabel: "Report"
       };
     }
-    
+
     if (eventStr.includes("attendance") || moduleStr.includes("attendance")) {
       return {
         icon: <Clock className="h-4 w-4" />,
@@ -182,7 +182,7 @@ const AuditTrailSection = () => {
         typeLabel: "Attendance"
       };
     }
-    
+
     if (eventStr.includes("backup") || moduleStr.includes("backup")) {
       return {
         icon: <Database className="h-4 w-4" />,
@@ -191,7 +191,7 @@ const AuditTrailSection = () => {
         typeLabel: "Backup"
       };
     }
-    
+
     if (eventStr.includes("contact") || moduleStr.includes("contact")) {
       return {
         icon: <Users className="h-4 w-4" />,
@@ -200,7 +200,7 @@ const AuditTrailSection = () => {
         typeLabel: "Contact"
       };
     }
-    
+
     // Default based on module
     if (moduleStr.includes("csr") || moduleStr.includes("team")) {
       return {
@@ -210,7 +210,7 @@ const AuditTrailSection = () => {
         typeLabel: "CSR Team"
       };
     }
-    
+
     if (moduleStr.includes("admin") || moduleStr.includes("super")) {
       return {
         icon: <Shield className="h-4 w-4" />,
@@ -219,7 +219,7 @@ const AuditTrailSection = () => {
         typeLabel: "Admin"
       };
     }
-    
+
     // Ultimate fallback
     return {
       icon: <Settings className="h-4 w-4" />,
@@ -233,7 +233,7 @@ const AuditTrailSection = () => {
   const getUserConfig = (userName, role) => {
     const name = String(userName || "").toLowerCase();
     const roleStr = String(role || "").toLowerCase();
-    
+
     if (name.includes("sung") || roleStr.includes("super admin")) {
       return {
         avatarColor: "bg-gradient-to-r from-purple-600 to-indigo-600",
@@ -242,8 +242,8 @@ const AuditTrailSection = () => {
         icon: <Shield className="h-4 w-4" />
       };
     }
-    
-    if (name.includes("ra") || roleStr.includes("team leader")) {
+
+    if (name.includes("ra") || roleStr.includes("Team-Leader")) {
       return {
         avatarColor: "bg-gradient-to-r from-blue-600 to-cyan-600",
         textColor: "text-blue-300",
@@ -251,7 +251,7 @@ const AuditTrailSection = () => {
         icon: <Users className="h-4 w-4" />
       };
     }
-    
+
     if (name.includes("chandan") || roleStr.includes("checker")) {
       return {
         avatarColor: "bg-gradient-to-r from-green-600 to-emerald-600",
@@ -260,8 +260,8 @@ const AuditTrailSection = () => {
         icon: <FileCheck className="h-4 w-4" />
       };
     }
-    
-    if (name.includes("lakh") || roleStr.includes("admin")) {
+
+    if (name.includes("lakh") || roleStr.includes("Admin")) {
       return {
         avatarColor: "bg-gradient-to-r from-gray-600 to-slate-600",
         textColor: "text-gray-300",
@@ -269,7 +269,7 @@ const AuditTrailSection = () => {
         icon: <Settings className="h-4 w-4" />
       };
     }
-    
+
     if (roleStr.includes("csr")) {
       return {
         avatarColor: "bg-gradient-to-r from-cyan-600 to-blue-500",
@@ -278,7 +278,7 @@ const AuditTrailSection = () => {
         icon: <User className="h-4 w-4" />
       };
     }
-    
+
     // Default
     return {
       avatarColor: "bg-gradient-to-r from-slate-600 to-gray-600",
@@ -291,14 +291,14 @@ const AuditTrailSection = () => {
   // Filter logs dynamically
   const filteredLogs = useMemo(() => {
     if (!auditTrails || auditTrails.length === 0) return [];
-    
+
     return auditTrails.filter((log) => {
       // Extract date
       let logDate;
       try {
         const dateObj = new Date(log.timestamp || log.date || log.createdAt);
-        logDate = !isNaN(dateObj.getTime()) 
-          ? dateObj.toISOString().slice(0, 10) 
+        logDate = !isNaN(dateObj.getTime())
+          ? dateObj.toISOString().slice(0, 10)
           : (log.timestamp || log.date || "").slice(0, 10);
       } catch {
         logDate = (log.timestamp || log.date || "").slice(0, 10);
@@ -353,40 +353,40 @@ const AuditTrailSection = () => {
     const user = log.userName || log.actorName || "";
     const dept = log.department || log.actorRole || "";
     const details = log.details || log.description || "";
-    
+
     // Custom remarks based on content
     if (details.includes("sick") || eventType.includes("SICK")) {
       return `🚑 ${user} marked sick leave - Medical case reported`;
     }
-    
+
     if (details.includes("internet") || eventType.includes("INTERNET")) {
       return `📶 ${user} reported internet connectivity issues`;
     }
-    
+
     if (details.includes("warning letter") || eventType.includes("WARNING")) {
       return `⚠️ ${user} issued warning letter to ${target}`;
     }
-    
+
     if (details.includes("day off") || eventType.includes("DAYOFF")) {
       return `🌴 ${user} approved day off for ${target}`;
     }
-    
+
     if (details.includes("shift change") || eventType.includes("SHIFT")) {
       return `🔄 ${user} changed shift schedule for ${target}`;
     }
-    
+
     if (details.includes("export") || eventType.includes("EXPORT")) {
       return `📥 ${user} exported ${target} data`;
     }
-    
+
     if (details.includes("backup")) {
       return `💾 ${user} performed backup operation`;
     }
-    
+
     if (details.includes("CSR") || dept.includes("CSR")) {
       return `👥 ${user} performed CSR team operation: ${eventType}`;
     }
-    
+
     // Generic remark
     return `${user} performed ${eventType} in ${module} module`;
   };
@@ -409,7 +409,7 @@ const AuditTrailSection = () => {
       "Remarks",
       "Status"
     ];
-    
+
     const rows = filteredLogs.map((log) => [
       convertToPhilippineTime(log.timestamp || log.date || log.createdAt),
       log.userName || log.actorName || "Unknown",
@@ -452,7 +452,7 @@ const AuditTrailSection = () => {
   // Render event label dynamically
   const renderEventLabel = (eventType) => {
     if (!eventType) return "Unknown Event";
-    
+
     // Convert to readable format
     return eventType
       .replace(/_/g, ' ')
@@ -713,8 +713,8 @@ const AuditTrailSection = () => {
                           <Database className="h-8 w-8 text-slate-600" />
                         </div>
                         <p className="text-sm font-medium text-slate-500">
-                          {auditTrails.length === 0 
-                            ? "No audit records available from backend" 
+                          {auditTrails.length === 0
+                            ? "No audit records available from backend"
                             : "No records match the current filters"}
                         </p>
                         {auditTrails.length > 0 && (
@@ -747,7 +747,7 @@ const AuditTrailSection = () => {
                       log.module || log.action
                     );
                     const remark = generateRemark(log);
-                    
+
                     return (
                       <tr
                         key={log.id || `${log.timestamp}-${log.userName}`}
@@ -768,15 +768,27 @@ const AuditTrailSection = () => {
                         </Td>
                         <Td>
                           <div className="flex items-center gap-3">
-                          
+
                             <div>
-                              <div className={`text-sm font-semibold capitalize ${userConfig.textColor}`}>
-                                {log.userName || log.actorName || "Unknown"}
+                              {/* Name + Role (single line) */}
+                              <div
+                                className={`text-sm font-semibold ${userConfig.textColor} whitespace-nowrap flex items-center gap-1`}
+                              >
+                                <span className="truncate">
+                                  {log?.userId?.name || log?.userName || log?.actorName || "Unknown"}
+                                </span>
+                                <span className="text-xs opacity-70 shrink-0">
+                                  ({log?.userId?.role || log?.actorRole || log?.role || "N/A"})
+                                </span>
                               </div>
-                              <div className={`text-xs ${userConfig.roleColor}`}>
-                                {log.department || log.actorRole || log.role || "Unknown"}
+
+                              {/* Department */}
+                              <div className={`text-xs mt-0.5 ${userConfig.roleColor}`}>
+                                {log?.userId?.department || "Unknown Department"}
                               </div>
                             </div>
+
+
                           </div>
                         </Td>
                         <Td>
@@ -791,8 +803,8 @@ const AuditTrailSection = () => {
                           </div>
                         </Td>
                         <Td>
-                          <div className="max-w-xs truncate text-sm font-medium text-slate-300" 
-                               title={log.target || log.entityLabel || log.entity || ""}>
+                          <div className="max-w-xs truncate text-sm font-medium text-slate-300"
+                            title={log.target || log.entityLabel || log.entity || ""}>
                             {log.target || log.entityLabel || log.entity || "N/A"}
                           </div>
                           <div className="text-xs text-slate-500 truncate">
@@ -805,8 +817,8 @@ const AuditTrailSection = () => {
                           </div>
                         </Td>
                         <Td>
-                          <div className="max-w-lg text-sm text-slate-400" 
-                               title={log.details || log.description || ""}>
+                          <div className="max-w-lg text-sm text-slate-400"
+                            title={log.details || log.description || ""}>
                             {log.details || log.description || "No details provided"}
                           </div>
                         </Td>
@@ -832,7 +844,7 @@ const AuditTrailSection = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-green-500/20 p-2">
@@ -844,7 +856,7 @@ const AuditTrailSection = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-purple-500/20 p-2">
@@ -856,7 +868,7 @@ const AuditTrailSection = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-cyan-500/20 p-2">

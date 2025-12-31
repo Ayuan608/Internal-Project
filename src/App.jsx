@@ -9,7 +9,7 @@ import {
   RequireAuth,
   Denied,
   Dashboard,
-  Setting,
+  Settings,
   UserDashboard,
   CheckerDashboard,
   DailyTimeRecord,
@@ -48,7 +48,7 @@ function App() {
   return (
     <Suspense fallback={<NoLoader />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/login"  />} />
 
         {/* PUBLIC ROUTES */}
         <Route element={<NotRequireAuth />}>
@@ -69,7 +69,7 @@ function App() {
             <Route path="overallAttendance" element={<OverallAttendance />} />
             <Route path="activityLogs" element={<ActivityLogs />} />
             <Route path="attendancerecords" element={<AttendanceRecords />} />
-            <Route path="setting" element={<Setting />} />
+            <Route path="setting" element={<Settings />} />
             <Route path="login" element={<LoginCredentials />} />
             <Route path="storage" element={<Storage />} />
             <Route path="calender" element={<Calender />} />
@@ -88,7 +88,7 @@ function App() {
             <Route path="directory" element={<Admin />} />
             <Route path="data-storage" element={<DataStoragePage />} />
             <Route path="announcement" element={<Announcement />} />
-            <Route path="setting" element={<Setting />} />
+            <Route path="setting" element={<Settings />} />
             <Route path="report" element={<CheckReport />} />
             <Route path="file-sharing" element={<FileSharing />} />
             <Route path="calender" element={<Calender />} />
@@ -111,7 +111,6 @@ function App() {
             <Route path="non-quotamember" element={<NonQuotaDepartment />} />
             <Route path="attendancerecords" element={<AttendanceRecords />} />
             <Route path="Performance" element={<Performance />} />
-            <Route path="setting" element={<Setting />} />
             <Route path="attandance" element={<UserDashboard />} />
             <Route path="leave-request" element={<LeaveRequest />} />
             <Route path="report" element={<CheckReport />} />
@@ -130,7 +129,6 @@ function App() {
             <Route path="daily-time-record" element={<DailyTimeRecord />} />
             <Route path="performance" element={<PerformanceDashboard />} />
             <Route path="announcement" element={<Announcement />} />
-            <Route path="setting" element={<Setting />} />
             <Route path="DayOffRequestsPage" element={<DayOffRequestsPage />} />
             <Route path="calender" element={<Calender />} />
             <Route path="report" element={<UserReport />} />
@@ -142,7 +140,6 @@ function App() {
           <Route path="/checker" element={<Layout />}>
             <Route index element={<CheckerDashboard />} />
             <Route path="report" element={<CheckReport />} />
-            <Route path="setting" element={<Setting />} />
             <Route path="storage" element={<Storage />} />
           </Route>
         </Route>

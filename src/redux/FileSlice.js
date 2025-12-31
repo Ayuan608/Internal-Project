@@ -45,7 +45,11 @@ export const createPDF = createAsyncThunk("/file/pdf", async (data) => {
     const response = await res;
     return response.data;
   } catch (error) {
-    toast.error(error?.response?.data?.message);
+    if (error.response) {
+      toast.error(error.response.data?.message || "Something went wrong");
+    } else {
+      toast.error("Server not reachable");
+    }
   }
 });
 

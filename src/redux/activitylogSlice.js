@@ -26,10 +26,12 @@ export const getAllActivities = createAsyncThunk(
 export const recordLogin = createAsyncThunk(
     "activity/record",
     async (_, { rejectWithValue }) => {
+
         try {
             const { data } = await axiosInstance.post(`/activity/record`, {}, {
                 withCredentials: true,
             });
+            console.log(data)
             return data.activity;
         } catch (error) {
             return rejectWithValue(
@@ -136,10 +138,30 @@ export const deleteWhitelistIp = createAsyncThunk(
     }
 );
 
+export const activateStatus = createAsyncThunk(
+    "activity/activateStatus",
+    async ({ id, status }, { rejectWithValue }) => {
+
+        try {
+            const { data } = await axiosInstance.put(`/activity/activate-status/${id}`,
+                { status },
+                { withCredentials: true }
+            );
+            return data.user;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to update user status"
+            );
+        }
+    }
+);
+
+
 const activitySlice = createSlice({
     name: "activity",
     initialState,
-    reducers: {},
+    reducers: {
+    },
     extraReducers: (builder) => {
         builder
             // ===== Get All Activities =====
@@ -168,27 +190,7 @@ const activitySlice = createSlice({
                 state.error = action.payload;
             })
 
-            // ===== Terminate Session =====
-            .addCase(terminateSession.fulfilled, (state, action) => {
-                state.activities = state.activities.map((activity) =>
-                    activity._id === action.payload.id
-                        ? { ...activity, terminated: true }
-                        : activity
-                );
-            })
-            .addCase(terminateSession.rejected, (state, action) => {
-                state.error = action.payload;
-            })
-            .addCase(activateSession.fulfilled, (state, action) => {
-                state.activities = state.activities.map((activity) =>
-                    activity._id === action.payload.id
-                        ? { ...activity, terminated: false }
-                        : activity
-                );
-            })
-            .addCase(activateSession.rejected, (state, action) => {
-                state.error = action.payload;
-            })
+
             .addCase(addWhitelistIp.pending, (state) => {
                 state.loading = true;
             })
@@ -242,7 +244,31 @@ const activitySlice = createSlice({
             .addCase(deleteWhitelistIp.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+
+            .addCase(activateStatus.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(activateStatus.fulfilled, (state, action) => {
+                state.loading = false;
+                state.activities = state.activities.map((activity) =>
+                    activity.userId === action.payload._id || activity.userId?._id === action.payload._id
+                        ? {
+                            ...activity,
+                            terminated: action.payload.terminated, // this drives your button
+                            status: action.payload.status,
+                        }
+                        : activity
+                );
+            })
+
+
+            .addCase(activateStatus.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
+
 
     },
 });

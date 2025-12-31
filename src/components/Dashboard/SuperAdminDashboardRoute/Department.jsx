@@ -106,8 +106,19 @@ const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab, shiftTargets }) => {
                     {member.output?.toLocaleString() || 0}
                   </td>
 
-                  <td className="py-3 px-4 text-gray-300 text-sm align-middle capitalize text-center">
-                    {member.shift || "N/A"}
+                  <td className="py-3 px-4 text-sm align-middle text-center">
+                    <span
+                      className={`px-3 py-1 capitalize rounded-full text-xs font-semibold
+      ${member.shift?.toLowerCase() === "morning"
+                          ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40"
+                          : member.shift?.toLowerCase() === "night"
+                            ? "bg-green-500/20 text-green-400 border border-green-500/40"
+                            : "bg-gray-500/20 text-gray-400 border border-gray-500/40"
+                        }
+    `}
+                    >
+                      {member.shift || "N/A"}
+                    </span>
                   </td>
 
                   <td className="py-3 px-4 text-white text-sm align-middle text-center ">
@@ -328,7 +339,7 @@ const Department = () => {
         return;
       }
 
-      const shift = getShiftFromName(memberName);
+      const shift = row[row.length - 1]?.toString()?.toLowerCase();
 
       if (department === "CSR") {
         const conversations = parseFloat(row[3]) || 0;

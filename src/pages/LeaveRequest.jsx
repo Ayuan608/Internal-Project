@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -9,6 +6,7 @@ import {
     getDayOffRequests,
     updateDayOffStatus
 } from "../redux/attendenceSlice";
+import toast from "react-hot-toast";
 
 function LeaveRequest() {
     const dispatch = useDispatch();
@@ -23,7 +21,7 @@ function LeaveRequest() {
         dispatch(getDayOffRequests());
     }, [dispatch]);
 
-   
+
     const leaves = dayOffRequests.filter(
         (req) => req.userId === employee?._id
     );
@@ -32,8 +30,12 @@ function LeaveRequest() {
         new Date(date).toLocaleDateString("en-US");
 
     const handleUpdateLeaveReq = (requestId, status) => {
-        dispatch(updateDayOffStatus({ requestId, status }));
+        dispatch(updateDayOffStatus({ requestId, status }))
+        dispatch(getDayOffRequests()).unwrap()
+            .then(() => toast.success("Status Updated Successfully!!"))
+            .catch((err) => toast.error(err));
     };
+
 
     return (
         <div className="min-h-screen p-8 text-white">
@@ -63,10 +65,18 @@ function LeaveRequest() {
                         >
                             <p className="text-lg font-semibold capitalize">{leave.reason}</p>
 
-                            <p className="text-slate-400 text-sm">
+                            {/* <p className="text-slate-400 text-sm">
                                 <span className="font-medium text-slate-300">Date: </span>
                                 {leave.date ? formatDate(leave.date) : "N/A"}
+
+                            </p> */}
+                            <p className="text-slate-400 text-sm">
+                                <span className="font-medium">Dates:</span>{" "}
+                                {formatDate(leave.startDate)}
+                                {leave.duration === "multiple" &&
+                                    ` → ${formatDate(leave.endDate)}`}
                             </p>
+
 
                             <p className="text-slate-400 text-sm mb-3">
                                 <span className="font-medium text-slate-300">Attachment: </span>
@@ -88,7 +98,7 @@ function LeaveRequest() {
 
                             {/* ACTION BUTTONS */}
                             {/* {leave.status === "PENDING" && ( */}
-                            {!leave.status && <div className="flex gap-4 mt-4">
+                            {leave.status === "PENDING" && <div className="flex gap-4 mt-4">
                                 <button
                                     onClick={() =>
                                         handleUpdateLeaveReq(leave.requestId, "APPROVED")

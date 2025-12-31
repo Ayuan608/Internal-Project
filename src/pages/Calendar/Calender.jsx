@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import { Paperclip } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { createEvent, deleteEvent, fetchAllEvents } from "../../redux/announcementSlice";
+import { createEvent, deleteEvent, fetchAllEvents, updateEvent } from "../../redux/announcementSlice";
 
 // Create the localizer with ES module imports
 const locales = {
@@ -36,6 +36,8 @@ function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
     const [view, setView] = useState(Views.MONTH);
+    const [mode, setMode] = useState("create"); // "create" | "edit"
+    const [activeEventId, setActiveEventId] = useState(null);
 
     const [newEvent, setNewEvent] = useState({
         title: "",
@@ -49,7 +51,6 @@ function CalendarPage() {
     const defaultDate = useMemo(() => selectedDate, [selectedDate]);
     useEffect(() => {
         dispatch(fetchAllEvents()).then(res => {
-            console.log("event fetched successfully");
         });
     }, [dispatch]);
 
@@ -58,11 +59,17 @@ function CalendarPage() {
         const file = e.target.files[0];
         if (file) {
             setAttachment(file);
-            setNewEvent(prev => ({ ...prev, files: [file] }));
+            console.log(newEvent.files, "newEvent files");
         }
     }, []);
+    useEffect(() => {
+    }, [newEvent.files]);
+
 
     const handleSelectSlot = useCallback(({ start, end }) => {
+        setMode("create");
+        setActiveEventId(null);
+
         setNewEvent({
             title: "",
             startDate: start,
@@ -71,6 +78,7 @@ function CalendarPage() {
             link: "",
             files: [],
         });
+
         setAttachment(null);
         setShowModal(true);
     }, []);
@@ -84,41 +92,69 @@ function CalendarPage() {
             endDate: newEvent.endDate.toISOString(),
             notes: newEvent.notes,
             link: newEvent.link,
-            files: newEvent.files,
+            attachments: newEvent.files,
         };
 
         try {
-            await dispatch(createEvent(eventData)).unwrap();
+            if (mode === "edit" && activeEventId) {
+                await dispatch(
+                    updateEvent({
+                        id: activeEventId,
+                        data: eventData,
+                    })
+                ).unwrap();
+            } else {
+                await dispatch(createEvent(eventData)).unwrap();
+            }
+
             setShowModal(false);
-            // Reset form after successful save
-            setNewEvent({
-                title: "",
-                startDate: new Date(),
-                endDate: new Date(),
-                notes: "",
-                link: "",
-                files: [],
-            });
+            setMode("create");
+            setActiveEventId(null);
             setAttachment(null);
         } catch (error) {
-            console.error("Failed to create event:", error);
+            console.error("Failed to save event:", error);
         }
-    }, [dispatch, newEvent]);
+    }, [dispatch, newEvent, mode, activeEventId]);
+
 
     const handleDelete = useCallback((event) => {
-        const id = event?.id;
-        console.log(id, "id")
-        if (!id) return console.error("Event ID is undefined!");
-
-        if (window.confirm("Are you sure you want to delete this event?")) {
-            dispatch(deleteEvent(id))
-                .unwrap()
-                .then(() => console.log("Event deleted successfully"))
-                .catch(err => console.error("Failed to delete event:", err));
-            toast.error("You haven't access to delete event");
+        if (mode === "create") {
+            setShowModal(false);
         }
-    }, [dispatch]);
+        else {
+            setShowModal(false);
+            const id = event?._id;
+            if (!id) return console.error("Event ID is undefined!");
 
+            if (window.confirm("Are you sure you want to delete this event?")) {
+                dispatch(deleteEvent(id))
+                    .unwrap()
+                    .then(() =>
+                        toast.success("Event deleted successfully")
+                    )
+                    .catch((err) => {
+                        toast.error("You haven't access to delete event")
+                    });
+            }
+        }
+    }, [dispatch, mode]);
+    const handleView = useCallback((event) => {
+        if (!event || !event.title) return; 
+
+        setMode("edit");
+        setActiveEventId(event.id);
+
+        setNewEvent({
+            title: event.title,
+            startDate: new Date(event.start),
+            endDate: new Date(event.end),
+            notes: event.notes || "",
+            link: event.link || "",
+            files: event.files || [],
+        });
+
+        setShowModal(true);
+    }, []);
 
     const handleDateChange = useCallback((date) => {
         setSelectedDate(date);
@@ -221,8 +257,22 @@ function CalendarPage() {
                     views={[Views.MONTH]}
                     style={{ height: "90vh" }}
                     selectable
-                    onSelectSlot={handleSelectSlot}
-                    onSelectEvent={handleDelete}
+                    onSelectSlot={(slotInfo) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        const selectedDate = new Date(slotInfo.start);
+                        selectedDate.setHours(0, 0, 0, 0);
+
+                        if (selectedDate < today) {
+                            toast.error("You cannot create an event before today");
+                            return;
+                        }
+
+                        handleSelectSlot(slotInfo);
+                    }}
+
+                    onSelectEvent={handleView}
                     onNavigate={setSelectedDate}
                     popup
                     maxRows={1}
@@ -334,17 +384,19 @@ function CalendarPage() {
 
                         <div className="flex justify-end gap-3 mt-6">
                             <button
-                                onClick={() => setShowModal(false)}
-                                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded"
+                                onClick={() => handleDelete(events.find(evt => evt._id === activeEventId))}
+                                className={`${mode !== "edit" ? "px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded" :
+                                    "px-4 py-2 bg-red-600 hover:bg-red-700 rounded"}`}
                             >
-                                Cancel
+                                {mode === "edit" ? "Delete" : "Cancel"}
                             </button>
                             <button
                                 onClick={saveEvent}
                                 disabled={createEventLoading || !newEvent.title.trim()}
                                 className={`px-4 py-2 rounded transition-colors ${createEventLoading || !newEvent.title.trim() ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
                             >
-                                {createEventLoading ? "Saving..." : "Save"}
+                                {/* {createEventLoading ? "Saving..." : "Save"} */}
+                                {mode === "edit" ? (createEventLoading ? "Updating..." : "Update") : (createEventLoading ? "Saving..." : "Save")}
                             </button>
                         </div>
 
