@@ -23,17 +23,15 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
 
-          cd /www/wwwroot/Internal-Project
+          cd /www/wwwroot
 
-          echo "🔄 Pulling latest code..."
-          git pull origin main
+          git clone https://github.com/Ayuan608/Internal-Project.git
 
-          echo "📦 Installing dependencies..."
+          cd Internal-Project
+
           npm install
 
-          echo "🏗️ Building frontend..."
           npm run build
 
-          echo "✅ Deployment completed"
 
           EOF
