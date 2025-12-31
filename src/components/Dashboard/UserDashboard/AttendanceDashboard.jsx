@@ -239,7 +239,7 @@ const AttendanceDashboard = () => {
 
           // Load today's attendance
           const todayResult = await dispatch(getTodayAttendance(userId)).unwrap();
-          console.log("todayResult", todayResult.attendance.actualWorkingHours)
+
 
 
 
@@ -390,7 +390,7 @@ const AttendanceDashboard = () => {
 
     try {
       const result = await dispatch(
-        punchIn({ userId, shift: "Day" })
+        punchIn({ userId })
       ).unwrap();
 
       // ⚠️ Show modal for ANY non-normal case
@@ -698,10 +698,6 @@ const AttendanceDashboard = () => {
     }
   }, [reduxAttendanceList]);
 
-  useEffect(() => {
-    console.log("TableData updated:", tableData);
-  }, [tableData]);
-
 
 
   // Get record status for table
@@ -893,9 +889,7 @@ const AttendanceDashboard = () => {
     return () => clearInterval(interval);
   }, [todayAttendance?.clockIn, todayAttendance?.clockOut]);
 
-  useEffect(() => {
-    console.log("ACTIVE TIMER:", activeTimer);
-  }, [activeTimer]);
+
 
 
   useEffect(() => {
