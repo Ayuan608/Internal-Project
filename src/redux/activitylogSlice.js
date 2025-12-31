@@ -209,7 +209,6 @@ const activitySlice = createSlice({
                 state.error = action.payload;
             })
 
-            // ===== Get All Whitelisted IPs =====
             .addCase(getAllIPWhitelist.pending, (state) => {
                 state.loading = true;
             })
