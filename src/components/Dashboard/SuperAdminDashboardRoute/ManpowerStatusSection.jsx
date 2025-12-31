@@ -55,6 +55,12 @@ const statusColorMap = {
     dot: "bg-blue-400",
   },
 };
+const departmentTextColorMap = {
+  "CSR Department": "text-blue-400",
+  "Deposit Department": "text-emerald-400",
+  "Withdraw Department": "text-purple-400",
+  "Marketing Department": "text-orange-400",
+};
 
 const ManpowerStatusSection = () => {
   const dispatch = useDispatch();
@@ -100,7 +106,7 @@ const ManpowerStatusSection = () => {
   };
   //calculate shift over
   const isShiftOver = (workingHour) => {
- 
+
     if (!workingHour) return false;
 
     const [, endTime] = workingHour.split(" - ");
@@ -144,7 +150,7 @@ const ManpowerStatusSection = () => {
       d.getDate() === now.getDate()
     );
   };
-  
+
   // Convert attendance data to manpower records
   const manpowerData = useMemo(() => {
     if (!departmentAttendance || !Array.isArray(departmentAttendance)) return [];
@@ -159,7 +165,7 @@ const ManpowerStatusSection = () => {
       else if (record.alert === "Suspended") manpowerStatus = "Suspended";
       else if (record.alert === "Day Off") manpowerStatus = "Day Off";
       else if (record.alert === "Present" || record.alert === "Normal") manpowerStatus = "Present";
-  
+
 
       const hasClockIn = Boolean(record.clockIn);
       const hasClockOut = Boolean(record.clockOut);
@@ -176,7 +182,7 @@ const ManpowerStatusSection = () => {
         ||
         Array.isArray(record.dayOffRequests) ||
         record.dayOffRequests.some(req => isToday(req.date));
-      
+
 
       const totalDayOff = hasTodayDayOff ? 1 : 0;
       // const hasTodayDayOffRequest =
@@ -198,7 +204,7 @@ const ManpowerStatusSection = () => {
       else if (totalLate) status = "Late";
 
 
-    
+
       return {
         id: record._id || `emp-${index}`,
         date: record.date ? new Date(record.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
@@ -207,7 +213,7 @@ const ManpowerStatusSection = () => {
         status: record.status,
         totalViolation: totalViolation,
         totalDayOff: totalDayOff,
-        totalLate:totalLate,
+        totalLate: totalLate,
         originalRecord: record
       };
     });
@@ -245,8 +251,8 @@ const ManpowerStatusSection = () => {
 
 
   const absentCount = filteredData.filter(r => r.status === "Absent").length;
-const lateCount = filteredData.filter(r => r.status === "Late").length;
-const dayOffCount = filteredData.filter(r => r.totalDayOff === 1).length;
+  const lateCount = filteredData.filter(r => r.status === "Late").length;
+  const dayOffCount = filteredData.filter(r => r.totalDayOff === 1).length;
   const handleExport = () => {
     const header = [
       "Date",
@@ -456,9 +462,21 @@ const dayOffCount = filteredData.filter(r => r.totalDayOff === 1).length;
                         <td className="px-4 py-3 text-slate-100">
                           {row.date}
                         </td>
-                        <td className="px-4 py-3 text-slate-100">
-                          {row.department}
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center justify-center
+      
+      text-[11px] font-semibold uppercase
+      ${departmentTextColorMap[row.department] ||
+                              "text-slate-400"
+                              }
+    `}
+                          >
+                            {row.department}
+                          </span>
                         </td>
+
+
                         <td className="px-4 py-3 text-slate-100 uppercase">{row.name}</td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-2">
