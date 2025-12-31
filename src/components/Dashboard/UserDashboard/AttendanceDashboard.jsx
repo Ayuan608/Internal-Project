@@ -446,10 +446,10 @@ const AttendanceDashboard = () => {
 
   // Handle Start Break - FIXED: WC और Lunch के लिए conditions सही की
   const handleStartBreak = async (breakType) => {
-      if (hasAnyActiveBreak()) {
-    toast.error("Finish current break first");
-    return;
-  }
+    if (hasAnyActiveBreak()) {
+      toast.error("Finish current break first");
+      return;
+    }
     if (!isBreakAvailable(breakType)) {
       toast.error("You have n't any active break");
       return;
@@ -1055,11 +1055,10 @@ const AttendanceDashboard = () => {
               {liveTimeLeft ? <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
                 Time Left:
                 <span className="font-mono">{liveTimeLeft}</span>
-
-              </div> : <div className='flex justify-center items-baseline-last gap-2'><Clock size={12} />
+              </div> : <div className='flex justify-center items-baseline-last gap-2'>
+                <Clock size={12} />
                 Time Left:
                 <span className="font-mono">-</span>
-
               </div>}
             </div>
           </div>
