@@ -257,17 +257,20 @@ const activitySlice = createSlice({
                 state.error = null;
             })
             .addCase(activateStatus.fulfilled, (state, action) => {
-                state.loading = false;
+                if (!action.payload?._id) return;
+
                 state.activities = state.activities.map((activity) =>
-                    activity.userId === action.payload._id || activity.userId?._id === action.payload._id
+                    activity?.userId === action.payload._id ||
+                        activity?.userId?._id === action.payload._id
                         ? {
                             ...activity,
-                            terminated: action.payload.terminated, // this drives your button
+                            terminated: action.payload.terminated,
                             status: action.payload.status,
                         }
                         : activity
                 );
             })
+
 
 
             .addCase(activateStatus.rejected, (state, action) => {
@@ -276,7 +279,7 @@ const activitySlice = createSlice({
             });
 
 
-    },
+},
 });
 
 export default activitySlice.reducer;

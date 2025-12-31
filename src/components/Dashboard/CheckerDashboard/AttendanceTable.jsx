@@ -35,6 +35,7 @@ const AttendanceTable = ({ data = [] }) => {
     return new Date(date).toLocaleDateString();
   };
 
+  console.log("userDate", data)
   if (data.length === 0) {
     return (
       <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-8 text-center">
@@ -109,7 +110,7 @@ const AttendanceTable = ({ data = [] }) => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-               
+
                       <div className="ml-3">
                         <div className="text-sm font-medium capitalize text-white">
                           {employee.FullName || employee.username || 'Unknown'}

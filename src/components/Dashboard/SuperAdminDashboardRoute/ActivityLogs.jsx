@@ -15,7 +15,7 @@ const ActivityLogs = () => {
   const dispatch = useDispatch();
   const { activities } = useSelector((state) => state.activity);
   const [filter, setFilter] = useState("all");
- 
+
 
   useEffect(() => {
     dispatch(getAllActivities());
@@ -28,25 +28,19 @@ const ActivityLogs = () => {
 
 
   const handleActivityStatus = (activity) => {
+    if (!activity || !activity.userId) return;
+
     if (window.confirm("Are you sure?")) {
       const newStatus = activity.terminated ? "active" : "terminate";
 
-      // 1. Optimistically update UI
-      dispatch({
-        type: "activity/activateStatus/fulfilled",
-        payload: {
-          _id: activity.userId._id || activity.userId,
-          terminated: !activity.terminated,
+      dispatch(
+        activateStatus({
+          id: activity.userId?._id || activity.userId,
           status: newStatus,
-        },
+        })
+      ).then(() => {
+        dispatch(getAllActivities());
       });
-
-      // 2. Call backend to actually update
-      dispatch(activateStatus({ id: activity.userId._id, status: newStatus }))
-        .then(() => {
-          // Optional: re-fetch activities to sync state with backend
-          dispatch(getAllActivities());
-        });
     }
   };
 
