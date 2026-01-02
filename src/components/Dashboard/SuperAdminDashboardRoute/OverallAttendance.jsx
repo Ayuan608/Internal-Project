@@ -82,14 +82,14 @@ const OverallAttendanceDashboard = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const dispatch = useDispatch();
   const { allAttendance, isLoading, pagination } = useSelector((state) => state.attendance);
- 
+
   const { departmentAttendance = [], department } = useSelector(
     (s) => s.attendance || {}
   );
 
   const totalUsers = departmentAttendance.length
   const totalWorking = departmentAttendance.filter(
-    item => item.status === "working"
+    item => item.status === "Present"
   ).length;
   const totalAbsent = departmentAttendance.filter(
     item => item.status === "Absent"
@@ -99,10 +99,27 @@ const OverallAttendanceDashboard = () => {
   ).length;
 
 
-  const totalLeaves = departmentAttendance.filter(
-    item => item.dayOffRequests
-  ).length;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const totalLeaves = departmentAttendance.filter(user => {
+    if (!Array.isArray(user.dayOffRequests)) return false;
 
+    return user.dayOffRequests.some(req => {
+      if (!req.startDate) return false;
+
+      const reqDate = new Date(req.startDate);
+      reqDate.setHours(0, 0, 0, 0);
+
+      return reqDate.getTime() === today.getTime();
+    });
+  }).length;
+
+  console.log(totalLeaves);
+
+  //   const totalLeaves = departmentAttendance.filter(
+  //     item => item.dayOffRequests
+  //   ).length;
+  // console.log(totalLeaves)
   // Fetch data on mount and when filters change
   useEffect(() => {
     const fetchData = async () => {
@@ -169,63 +186,63 @@ const OverallAttendanceDashboard = () => {
   }, [departmentAttendance, searchTerm, selectedDept, selectedStatus]);
   // console.log(filteredData)
   const getCurrentWeekDates = () => {
-  const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); 
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7));
 
-  return Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(startOfWeek);
-    d.setDate(startOfWeek.getDate() + i);
-    console.log(d)
-    return d;
-  });
-};
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
 
-const weeklyTrendData = useMemo(() => {
-  if (!Array.isArray(departmentAttendance)) return [];
-
-  const weekDates = getCurrentWeekDates();
-
-  return weekDates.map((dateObj) => {
-    const dayNumber = dateObj.getDate(); // 1–31
-    const dayLabel = dateObj.toLocaleDateString("en-US", { weekday: "short" });
-
-    let present = 0;
-    let absent = 0;
-    let late = 0;
-    let onTime = 0;
-
-    departmentAttendance.forEach((emp) => {
-      const status = emp?.patternByDay?.[dayNumber];
-
-      // Present
-        if (status === "D" || status === "M" || status === "N" || status === "PS") {
-        present++;
-
-        if (emp.alert === "Late") {
-          late++;
-        } else {
-          onTime++;
-        }
-      }
-
-      // Absent
-      else if (!status || emp.alert === "Absent") {
-        absent++;
-      }
-
-     
+      return d;
     });
+  };
 
-    return {
-      day: dayLabel,
-      present,
-      absent,
-      late,
-      onTime,
-    };
-  });
-}, [departmentAttendance]);
+  const weeklyTrendData = useMemo(() => {
+    if (!Array.isArray(departmentAttendance)) return [];
+
+    const weekDates = getCurrentWeekDates();
+
+    return weekDates.map((dateObj) => {
+      const dayNumber = dateObj.getDate(); // 1–31
+      const dayLabel = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+
+      let present = 0;
+      let absent = 0;
+      let late = 0;
+      let onTime = 0;
+
+      departmentAttendance.forEach((emp) => {
+        const status = emp?.patternByDay?.[dayNumber];
+
+        // Present
+        if (status === "D" || status === "M" || status === "N" || status === "PS") {
+          present++;
+
+          if (emp.alert === "Late") {
+            late++;
+          } else {
+            onTime++;
+          }
+        }
+
+        // Absent
+        else if (!status || emp.alert === "Absent") {
+          absent++;
+        }
+
+
+      });
+
+      return {
+        day: dayLabel,
+        present,
+        absent,
+        late,
+        onTime,
+      };
+    });
+  }, [departmentAttendance]);
 
   // const weeklyTrendData = useMemo(() => {
   //   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -1008,15 +1025,15 @@ const weeklyTrendData = useMemo(() => {
               </thead>
               <tbody className="divide-y divide-slate-700/30">
                 {
-                // isLoading ? (
-                //   <tr>
-                //     <td colSpan="8" className="px-4 py-8 text-center">
-                //       <div className="flex justify-center">
-                //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                //       </div>
-                //     </td>
-                //   </tr>
-                // ) :
+                  // isLoading ? (
+                  //   <tr>
+                  //     <td colSpan="8" className="px-4 py-8 text-center">
+                  //       <div className="flex justify-center">
+                  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  //       </div>
+                  //     </td>
+                  //   </tr>
+                  // ) :
                   filteredData.length === 0 ? (
                     <tr>
                       <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
@@ -1164,61 +1181,61 @@ const weeklyTrendData = useMemo(() => {
 
             {/* Loading */}
             {
-            // isLoading ? (
-            //   <div className="col-span-full flex justify-center py-10">
-            //     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-            //   </div>
-            // ) :
-             filteredData.length === 0 ? (
-              <div className="col-span-full text-center text-gray-400 py-10">
-                No records found
-              </div>
-            ) : (
-              filteredData.map((emp) => (
-                <div
-                  key={emp._id}
-                  onClick={() => setSelectedCard(emp)}
-                  className="bg-[#0F172A]/60 border border-[#1E293B] rounded-2xl p-6 shadow-xl backdrop-blur hover:border-blue-500/50 hover:shadow-blue-500/20 transition-all duration-300"
-                >
-
-                  {/* Header */}
-                  <div className="flex justify-between items-start pb-4 border-b border-slate-700/50 mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white capitalize">{emp?.FullName}</h3>
-                      <p className="text-sm text-blue-300">{emp?.department}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp?.alert)}`}>
-                      {emp?.alert}
-                    </span>
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-3">
-                    {/* <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} /> */}
-
-                    <CardRow label="Date" value={emp?.date
-                      ? new Date(emp.date).toLocaleDateString("en-GB")
-                      : "--"} />
-                    <CardRow label="Punch In" value={emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
-                    <CardRow label="Punch Out" value={emp.clockOut ? new Date(emp.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
-                    <CardRow label="User Name" value={emp.username || 'N/A'} />
-                    {/* Hours Highlight */}
-                    <div className="flex justify-between items-center bg-blue-900/20 p-3 rounded-lg border border-blue-700/20 shadow-inner">
-                      <span className="text-sm text-gray-300">Hours</span>
-                      <span className="text-lg font-bold text-blue-400">{emp.workingHours}h</span>
-                    </div>
-
-                    <CardRow label="Shift" value={emp.Shift || 'N/A'} />
-                  </div>
-
-                  {/* Footer */}
-                  <div className="mt-5 pt-4 border-t border-slate-700/50">
-                    <p className="text-xs text-gray-400 font-mono">ID: {emp._id?.slice(0, 8)}</p>
-                  </div>
-
+              // isLoading ? (
+              //   <div className="col-span-full flex justify-center py-10">
+              //     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+              //   </div>
+              // ) :
+              filteredData.length === 0 ? (
+                <div className="col-span-full text-center text-gray-400 py-10">
+                  No records found
                 </div>
-              ))
-            )}
+              ) : (
+                filteredData.map((emp) => (
+                  <div
+                    key={emp._id}
+                    onClick={() => setSelectedCard(emp)}
+                    className="bg-[#0F172A]/60 border border-[#1E293B] rounded-2xl p-6 shadow-xl backdrop-blur hover:border-blue-500/50 hover:shadow-blue-500/20 transition-all duration-300"
+                  >
+
+                    {/* Header */}
+                    <div className="flex justify-between items-start pb-4 border-b border-slate-700/50 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white capitalize">{emp?.FullName}</h3>
+                        <p className="text-sm text-blue-300">{emp?.department}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getStatusColor(emp?.alert)}`}>
+                        {emp?.alert}
+                      </span>
+                    </div>
+
+                    {/* Details */}
+                    <div className="space-y-3">
+                      {/* <CardRow label="Date" value={new Date(emp.date).toLocaleDateString()} /> */}
+
+                      <CardRow label="Date" value={emp?.date
+                        ? new Date(emp.date).toLocaleDateString("en-GB")
+                        : "--"} />
+                      <CardRow label="Punch In" value={emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
+                      <CardRow label="Punch Out" value={emp.clockOut ? new Date(emp.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'} />
+                      <CardRow label="User Name" value={emp.username || 'N/A'} />
+                      {/* Hours Highlight */}
+                      <div className="flex justify-between items-center bg-blue-900/20 p-3 rounded-lg border border-blue-700/20 shadow-inner">
+                        <span className="text-sm text-gray-300">Hours</span>
+                        <span className="text-lg font-bold text-blue-400">{emp.workingHours}h</span>
+                      </div>
+
+                      <CardRow label="Shift" value={emp.Shift || 'N/A'} />
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-5 pt-4 border-t border-slate-700/50">
+                      <p className="text-xs text-gray-400 font-mono">ID: {emp._id?.slice(0, 8)}</p>
+                    </div>
+
+                  </div>
+                ))
+              )}
 
           </div>
 
@@ -1279,9 +1296,9 @@ const weeklyTrendData = useMemo(() => {
             <div className="space-y-3 text-gray-200">
               <CardRow
                 label="Date"
-             value={selectedCard?.date
-                      ? new Date(selectedCard.date).toLocaleDateString("en-GB")
-                      : "--"} 
+                value={selectedCard?.date
+                  ? new Date(selectedCard.date).toLocaleDateString("en-GB")
+                  : "--"}
               />
               <CardRow
                 label="Punch In"
@@ -1370,7 +1387,7 @@ const weeklyTrendData = useMemo(() => {
       <div className="mt-6 flex justify-between items-center text-sm text-gray-400">
         <div>
           {/* Total Records: {pagination?.total || allAttendance?.length || 0} */}
-          Total Records: { departmentAttendance?.length }
+          Total Records: {departmentAttendance?.length}
         </div>
         <button
           onClick={refreshData}

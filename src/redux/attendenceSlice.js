@@ -387,7 +387,7 @@ export const deleteAttendance = createAsyncThunk(
   async ({ user }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.delete(
-        `/attendance/delete-attendance/${user}`
+       `/attendance/delete-attendance/${user}`
 
       );
 
