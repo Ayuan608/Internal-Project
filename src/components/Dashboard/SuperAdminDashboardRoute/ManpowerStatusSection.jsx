@@ -1,15 +1,15 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllAttendance } from "../../../redux/attendenceSlice";
+import { getAllAttendance, getDepartmentWiseUsersCalender } from "../../../redux/attendenceSlice";
 import { Download, Search, Filter, Calendar } from "lucide-react";
 
-const departments = [
-  "All Departments",
-  "CSR Department",
-  "Withdraw Department",
-  "Deposit Department",
-  "Marketing Department",
-];
+// const departments = [
+//   "All Departments",
+//   "CSR Department",
+//   "Withdraw Department",
+//   "Deposit Department",
+//   "Marketing Department",
+// ];
 
 const statusFilters = [
   "All Status",
@@ -94,6 +94,16 @@ const ManpowerStatusSection = () => {
     };
     fetchData();
   }, [dispatch, dateFrom, dateTo, selectedDept]);
+useEffect(() => {
+  if (!dateFrom || !dateTo) return;
+
+  dispatch(
+    getDepartmentWiseUsersCalender({
+      startDate: dateFrom,
+      endDate: dateTo
+    })
+  );
+}, [dispatch, dateFrom, dateTo]);
 
   const parseTime = (timeStr) => {
     const [time, modifier] = timeStr.split(" ");
@@ -180,9 +190,9 @@ const ManpowerStatusSection = () => {
       // ✅ day off rule
       const hasTodayDayOff =
         !hasClockIn
-        // ||
-        // Array.isArray(record.dayOffRequests) ||
-        // record.dayOffRequests.some(req => isToday(req.date));
+      // ||
+      // Array.isArray(record.dayOffRequests) ||
+      // record.dayOffRequests.some(req => isToday(req.date));
 
 
       const totalDayOff = hasTodayDayOff ? 1 : 0;
@@ -301,7 +311,17 @@ const ManpowerStatusSection = () => {
       {children}
     </th>
   );
+  const departmentOptions = useMemo(() => {
+    const set = new Set();
 
+    manpowerData.forEach(emp => {
+      if (emp.department) {
+        set.add(emp.department);
+      }
+    });
+
+    return ["All Departments", ...Array.from(set)];
+  }, [manpowerData]);
   return (
     <div className="px-4 py-6 text-slate-50 md:px-8">
       <div className="mx-auto w-full max-w-full">
@@ -345,7 +365,7 @@ const ManpowerStatusSection = () => {
                   onChange={(e) => setSelectedDept(e.target.value)}
                   className="h-9 rounded-lg border border-slate-700 bg-slate-900/80 pl-8 pr-3 text-xs text-slate-200 outline-none ring-0 focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                 >
-                  {departments.map((dept) => (
+                  {departmentOptions.map((dept) => (
                     <option key={dept} value={dept}>
                       {dept}
                     </option>
@@ -438,78 +458,78 @@ const ManpowerStatusSection = () => {
               </thead>
               <tbody className="divide-y divide-slate-800 bg-slate-950/60">
                 {
-                // isLoading 
-                // ? (
-                //   <tr>
-                //     <td colSpan={6} className="px-4 py-8 text-center">
-                //       <div className="flex justify-center">
-                //         <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-sky-500"></div>
-                //       </div>
-                //     </td>
-                //   </tr>
-                // ) :
-                filteredData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-8 text-center text-xs text-slate-400"
-                    >
-                      No records match the current filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((row) => {
-                    const colors = statusColorMap[row.status] || statusColorMap.Present;
-                    return (
-                      <tr
-                        key={row.id}
-                        className="transition hover:bg-slate-900/80"
+                  // isLoading 
+                  // ? (
+                  //   <tr>
+                  //     <td colSpan={6} className="px-4 py-8 text-center">
+                  //       <div className="flex justify-center">
+                  //         <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-sky-500"></div>
+                  //       </div>
+                  //     </td>
+                  //   </tr>
+                  // ) :
+                  filteredData.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-8 text-center text-xs text-slate-400"
                       >
-                        <td className="px-4 py-3 text-slate-100">
-                          {row.date}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center justify-center
+                        No records match the current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredData.map((row) => {
+                      const colors = statusColorMap[row.status] || statusColorMap.Present;
+                      return (
+                        <tr
+                          key={row.id}
+                          className="transition hover:bg-slate-900/80"
+                        >
+                          <td className="px-4 py-3 text-slate-100">
+                            {row.date}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center justify-center
       
       text-[11px] font-semibold uppercase
       ${departmentTextColorMap[row.department] ||
-                              "text-slate-400"
-                              }
+                                "text-slate-400"
+                                }
     `}
-                          >
-                            {row.department}
-                          </span>
-                        </td>
-
-
-                        <td className="px-4 py-3 text-slate-100 uppercase">{row.name}</td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full ${colors.dot}`}
-                            />
-                            <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${colors.badge}`}
                             >
-                              {row.status}
+                              {row.department}
                             </span>
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-100">
-                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${row.totalViolation > 0 ? 'bg-rose-900/50 text-rose-300' : 'bg-slate-800 text-slate-400'}`}>
-                            {row.totalViolation}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-100">
-                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${row.totalDayOff > 0 ? 'bg-emerald-900/50 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                            {row.totalDayOff}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                          </td>
+
+
+                          <td className="px-4 py-3 text-slate-100 uppercase">{row.name}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className={`h-2 w-2 rounded-full ${colors.dot}`}
+                              />
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${colors.badge}`}
+                              >
+                                {row.status}
+                              </span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-100">
+                            <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${row.totalViolation > 0 ? 'bg-rose-900/50 text-rose-300' : 'bg-slate-800 text-slate-400'}`}>
+                              {row.totalViolation}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-100">
+                            <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${row.totalDayOff > 0 ? 'bg-emerald-900/50 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                              {row.totalDayOff}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
               </tbody>
             </table>
           </div>

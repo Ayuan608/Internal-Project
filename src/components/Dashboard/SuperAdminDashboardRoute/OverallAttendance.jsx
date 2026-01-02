@@ -41,7 +41,7 @@ import {
 } from 'recharts';
 import html2canvas from "html2canvas";
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllAttendance, getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
+import { getAllAttendance, getDepartmentWiseUsers,getDepartmentWiseUsersCalender } from '../../../redux/attendenceSlice';
 import AttendanceDashboard from '../TeamLeaderDashboard/RestDay';
 import ManpowerStatusSection from './ManpowerStatusSection';
 
@@ -53,12 +53,12 @@ const COLORS = {
   halfDay: '#EC4899',
   overbreak: '#06B6D4'
 };
-const departments = [
-  { label: "CSR Department", value: "CSR" },
-  { label: "Deposit Department", value: "Deposit" },
-  { label: "Withdraw Department", value: "Withdraw" },
-  { label: "Marketing Department", value: "Marketing" }
-];
+// const departments = [
+//   { label: "CSR Department", value: "CSR" },
+//   { label: "Deposit Department", value: "Deposit" },
+//   { label: "Withdraw Department", value: "Withdraw" },
+//   { label: "Marketing Department", value: "Marketing" }
+// ];
 
 const OverallAttendanceDashboard = () => {
   //  data = [],
@@ -74,7 +74,7 @@ const OverallAttendanceDashboard = () => {
     setViewMode(mode);
   };
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDept, setSelectedDept] = useState('All');
+  const [selectedDept, setSelectedDept] = useState('All Departments');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -121,28 +121,37 @@ const OverallAttendanceDashboard = () => {
   //   ).length;
   // console.log(totalLeaves)
   // Fetch data on mount and when filters change
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await dispatch(getAllAttendance({
-          startDate: startDate || undefined,
-          endDate: endDate || undefined,
-          department: selectedDept !== 'All' ? selectedDept : undefined,
-          page: 1,
-          limit: 100
-        })).unwrap();
-      } catch (error) {
-        console.error('Failed to fetch attendance data:', error);
-      }
-    };
-    fetchData();
-  }, [dispatch, startDate, endDate, selectedDept]);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       await dispatch(getAllAttendance({
+  //         startDate: startDate || undefined,
+  //         endDate: endDate || undefined,
+  //         department: selectedDept !== 'All' ? selectedDept : undefined,
+  //         page: 1,
+  //         limit: 100
+  //       })).unwrap();
+  //     } catch (error) {
+  //       console.error('Failed to fetch attendance data:', error);
+  //     }
+  //   };
+  //   fetchData();
+  // }, [dispatch, startDate, endDate, selectedDept]);
   useEffect(() => {
     dispatch(getDepartmentWiseUsers()).catch((e) =>
       console.error("fetch dept users err", e)
     )
   }, [dispatch]);
+useEffect(() => {
+  if (!startDate || !endDate) return;
 
+  dispatch(
+    getDepartmentWiseUsersCalender({
+      startDate: startDate,
+      endDate: endDate
+    })
+  );
+}, [dispatch, startDate, endDate]);
   const downloadCard = async () => {
     const card = popupRef.current;
 
@@ -179,7 +188,7 @@ const OverallAttendanceDashboard = () => {
     return departmentAttendance.filter(emp => {
       const matchesSearch = emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp._id?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDept = selectedDept === 'All' || emp.department === selectedDept;
+      const matchesDept = selectedDept === 'All Departments' || emp.department === selectedDept;
       const matchesStatus = selectedStatus === 'All' || emp.alert === selectedStatus;
       return matchesSearch && matchesDept && matchesStatus;
     });
@@ -256,6 +265,17 @@ const OverallAttendanceDashboard = () => {
   // }, []);
 
   // Department-wise analytics from filtered data
+    const departments = useMemo(() => {
+      const set = new Set();
+  
+      departmentAttendance.forEach(emp => {
+        if (emp.department) {
+          set.add(emp.department);
+        }
+      });
+  
+      return ["All Departments", ...Array.from(set)];
+    }, [departmentAttendance]);
   const deptAnalytics = useMemo(() => {
     return departments.slice(1).map(dept => {
       const deptEmps = allAttendance?.filter(e => e.user?.department === dept) || [];
@@ -448,7 +468,7 @@ const OverallAttendanceDashboard = () => {
   // Clear filters
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedDept('All');
+    setSelectedDept('All Departments');
     setSelectedStatus('All');
     setStartDate('');
     setEndDate('');
@@ -944,9 +964,11 @@ const OverallAttendanceDashboard = () => {
                   onChange={(e) => setSelectedDept(e.target.value)}
                   className="w-full px-4 py-2 bg-[#0d1b2a] border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 >
-                  <option value="All">All</option>
-                  {departments.map((d, idx) => (
-                    <option key={idx} value={d.value}>{d.label}</option>
+                  {/* <option value="All">All</option> */}
+                 {departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1141,10 +1163,12 @@ const OverallAttendanceDashboard = () => {
                   onChange={(e) => setSelectedDept(e.target.value)}
                   className="w-full px-4 py-2 bg-[#111827] border border-slate-600 rounded-lg text-white"
                 >
-                  <option className="bg-[#111827] text-gray-300" value="All">All</option>
+              
 
-                  {departments.map((d, idx) => (
-                    <option className="bg-[#111827] text-gray-300" key={idx} value={d.value}>{d.label}</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </select>
               </div>

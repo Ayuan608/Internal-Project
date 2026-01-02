@@ -211,22 +211,29 @@ export const getDepartmentWiseUsers = createAsyncThunk(
 // );
 export const getDepartmentWiseUsersCalender = createAsyncThunk(
   "attendance/get-department-wise-Calender",
-  async ({ date, month }, { rejectWithValue }) => {
+  async ({ date, month, startDate, endDate }, { rejectWithValue }) => {
     try {
       let query = "";
 
-      if (date) query = `?date=${date}`;
-      else if (month) query = `?month=${month}`;
+      if (startDate && endDate) {
+        query = `?startDate=${startDate}&endDate=${endDate}`;
+      } else if (date) {
+        query = `?date=${date}`;
+      } else if (month) {
+        query = `?month=${month}`;
+      }
 
       const { data } = await axiosInstance.get(
         `/attendance/get-department-wise-Calender${query}`
       );
+
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data);
     }
   }
 );
+
 
 // =============== 6. DAY OFF REQUESTS ===============
 export const requestDayOff = createAsyncThunk(
