@@ -13,7 +13,9 @@ import { activateStatus, getAllActivities, recordLogin, terminateSession } from 
 
 const ActivityLogs = () => {
   const dispatch = useDispatch();
-  const { activities } = useSelector((state) => state.activity);
+  const activities = useSelector(
+    (state) => state.activity?.activities || []
+  );
   const [filter, setFilter] = useState("all");
 
 
@@ -23,7 +25,7 @@ const ActivityLogs = () => {
       dispatch(getAllActivities());
     }, 30000);
     return () => clearInterval(interval);
-  }, [dispatch, filter]);
+  }, [dispatch]);
 
 
 
@@ -194,11 +196,11 @@ const ActivityLogs = () => {
                         <td className="px-6 py-4">
                           <div>
                             <div className="font-medium  capitalize text-white">
-                              {activity.user?.FullName || "Unknown"}
+                              {activity.userId?.FullName || "Unknown"}
                             </div>
                             <div className="text-sm text-slate-500">
-                              {activity.user?.department || "N/A"} —{" "}
-                              {activity.user?.role || "N/A"}
+                              {activity.userId?.department || "N/A"} —{" "}
+                              {activity.userId?.role || "N/A"}
                             </div>
                           </div>
                         </td>

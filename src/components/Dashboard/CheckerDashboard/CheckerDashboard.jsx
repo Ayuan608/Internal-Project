@@ -118,7 +118,6 @@ const CheckerDashboard = () => {
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
-  console.log(filteredData)
 
   // Stats cards
   const statsCards = [
@@ -355,7 +354,7 @@ const CheckerDashboard = () => {
             </TabsContent>
 
             <TabsContent value="breaks" className="mt-0">
-              <WCBreakHistory allAttendance={filteredData} detailed={true} />
+              <WCBreakHistory allAttendance={filteredData} />
             </TabsContent>
 
             <TabsContent value="attendance" className="mt-0">

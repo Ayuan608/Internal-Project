@@ -1,46 +1,19 @@
 import { File, Plus, RefreshCcw, Search, Settings } from "lucide-react";
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import Files from "../Files";
-import { DocumentEditorContainerComponent, Toolbar, Inject } from '@syncfusion/ej2-react-documenteditor';
 
 function DocsFile() {
     const [isRotating, setIsRotating] = useState(false);
-    const [openEditor, setOpenEditor] = useState(false);
-    const editorRef = useRef(null);
 
     const handleRefresh = () => {
         setIsRotating(true);
         setTimeout(() => setIsRotating(false), 500);
     };
 
-    // 👇 If Blank clicked → show editor instead of full page
-    if (openEditor) {
-        return (
-            <div className="w-full h-[100%] rounded-lg overflow-hidden border border-white/10">
-                <DocumentEditorContainerComponent
-                    ref={editorRef}
-                    id="documenteditor-container"
-                    height="100%"
-                    width="100%"
-                    serviceUrl="https://document.syncfusion.com/web-services/docx-editor/api/documenteditor/"
-                    enableToolbar={true}
-                    enableSelection={true}
-                    enableEditor={true}
-                    enableEditorHistory={true}
-                    enableSfdtExport={true}
-                    usecolor={"#1e293b3a"}
-                    title="Internal-Project"
-                >
-                    <Inject services={[Toolbar]} />
-                </DocumentEditorContainerComponent>
-            </div>
-        );
-    }
-
     return (
-        <div className="w-full h-screen overflow-hidden flex flex-col">
+        <div className="w-full h-screen  overflow-hidden flex flex-col">
 
-            {/* TOP SECTION */}
+            {/* 🔵 TOP SECTION (FULL WIDTH) */}
             <div className="px-8 py-6">
 
                 {/* Search Bar */}
@@ -53,14 +26,13 @@ function DocsFile() {
                     <Search className="absolute left-4 top-3.5 w-5 h-5 text-white/50" />
                 </div>
 
+                {/* Create New Docs Title */}
                 <h1 className="text-xl text-white mb-4 font-light">Create new Docs file</h1>
 
-                {/* ⭐ BLANK TEMPLATE BOX (Click → Open Editor) */}
+                {/* Blank Template */}
+
                 <div className="w-[160px] h-[235px] flex flex-col items-center p-3">
-                    <div
-                        className="group relative h-full w-full border-2 border-dashed border-[#325ab1] rounded-lg overflow-hidden cursor-pointer transition-all"
-                        onClick={() => setOpenEditor(true)}   // 👈 🔥 MAIN CLICK LOGIC
-                    >
+                    <div className="group relative h-full w-full border-2 border-dashed border-[#325ab1] rounded-lg overflow-hidden cursor-pointer transition-all">
 
                         <div className="flex items-center justify-center w-full h-full">
                             <div className="w-[95%] h-[95%] bg-[#325ab1] rounded-md"></div>
@@ -77,16 +49,15 @@ function DocsFile() {
 
             </div>
 
-            {/* REST OF YOUR PAGE */}
             <div className="flex flex-1 overflow-hidden border-t border-white/10">
 
-                {/* LEFT SIDE */}
+                {/* LEFT SIDE (Recent + Files) */}
                 <div className="flex-1 px-6 py-6 overflow-y-auto">
-                    <div className="bg-white/10 px-3 py-2 rounded-full flex items-center gap-2 w-fit cursor-pointer hover:bg-white/20 transition">
+                    <div className="bg-white/10 px-3 py-2  rounded-full flex items-center gap-2 w-fit cursor-pointer hover:bg-white/20 transition">
                         <Plus size={20} />
                         <span className="text-white text-base">Open Document</span>
                     </div>
-
+                    {/* Recent Header */}
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-light mt-6 text-white flex items-center gap-3">
                             Recent
@@ -98,11 +69,11 @@ function DocsFile() {
                         </h2>
                         <Settings className="w-6 h-6 text-white cursor-pointer" />
                     </div>
-
+                    {/* Files */}
                     <Files />
                 </div>
 
-                {/* RIGHT SIDE */}
+                {/* RIGHT PANEL */}
                 <div className="w-[420px] border-l border-white/10 p-6 flex flex-col">
                     <h2 className="text-white text-lg font-light mb-10">File Information</h2>
 

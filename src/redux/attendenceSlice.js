@@ -693,7 +693,7 @@ const attendanceSlice = createSlice({
       .addCase(reportWfhIssue.fulfilled, (state, action) => {
         // Add the new issue to the list
         if (action.payload.data) {
-          state.wfhIssues = action.payload.data;
+          state.requestWfhIssue = action.payload.data;
         }
         state.success = true;
         state.isLoading = false;
@@ -768,7 +768,7 @@ const attendanceSlice = createSlice({
         state.error = action.payload;
       })
 
-     
+
       .addCase(getDepartmentWiseUsersCalender.fulfilled, (state, action) => {
         state.departmentAttendance = action.payload.users;
       })

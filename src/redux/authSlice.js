@@ -536,12 +536,12 @@ const authSlice = createSlice({
         toast.error(action.payload || "Shift update failed!");
       })
       .addCase(requestAccountDeletion.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.isError = false;
         state.isSuccess = false;
       })
       .addCase(requestAccountDeletion.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.isSuccess = true;
         state.deleteRequested = true;
         state.message = action.payload.message;
@@ -551,19 +551,19 @@ const authSlice = createSlice({
         }
       })
       .addCase(requestAccountDeletion.rejected, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.isError = true;
         state.message = action.payload || 'Something went wrong';
       })
 
       // Delete Account
       .addCase(deleteAccount.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.isError = false;
         state.isSuccess = false;
       })
       .addCase(deleteAccount.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.isSuccess = true;
         state.user = null;
         state.deleteRequested = false;
