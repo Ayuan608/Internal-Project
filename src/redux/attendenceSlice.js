@@ -32,9 +32,9 @@ const handleError = (error, defaultMessage = "Operation failed") => {
 // =============== 1. PUNCH IN/OUT ===============
 export const punchIn = createAsyncThunk(
   "attendance/punchIn",
-  async ({ userId, shift = "MORNING" }, { rejectWithValue }) => {
+  async ({ userId }, { rejectWithValue }) => {
     try {
-      const { data } = await axiosInstance.post(`/attendance/punch-in/${userId}`, { shift });
+      const { data } = await axiosInstance.post(`/attendance/punch-in/${userId}`);
 
       return data;
     } catch (error) {

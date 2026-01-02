@@ -15,7 +15,7 @@ const ActivityLogs = () => {
   const dispatch = useDispatch();
   const { activities } = useSelector((state) => state.activity);
   const [filter, setFilter] = useState("all");
- 
+
 
   useEffect(() => {
     dispatch(getAllActivities());
@@ -28,27 +28,22 @@ const ActivityLogs = () => {
 
 
   const handleActivityStatus = (activity) => {
+    if (!activity || !activity.userId) return;
+
     if (window.confirm("Are you sure?")) {
       const newStatus = activity.terminated ? "active" : "terminate";
 
-      // 1. Optimistically update UI
-      dispatch({
-        type: "activity/activateStatus/fulfilled",
-        payload: {
-          _id: activity.userId._id || activity.userId,
-          terminated: !activity.terminated,
+      dispatch(
+        activateStatus({
+          id: activity.userId?._id || activity.userId,
           status: newStatus,
-        },
+        })
+      ).then(() => {
+        dispatch(getAllActivities());
       });
-
-      // 2. Call backend to actually update
-      dispatch(activateStatus({ id: activity.userId._id, status: newStatus }))
-        .then(() => {
-          // Optional: re-fetch activities to sync state with backend
-          dispatch(getAllActivities());
-        });
     }
   };
+
 
 
 
@@ -191,85 +186,88 @@ const ActivityLogs = () => {
               </thead>
 
               <tbody className="divide-y divide-slate-900">
-                {filteredActivities.map((activity) => (
-                  <tr key={activity._id} className="hover:bg-slate-900/40">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="font-medium  capitalize text-white">
-                          {activity.user?.FullName || "Unknown"}
-                        </div>
-                        <div className="text-sm text-slate-500">
-                          {activity.user?.department || "N/A"} —{" "}
-                          {activity.user?.role || "N/A"}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex items-center text-sm">
-                        <Clock className="w-4 h-4 mr-2 text-slate-400" />
-                        <div>
+                {Array.isArray(filteredActivities) &&
+                  filteredActivities
+                    .filter(a => a && a.userId)
+                    .map((activity) => (
+                      <tr key={activity._id} className="hover:bg-slate-900/40">
+                        <td className="px-6 py-4">
                           <div>
-                            {new Date(activity.createdAt).toLocaleDateString()}
+                            <div className="font-medium  capitalize text-white">
+                              {activity.user?.FullName || "Unknown"}
+                            </div>
+                            <div className="text-sm text-slate-500">
+                              {activity.user?.department || "N/A"} —{" "}
+                              {activity.user?.role || "N/A"}
+                            </div>
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {new Date(activity.createdAt).toLocaleTimeString()}{" "}
-                            ({formatTime(activity.createdAt)})
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex items-center text-sm">
+                            <Clock className="w-4 h-4 mr-2 text-slate-400" />
+                            <div>
+                              <div>
+                                {new Date(activity.createdAt).toLocaleDateString()}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {new Date(activity.createdAt).toLocaleTimeString()}{" "}
+                                ({formatTime(activity.createdAt)})
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </td>
+                        </td>
 
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${activity.loginAttempt === "Success"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                          }`}
-                      >
-                        {activity.loginAttempt}
-                      </span>
-                    </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${activity.loginAttempt === "Success"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                              }`}
+                          >
+                            {activity.loginAttempt}
+                          </span>
+                        </td>
 
-                    <td className="px-6 py-4 font-mono text-white">
-                      {activity.ipAddress}
-                    </td>
+                        <td className="px-6 py-4 font-mono text-white">
+                          {activity.ipAddress}
+                        </td>
 
-                    <td className="px-6 py-4 text-white">
-                      <div className="flex items-center text-sm">
-                        <MapPin className="w-4 h-4 mr-2 text-slate-400" />
-                        <div>
-                          {activity.location?.city || "Unknown"},{" "}
-                          {activity.location?.country || "Unknown"}
-                          <div className="text-xs text-slate-500">
-                            {activity.location?.region || ""}
+                        <td className="px-6 py-4 text-white">
+                          <div className="flex items-center text-sm">
+                            <MapPin className="w-4 h-4 mr-2 text-slate-400" />
+                            <div>
+                              {activity.location?.city || "Unknown"},{" "}
+                              {activity.location?.country || "Unknown"}
+                              <div className="text-xs text-slate-500">
+                                {activity.location?.region || ""}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </td>
+                        </td>
 
-                    <td className="px-6 py-4">
+                        <td className="px-6 py-4">
 
-                      {activity.terminated === false ? (
-                        <button
-                          onClick={() => handleActivityStatus(activity)}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
-                        >
-                          Terminate
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleActivityStatus(activity)}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
-                        >
-                          Activate
-                        </button>
-                      )}
+                          {activity.terminated === false ? (
+                            <button
+                              onClick={() => activity?.userId && handleActivityStatus(activity)}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
+                            >
+                              Terminate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => activity?.userId && handleActivityStatus(activity)}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                            >
+                              Activate
+                            </button>
+                          )}
 
-                    </td>
+                        </td>
 
-                  </tr>
-                ))}
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>

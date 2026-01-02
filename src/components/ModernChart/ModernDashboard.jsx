@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Calendar, RefreshCw, MessageCircle, Target, Activity, DollarSign, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Users, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, RefreshCw, MessageCircle, Target, Activity as ActivityIcon, DollarSign, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Users, AlertTriangle } from 'lucide-react';
 import { SparklineStatCard } from './SparklineStatCard';
 import { PerformanceTrendCard } from './PerformanceTrendCard';
 import { CircularProgress } from './CircularProgress';
@@ -125,11 +125,11 @@ const ModernDashboard = () => {
   ];
 
   const depositMetrics = [
-    { title: 'Live Check', value: '156', change: '+9.2%', icon: Activity, color: 'from-blue-500 to-indigo-500' },
+    { title: 'Live Check', value: '156', change: '+9.2%', icon: ActivityIcon, color: 'from-blue-500 to-indigo-500' },
     { title: '1st Check', value: '89', change: '+6.7%', icon: CheckCircle, color: 'from-green-500 to-teal-500' },
     { title: '2nd/3rd', value: '34', change: '+4.1%', icon: Target, color: 'from-purple-500 to-pink-500' },
     { title: 'Paycheck', value: '234', change: '+11.8%', icon: DollarSign, color: 'from-yellow-500 to-orange-500' },
-    { title: 'Records', value: '198', change: '+7.5%', icon: Activity, color: 'from-cyan-500 to-blue-500' },
+    { title: 'Records', value: '198', change: '+7.5%', icon: ActivityIcon, color: 'from-cyan-500 to-blue-500' },
     { title: 'Offline', value: '12', change: '-3.2%', icon: XCircle, color: 'from-red-500 to-pink-500' }
   ];
 
@@ -139,7 +139,7 @@ const ModernDashboard = () => {
     { title: 'RTotal Transaction Rejected', value: '87', change: '-4.8%', icon: XCircle, color: 'from-red-500 to-orange-500' },
     { title: 'Total amount Rejected', value: '$234K', change: '-6.2%', icon: TrendingDown, color: 'from-orange-500 to-red-500' },
     { title: 'Total Transaction process', value: '156', change: '+5.3%', icon: Clock, color: 'from-blue-500 to-cyan-500' },
-    { title: 'Total Amount process', value: '$987K', change: '+8.7%', icon: Activity, color: 'from-indigo-500 to-purple-500' }
+    { title: 'Total Amount process', value: '$987K', change: '+8.7%', icon: ActivityIcon, color: 'from-indigo-500 to-purple-500' }
   ];
 
   // Build daily series for KPI sparklines
@@ -163,7 +163,7 @@ const ModernDashboard = () => {
           <div>
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Super Admin Dashboard</h1>
             <p className="text-gray-400 flex items-center gap-2">
-              <Activity size={16} className="text-green-400" />
+              <ActivityIcon size={16} className="text-green-400" />
               Live Performance Monitoring • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
