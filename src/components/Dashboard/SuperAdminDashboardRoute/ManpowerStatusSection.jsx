@@ -6,7 +6,7 @@ import { Download, Search, Filter, Calendar } from "lucide-react";
 const departments = [
   "All Departments",
   "CSR Department",
-  "Withdrawal Department",
+  "Withdraw Department",
   "Deposit Department",
   "Marketing Department",
 ];
@@ -168,6 +168,7 @@ const ManpowerStatusSection = () => {
 
 
       const hasClockIn = Boolean(record.clockIn);
+ 
       const hasClockOut = Boolean(record.clockOut);
       const shiftEnded = isShiftOver(record.workingHour);
 
@@ -179,9 +180,9 @@ const ManpowerStatusSection = () => {
       // ✅ day off rule
       const hasTodayDayOff =
         !hasClockIn
-        ||
-        Array.isArray(record.dayOffRequests) ||
-        record.dayOffRequests.some(req => isToday(req.date));
+        // ||
+        // Array.isArray(record.dayOffRequests) ||
+        // record.dayOffRequests.some(req => isToday(req.date));
 
 
       const totalDayOff = hasTodayDayOff ? 1 : 0;
@@ -202,6 +203,7 @@ const ManpowerStatusSection = () => {
       let status = record.alert || "Present";
       if (totalDayOff) status = "Day Off";
       else if (totalLate) status = "Late";
+    
 
 
 
@@ -253,6 +255,7 @@ const ManpowerStatusSection = () => {
   const absentCount = filteredData.filter(r => r.status === "Absent").length;
   const lateCount = filteredData.filter(r => r.status === "Late").length;
   const dayOffCount = filteredData.filter(r => r.totalDayOff === 1).length;
+
   const handleExport = () => {
     const header = [
       "Date",
@@ -434,15 +437,18 @@ const ManpowerStatusSection = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 bg-slate-950/60">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center">
-                      <div className="flex justify-center">
-                        <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-sky-500"></div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredData.length === 0 ? (
+                {
+                // isLoading 
+                // ? (
+                //   <tr>
+                //     <td colSpan={6} className="px-4 py-8 text-center">
+                //       <div className="flex justify-center">
+                //         <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-sky-500"></div>
+                //       </div>
+                //     </td>
+                //   </tr>
+                // ) :
+                filteredData.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}
