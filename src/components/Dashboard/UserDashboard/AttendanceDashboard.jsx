@@ -1079,8 +1079,13 @@ const AttendanceDashboard = () => {
               </p>
 
               <div className="mt-4 flex flex-col items-center gap-1">
-                <div className={`text-4xl font-mono font-semibold ${timeLeft > 60 ? 'text-slate-50' : 'text-amber-400'
-                  }`}>
+                <div className={`text-4xl font-mono font-semibold ${timeLeft <= 30
+                  ? "text-red-500"
+                  : timeLeft <= 60
+                    ? "text-amber-400"
+                    : "text-slate-50"
+                  }`}
+                >
                   {formatBreakTimer(timeLeft)}
                 </div>
                 {timeLeft <= 0 && (

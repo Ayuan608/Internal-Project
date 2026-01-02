@@ -48,7 +48,7 @@ function App() {
   return (
     <Suspense fallback={<NoLoader />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/login"  />} />
+        <Route path="/" element={<Navigate to="/login" />} />
 
         {/* PUBLIC ROUTES */}
         <Route element={<NotRequireAuth />}>
@@ -116,6 +116,7 @@ function App() {
             <Route path="report" element={<CheckReport />} />
             <Route path="file-sharing" element={<FileSharing />} />
             <Route path="calender" element={<Calender />} />
+            <Route path="DayOffRequestsPage" element={<DayOffRequestsPage />} />
             <Route path="Internal-mailing" element={<InternalMailingPage />} />
             <Route path="shift-management" element={<ShiftManagement />} />
             <Route path="daily-time-record" element={<DailyTimeRecord />} />

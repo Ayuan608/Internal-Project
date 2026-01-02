@@ -170,7 +170,9 @@ const activitySlice = createSlice({
             })
             .addCase(getAllActivities.fulfilled, (state, action) => {
                 state.loading = false;
-                state.activities = action.payload;
+                state.activities = Array.isArray(action.payload)
+                    ? action.payload
+                    : [];
             })
             .addCase(getAllActivities.rejected, (state, action) => {
                 state.loading = false;
@@ -183,8 +185,12 @@ const activitySlice = createSlice({
             })
             .addCase(recordLogin.fulfilled, (state, action) => {
                 state.loading = false;
-                state.activities.unshift(action.payload);
+
+                if (action.payload) {
+                    state.activities.unshift(action.payload);
+                }
             })
+
             .addCase(recordLogin.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
@@ -203,7 +209,6 @@ const activitySlice = createSlice({
                 state.error = action.payload;
             })
 
-            // ===== Get All Whitelisted IPs =====
             .addCase(getAllIPWhitelist.pending, (state) => {
                 state.loading = true;
             })
@@ -251,19 +256,21 @@ const activitySlice = createSlice({
                 state.error = null;
             })
             .addCase(activateStatus.fulfilled, (state, action) => {
-                state.loading = false;
-                state.activities = state.activities.map((activity) =>
-                    activity.userId === action.payload._id || activity.userId?._id === action.payload._id
+                if (!action.payload?._id) return;
+
+                state.activities = state.activities.map((activity) => {
+                    if (!activity || !activity.userId) return activity;
+
+                    return activity.userId === action.payload._id ||
+                        activity.userId?._id === action.payload._id
                         ? {
                             ...activity,
-                            terminated: action.payload.terminated, // this drives your button
+                            terminated: action.payload.terminated,
                             status: action.payload.status,
                         }
-                        : activity
-                );
+                        : activity;
+                });
             })
-
-
             .addCase(activateStatus.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;

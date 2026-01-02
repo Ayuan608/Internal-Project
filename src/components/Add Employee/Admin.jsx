@@ -175,8 +175,8 @@ function Admin() {
 
   // Shift colors
   const shiftColors = {
-    Morning: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    Night: "bg-slate-500/20 text-slate-300 border-slate-500/30",
+    Day: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    Night: "bg-green-500/20 text-green-300 border-green-500/30",
     "Mid Shift": "bg-teal-500/20 text-teal-300 border-teal-500/30",
     "Marketing/SEO": "bg-orange-500/20 text-orange-300 border-orange-500/30",
     Admin: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",

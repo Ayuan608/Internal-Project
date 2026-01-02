@@ -11,6 +11,28 @@ const DEPARTMENT_COLORS = {
   'default': { bg: 'bg-gray-500/20', text: 'text-gray-300', border: 'border-gray-700/30' }
 };
 
+const Shift_COLORS = {
+  Day: {
+    bg: 'bg-yellow-500/20',
+    text: 'text-yellow-300',
+    border: 'border-yellow-700/30',
+  },
+  Night: {
+    bg: 'bg-green-500/20',
+    text: 'text-green-300',
+    border: 'border-green-700/30',
+  },
+  Mid: {
+    bg: 'bg-gray-500/20',
+    text: 'text-gray-300',
+    border: 'border-gray-700/30',
+  },
+  default: {
+    bg: 'bg-slate-500/20',
+    text: 'text-slate-300',
+    border: 'border-slate-700/30',
+  },
+};
 
 // Backend → Frontend (for display)
 const BACKEND_TO_FRONTEND_STATUS = {
@@ -270,7 +292,7 @@ export default function AttendanceTable({
           totals.totalLeave++;
           break;
         default:
-         
+
           break;
       }
     }
@@ -290,7 +312,7 @@ export default function AttendanceTable({
 
     filteredEmployees.forEach(emp => {
       const totals = calculateTotals(emp.patternByDay);
-     
+
       dayShift += totals.totalDayShift;
       midShift += totals.totalMidShift;
       nightShift += totals.totalNightShift;
@@ -392,13 +414,20 @@ export default function AttendanceTable({
     );
     return DEPARTMENT_COLORS[deptKey] || DEPARTMENT_COLORS.default;
   };
+  const getShiftColor = (Shift) => {
+    const shift = Shift || '';
+    const shiftKey = Object.keys(Shift_COLORS).find(key =>
+      shift.toLowerCase().includes(key.toLowerCase())
+    );
+    return Shift_COLORS[shiftKey] || Shift_COLORS.default;
+  };
 
   // Start editing an employee
   const handleStartEdit = (empId) => {
     const emp = data.find(e => e._id === empId);
 
     const totals = calculateTotals(emp.patternByDay);
-  
+
     const patternByDay = {};
     (emp.pattern || []).forEach((status, index) => {
       const day = index + 1;
@@ -467,7 +496,7 @@ export default function AttendanceTable({
 
     const { _id, patternByDay, remarks } = editData;
 
-   
+
     const originalUser = filteredEmployees.find(
       emp => emp._id === _id
     );
@@ -477,17 +506,17 @@ export default function AttendanceTable({
 
     const isRemarksChanged =
       remarks !== (originalUser.remarks || "");
-   
+
     const isPatternChanged = Object.entries(patternByDay).some(
       ([day, status]) =>
         status !== originalUser.patternByDay?.[day]
     );
-   
+
     if (isRemarksChanged && !isPatternChanged) {
       await dispatch(
         updateAttendance({
           user: _id,
-          remarks, 
+          remarks,
         })
       );
 
@@ -497,12 +526,12 @@ export default function AttendanceTable({
       return;
     }
 
-   
+
     for (const [day, frontendStatus] of Object.entries(patternByDay)) {
       const backendStatus =
         FRONTEND_TO_BACKEND_STATUS[frontendStatus];
 
-      
+
       if (backendStatus === originalUser.patternByDay?.[day]) {
         continue;
       }
@@ -856,6 +885,7 @@ export default function AttendanceTable({
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Username</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Department</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Shift</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Schedule</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Remarks</th>
 
@@ -895,7 +925,9 @@ export default function AttendanceTable({
                   const totals = calculateTotals(emp.patternByDay);
                   // console.log(totals)
                   const deptColor = getDepartmentColor(emp.department);
-
+                 
+                  const shiftColor = getShiftColor(emp?.Shift);
+                 
                   return (
                     <tr key={emp._id || emp.id} className="hover:bg-slate-800/30 transition">
                       <td className="px-4 py-3 text-sm text-slate-300">{index + 1}</td>
@@ -910,7 +942,14 @@ export default function AttendanceTable({
                           {emp.department || 'N/A'}
                         </span>
                       </td>
-
+                      <td className="px-4 py-3 text-sm">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap 
+  ${shiftColor.bg} ${shiftColor.text} border ${shiftColor.border}`}
+                        >
+                          {emp?.Shift || 'N/A'}
+                        </span>
+                      </td>
                       {/* Schedule Column */}
                       <td className="px-4 py-3 text-sm text-slate-300 whitespace-nowrap">
                         {isEditing ? (
@@ -1127,7 +1166,7 @@ export default function AttendanceTable({
           <div
             className="fixed inset-0 z-40"
             onClick={() => setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null })}
-          
+
           />
           <div
             className="fixed z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-2 min-w-[220px]"
@@ -1160,10 +1199,10 @@ export default function AttendanceTable({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           {Object.entries(FRONTEND_STATUS_MAP).map(([key, value]) => {
-          
+
 
             const stat = legendStats[key];
-       
+
             return (
               <div
                 key={key}

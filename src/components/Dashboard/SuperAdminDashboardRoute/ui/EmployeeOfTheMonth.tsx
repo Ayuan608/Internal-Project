@@ -244,39 +244,37 @@ const EmployeeOfTheMonthAdmin = () => {
           </div>
         )}
 
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            Employee of the Month
-          </h1>
-          <p className="text-gray-400">
-            Manage your users, employees and their permissions
-          </p>
-        </div>
+        {/* Header + Actions */}
+        <div className="mb-10 flex items-start justify-between pt-6">
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setActiveTab("create")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-              activeTab === "create"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30"
-                : "bg-[rgba(59,130,246,0.03)] text-slate-300 border border-slate-700 hover:bg-slate-800"
-            }`}
-          >
-            <Plus className="w-5 h-5" />
-            Create Announcement
-          </button>
-          <button
-            onClick={() => setActiveTab("view")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-              activeTab === "view"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30"
-                : "bg-[rgba(59,130,246,0.03)] text-slate-300 border border-slate-700 hover:bg-slate-800"
-            }`}
-          >
-            <Award className="w-5 h-5" />
-            View All Announcements
-          </button>
+          {/* Left: Title */}
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+              Employee of the Month 
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-slate-400">
+              Manage your users, employees and their permissions efficiently from one place.
+            </p>
+          </div>
+
+          {/* Right: Buttons */}
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() => setActiveTab("create")}
+              className="flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/30 transition hover:bg-blue-500"
+            >
+              <Plus className="h-4 w-4" />
+              Create Announcement
+            </button>
+
+            <button
+              onClick={() => setActiveTab("view")}
+              className="flex items-center gap-2 rounded-full bg-slate-900/70 px-5 py-2.5 text-sm font-semibold text-slate-200 border border-slate-700 transition hover:bg-slate-800"
+            >
+              <Award className="h-4 w-4" />
+              View All Announcements
+            </button>
+          </div>
         </div>
 
         {/* Create Tab */}
@@ -315,22 +313,20 @@ const EmployeeOfTheMonthAdmin = () => {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <Users
-                      className={`w-6 h-6 ${
-                        dept.color === "blue"
+                      className={`w-6 h-6 ${dept.color === "blue"
                           ? "text-blue-400"
                           : dept.color === "emerald"
-                          ? "text-emerald-400"
-                          : "text-purple-400"
-                      }`}
+                            ? "text-emerald-400"
+                            : "text-purple-400"
+                        }`}
                     />
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        dept.color === "blue"
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${dept.color === "blue"
                           ? "bg-blue-500/10 text-blue-400"
                           : dept.color === "emerald"
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-purple-500/10 text-purple-400"
-                      }`}
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : "bg-purple-500/10 text-purple-400"
+                        }`}
                     >
                       {
                         announcements.filter(
@@ -509,13 +505,13 @@ const EmployeeOfTheMonthAdmin = () => {
                   {(!formData.hasGoodPerformance ||
                     !formData.hasNoLate ||
                     !formData.hasNoMissingPunches) && (
-                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                      <p className="text-amber-400 text-sm font-medium">
-                        ⚠️ All criteria must be checked to proceed with
-                        nomination
-                      </p>
-                    </div>
-                  )}
+                      <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                        <p className="text-amber-400 text-sm font-medium">
+                          ⚠️ All criteria must be checked to proceed with
+                          nomination
+                        </p>
+                      </div>
+                    )}
                 </div>
 
                 <div>
@@ -596,13 +592,12 @@ const EmployeeOfTheMonthAdmin = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex gap-6 flex-1">
                         <div
-                          className={`p-3 rounded-2xl shadow-lg h-full ${
-                            color === "blue"
+                          className={`p-3 rounded-2xl shadow-lg h-full ${color === "blue"
                               ? "bg-gradient-to-br from-blue-500 to-blue-600"
                               : color === "emerald"
-                              ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
-                              : "bg-gradient-to-br from-purple-500 to-purple-600"
-                          }`}
+                                ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
+                                : "bg-gradient-to-br from-purple-500 to-purple-600"
+                            }`}
                         >
                           <Trophy className="w-8 h-8 text-white" />
                         </div>
@@ -613,13 +608,12 @@ const EmployeeOfTheMonthAdmin = () => {
                               {employee.name || employee.employeeName}
                             </h3>
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                                color === "blue"
+                              className={`px-3 py-1 rounded-full text-xs font-bold border ${color === "blue"
                                   ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
                                   : color === "emerald"
-                                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                  : "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                              }`}
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                    : "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                                }`}
                             >
                               {employee.month} {employee.year}
                             </span>
@@ -676,13 +670,13 @@ const EmployeeOfTheMonthAdmin = () => {
                             Posted on{" "}
                             {employee.datePosted
                               ? new Date(
-                                  employee.datePosted
-                                ).toLocaleDateString()
+                                employee.datePosted
+                              ).toLocaleDateString()
                               : employee.createdAt
-                              ? new Date(
+                                ? new Date(
                                   employee.createdAt
                                 ).toLocaleDateString()
-                              : "N/A"}
+                                : "N/A"}
                           </div>
                         </div>
                       </div>

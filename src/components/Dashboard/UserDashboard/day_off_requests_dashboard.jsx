@@ -120,12 +120,28 @@ const DayOffRequestsPage = () => {
           </button>
         </header>
 
-        {/* SUMMARY */}
-        <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <SummaryCard label="Pending" value={counters.PENDING} className="border-amber-400/70 bg-amber-500/10 text-amber-200" />
-          <SummaryCard label="Approved" value={counters.APPROVED} className=" border-emerald-400 /70 bg-emerald-500/10 text-emerald-200" />
-          <SummaryCard label="Rejected" value={counters.REJECTED} className=" border-rose-400 /70 bg-rose-500/10 text-rose-200" />
-        </section>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          {/* Pending */}
+          <div className="border border-yellow-400 rounded-lg p-4">
+            <p className="text-xs text-yellow-400 uppercase mb-1">Pending</p>
+            <h2 className="text-2xl font-bold text-yellow-400">0</h2>
+          </div>
+
+          {/* Approved */}
+          <div className="border border-emerald-400 rounded-lg p-4">
+            <p className="text-xs text-emerald-400 uppercase mb-1">Approved</p>
+            <h2 className="text-2xl font-bold text-emerald-400">1</h2>
+          </div>
+
+          {/* Rejected */}
+          <div className="border border-rose-400 rounded-lg p-4">
+            <p className="text-xs text-rose-400 uppercase mb-1">Rejected</p>
+            <h2 className="text-2xl font-bold text-rose-400">0</h2>
+          </div>
+
+        </div>
+
 
         {/* FILTERS */}
         <section className="mb-4 flex flex-wrap gap-2">

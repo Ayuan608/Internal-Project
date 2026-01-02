@@ -1,28 +1,15 @@
-import React, { useState } from 'react';
-import { Plus, RefreshCcw, Search, Settings, SquareCheckBig, Trash2 } from 'lucide-react';
+import React, { useState } from 'react'
+import {  Plus, RefreshCcw, Search, Settings, SquareCheckBig, Trash2 } from 'lucide-react'
 import Files from '../Files';
-
-function PPTFile({ fileData }) {
-
+function PPTFile() {
     const [isRotating, setIsRotating] = useState(false);
-    const [openEditor, setOpenEditor] = useState(false);
 
     const handleRefresh = () => {
         setIsRotating(true);
         setTimeout(() => setIsRotating(false), 500);
     };
-
-    // ⭐ If user clicks "Blank" → open slide editor
-    if (openEditor) {
-        return (
-            <div className="w-full h-screen bg-black text-white flex items-center justify-center">
-                <h1 className="text-3xl font-semibold">Slides Editor Coming Soon...</h1>
-            </div>
-        );
-    }
-
     return (
-        <div className='flex-1 p-6 overflow-y-auto h-screen'>
+        <div className='flex-1 p-6 overflow-y-auto  h-screen'>
             <div className="relative mb-6 w-full max-w-4xl">
                 <input
                     type="text"
@@ -31,15 +18,10 @@ function PPTFile({ fileData }) {
                 />
                 <Search className="absolute left-3 top-2.5 w-5 h-5 text-white" />
             </div>
-
             <h1 className='text-xl text-white mb-4 font-semibold'>Create new Slides File</h1>
+            <div className="w-[230px] h-[200px] flex flex-col items-center bg-[#222c432b] rounded-xl p-3 ">
+                <div className="group relative h-full w-full border-2 border-dashed border-[#FF8F6B] rounded-lg overflow-hidden cursor-pointer transition-all">
 
-            {/* ⭐ Blank Slide Template */}
-            <div className="w-[230px] h-[200px] flex flex-col items-center bg-[#222c432b] rounded-xl p-3">
-                <div
-                    className="group relative h-full w-full border-2 border-dashed border-[#FF8F6B] rounded-lg overflow-hidden cursor-pointer transition-all"
-                    onClick={() => setOpenEditor(true)}  // 👈 MAIN LOGIC
-                >
                     <div className="flex items-center justify-center w-full h-full">
                         <div className="w-[95%] h-[95%] bg-[#FF8F6B] rounded-md"></div>
                     </div>
@@ -51,14 +33,12 @@ function PPTFile({ fileData }) {
                     </div>
                 </div>
 
-                <div className="mt-3 text-white text-sm">Blank</div>
+                <div className="mt-3  text-white text-sm">Blank</div>
             </div>
-
             <div className="bg-[#f5f6fa13] px-4 py-2.5 mt-5 rounded-full flex items-center gap-2 w-fit mb-8 cursor-pointer hover:bg-[#2a2d3b] transition">
                 <Plus size={20} />
                 <span className="text-sm">Open Document</span>
             </div>
-
             <div className="border-b border-[#9E9FA74D] pb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold flex items-center gap-3">
                     Recent
@@ -84,10 +64,9 @@ function PPTFile({ fileData }) {
                     </button>
                 </div>
             </div>
-
             <Files />
         </div>
-    );
+    )
 }
 
-export default PPTFile;
+export default PPTFile
