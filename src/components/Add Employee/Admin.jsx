@@ -33,14 +33,14 @@ import {
 } from "../../redux/authSlice";
 import toast from "react-hot-toast";
 import MetaData from "../../more/MetaData";
-import countries from "../../Helpers/countriles";
+import UserActionsModal from "./ActionModal";
 
 function Admin() {
   const dispatch = useDispatch();
   const { users } = useSelector((state) => state?.auth);
   const role = useSelector((state) => state.auth?.role);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("add"); // 'add' or 'edit'
+  const [modalType, setModalType] = useState("add");
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
@@ -49,48 +49,45 @@ function Admin() {
   const [actionModal, setActionModal] = useState(false);
   const [selectedAction, setSelectedAction] = useState("");
   const [actionUser, setActionUser] = useState(null);
-  const [useManualWorkingHour, setUseManualWorkingHour] = useState(false);
+  const [useManualShift, setUseManualShift] = useState(false);
 
-  // Single form state for both add and edit
   const [formData, setFormData] = useState({
     FullName: "",
     username: "",
     password: "",
     email: "",
-    phone: "",
     department: "",
-    dateHired: "",
     role: "",
-    salary: "",
-    workingHour: "",
     Shift: "",
+    workingHour: "",
   });
 
-  const [selectedCountry] = useState(
-    countries.find((c) => c.dialCode === "+63")
-  );
-
-  // Department-specific shifts data
+  // Sab departments ke liye shift options
   const departmentShifts = {
     "CSR": [
       { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM" },
       { value: "Night", label: "Night: 4:00 PM - 4:00 AM" },
-      { value: "Mid Shift", label: "Mid Shift: 10:00 AM - 10:00 PM" }
+      { value: "Mid", label: "Mid Shift: 10:00 AM - 10:00 PM" }
     ],
     "Deposit": [
-      { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM | 3:00 AM - 3:00 PM" },
-      { value: "Night", label: "Night: 4:00 PM - 4:00 AM | 3:00 PM - 3:00 AM" },
-      { value: "Mid Shift", label: "Mid Shift: 7:00 AM - 4:00 PM | 7:00 PM - 4:00 AM" }
+      { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM" },
+      { value: "Night", label: "Night: 4:00 PM - 4:00 AM" },
+      { value: "Mid", label: "Mid Shift: 7:00 AM - 4:00 PM" }
     ],
     "Withdraw": [
       { value: "Morning", label: "Morning: 4:00 AM - 4:00 PM" },
       { value: "Night", label: "Night: 4:00 PM - 4:00 AM" }
     ],
     "Marketing": [
-      { value: "Marketing/SEO", label: "Marketing/SEO: 12 Noon - 12 Midnight | 12 Noon - 10:00 PM" }
+      { value: "Marketing", label: "Marketing: 12 Noon - 12 Midnight" }
     ],
     "Admin": [
-      { value: "Admin", label: "Admin: 10:00 AM - 10:00 PM" }
+      { value: "Morning", label: "Admin Shift: 10:00 AM - 10:00 PM" },
+      { value: "Day", label: "Day Shift: 9 AM - 5 PM" }
+    ],
+    "Checker": [
+      { value: "Morning", label: "Checker Shift: 9 AM - 5 PM" },
+      { value: "Day", label: "Day Shift: 9 AM - 5 PM" }
     ]
   };
 
@@ -101,64 +98,42 @@ function Admin() {
 
   const allowedRoles = rolePermissions[role] || [];
 
-  // Check if role should show extra fields
-  const shouldShowExtraFields = (userRole) => {
-    return !["Admin", "Checker"].includes(userRole);
-  };
-
-  // Format department name
-  const formatDepartment = (dept) => {
-    if (!dept || dept === "undefined") return "—";
+  // Format functions
+  const formatDepartment = (dept, userRole) => {
+    if (!dept || dept === "undefined") {
+      if (userRole === "Admin") return "Admin";
+      if (userRole === "Checker") return "Checker";
+      return "—";
+    }
     return dept;
   };
 
-  // Format role name
   const formatRole = (userRole) => {
     if (!userRole || userRole === "undefined") return "—";
     return userRole;
   };
 
-  // Format shift name
-  const formatShift = (shift, userRole) => {
-    if (["Admin", "Checker"].includes(userRole)) return "—";
+  const formatShift = (shift) => {
     if (!shift || shift === "undefined") return "—";
     return shift;
   };
 
-  const formatPhone = (phone, userRole) => {
-    if (["Admin", "Checker"].includes(userRole) && !phone) return "—";
-    if (!phone) return "—";
-    return `+63 ${phone}`;
-  };
-
-  // Format salary
-  const formatSalary = (salary, userRole) => {
-    if (["Admin", "Checker"].includes(userRole) && !salary) return "—";
-    if (!salary) return "—";
-    return new Intl.NumberFormat("en-PH", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(salary);
-  };
-
-  // Department colors
+  // Color mappings
   const departmentColors = {
     CSR: "bg-blue-500/20 text-blue-300 border-blue-500/30",
     Deposit: "bg-green-500/20 text-green-300 border-green-500/30",
     Withdraw: "bg-purple-500/20 text-purple-300 border-purple-500/30",
     Marketing: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+    Admin: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+    Checker: "bg-pink-500/20 text-pink-300 border-pink-500/30",
   };
 
   const getDepartmentColor = (dept, userRole) => {
-    if (userRole === "Admin") {
-      return "bg-gray-500/10 text-gray-400 border-gray-500/20";
-    }
-    const formattedDept = formatDepartment(dept);
+    let formattedDept = formatDepartment(dept, userRole);
     if (formattedDept === "—") return "bg-gray-500/10 text-gray-400 border-gray-500/20";
-    return departmentColors[dept] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    return departmentColors[formattedDept] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
   };
 
-  // Role colors
   const roleColors = {
     "Super-Admin": "bg-red-500/20 text-red-300 border-red-500/30",
     Admin: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
@@ -173,58 +148,51 @@ function Admin() {
     return roleColors[userRole] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
   };
 
-  // Shift colors
   const shiftColors = {
-    Day: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    Morning: "bg-amber-500/20 text-amber-300 border-amber-500/30",
     Night: "bg-green-500/20 text-green-300 border-green-500/30",
-    "Mid Shift": "bg-teal-500/20 text-teal-300 border-teal-500/30",
-    "Marketing/SEO": "bg-orange-500/20 text-orange-300 border-orange-500/30",
-    Admin: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+    Mid: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+    Marketing: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+    Day: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    Probation: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    Rest: "bg-gray-500/20 text-gray-300 border-gray-500/30",
   };
 
-  const getShiftColor = (shift, userRole) => {
-    if (["Admin", "Checker"].includes(userRole)) return "bg-gray-500/10 text-gray-400 border-gray-500/20";
-    const formattedShift = formatShift(shift, userRole);
+  const getShiftColor = (shift) => {
+    const formattedShift = formatShift(shift);
     if (formattedShift === "—") return "bg-gray-500/10 text-gray-400 border-gray-500/20";
     return shiftColors[shift] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
   };
 
+  // Effects
   useEffect(() => {
     dispatch(getAllUsers());
   }, [dispatch]);
 
-  // Auto-fill working hours when shift is selected
   useEffect(() => {
-    if (formData.Shift && !useManualWorkingHour) {
-      // Find the selected shift details
+    if (formData.Shift && !useManualShift) {
       const allShifts = Object.values(departmentShifts).flat();
       const selectedShift = allShifts.find(shift => shift.value === formData.Shift);
-      
+
       if (selectedShift) {
-        // Extract working hours from label (format: "Shift Name: Working Hours")
         const match = selectedShift.label.match(/:\s*(.+)/);
         if (match) {
+          const workingHour = match[1].split('|')[0].trim();
           setFormData(prev => ({
             ...prev,
-            workingHour: match[1].trim()
+            workingHour: workingHour
           }));
         }
-      } else if (formData.role === "Admin" && formData.Shift === "Admin") {
-        setFormData(prev => ({
-          ...prev,
-          workingHour: "10:00 AM - 10:00 PM"
-        }));
       }
     }
-  }, [formData.Shift, useManualWorkingHour, formData.role]);
+  }, [formData.Shift, useManualShift]);
 
-  // Filter users based on active tab
+  // Filter users
   const filteredUsers = useMemo(() => {
     if (!users) return [];
 
     let filtered = users;
 
-    // Filter by tab
     if (activeTab === "checker") {
       filtered = filtered.filter(user => user?.role === "Checker");
     } else if (activeTab === "admin") {
@@ -233,7 +201,6 @@ function Admin() {
       filtered = filtered.filter(user => user?.role === "Super-Admin");
     }
 
-    // Filter by search
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -242,33 +209,30 @@ function Admin() {
       );
     }
 
-    // Filter by department
     if (departmentFilter) {
       filtered = filtered.filter(user =>
-        formatDepartment(user.department) === departmentFilter
+        formatDepartment(user.department, user.role) === departmentFilter
       );
     }
 
     return filtered;
   }, [users, activeTab, searchTerm, departmentFilter]);
 
-  // Calculate statistics
+  // Statistics
   const statistics = useMemo(() => {
     const totalUsers = filteredUsers.length;
     const activeUsers = filteredUsers.filter(
       (user) => user?.status === "active"
     ).length;
 
-    // Department distribution
     const departmentCount = filteredUsers.reduce((acc, user) => {
-      const dept = formatDepartment(user?.department);
+      const dept = formatDepartment(user?.department, user?.role);
       if (dept !== "—") {
         acc[dept] = (acc[dept] || 0) + 1;
       }
       return acc;
     }, {});
 
-    // Role distribution
     const roleCount = filteredUsers.reduce((acc, user) => {
       const role = formatRole(user?.role);
       if (role !== "—") {
@@ -277,7 +241,6 @@ function Admin() {
       return acc;
     }, {});
 
-    // Recent hires (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentHires = filteredUsers.filter((user) => {
@@ -298,56 +261,42 @@ function Admin() {
     };
   }, [filteredUsers]);
 
-  // Function to get available shifts based on role and department
+  // Get available shifts
   const getAvailableShifts = () => {
-    // For Admin role
     if (formData.role === "Admin") {
       return departmentShifts["Admin"] || [];
     }
-    
-    // For other roles with department
+    if (formData.role === "Checker") {
+      return departmentShifts["Checker"] || [];
+    }
     if (formData.department && departmentShifts[formData.department]) {
       return departmentShifts[formData.department];
     }
-    
-    // Default empty array
     return [];
   };
 
-  // Handle form input change
+  // Form handlers
   const handleFormInput = (e) => {
     const { name, value } = e.target;
     const updatedData = { ...formData, [name]: value };
 
-    // Handle Checker role - no department
-    if (name === "role" && value === "Checker") {
-      updatedData.department = "";
-    }
-
-    // Handle Admin role - clear extra fields
-    if (name === "role" && value === "Admin") {
-      updatedData.phone = "";
-      updatedData.dateHired = "";
-      updatedData.salary = "";
-      updatedData.workingHour = "";
+    if (name === "role") {
       updatedData.Shift = "";
-      // For Admin role, show Admin shift options
-      if (name === "role") {
+      updatedData.workingHour = "";
+      if (value === "Admin" || value === "Checker") {
         updatedData.department = "";
       }
     }
 
-    // When department changes, reset Shift to empty
     if (name === "department") {
       updatedData.Shift = "";
       updatedData.workingHour = "";
-      setUseManualWorkingHour(false);
+      setUseManualShift(false);
     }
 
     setFormData(updatedData);
   };
 
-  // Open modal for add
   const openAddModal = () => {
     setModalType("add");
     setFormData({
@@ -355,49 +304,43 @@ function Admin() {
       username: "",
       password: "",
       email: "",
-      phone: "",
       department: "",
-      dateHired: "",
       role: "",
-      salary: "",
-      workingHour: "",
       Shift: "",
+      workingHour: "",
     });
     setSelectedUser(null);
-    setUseManualWorkingHour(false);
+    setUseManualShift(false);
     setIsModalOpen(true);
   };
 
-  // Open modal for edit
   const openEditModal = (user) => {
     setModalType("edit");
     setSelectedUser(user);
+
+    const userShift = user.Shift || "";
+    const isManualShift = !["Morning", "Night", "Mid", "Marketing", "Day"].includes(userShift);
+
     setFormData({
       FullName: user.FullName || "",
       username: user.username || "",
       password: "",
       email: user.email || "",
-      phone: user.phone || "",
       department: user.department || "",
-      dateHired: user.dateHired
-        ? new Date(user.dateHired).toISOString().split("T")[0]
-        : "",
       role: user.role || "",
-      salary: user.salary || "",
+      Shift: userShift,
       workingHour: user.workingHour || "",
-      Shift: user.Shift || "",
     });
-    setUseManualWorkingHour(false);
+    setUseManualShift(isManualShift);
     setIsModalOpen(true);
   };
 
-  // Handle form submit
+  // Form submission
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    const { FullName, username, password, email, phone, department, dateHired, role, salary, workingHour, Shift } = formData;
+    const { FullName, username, password, email, department, role, Shift, workingHour } = formData;
 
-    // Basic validation
     if (!FullName || !email || !role) {
       toast.error("Please fill required fields");
       return;
@@ -410,18 +353,14 @@ function Admin() {
       }
     }
 
-    // Department validation for non-Checker roles
     if (role !== "Checker" && role !== "Admin" && !department) {
       toast.error("Department is required for this role");
       return;
     }
 
-    // Extra fields validation for non-Admin/Checker roles
-    if (shouldShowExtraFields(role)) {
-      if (!phone || !dateHired || !salary || !workingHour || !Shift) {
-        toast.error("Please fill all the details");
-        return;
-      }
+    if (!Shift || !workingHour) {
+      toast.error("Shift and working hours are required");
+      return;
     }
 
     if (FullName.length < 5) {
@@ -457,7 +396,7 @@ function Admin() {
     }
   };
 
-  // Handle delete
+  // Delete user function
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this user?"
@@ -474,36 +413,46 @@ function Admin() {
     }
   };
 
-  // Handle action modal
-  const openActionModal = (user, action) => {
-    setActionUser(user);
-    setSelectedAction(action);
-    setActionModal(true);
-  };
+  // Action handlers
+  const handleAction = async (action, user) => {
+    switch (action) {
+      case "delete":
+        const confirmDelete = window.confirm(
+          `Are you sure you want to delete ${user.FullName}?`
+        );
+        if (!confirmDelete) return;
 
-  // Handle action execution
-  const handleAction = async () => {
-    switch (selectedAction) {
+        const response = await dispatch(deleteUser(user._id));
+
+        if (response?.payload?.success) {
+          toast.success("User deleted successfully!");
+          dispatch(getAllUsers());
+        } else {
+          toast.error(response?.payload || "Failed to delete user");
+        }
+        break;
       case "suspend":
-        toast.success(`${actionUser.FullName} has been suspended!`);
+        toast.success(`${user.FullName} has been suspended!`);
         break;
       case "activate":
-        toast.success(`${actionUser.FullName} has been activated!`);
+        toast.success(`${user.FullName} has been activated!`);
         break;
       case "reset-password":
-        toast.success(`Password reset link sent to ${actionUser.email}!`);
+        toast.success(`Password reset link sent to ${user.email}!`);
         break;
       case "view-logs":
-        toast.success(`Opening logs for ${actionUser.FullName}...`);
+        toast.success(`Opening logs for ${user.FullName}...`);
         break;
       case "export-data":
-        toast.success(`Exporting data for ${actionUser.FullName}...`);
+        toast.success(`Exporting data for ${user.FullName}...`);
+        break;
+      case "toggle-2fa":
+        toast.success(`2FA ${user.isTwoFactorEnabled ? "disabled" : "enabled"} for ${user.FullName}!`);
         break;
       default:
         break;
     }
-    setActionModal(false);
-    dispatch(getAllUsers());
+    setActionUser(null);
   };
 
   if (!allowedRoles.length) {
@@ -514,11 +463,319 @@ function Admin() {
     );
   }
 
+  // Modal for add/edit
+  const renderModal = () => (
+    <AnimatePresence>
+      {isModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="bg-slate-900/30 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] border border-slate-800 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-6 border-b border-slate-800/30 bg-slate-900/30">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                {modalType === "add" ? <User className="w-6 h-6" /> : <Edit className="w-6 h-6" />}
+                {modalType === "add" ? "Add New Employee" : "Edit Employee"}
+              </h2>
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg"
+              >
+                <X size={24} />
+              </motion.button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+              <form noValidate onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm font-medium">
+                      Full Name *
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      name="FullName"
+                      value={formData.FullName}
+                      onChange={handleFormInput}
+                      placeholder="Enter employee name"
+                      className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm font-medium">
+                      Email *
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleFormInput}
+                      placeholder="Enter employee email"
+                      className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Username */}
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm font-medium">
+                      Username {modalType === "add" ? "*" : ""}
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleFormInput}
+                      placeholder="Enter username"
+                      disabled={modalType === "edit"}
+                      className={`w-full border border-slate-700 rounded-xl px-4 py-3 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${modalType === "edit"
+                        ? "bg-slate-800/30 text-gray-400 cursor-not-allowed"
+                        : "bg-slate-800/50 text-white"
+                        }`}
+                    />
+                    {modalType === "edit" && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Username cannot be changed
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Password */}
+                  {modalType === "add" && (
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Password *
+                      </label>
+                      <input
+                        required
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleFormInput}
+                        placeholder="Enter password"
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+                  )}
+
+                  {/* Department (not for Admin/Checker) */}
+                  {formData.role !== "Checker" && formData.role !== "Admin" && (
+                    <div>
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Department *
+                      </label>
+                      <select
+                        name="department"
+                        value={formData.department}
+                        onChange={handleFormInput}
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      >
+                        <option className="bg-slate-800" value="">
+                          Select Department
+                        </option>
+                        <option className="bg-slate-800" value="CSR">
+                          CSR Department
+                        </option>
+                        <option className="bg-slate-800" value="Deposit">
+                          Deposit Department
+                        </option>
+                        <option className="bg-slate-800" value="Withdraw">
+                          Withdraw Department
+                        </option>
+                        <option className="bg-slate-800" value="Marketing">
+                          Marketing Department
+                        </option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Role */}
+                  <div>
+                    <label className="block text-gray-300 mb-2 text-sm font-medium">
+                      Role *
+                    </label>
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleFormInput}
+                      className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    >
+                      <option className="bg-slate-800" value="">
+                        Select Role
+                      </option>
+                      {allowedRoles.map((roleOption) => (
+                        <option
+                          key={roleOption}
+                          value={roleOption}
+                          className="bg-slate-800"
+                        >
+                          {roleOption}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Shift Section - All in One */}
+                  <div className="col-span-2">
+                    <label className="block text-gray-300 mb-2 text-sm font-medium">
+                      Shift & Working Hours *
+                    </label>
+
+                    <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 space-y-4">
+                      {/* Toggle for Manual Shift */}
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id="manualShift"
+                          checked={useManualShift}
+                          onChange={(e) => {
+                            setUseManualShift(e.target.checked);
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                Shift: "",
+                                workingHour: ""
+                              }));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor="manualShift" className="text-sm text-gray-300 font-medium">
+                          Enter custom shift manually
+                        </label>
+                      </div>
+
+                      {useManualShift ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-gray-300 mb-2 text-sm">
+                              Shift Name *
+                            </label>
+                            <input
+                              type="text"
+                              name="Shift"
+                              value={formData.Shift}
+                              onChange={handleFormInput}
+                              placeholder="e.g., Custom Shift"
+                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-300 mb-2 text-sm">
+                              Working Hours *
+                            </label>
+                            <input
+                              type="text"
+                              name="workingHour"
+                              value={formData.workingHour}
+                              onChange={handleFormInput}
+                              placeholder="e.g., 9 AM - 5 PM"
+                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-gray-300 mb-2 text-sm">
+                            Select Shift *
+                          </label>
+                          <select
+                            name="Shift"
+                            value={formData.Shift}
+                            onChange={handleFormInput}
+                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            disabled={!formData.role}
+                          >
+                            <option className="bg-slate-800" value="">
+                              {!formData.role
+                                ? "Select Role First"
+                                : `Select ${formData.role} Shift`}
+                            </option>
+                            {getAvailableShifts().map((shift) => (
+                              <option
+                                key={shift.value}
+                                value={shift.value}
+                                className="bg-slate-800"
+                              >
+                                {shift.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          {formData.workingHour && (
+                            <div className="mt-3 p-3 bg-slate-800/30 rounded-lg">
+                              <p className="text-sm text-gray-300 mb-1">Working Hours:</p>
+                              <p className="text-white font-medium">{formData.workingHour}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex justify-end gap-3 pt-6">
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-all"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${modalType === "add"
+                      ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                      : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                      } text-white`}
+                  >
+                    {modalType === "add" ? (
+                      <>
+                        <Plus className="w-4 h-4 inline mr-2" />
+                        Add Employee
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 inline mr-2" />
+                        Update Employee
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  // Main render
   return (
     <div className="min-h-[92.7vh] p-6">
       <MetaData title="Admin Dashboard - User Management" />
 
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -596,6 +853,7 @@ function Admin() {
           </motion.button>
         </div>
 
+        {/* Search and Filter */}
         <div className="flex gap-4 flex-wrap items-end">
           <div className="relative flex-1 min-w-[250px] max-w-2xl">
             <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
@@ -608,11 +866,13 @@ function Admin() {
             />
           </div>
 
+          {/* Department Filter Buttons */}
           <div className="flex gap-3">
             {Object.entries(statistics.departmentCount).map(([dept, count]) => {
               const isActive = departmentFilter === dept;
               let buttonColor = "bg-slate-800/30 text-gray-300 border-slate-700 hover:bg-slate-800/50";
 
+              // Color coding for departments
               if (dept === "CSR") {
                 buttonColor = isActive
                   ? "bg-blue-600/30 text-blue-300 border-blue-500"
@@ -629,6 +889,14 @@ function Admin() {
                 buttonColor = isActive
                   ? "bg-orange-600/30 text-orange-300 border-orange-500"
                   : "bg-orange-600/10 text-orange-400 border-orange-600/30 hover:bg-orange-600/20";
+              } else if (dept === "Admin") {
+                buttonColor = isActive
+                  ? "bg-yellow-600/30 text-yellow-300 border-yellow-500"
+                  : "bg-yellow-600/10 text-yellow-400 border-yellow-600/30 hover:bg-yellow-600/20";
+              } else if (dept === "Checker") {
+                buttonColor = isActive
+                  ? "bg-pink-600/30 text-pink-300 border-pink-500"
+                  : "bg-pink-600/10 text-pink-400 border-pink-600/30 hover:bg-pink-600/20";
               }
 
               return (
@@ -737,9 +1005,6 @@ function Admin() {
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider emailwidth">
                   Email
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider phonewidth">
-                  Phone
-                </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
                   Department
                 </th>
@@ -748,9 +1013,6 @@ function Admin() {
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider shiftwidth">
                   Shift
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider salerywith">
-                  Salary
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider statuswidth">
                   Status
@@ -785,9 +1047,7 @@ function Admin() {
                   <td className="px-6 py-4 text-gray-300 sdasemail">
                     {user?.email || "—"}
                   </td>
-                  <td className="px-6 py-4 text-gray-300 sddsphone">
-                    {formatPhone(user?.phone, user?.role)}
-                  </td>
+
                   <td className="px-6 py-4 sdsadepart">
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getDepartmentColor(
@@ -795,7 +1055,7 @@ function Admin() {
                         user?.role
                       )}`}
                     >
-                      {user?.role === "Admin" || user?.role === "Checker" ? "—" : formatDepartment(user?.department)}
+                      {formatDepartment(user?.department, user?.role)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -810,22 +1070,13 @@ function Admin() {
                   <td className="px-6 py-4">
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getShiftColor(
-                        user?.Shift,
-                        user?.role
+                        user?.Shift
                       )}`}
                     >
-                      {formatShift(user?.Shift, user?.role)}
+                      {formatShift(user?.Shift)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`flex items-center gap-1 font-semibold ${user?.salary > 20000 ? "text-purple-400" : "text-red-400"
-                        }`}
-                    >
-                      <span className="text-lg font-bold">₱</span>
-                      {formatSalary(user?.salary, user?.role)}
-                    </span>
-                  </td>
+
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${user?.status === "active"
@@ -862,7 +1113,6 @@ function Admin() {
                         <QrCode className="w-4 h-4" />
                       </motion.button>
 
-                      {/* Edit Button */}
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -873,7 +1123,6 @@ function Admin() {
                         <Edit className="w-4 h-4" />
                       </motion.button>
 
-                      {/* Action Menu Button (Suspended, Reset Password, etc.) */}
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -883,19 +1132,6 @@ function Admin() {
                       >
                         <Shield className="w-4 h-4" />
                       </motion.button>
-
-                      {/* Delete Button */}
-                      {role !== "Admin" && (
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDelete(user._id)}
-                          className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all"
-                          title="Delete User"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </motion.button>
-                      )}
                     </div>
                   </td>
                 </motion.tr>
@@ -905,397 +1141,8 @@ function Admin() {
         </div>
       </motion.div>
 
-      {/* Single Modal for Add/Edit */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-slate-900/30 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] border border-slate-800 overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex justify-between items-center p-6 border-b border-slate-800/30 bg-slate-900/30">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  {modalType === "add" ? <User className="w-6 h-6" /> : <Edit className="w-6 h-6" />}
-                  {modalType === "add" ? "Add New Employee" : "Edit Employee"}
-                </h2>
-                <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg"
-                >
-                  <X size={24} />
-                </motion.button>
-              </div>
-
-              {/* Form */}
-              <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
-                <form onSubmit={handleFormSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Full Name */}
-                    <div>
-                      <label className="block text-gray-300 mb-2 text-sm font-medium">
-                        Full Name *
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        name="FullName"
-                        value={formData.FullName}
-                        onChange={handleFormInput}
-                        placeholder="Enter employee name"
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
-                    </div>
-
-                    {/* Email */}
-                    <div>
-                      <label className="block text-gray-300 mb-2 text-sm font-medium">
-                        Email *
-                      </label>
-                      <input
-                        required
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleFormInput}
-                        placeholder="Enter employee email"
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
-                    </div>
-
-                    {/* Username */}
-                    <div>
-                      <label className="block text-gray-300 mb-2 text-sm font-medium">
-                        Username {modalType === "add" ? "*" : ""}
-                      </label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleFormInput}
-                        placeholder="Enter username"
-                        disabled={modalType === "edit"}
-                        className={`w-full border border-slate-700 rounded-xl px-4 py-3 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${modalType === "edit"
-                          ? "bg-slate-800/30 text-gray-400 cursor-not-allowed"
-                          : "bg-slate-800/50 text-white"
-                          }`}
-                      />
-                      {modalType === "edit" && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Username cannot be changed
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Password - Only for Add */}
-                    {modalType === "add" && (
-                      <div>
-                        <label className="block text-gray-300 mb-2 text-sm font-medium">
-                          Password *
-                        </label>
-                        <input
-                          required
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleFormInput}
-                          placeholder="Enter password"
-                          className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                        />
-                      </div>
-                    )}
-
-                    {/* Department */}
-                    {formData.role !== "Checker" && formData.role !== "Admin" && (
-                      <div>
-                        <label className="block text-gray-300 mb-2 text-sm font-medium">
-                          Department *
-                        </label>
-                        <select
-                          name="department"
-                          value={formData.department}
-                          onChange={handleFormInput}
-                          className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                        >
-                          <option className="bg-slate-800" value="">
-                            Select Department
-                          </option>
-                          <option className="bg-slate-800" value="CSR">
-                            CSR Department
-                          </option>
-                          <option className="bg-slate-800" value="Deposit">
-                            Deposit Department
-                          </option>
-                          <option className="bg-slate-800" value="Withdraw">
-                            Withdraw Department
-                          </option>
-                          <option className="bg-slate-800" value="Marketing">
-                            Marketing Department
-                          </option>
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Role */}
-                    <div>
-                      <label className="block text-gray-300 mb-2 text-sm font-medium">
-                        Role *
-                      </label>
-                      <select
-                        name="role"
-                        value={formData.role}
-                        onChange={handleFormInput}
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                      >
-                        <option className="bg-slate-800" value="">
-                          Select Role
-                        </option>
-                        {allowedRoles.map((roleOption) => (
-                          <option
-                            key={roleOption}
-                            value={roleOption}
-                            className="bg-slate-800"
-                          >
-                            {roleOption}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Extra Fields for non-Admin/Checker */}
-                    {shouldShowExtraFields(formData.role) && (
-                      <>
-                        {/* Phone */}
-                        <div>
-                          <label className="block text-gray-300 mb-2 text-sm font-medium">
-                            Phone Number *
-                          </label>
-                          <div className="flex items-center bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white w-full">
-                            <div className="relative flex items-center mr-2 min-w-[85px]">
-                              <select
-                                value={selectedCountry.dialCode}
-                                onChange={(e) => {
-                                  const country = countries.find(
-                                    (c) => c.dialCode === e.target.value
-                                  );
-                                }}
-                                className="bg-transparent text-white outline-none text-sm cursor-pointer appearance-none w-full"
-                              >
-                                {countries.map((country, index) => (
-                                  <option
-                                    key={index}
-                                    value={country.dialCode}
-                                    className="bg-slate-800"
-                                  >
-                                    {country.flag} {country.dialCode}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="absolute right-6 text-white pointer-events-none text-sm">
-                                ▼
-                              </span>
-                            </div>
-                            <input
-                              type="tel"
-                              name="phone"
-                              value={formData.phone}
-                              onChange={(e) => {
-                                const onlyDigits = e.target.value
-                                  .replace(/\D/g, "")
-                                  .slice(0, 10);
-                                setFormData({ ...formData, phone: onlyDigits });
-                              }}
-                              placeholder="9168636883"
-                              className="bg-transparent outline-none w-full text-white placeholder-gray-500"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Date Hired */}
-                        <div>
-                          <label className="block text-gray-300 mb-2 text-sm font-medium">
-                            Date Hired *
-                          </label>
-                          <input
-                            type="date"
-                            name="dateHired"
-                            value={formData.dateHired}
-                            onChange={handleFormInput}
-                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                          />
-                        </div>
-
-                        {/* Salary */}
-                        <div>
-                          <label className="block text-gray-300 mb-2 text-sm font-medium">
-                            Salary *
-                          </label>
-                          <input
-                            type="number"
-                            name="salary"
-                            value={formData.salary}
-                            onChange={handleFormInput}
-                            placeholder="Enter salary"
-                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                          />
-                        </div>
-
-                        {/* Working Hours - Show only when shift is selected or manual entry */}
-                        {(formData.Shift && !useManualWorkingHour) || useManualWorkingHour ? (
-                          <div>
-                            <label className="block text-gray-300 mb-2 text-sm font-medium">
-                              Working Hours *
-                            </label>
-                            <input
-                              type="text"
-                              name="workingHour"
-                              value={formData.workingHour}
-                              onChange={handleFormInput}
-                              placeholder="e.g., 9 AM - 5 PM"
-                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                            />
-                            {!useManualWorkingHour && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Working hours are automatically set based on the selected shift
-                              </p>
-                            )}
-                          </div>
-                        ) : null}
-
-                        {/* Shift */}
-                        <div>
-                          <label className="block text-gray-300 mb-2 text-sm font-medium">
-                            Shift *
-                          </label>
-                          
-                          {/* Toggle for manual entry */}
-                          {formData.department && formData.role !== "Admin" && formData.role !== "Checker" && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <input
-                                type="checkbox"
-                                id="manualWorkingHour"
-                                checked={useManualWorkingHour}
-                                onChange={(e) => {
-                                  setUseManualWorkingHour(e.target.checked);
-                                  if (e.target.checked) {
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      Shift: "",
-                                      workingHour: ""
-                                    }));
-                                  }
-                                }}
-                                className="rounded"
-                              />
-                              <label htmlFor="manualWorkingHour" className="text-sm text-gray-400">
-                                Enter working hours manually
-                              </label>
-                            </div>
-                          )}
-                          
-                          {useManualWorkingHour ? (
-                            // Manual working hours input
-                            <div className="space-y-3">
-                              <input
-                                type="text"
-                                name="workingHour"
-                                value={formData.workingHour}
-                                onChange={handleFormInput}
-                                placeholder="e.g., 9 AM - 5 PM"
-                                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                              />
-                              <input
-                                type="text"
-                                name="Shift"
-                                value={formData.Shift}
-                                onChange={handleFormInput}
-                                placeholder="Shift name (e.g., Custom Shift)"
-                                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                              />
-                            </div>
-                          ) : (
-                            // Department-based shift dropdown
-                            <select
-                              name="Shift"
-                              value={formData.Shift}
-                              onChange={handleFormInput}
-                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                              disabled={!formData.department && formData.role !== "Admin"}
-                            >
-                              <option className="bg-slate-800" value="">
-                                {formData.role === "Admin" 
-                                  ? "Select Admin Shift" 
-                                  : !formData.department 
-                                    ? "Select Department First"
-                                    : "Select Shift"}
-                              </option>
-                              {getAvailableShifts().map((shift) => (
-                                <option
-                                  key={shift.value}
-                                  value={shift.value}
-                                  className="bg-slate-800"
-                                >
-                                  {shift.label}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Buttons */}
-                  <div className="flex justify-end gap-3 pt-6">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-all"
-                    >
-                      Cancel
-                    </motion.button>
-                    <motion.button
-                      type="submit"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${modalType === "add"
-                        ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                        : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-                        } text-white`}
-                    >
-                      {modalType === "add" ? (
-                        <>
-                          <Plus className="w-4 h-4 inline mr-2" />
-                          Add Employee
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 inline mr-2" />
-                          Update Employee
-                        </>
-                      )}
-                    </motion.button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Add/Edit Modal */}
+      {renderModal()}
 
       {/* QR Code Modal */}
       <AnimatePresence>
@@ -1320,8 +1167,8 @@ function Admin() {
               </h2>
               <div className="mb-4">
                 <label className="text-gray-400 text-sm">Department: </label>
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ml-2 ${getDepartmentColor(selectedUser.department)}`}>
-                  {formatDepartment(selectedUser.department)}
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ml-2 ${getDepartmentColor(selectedUser.department, selectedUser.role)}`}>
+                  {formatDepartment(selectedUser.department, selectedUser.role)}
                 </span>
               </div>
 
@@ -1355,196 +1202,25 @@ function Admin() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Action Menu Modal */}
       <AnimatePresence>
         {actionUser && (
-          <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setActionUser(null)}
-          >
-            <motion.div
-              className="bg-slate-900/30 backdrop-blur-xl rounded-2xl shadow-2xl p-6 relative max-w-md w-full border border-slate-800"
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Manage {actionUser.FullName}
-              </h3>
-
-              <div className="space-y-3 mb-6">
-                {/* Suspend/Activate */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    const action = actionUser.status === "active" ? "suspend" : "activate";
-                    openActionModal(actionUser, action);
-                    setActionUser(null);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${actionUser.status === "active"
-                    ? "bg-red-500/20 text-red-300 hover:bg-red-500/30"
-                    : "bg-green-500/20 text-green-300 hover:bg-green-500/30"
-                    }`}
-                >
-                  {actionUser.status === "active" ? (
-                    <>
-                      <Ban className="w-5 h-5" />
-                      Suspend User
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      Activate User
-                    </>
-                  )}
-                </motion.button>
-
-                {/* Reset Password */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    openActionModal(actionUser, "reset-password");
-                    setActionUser(null);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30"
-                >
-                  <Key className="w-5 h-5" />
-                  Reset Password
-                </motion.button>
-
-                {/* View Activity Logs */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    openActionModal(actionUser, "view-logs");
-                    setActionUser(null);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
-                >
-                  <Eye className="w-5 h-5" />
-                  View Activity Logs
-                </motion.button>
-
-                {/* Export User Data */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    openActionModal(actionUser, "export-data");
-                    setActionUser(null);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-                >
-                  <Download className="w-5 h-5" />
-                  Export User Data
-                </motion.button>
-
-                {/* Enable/Disable 2FA */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    openActionModal(actionUser, "toggle-2fa");
-                    setActionUser(null);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30"
-                >
-                  <Lock className="w-5 h-5" />
-                  {actionUser.isTwoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}
-                </motion.button>
-              </div>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full px-4 py-3 rounded-xl bg-slate-800/50 text-gray-300 hover:bg-slate-800/70 transition font-semibold"
-                onClick={() => setActionUser(null)}
-              >
-                Close
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Action Confirmation Modal */}
-      <AnimatePresence>
-        {actionModal && actionUser && (
-          <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setActionModal(false)}
-          >
-            <motion.div
-              className="bg-slate-900/30 backdrop-blur-xl rounded-2xl shadow-2xl p-6 relative max-w-md w-full border border-slate-800"
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                {selectedAction === "suspend" && <Ban className="w-5 h-5 text-red-400" />}
-                {selectedAction === "activate" && <CheckCircle className="w-5 h-5 text-green-400" />}
-                {selectedAction === "reset-password" && <Key className="w-5 h-5 text-yellow-400" />}
-                {selectedAction === "view-logs" && <Eye className="w-5 h-5 text-blue-400" />}
-                {selectedAction === "export-data" && <Download className="w-5 h-5 text-purple-400" />}
-                {selectedAction === "toggle-2fa" && <Lock className="w-5 h-5 text-indigo-400" />}
-                {selectedAction === "suspend" && "Confirm Suspension"}
-                {selectedAction === "activate" && "Confirm Activation"}
-                {selectedAction === "reset-password" && "Reset Password"}
-                {selectedAction === "view-logs" && "View Activity Logs"}
-                {selectedAction === "export-data" && "Export User Data"}
-                {selectedAction === "toggle-2fa" && "2FA Settings"}
-              </h3>
-
-              <p className="text-gray-300 mb-6">
-                {selectedAction === "suspend" && `Are you sure you want to suspend ${actionUser.FullName}? They will not be able to login.`}
-                {selectedAction === "activate" && `Are you sure you want to activate ${actionUser.FullName}? They will be able to login again.`}
-                {selectedAction === "reset-password" && `A password reset link will be sent to ${actionUser.email}. They will need to set a new password.`}
-                {selectedAction === "view-logs" && `View login history and activity logs for ${actionUser.FullName}.`}
-                {selectedAction === "export-data" && `Export all data for ${actionUser.FullName} including profile, activity logs, and transactions.`}
-                {selectedAction === "toggle-2fa" && `${actionUser.isTwoFactorEnabled ? "Disable" : "Enable"} two-factor authentication for ${actionUser.FullName}.`}
-              </p>
-
-              <div className="flex justify-end gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActionModal(false)}
-                  className="px-6 py-2.5 bg-slate-700 rounded-xl hover:bg-slate-600 text-white font-semibold transition-all"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleAction}
-                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all shadow-lg ${selectedAction === "suspend" ? "bg-red-600 hover:bg-red-700" :
-                    selectedAction === "activate" ? "bg-green-600 hover:bg-green-700" :
-                      "bg-blue-600 hover:bg-blue-700"
-                    } text-white`}
-                >
-                  {selectedAction === "suspend" && "Suspend"}
-                  {selectedAction === "activate" && "Activate"}
-                  {selectedAction === "reset-password" && "Send Reset Link"}
-                  {selectedAction === "view-logs" && "View Logs"}
-                  {selectedAction === "export-data" && "Export"}
-                  {selectedAction === "toggle-2fa" && (actionUser.isTwoFactorEnabled ? "Disable" : "Enable")}
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <UserActionsModal
+            actionUser={actionUser}
+            onClose={() => setActionUser(null)}
+            onEdit={(user) => {
+              openEditModal(user);
+              setActionUser(null);
+            }}
+            onDelete={(id, name) => {
+              handleDelete(id, name);
+              setActionUser(null);
+            }}
+            onActionSelect={(action, user) => {
+              setSelectedAction(action);
+              setActionUser(user);
+              setActionModal(true);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>
