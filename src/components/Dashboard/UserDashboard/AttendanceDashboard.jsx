@@ -77,7 +77,9 @@ const AttendanceDashboard = () => {
   const [hiddenTimerType, setHiddenTimerType] = useState(null)
   const [showAbsentModal, setShowAbsentModal] = useState(false);
   const [liveWorkingTime, setLiveWorkingTime] = useState("0h 0m 0s");
-
+  // const [now, setNow] = useState()
+  // const hasOpenAttendance =
+  //   !!todayAttendance?.clockIn && !todayAttendance?.clockOut;
 
 
   const [dayOffForm, setDayOffForm] = useState({
@@ -166,18 +168,44 @@ const AttendanceDashboard = () => {
     });
   };
 
-  // Update live clock
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const openAttendance = useMemo(() => {
+    return reduxAttendanceList.find(
+      r => r.clockIn && !r.clockOut
+    ) || null;
+  }, [reduxAttendanceList]);
+
+
 
   // Check if user is online (has punched in but not out)
-  const isOnline = todayAttendance?.clockIn && !todayAttendance?.clockOut;
-  const canPunchIn = !todayAttendance?.clockIn;
-  const canPunchOut = todayAttendance?.clockIn && !todayAttendance?.clockOut;
+  // const canPunchIn = !todayAttendance?.clockIn
+  const canPunchOut = !!openAttendance;
+
+  const isOnline = canPunchOut;
+  const isSameDayPH = (date1, date2) => {
+    const d1 = new Date(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(date1)
+    );
+
+    const d2 = new Date(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(date2)
+    );
+
+    return d1.getTime() === d2.getTime();
+  };
+
+
+  const canPunchIn = !openAttendance
+
 
   // Format time for display
   const formatTime = (timeString) => {
@@ -230,7 +258,6 @@ const AttendanceDashboard = () => {
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
   // Load initial data - FIXED: बार-बार नहीं चलेगा
   useEffect(() => {
     const loadData = async () => {
@@ -239,10 +266,6 @@ const AttendanceDashboard = () => {
 
           // Load today's attendance
           const todayResult = await dispatch(getTodayAttendance(userId)).unwrap();
-
-
-
-
           const historyResult = await dispatch(getUserAttendance({
             userId,
             page: 1,
@@ -294,8 +317,9 @@ const AttendanceDashboard = () => {
     const findActiveBreak = (type) => {
       const arr = todayAttendance[`${type}Breaks`] || [];
       const active = arr.find(b => b && !b.end);
+
       return active
-        ? { type, startTime: new Date(active.start) }
+        ? { type, startTime: new Date(active.start).getTime() }
         : null;
     };
 
@@ -328,10 +352,9 @@ const AttendanceDashboard = () => {
     );
 
 
-
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(getPhilippinesTime());
+      setCurrentTime(getPHNow());
     }, 1000);
 
     return () => clearInterval(interval);
@@ -339,83 +362,77 @@ const AttendanceDashboard = () => {
 
 
   useEffect(() => {
-    if (activeTimer) {
-      const breakLimit =
-        activeTimer.type === "lunch" ? 30 * 60 : 5 * 60;
-
-      const startTime = new Date(activeTimer.startTime).getTime();
-      const currentTime = Date.now();
-
-      const elapsedSeconds = Math.floor(
-        (currentTime - startTime) / 1000
-      );
-
-      const remainingSeconds = Math.max(
-        0,
-        breakLimit - elapsedSeconds
-      );
-
-      setTimeLeft(remainingSeconds);
-
-      const interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [activeTimer]);
-
-  const [currentTime, setCurrentTime] = useState(getPhilippinesTime());
-  // Handle Punch In
-  const MISSED_MESSAGES = [
-    "You have already missed punch-in for today.",
-    "Punch-in after working hours is not allowed. You are marked absent."
-  ];
-
-  const MISSED_CODES = [
-    "MISSED_PUNCH_IN",
-    "PUNCH_AFTER_SHIFT"
-  ];
-  const handlePunchIn = async () => {
-    if (!userId) {
-      toast.error("User ID not found");
+    if (!activeTimer) {
+      setTimeLeft(0);
       return;
     }
 
-    try {
-      const result = await dispatch(
-        punchIn({ userId })
-      ).unwrap();
+    const breakLimit =
+      activeTimer.type === "lunch" ? 30 * 60 : 5 * 60;
 
-      // ⚠️ Show modal for ANY non-normal case
-      if (
-        result?.alert === "Late" ||
-        result?.alert === "AfterShift" ||
-        result?.alert === "Absent"
-      ) {
-        setShowAbsentModal(true);
+    const tick = () => {
+      const now = Date.now()
+      const elapsed = Math.floor((now - activeTimer.startTime) / 1000);
+      const remaining = Math.max(0, breakLimit - elapsed);
+      setTimeLeft(remaining);
+    };
+
+    // run immediately
+    tick();
+
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [activeTimer]);
+
+
+  useEffect(() => {
+    if (!activeTimer) {
+      setTimeLeft(0);
+      return;
+    }
+
+    const breakLimit =
+      activeTimer.type === "lunch" ? 30 * 60 : 5 * 60;
+
+    const tick = () => {
+      const now = Date.now(); // ✅ UTC
+      const elapsed = Math.floor((now - activeTimer.startTime) / 1000);
+      const remaining = Math.max(0, breakLimit - elapsed);
+      setTimeLeft(remaining);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [activeTimer]);
+
+  const [currentTime, setCurrentTime] = useState(getPHNow());
+
+  // Handle Punch In
+  // const MISSED_MESSAGES = [
+  //   "You have already missed punch-in for today.",
+  //   "Punch-in after working hours is not allowed. You are marked absent."
+  // ];
+
+  // const MISSED_CODES = [
+  //   "MISSED_PUNCH_IN",
+  //   "PUNCH_AFTER_SHIFT"
+  // ];
+
+  const handlePunchIn = async () => {
+    try {
+      await dispatch(punchIn({ userId })).unwrap();
+      toast.success("Punched in successfully!");
+    } catch (error) {
+
+      if (error?.code === "PUNCH_OUT_REQUIRED") {
+        toast.error("Please punch out yesterday first");
+        return;
       }
 
-      toast.success("Punched in successfully!");
-
-      await Promise.all([
-        dispatch(getTodayAttendance(userId)),
-        dispatch(getUserAttendance({ userId, page: 1, limit: 10 })),
-        dispatch(getTodayBreaks(userId)),
-      ]);
-
-    } catch (error) {
-      toast.error("Punch in failed");
+      toast.error(error?.message || "Punch in failed");
     }
   };
-
-
 
 
   // Handle Punch Out
@@ -429,7 +446,12 @@ const AttendanceDashboard = () => {
       const result = await dispatch(punchOut(userId)).unwrap();
 
       setShowPunchOutModal(false);
-      toast.success("Punched out successfully!");
+      if (result?.punchedFor === "yesterday") {
+        toast.success("Yesterday punch-out recorded");
+      } else {
+        toast.success("Punched out successfully!");
+      }
+
 
       // Refresh data - FIXED: timeout remove kiya
       await Promise.all([
@@ -479,11 +501,11 @@ const AttendanceDashboard = () => {
       const result = await dispatch(startBreak({ userId, breakType })).unwrap();
 
       toast.success(`${breakType.charAt(0).toUpperCase() + breakType.slice(1)} break started`);
-
       setActiveTimer({
-        type: breakType,      // "smoke"
+        type: breakType,
         startTime: Date.now()
       });
+
       // Refresh data - FIXED: Immediate refresh without timeout
       await Promise.all([
         dispatch(getTodayBreaks(userId)),
@@ -615,13 +637,12 @@ const AttendanceDashboard = () => {
 
 
 
-
-  // Get status text
   const getStatusText = () => {
-    if (!todayAttendance) return "Not Punched In";
-    if (todayAttendance.clockOut) return "Punched Out";
-    return "Currently Working";
+    if (canPunchOut) return "Currently Working";
+    if (todayAttendance?.clockOut) return "Punched Out";
+    return "Not Punched In";
   };
+
 
   // Check break availability - FIXED
   const isBreakAvailable = (breakType) => {
@@ -661,58 +682,90 @@ const AttendanceDashboard = () => {
     return total > 0 ? `${total}m` : "0m";
   };
 
+
+  const toPHDate = (dateInput) => {
+    if (!dateInput) return null;
+
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return null;
+
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: PH_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(date);
+  };
+
   // Get table data for attendance history - FIXED: Debug logs added
   useEffect(() => {
-    const todayPH = getTodayPHDate(); // YYYY-MM-DD (PH)
-
-    if (reduxAttendanceList && reduxAttendanceList.length > 0) {
-      const formattedData = reduxAttendanceList
-        .filter(record => {
-          if (!record?.date) return false;
-
-          const recordPHDate = new Intl.DateTimeFormat("en-CA", {
-            timeZone: PH_TIMEZONE,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          }).format(new Date(record.date));
-
-          return recordPHDate === todayPH;
-        })
-        .map(record => ({
-          id: record._id,
-          date: formatDatePH(record.date),
-          punchIn: formatTimePH(record.clockIn),
-          punchOut: formatTimePH(record.clockOut),
-          wcBreak: calculateTotalFromBreakArray(record.wcBreaks),
-          smokeBreak: calculateTotalFromBreakArray(record.smokeBreaks),
-          lunchBreak: calculateTotalFromBreakArray(record.lunchBreaks),
-          hours: record.workingHours || "0h 00m",
-          status: getRecordStatus(record),
-          fullRecord: record,
-        }));
-
-      setTableData(formattedData);
-    } else {
+    if (!reduxAttendanceList?.length) {
       setTableData([]);
+      return;
     }
+
+    let recordsToShow = [];
+
+    if (openAttendance) {
+      recordsToShow = [openAttendance];
+    } else {
+      const todayPH = toPHDate(new Date());
+      recordsToShow = reduxAttendanceList.filter(
+        r => toPHDate(r.date) === todayPH
+      );
+    }
+
+    const formatted = recordsToShow.map(record => ({
+      id: record._id,
+      date: formatDatePH(record.date),
+      punchIn: formatTimePH(record.clockIn),
+      punchOut: formatTimePH(record.clockOut),
+      hours: record.workingHours || liveWorkingTime,
+      fullRecord: record,
+      status: getRecordStatus(record),
+    }));
+
+    setTableData(formatted);
+  }, [reduxAttendanceList, openAttendance]);
+
+
+
+  const hasMissedPunchOut = useMemo(() => {
+    return reduxAttendanceList.some(
+      r => r.alert === "Missed Punch-Out" && !r.clockOut
+    );
   }, [reduxAttendanceList]);
 
 
 
   // Get record status for table
   const getRecordStatus = (record) => {
-    if (!record.clockIn) return {
-      text: 'Missed Punch IN',
-      class: 'bg-rose-500/25 text-rose-100 border border-rose-400/70'
-    };
-    if (!record.clockOut) return {
-      text: 'Missed Punch OUT',
-      class: 'bg-amber-500/20 text-amber-100 border border-amber-400/60'
-    };
+    if (record.status === "Absent") {
+      return {
+        text: "Absent",
+        class: "bg-rose-500/25 text-rose-100 border border-rose-400/70"
+      };
+    }
+
+    if (record.alert === "Early Leave") {
+      return {
+        text: "Early Leave",
+        class: "bg-orange-500/20 text-orange-100 border border-orange-400/60"
+      };
+    }
+
+    if (record.alert === "Missed Punch-Out") {
+      return {
+        text: "Missed Punch-Out",
+        class: "bg-sky-500/20 text-sky-100 border border-sky-400/60"
+      };
+    }
+
+
+
     return {
-      text: 'Complete',
-      class: 'bg-sky-500/15 text-sky-100 border border-sky-500/60'
+      text: "Present",
+      class: "bg-emerald-500/20 text-emerald-100 border border-emerald-400/60"
     };
   };
 
@@ -838,15 +891,14 @@ const AttendanceDashboard = () => {
 
   // Converts "05:00 AM", "5:00 PM" → Date (today)
 
-  const [now, setNow] = useState(getPHNow());
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(getPHNow());
-    }, 1000);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setNow(getPHNow());
+  //   }, 1000);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
 
 
@@ -861,19 +913,17 @@ const AttendanceDashboard = () => {
 
     return allBreaks.some(b => b && !b.end);
   };
-
-
   useEffect(() => {
-    if (!todayAttendance?.clockIn) {
+    if (!openAttendance?.clockIn) {
       setLiveWorkingTime("0h 0m 0s");
       return;
     }
 
-    const start = new Date(todayAttendance.clockIn).getTime();
+    const start = new Date(openAttendance.clockIn).getTime();
 
     const interval = setInterval(() => {
-      const end = todayAttendance.clockOut
-        ? new Date(todayAttendance.clockOut).getTime()
+      const end = openAttendance.clockOut
+        ? new Date(openAttendance.clockOut).getTime()
         : Date.now();
 
       const diff = Math.max(0, end - start);
@@ -887,28 +937,37 @@ const AttendanceDashboard = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [todayAttendance?.clockIn, todayAttendance?.clockOut]);
+  }, [openAttendance?.clockIn, openAttendance?.clockOut]);
 
 
 
 
-  useEffect(() => {
-    if (!todayAttendance) return;
+  // useEffect(() => {
+  //   if (!todayAttendance) return;
 
-    const smoke = todayAttendance.smokeBreaks?.find(b => !b.end);
-    const wc = todayAttendance.wcBreaks?.find(b => !b.end);
-    const lunch = todayAttendance.lunchBreaks?.find(b => !b.end);
+  //   const smoke = todayAttendance.smokeBreaks?.find(b => !b.end);
+  //   const wc = todayAttendance.wcBreaks?.find(b => !b.end);
+  //   const lunch = todayAttendance.lunchBreaks?.find(b => !b.end);
 
-    if (smoke) {
-      setActiveTimer({ type: "smoke", startTime: smoke.start });
-    } else if (wc) {
-      setActiveTimer({ type: "wc", startTime: wc.start });
-    } else if (lunch) {
-      setActiveTimer({ type: "lunch", startTime: lunch.start });
-    } else {
-      setActiveTimer(null);
-    }
-  }, [todayAttendance]);
+  //   if (smoke) {
+  //     setActiveTimer({ type: "smoke", startTime: smoke.start });
+  //   } else if (wc) {
+  //     setActiveTimer({ type: "wc", startTime: wc.start });
+  //   } else if (lunch) {
+  //     setActiveTimer({ type: "lunch", startTime: lunch.start });
+  //   } else {
+  //     setActiveTimer(null);
+  //   }
+  // }, [todayAttendance]);
+
+  console.log({
+    canPunchIn,
+    canPunchOut,
+    todayAttendance,
+    activeTimer,
+    timeLeft
+  });
+
 
   return (
     <div className="min-h-screen p-4 text-slate-200 bg-[#020617] ">
@@ -936,7 +995,7 @@ const AttendanceDashboard = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handlePunchIn}
-                  disabled={!canPunchIn}
+                  disabled={!canPunchIn || hasMissedPunchOut}
                   className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${!canPunchIn
                     ? "bg-slate-700 cursor-not-allowed text-slate-400"
                     : "bg-sky-500/80 text-slate-950 hover:bg-sky-400"
@@ -1161,7 +1220,7 @@ const AttendanceDashboard = () => {
                 }`}
 
             >
-              <Coffee size={16} color={activeTimer?.type === 'smoke' ? "white" : "gray"} />
+              <Coffee size={16} color={activeTimer?.type === 'smoke' ? "white" : "#64748B"} />
               < span > Smoke Break ({breakCounts.smoke}/3 • 5m) </span >
 
               {hiddenTimerType === 'smoke' && (
@@ -1192,7 +1251,7 @@ const AttendanceDashboard = () => {
                 }`}
 
             >
-              <Droplets size={16} color={activeTimer?.type === 'wc' ? "white" : "gray"} />
+              <Droplets size={16} color={activeTimer?.type === 'wc' ? "white" : "#64748B"} />
               <span>WC Break ({breakCounts.wc}/3 • 5m)</span>
               {hiddenTimerType === 'wc' && <button
                 onClick={handleShowTimer}
@@ -1215,7 +1274,7 @@ const AttendanceDashboard = () => {
                 }`}
 
             >
-              <Utensils size={16} color={activeTimer?.type === 'lunch' ? "white" : "gray"} />
+              <Utensils size={16} color={activeTimer?.type === 'lunch' ? "white" : "#64748B"} />
               <span>Lunch Break ({breakCounts.lunch}/2 • 30m)</span>
               {hiddenTimerType === 'lunch' && <button
                 onClick={handleShowTimer}
