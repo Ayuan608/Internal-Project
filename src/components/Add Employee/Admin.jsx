@@ -117,8 +117,7 @@ function Admin() {
     if (!shift || shift === "undefined") return "—";
     return shift;
   };
-
-  // Color mappings
+// Color mappings
   const departmentColors = {
     CSR: "bg-blue-500/20 text-blue-300 border-blue-500/30",
     Deposit: "bg-green-500/20 text-green-300 border-green-500/30",
