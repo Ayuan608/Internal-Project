@@ -15,41 +15,70 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab, shiftTargets }) => {
-  const excludedWords = ["hours", "backstage", "senior", "trainee", "highlight", "half", "failed", "assigned", 'reached', "name"];
-  console.log(nonQuotaMembers);
+const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab }) => {
+  const excludedWords = [
+    "hours",
+    "backstage",
+    "senior",
+    "trainee",
+    "highlight",
+    "half",
+    "failed",
+    "assigned",
+    "reached",
+    "name",
+  ];
 
-  // Filter out excluded members and seniors/highlights
-  const filteredMembers = nonQuotaMembers?.filter((member) => {
-    const name = member.name?.toLowerCase() || "";
-    return !excludedWords.some((word) => name.includes(word));
+  // 1️⃣ Filter valid members
+  const filteredMembers = nonQuotaMembers?.filter((m) => {
+    const name = m.name?.toLowerCase() || "";
+    return !excludedWords.some((w) => name.includes(w));
   });
-  console.log("FILTERED:", filteredMembers);
 
-  // Function to get target based on shift
+  // 2️⃣ Build rows with shift headers (FIXED)
+  const rowsWithShiftHeaders = [];
+  let lastShiftTitle = null;
+
+  filteredMembers.forEach((m) => {
+    if (m.shiftTitle && m.shiftTitle !== lastShiftTitle) {
+      rowsWithShiftHeaders.push({
+        type: "shift",
+        title: m.shiftTitle,
+        shift: m.shift?.toLowerCase(),
+      });
+      lastShiftTitle = m.shiftTitle;
+    }
+
+    rowsWithShiftHeaders.push({
+      type: "member",
+      ...m,
+      shift: m.shift?.toLowerCase(),
+    });
+  });
+
+  // 3️⃣ Target logic
   const getTargetForShift = (shift) => {
     if (activeTab === "CSR") {
       if (shift === "morning") return 500;
       if (shift === "night") return 600;
-      return 560; // default
-    } else if (activeTab === "Deposit") {
+    }
+
+    if (activeTab === "Deposit") {
       if (shift === "morning") return 530;
       if (shift === "night") return 450;
-      return 560; // default
-    } else if (activeTab === "Withdrawal") {
-      if (shift === "morning12") return 1400;
-      if (shift === "morning9") return 900;
-      if (shift === "night12") return 1500;
-      if (shift === "night9") return 1000;
-      return 1500; // default
     }
+ if (activeTab === "Withdrawal") {
+    if (shift === "morning") return 1500;
+    if (shift === "night") return 900;
+    return 0;
+  }
+
     return 0;
   };
 
-  // Calculate completion percentage based on shift target
   const calculateCompletion = (output, shift) => {
     const target = getTargetForShift(shift);
-    return target > 0 ? Math.round((output / target) * 100) : 0;
+    return target ? Math.round((output / target) * 100) : 0;
   };
 
   return (
@@ -57,86 +86,90 @@ const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab, shiftTargets }) => {
       <table className="w-full text-sm table-auto">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
-              DATE
-            </th>
-            <th className="text-left py-3 px-4 text-gray-300 font-semibold text-xs">
-              NAME
-            </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
-              OUTPUT
-            </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
-              SHIFT
-            </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
-              TARGET
-            </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
-              COMPLETION
-            </th>
-            <th className="text-center py-3 px-4 text-gray-300 font-semibold text-xs ">
-              VARIANCE
-            </th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-center">DATE</th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-left">NAME</th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-center">OUTPUT</th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-center">SHIFT</th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-center">TARGET</th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-center">COMPLETION</th>
+            <th className="py-3 px-4 text-xs text-gray-300 text-center">VARIANCE</th>
           </tr>
         </thead>
 
         <tbody>
-          {filteredMembers && filteredMembers.length > 0 ? (
-            filteredMembers.map((member, idx) => {
-              const target = getTargetForShift(member.shift?.toLowerCase());
-              const completion = calculateCompletion(member.output, member.shift?.toLowerCase());
-              const variance = member.output - target;
+          {rowsWithShiftHeaders.length > 0 ? (
+            rowsWithShiftHeaders.map((row, idx) => {
+              // 🔴 SHIFT HEADER ROW
+              if (row.type === "shift") {
+                return (
+                  <tr key={idx} className="bg-black">
+                    <td colSpan="7" className="px-4 py-2">
+                      <span
+                        className={`px-3 py-1 rounded text-sm font-semibold
+                          ${row.shift === "morning"
+                            ? "border border-yellow-500 text-yellow-400"
+                            : "border border-green-500 text-green-400"
+                          }
+                        `}
+                      >
+                        {row.title}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }
+
+              // 👤 MEMBER ROW
+              const target = getTargetForShift(row.shift);
+              const completion = calculateCompletion(row.output, row.shift);
+              const variance = row.output - target;
 
               return (
                 <tr
                   key={idx}
-                  className="border-b border-gray-800/30 hover:bg-gray-900/40 transition"
+                  className="border-b border-gray-800/30 hover:bg-gray-900/40"
                 >
-                  <td className="py-3 px-4 text-gray-400 text-xs align-middle text-center">
-                    {member.date}
+                  <td className="py-3 px-4 text-gray-400 text-xs text-center">
+                    {row.date}
                   </td>
 
-                  {/* NAME SHOULD BE LEFT ALIGNED */}
-                  <td className="py-3 px-4 text-white font-medium text-sm text-left w-[220px]">
-                    {member.name}
+                  <td className="py-3 px-4 text-white font-medium text-sm text-left">
+                    {row.name}
                   </td>
 
-                  <td className="py-3 px-4 text-white text-sm align-middle text-center">
-                    {member.output?.toLocaleString() || 0}
+                  <td className="py-3 px-4 text-white text-sm text-center">
+                    {row.output}
                   </td>
 
-                  <td className="py-3 px-4 text-sm align-middle text-center">
+                  <td className="py-3 px-4 text-center">
                     <span
-                      className={`px-3 py-1 capitalize rounded-full text-xs font-semibold
-      ${member.shift?.toLowerCase() === "morning"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold
+                        ${row.shift === "morning"
                           ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40"
-                          : member.shift?.toLowerCase() === "night"
-                            ? "bg-green-500/20 text-green-400 border border-green-500/40"
-                            : "bg-gray-500/20 text-gray-400 border border-gray-500/40"
+                          : "bg-green-500/20 text-green-400 border border-green-500/40"
                         }
-    `}
+                      `}
                     >
-                      {member.shift || "N/A"}
+                      {row.shift}
                     </span>
                   </td>
 
-                  <td className="py-3 px-4 text-white text-sm align-middle text-center ">
-                    {target?.toLocaleString() || 0}
-                  </td>
+                  <td className="py-3 px-4 text-center">{target}</td>
 
                   <td
-                    className={`py-3 px-4 font-semibold text-sm align-middle text-center ${completion >= 70 ? "text-green-400" : "text-red-400"
-                      }`}
+                    className={`py-3 px-4 text-center font-semibold
+                      ${completion >= 90 ? "text-green-400" : "text-red-400"}
+                    `}
                   >
                     {completion}%
                   </td>
 
                   <td
-                    className={`py-3 px-4 font-medium text-sm align-middle text-center ${variance >= 0 ? "text-green-400" : "text-red-400"
-                      }`}
+                    className={`py-3 px-4 text-center
+                      ${variance >= 0 ? "text-green-400" : "text-red-400"}
+                    `}
                   >
-                    {variance > 0 ? `+${variance}` : variance}
+                    {variance}
                   </td>
                 </tr>
               );
@@ -149,7 +182,6 @@ const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab, shiftTargets }) => {
             </tr>
           )}
         </tbody>
-
       </table>
     </div>
   );
@@ -276,6 +308,7 @@ const Department = () => {
     }
     return 0;
   };
+  let currentShiftTitle = null;
 
   const calculateDepartmentStats = () => {
     if (!data || data.length === 0) {
@@ -322,7 +355,15 @@ const Department = () => {
     const nonQuotaList = [];
 
     data.forEach((row) => {
-      if (!Array.isArray(row) || row.length < 3) return;
+      if (
+        Array.isArray(row) &&
+        row.length === 4 &&
+        typeof row[2] === "string" &&
+        row[2].toLowerCase().includes("shift")
+      ) {
+        currentShiftTitle = row[2]; // 👈 THIS IS THE KEY
+        return;
+      }
       const sheetDate = row[1];
 
       const department = row[0]?.toString()?.trim();
@@ -362,14 +403,31 @@ const Department = () => {
             name: memberName,
             output: conversations,
             shift: shift,
+            shiftTitle: currentShiftTitle,
             quota: target,
             completion: Math.round(quotaPercentage),
             variance: Math.round(conversations - target),
           });
         }
       } else if (department === "Deposit") {
-        const depositAmount = parseFloat(row[9]?.toString()?.replace(/,/g, "")) || 0;
-        const target = getTargetForAgent("Deposit", shift);
+
+        if (
+          memberName.toLowerCase().includes("total") ||
+          memberName.toLowerCase().includes("member")
+        ) return;
+
+        const shift = row[row.length - 1]?.toString().toLowerCase();
+
+        // ✅ ALWAYS TOTAL column
+        const depositAmount =
+          parseFloat(row[9]?.toString()?.replace(/,/g, "")) || 0;
+
+        const target =
+          shift === "morning" ? 530 :
+            shift === "night" ? 450 : 0;
+
+        const quotaPercentage =
+          target > 0 ? (depositAmount / target) * 100 : 0;
 
         stats.Deposit.transactions += depositAmount;
         stats.Deposit.totalAgents += 1;
@@ -377,46 +435,62 @@ const Department = () => {
         if (shift === "morning") stats.Deposit.morningAgents += 1;
         if (shift === "night") stats.Deposit.nightAgents += 1;
 
-        const quotaPercentage = target > 0 ? (depositAmount / target) * 100 : 0;
-        if (quotaPercentage >= 70) {
-          stats.Deposit.quotaMetCount += 1;
-        } else {
+        if (quotaPercentage < 100) {
           stats.Deposit.nonQuotaCount += 1;
+
           nonQuotaList.push({
             department: "Deposit",
             date: formatDateReadable(sheetDate),
             name: memberName,
-            output: depositAmount,
-            shift: shift,
-            quota: target,
+            output: depositAmount,     // ✅ 461, 502, 360, 279...
+            shift,
+            shiftTitle: currentShiftTitle,
+            quota: target,             // 530 / 450
             completion: Math.round(quotaPercentage),
-            variance: Math.round(depositAmount - target),
+            variance: depositAmount - target
           });
+        } else {
+          stats.Deposit.quotaMetCount += 1;
         }
-      } else if (department === "Withdraw") {
-        const transactionsProcessed = parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
-        const target = getTargetForAgent("Withdrawal", shift);
+      }
+      else if (department === "Withdraw") {
+
+        // ✅ Total Transaction process (row[7] is correct)
+        const transactionsProcessed =
+          parseFloat(row[7]?.toString()?.replace(/,/g, "")) || 0;
+
+        // ✅ UPDATED SHIFT-BASED TARGET
+        let target = 0;
+        if (shift === "morning") target = 1500;
+        else if (shift === "night") target = 900;
 
         stats.Withdrawal.transactions += transactionsProcessed;
         stats.Withdrawal.totalAgents += 1;
 
-        const quotaPercentage = target > 0 ? (transactionsProcessed / target) * 100 : 0;
-        if (quotaPercentage >= 70) {
-          stats.Withdrawal.quotaMetCount += 1;
-        } else {
+        const quotaPercentage =
+          target > 0 ? (transactionsProcessed / target) * 100 : 0;
+
+        // ✅ SHOW ONLY BELOW TARGET
+        if (transactionsProcessed < target) {
+
           stats.Withdrawal.nonQuotaCount += 1;
+
           nonQuotaList.push({
             department: "Withdrawal",
             date: formatDateReadable(sheetDate),
             name: memberName,
             output: transactionsProcessed,
-            shift: shift,
-            quota: target,
+            shift,
+            quota: target, // ✅ 1500 / 900
             completion: Math.round(quotaPercentage),
-            variance: Math.round(transactionsProcessed - target),
+            variance: transactionsProcessed - target, // negative = below
           });
+
+        } else {
+          stats.Withdrawal.quotaMetCount += 1;
         }
       }
+
     });
 
     // Calculate percentages
