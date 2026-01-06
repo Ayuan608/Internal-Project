@@ -67,11 +67,11 @@ const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab }) => {
       if (shift === "morning") return 530;
       if (shift === "night") return 450;
     }
- if (activeTab === "Withdrawal") {
-    if (shift === "morning") return 1500;
-    if (shift === "night") return 900;
-    return 0;
-  }
+    if (activeTab === "Withdrawal") {
+      if (shift === "morning") return 1500;
+      if (shift === "night") return 900;
+      return 0;
+    }
 
     return 0;
   };
@@ -99,18 +99,22 @@ const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab }) => {
         <tbody>
           {rowsWithShiftHeaders.length > 0 ? (
             rowsWithShiftHeaders.map((row, idx) => {
-              // 🔴 SHIFT HEADER ROW
               if (row.type === "shift") {
+                const isMorning = row.title?.toLowerCase().includes("morning");
+                const isNight = row.title?.toLowerCase().includes("night");
+
                 return (
                   <tr key={idx} className="bg-black">
                     <td colSpan="7" className="px-4 py-2">
                       <span
                         className={`px-3 py-1 rounded text-sm font-semibold
-                          ${row.shift === "morning"
+            ${isMorning
                             ? "border border-yellow-500 text-yellow-400"
-                            : "border border-green-500 text-green-400"
+                            : isNight
+                              ? "border border-green-500 text-green-400"
+                              : "border border-gray-500 text-gray-400"
                           }
-                        `}
+          `}
                       >
                         {row.title}
                       </span>
@@ -141,9 +145,9 @@ const NonQuotaMembersTable = ({ nonQuotaMembers, activeTab }) => {
                     {row.output}
                   </td>
 
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3 px-4 text-center ">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold
+                      className={`px-3 py-1 rounded-full text-xs font-semibold capitalize
                         ${row.shift === "morning"
                           ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40"
                           : "bg-green-500/20 text-green-400 border border-green-500/40"
@@ -383,8 +387,13 @@ const Department = () => {
       const shift = row[row.length - 1]?.toString()?.toLowerCase();
 
       if (department === "CSR") {
-        const conversations = parseFloat(row[3]) || 0;
-        const target = getTargetForAgent("CSR", shift);
+        const conversations =
+          parseFloat(row[3]?.toString()?.replace(/,/g, "")) || 0;
+
+        // ✅ ONLY MORNING / NIGHT (IGNORE 9hrs / 12hrs)
+        let target = 0;
+        if (shift === "morning") target = 500;
+        else if (shift === "night") target = 600;
 
         stats.CSR.transactions += conversations;
         stats.CSR.totalAgents += 1;
@@ -392,24 +401,30 @@ const Department = () => {
         if (shift === "morning") stats.CSR.morningAgents += 1;
         if (shift === "night") stats.CSR.nightAgents += 1;
 
-        const quotaPercentage = target > 0 ? (conversations / target) * 100 : 0;
-        if (quotaPercentage >= 70) {
+        const quotaPercentage =
+          target > 0 ? (conversations / target) * 100 : 0;
+
+        if (conversations >= target) {
           stats.CSR.quotaMetCount += 1;
         } else {
           stats.CSR.nonQuotaCount += 1;
+
           nonQuotaList.push({
             department: "CSR",
             date: formatDateReadable(sheetDate),
             name: memberName,
             output: conversations,
-            shift: shift,
+            shift,
             shiftTitle: currentShiftTitle,
             quota: target,
-            completion: Math.round(quotaPercentage),
-            variance: Math.round(conversations - target),
+            completion: Math.round((conversations / target) * 100),
+            variance: conversations - target,
           });
         }
-      } else if (department === "Deposit") {
+
+      }
+
+      else if (department === "Deposit") {
 
         if (
           memberName.toLowerCase().includes("total") ||
