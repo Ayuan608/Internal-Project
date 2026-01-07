@@ -85,10 +85,7 @@ function Admin() {
       { value: "Morning", label: "Admin Shift: 10:00 AM - 10:00 PM" },
       { value: "Day", label: "Day Shift: 9 AM - 5 PM" }
     ],
-    "Checker": [
-      { value: "Morning", label: "Checker Shift: 9 AM - 5 PM" },
-      { value: "Day", label: "Day Shift: 9 AM - 5 PM" }
-    ]
+
   };
 
   const rolePermissions = {
@@ -117,7 +114,7 @@ function Admin() {
     if (!shift || shift === "undefined") return "—";
     return shift;
   };
-// Color mappings
+  // Color mappings
   const departmentColors = {
     CSR: "bg-blue-500/20 text-blue-300 border-blue-500/30",
     Deposit: "bg-green-500/20 text-green-300 border-green-500/30",
@@ -266,7 +263,7 @@ function Admin() {
       return departmentShifts["Admin"] || [];
     }
     if (formData.role === "Checker") {
-      return departmentShifts["Checker"] || [];
+      return [];
     }
     if (formData.department && departmentShifts[formData.department]) {
       return departmentShifts[formData.department];
@@ -357,9 +354,11 @@ function Admin() {
       return;
     }
 
-    if (!Shift || !workingHour) {
-      toast.error("Shift and working hours are required");
-      return;
+    if (role !== "Checker") {
+      if (!Shift || !workingHour) {
+        toast.error("Shift and working hours are required");
+        return;
+      }
     }
 
     if (FullName.length < 5) {
@@ -631,102 +630,104 @@ function Admin() {
                   </div>
 
                   {/* Shift Section - All in One */}
-                  <div className="col-span-2">
-                    <label className="block text-gray-300 mb-2 text-sm font-medium">
-                      Shift & Working Hours *
-                    </label>
+                  {formData.role !== "Checker" &&
+                    <div className="col-span-2">
+                      <label className="block text-gray-300 mb-2 text-sm font-medium">
+                        Shift & Working Hours *
+                      </label>
 
-                    <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 space-y-4">
-                      {/* Toggle for Manual Shift */}
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          id="manualShift"
-                          checked={useManualShift}
-                          onChange={(e) => {
-                            setUseManualShift(e.target.checked);
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                Shift: "",
-                                workingHour: ""
-                              }));
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <label htmlFor="manualShift" className="text-sm text-gray-300 font-medium">
-                          Enter custom shift manually
-                        </label>
-                      </div>
+                      <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 space-y-4">
+                        {/* Toggle for Manual Shift */}
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="manualShift"
+                            checked={useManualShift}
+                            onChange={(e) => {
+                              setUseManualShift(e.target.checked);
+                              if (e.target.checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  Shift: "",
+                                  workingHour: ""
+                                }));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <label htmlFor="manualShift" className="text-sm text-gray-300 font-medium">
+                            Enter custom shift manually
+                          </label>
+                        </div>
 
-                      {useManualShift ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {useManualShift ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-gray-300 mb-2 text-sm">
+                                Shift Name *
+                              </label>
+                              <input
+                                type="text"
+                                name="Shift"
+                                value={formData.Shift}
+                                onChange={handleFormInput}
+                                placeholder="e.g., Custom Shift"
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-300 mb-2 text-sm">
+                                Working Hours *
+                              </label>
+                              <input
+                                type="text"
+                                name="workingHour"
+                                value={formData.workingHour}
+                                onChange={handleFormInput}
+                                placeholder="e.g., 9 AM - 5 PM"
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              />
+                            </div>
+                          </div>
+                        ) : (
                           <div>
                             <label className="block text-gray-300 mb-2 text-sm">
-                              Shift Name *
+                              Select Shift *
                             </label>
-                            <input
-                              type="text"
+                            <select
                               name="Shift"
                               value={formData.Shift}
                               onChange={handleFormInput}
-                              placeholder="e.g., Custom Shift"
-                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-gray-300 mb-2 text-sm">
-                              Working Hours *
-                            </label>
-                            <input
-                              type="text"
-                              name="workingHour"
-                              value={formData.workingHour}
-                              onChange={handleFormInput}
-                              placeholder="e.g., 9 AM - 5 PM"
-                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="block text-gray-300 mb-2 text-sm">
-                            Select Shift *
-                          </label>
-                          <select
-                            name="Shift"
-                            value={formData.Shift}
-                            onChange={handleFormInput}
-                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                            disabled={!formData.role}
-                          >
-                            <option className="bg-slate-800" value="">
-                              {!formData.role
-                                ? "Select Role First"
-                                : `Select ${formData.role} Shift`}
-                            </option>
-                            {getAvailableShifts().map((shift) => (
-                              <option
-                                key={shift.value}
-                                value={shift.value}
-                                className="bg-slate-800"
-                              >
-                                {shift.label}
+                              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              disabled={!formData.role}
+                            >
+                              <option className="bg-slate-800" value="">
+                                {!formData.role
+                                  ? "Select Role First"
+                                  : `Select ${formData.role} Shift`}
                               </option>
-                            ))}
-                          </select>
+                              {getAvailableShifts().map((shift) => (
+                                <option
+                                  key={shift.value}
+                                  value={shift.value}
+                                  className="bg-slate-800"
+                                >
+                                  {shift.label}
+                                </option>
+                              ))}
+                            </select>
 
-                          {formData.workingHour && (
-                            <div className="mt-3 p-3 bg-slate-800/30 rounded-lg">
-                              <p className="text-sm text-gray-300 mb-1">Working Hours:</p>
-                              <p className="text-white font-medium">{formData.workingHour}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                            {formData.workingHour && (
+                              <div className="mt-3 p-3 bg-slate-800/30 rounded-lg">
+                                <p className="text-sm text-gray-300 mb-1">Working Hours:</p>
+                                <p className="text-white font-medium">{formData.workingHour}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  }
                 </div>
 
                 {/* Buttons */}
