@@ -135,64 +135,42 @@ export default function AttendanceTable({
   }, []);
 
 
-  // Get days in current month
-  // const daysInMonth = useMemo(() => {
-  //   const { year, month } = currentMonthInfo;
-  //   return new Date(year, month + 1, 0).getDate();
-  // }, [currentMonthInfo]);
-
-  // Get days to show (1 से current day तक)
-  // const daysToShow = useMemo(() => {
-  //   const days = [];
-  //   for (let day = 1; day <= currentMonthInfo.currentDay; day++) {
-  //     days.push(day);
-  //   }
-  //   return days;
-  // }, [currentMonthInfo]);
   const today = new Date();
 
   const daysToShow = useMemo(() => {
-  const selectedYear = selectedMonth.getFullYear();
-  const selectedMonthIndex = selectedMonth.getMonth();
+    const selectedYear = selectedMonth.getFullYear();
+    const selectedMonthIndex = selectedMonth.getMonth();
 
-  const currentYear = today.getFullYear();
-  const currentMonthIndex = today.getMonth();
+    const currentYear = today.getFullYear();
+    const currentMonthIndex = today.getMonth();
 
-  const totalDaysInSelectedMonth = new Date(
-    selectedYear,
-    selectedMonthIndex + 1,
-    0
-  ).getDate();
-
- 
-  if (
-    selectedYear < currentYear ||
-    (selectedYear === currentYear && selectedMonthIndex < currentMonthIndex)
-  ) {
-    return Array.from({ length: totalDaysInSelectedMonth }, (_, i) => i + 1);
-  }
+    const totalDaysInSelectedMonth = new Date(
+      selectedYear,
+      selectedMonthIndex + 1,
+      0
+    ).getDate();
 
 
-  if (
-    selectedYear === currentYear &&
-    selectedMonthIndex === currentMonthIndex
-  ) {
-    return Array.from({ length: today.getDate() }, (_, i) => i + 1);
-  }
+    if (
+      selectedYear < currentYear ||
+      (selectedYear === currentYear && selectedMonthIndex < currentMonthIndex)
+    ) {
+      return Array.from({ length: totalDaysInSelectedMonth }, (_, i) => i + 1);
+    }
 
-  // 🔹 FUTURE MONTH → show nothing (or full month disabled)
-  return [];
-}, [selectedMonth]);
+
+    if (
+      selectedYear === currentYear &&
+      selectedMonthIndex === currentMonthIndex
+    ) {
+      return Array.from({ length: today.getDate() }, (_, i) => i + 1);
+    }
+
+    return [];
+  }, [selectedMonth]);
 
   console.log(daysToShow)
 
-  // const monthLabel = useMemo(() => {
-  //   const { year, month } = currentMonthInfo;
-  //   const date = new Date(year, month, 1);
-  //   return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-  // }, [currentMonthInfo]);
-
-  // Check if user has edit access (Admin or SuperAdmin)
   const hasEditAccess = useMemo(() => {
     return role === 'Admin' || role === 'Super-Admin';
   }, [role]);
@@ -216,14 +194,7 @@ export default function AttendanceTable({
       return FRONTEND_TO_BACKEND_STATUS[code] || 'D'; // Default to Day
     });
   };
-  // Filter data based on search
-  // const filteredEmployees = useMemo(() => {
-  //   return data.filter(emp =>
-  //     emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
-  //   );
-  // }, [data, searchTerm]);
+
   const filteredEmployees = useMemo(() => {
     return data.filter(emp => {
       const matchesSearch =
@@ -240,217 +211,130 @@ export default function AttendanceTable({
   }, [data, searchTerm, selectedDept]);
 
 
-  // Calculate totals for an employee - FIXED
-  // const calculateTotals = (patternByDay = {}) => {
-  //   // const frontendPattern = convertBackendPattern(pattern);
-
-  //   // // Ensure pattern has correct length for days shown
-  //   // const displayPattern =
-  //   //   frontendPattern.length >= daysToShow.length
-  //   //     ? frontendPattern.slice(0, daysToShow.length)
-  //   //     : [...frontendPattern, ...Array(daysToShow.length - frontendPattern.length).fill('D')];
-
-  //   // Initialize totals
-  //   const totals = {
-  //     totalDayShift: 0,
-  //     totalMidShift: 0,
-  //     totalNightShift: 0,
-  //     totalProbation: 0,
-  //     totalRestDay: 0,
-  //     totalAbsent: 0,
-  //     totalLeave: 0,
-  //   };
-
-  //   // Count each status
-  //   Object.values(patternByDay).forEach(status => {
-  //     switch (status) {
-  //       case 'D':
-  //         totals.totalDayShift++;
-  //         break;
-  //       case 'M':
-  //         totals.totalMidShift++;
-  //         break;
-  //       case 'N':
-  //         totals.totalNightShift++;
-  //         break;
-  //       case 'PS':
-  //         totals.totalProbation++;
-  //         break;
-  //       case 'RD':
-  //         totals.totalRestDay++;
-  //         break;
-  //       // 'A' and 'L' को हमने frontend में D माना है (आपकी requirement के according)
-  //       case 'A':
-  //       case 'L':
-  //         totals.totalDayShift++; // Absent/Leave को Day shift में count करें
-  //         break;
-  //       default:
-  //         totals.totalDayShift++; // Default को Day shift
-  //     }
-  //   });
-
-  //   totals.totalAttendance = totals.totalDayShift + totals.totalMidShift + totals.totalNightShift;
-  //   return totals;
-  // };
-const calculateTotals = (patternByDay = {}) => {
-  const totals = {
-    totalDayShift: 0,
-    totalMidShift: 0,
-    totalNightShift: 0,
-    totalProbation: 0,
-    totalRestDay: 0,
-    totalAbsent: 0,
-    totalLeave: 0,
-    totalAttendance: 0,
-  };
-
-  for (const day of daysToShow) {
-    const status = patternByDay?.[day];
-
-    switch (status) {
-      case 'D':
-        totals.totalDayShift++;
-        break;
-      case 'M':
-        totals.totalMidShift++;
-        break;
-      case 'N':
-        totals.totalNightShift++;
-        break;
-      case 'PS':
-        totals.totalProbation++;
-        break;
-      case 'RD':
-        totals.totalRestDay++;
-        break;
-      case 'A':
-        totals.totalAbsent++;
-        break;
-      case 'L':
-        totals.totalLeave++;
-        break;
-      default:
-        break;
-    }
-  }
-
-  totals.totalAttendance =
-    totals.totalDayShift +
-    totals.totalMidShift +
-    totals.totalNightShift;
-
-  return totals;
-};
-
-
-  // Calculate statistics for all employees
-
-const stats = useMemo(() => {
-  let dayShift = 0,
-    midShift = 0,
-    nightShift = 0,
-    probation = 0,
-    restDay = 0,
-    absent = 0,
-    leave = 0,
-    totalAttendance = 0;
-
-  filteredEmployees.forEach(emp => {
-    const totals = calculateTotals(emp.patternByDay);
-
-    dayShift += totals.totalDayShift;
-    midShift += totals.totalMidShift;
-    nightShift += totals.totalNightShift;
-    probation += totals.totalProbation;
-    restDay += totals.totalRestDay;
-    absent += totals.totalAbsent;
-    leave += totals.totalLeave;
-    totalAttendance += totals.totalAttendance;
-  });
-
-  return {
-    dayShift,
-    midShift,
-    nightShift,
-    probation,
-    restDay,
-    absent,
-    leave,
-    totalAttendance,
-    totalEmployees: filteredEmployees.length,
-  };
-}, [filteredEmployees, daysToShow]);
-
-
-  // Calculate legend statistics from data
-  // const legendStats = useMemo(() => {
-  //   const stats = {
-  //     'D': { count: 0, percentage: 0 },
-  //     'M': { count: 0, percentage: 0 },
-  //     'N': { count: 0, percentage: 0 },
-  //     'PS': { count: 0, percentage: 0 },
-  //     'RD': { count: 0, percentage: 0 },
-  //   };
-
-  //   let totalStatuses = 0;
-
-  //   // Count all statuses from all employees
-  //   filteredEmployees.forEach(emp => {
-  //     const frontendPattern = convertBackendPattern(emp.pattern || []);
-  //     frontendPattern.slice(0, daysToShow.length).forEach(status => {
-  //       // सिर्फ 5 स्टेटस को ही count करें
-  //       if (stats[status]) {
-  //         stats[status].count++;
-  //         totalStatuses++;
-  //       }
-  //     });
-  //   });
-
-  //   // Calculate percentages
-  //   Object.keys(stats).forEach(key => {
-  //     stats[key].percentage = totalStatuses > 0
-  //       ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
-  //       : 0;
-  //   });
-
-  //   return stats;
-  // }, [filteredEmployees, daysToShow]);
-const legendStats = useMemo(() => {
-  const stats = {
-    D: { count: 0, percentage: 0 },
-    M: { count: 0, percentage: 0 },
-    N: { count: 0, percentage: 0 },
-    PS: { count: 0, percentage: 0 },
-    RD: { count: 0, percentage: 0 },
-  };
-
-  let totalStatuses = 0;
-
-  filteredEmployees.forEach(emp => {
-    const patternByDay = emp.patternByDay || {};
+  const calculateTotals = (patternByDay = {}) => {
+    const totals = {
+      totalDayShift: 0,
+      totalMidShift: 0,
+      totalNightShift: 0,
+      totalProbation: 0,
+      totalRestDay: 0,
+      totalAbsent: 0,
+      totalLeave: 0,
+      totalAttendance: 0,
+    };
 
     for (const day of daysToShow) {
-      const status = patternByDay[day];
+      const status = patternByDay?.[day];
 
-      if (stats[status]) {
-        stats[status].count++;
-        totalStatuses++;
+      switch (status) {
+        case 'D':
+          totals.totalDayShift++;
+          break;
+        case 'M':
+          totals.totalMidShift++;
+          break;
+        case 'N':
+          totals.totalNightShift++;
+          break;
+        case 'PS':
+          totals.totalProbation++;
+          break;
+        case 'RD':
+          totals.totalRestDay++;
+          break;
+        case 'A':
+          totals.totalAbsent++;
+          break;
+        case 'L':
+          totals.totalLeave++;
+          break;
+        default:
+          break;
       }
     }
-  });
 
-  Object.keys(stats).forEach(key => {
-    stats[key].percentage =
-      totalStatuses > 0
-        ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
-        : 0;
-  });
+    totals.totalAttendance =
+      totals.totalDayShift +
+      totals.totalMidShift +
+      totals.totalNightShift;
 
-  return stats;
-}, [filteredEmployees, daysToShow]);
+    return totals;
+  };
 
 
-  // Get department color
+
+  const stats = useMemo(() => {
+    let dayShift = 0,
+      midShift = 0,
+      nightShift = 0,
+      probation = 0,
+      restDay = 0,
+      absent = 0,
+      leave = 0,
+      totalAttendance = 0;
+
+    filteredEmployees.forEach(emp => {
+      const totals = calculateTotals(emp.patternByDay);
+
+      dayShift += totals.totalDayShift;
+      midShift += totals.totalMidShift;
+      nightShift += totals.totalNightShift;
+      probation += totals.totalProbation;
+      restDay += totals.totalRestDay;
+      absent += totals.totalAbsent;
+      leave += totals.totalLeave;
+      totalAttendance += totals.totalAttendance;
+    });
+
+    return {
+      dayShift,
+      midShift,
+      nightShift,
+      probation,
+      restDay,
+      absent,
+      leave,
+      totalAttendance,
+      totalEmployees: filteredEmployees.length,
+    };
+  }, [filteredEmployees, daysToShow]);
+
+
+  const legendStats = useMemo(() => {
+    const stats = {
+      D: { count: 0, percentage: 0 },
+      M: { count: 0, percentage: 0 },
+      N: { count: 0, percentage: 0 },
+      PS: { count: 0, percentage: 0 },
+      RD: { count: 0, percentage: 0 },
+    };
+
+    let totalStatuses = 0;
+
+    filteredEmployees.forEach(emp => {
+      const patternByDay = emp.patternByDay || {};
+
+      for (const day of daysToShow) {
+        const status = patternByDay[day];
+
+        if (stats[status]) {
+          stats[status].count++;
+          totalStatuses++;
+        }
+      }
+    });
+
+    Object.keys(stats).forEach(key => {
+      stats[key].percentage =
+        totalStatuses > 0
+          ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
+          : 0;
+    });
+
+    return stats;
+  }, [filteredEmployees, daysToShow]);
+
+
   const getDepartmentColor = (department) => {
     const dept = department || '';
     const deptKey = Object.keys(DEPARTMENT_COLORS).find(key =>
@@ -466,7 +350,6 @@ const legendStats = useMemo(() => {
     return Shift_COLORS[shiftKey] || Shift_COLORS.default;
   };
 
-  // Start editing an employee
   const handleStartEdit = (empId) => {
     const emp = data.find(e => e._id === empId);
 
@@ -482,27 +365,12 @@ const legendStats = useMemo(() => {
       _id: emp._id,
       patternByDay,
       remarks: emp.remarks || '',
+      schedule: emp.workingHour || '',
       ...totals
     });
 
     setEditingId(empId);
   };
-  // const handleStartEdit = (empId) => {
-  //   const emp = data.find(e => e._id === empId || e.id === empId);
-  //   if (emp) {
-  //     const pattern = emp.pattern || [];
-  //     const totals = calculateTotals(pattern);
-
-  //     setEditData({
-  //       ...emp,
-  //       pattern: [...pattern],
-  //       ...totals,
-  //       remarks: emp.remarks || '',
-  //       schedule: emp.workingHour || '8:00 AM - 5:00 PM'
-  //     });
-  //     setEditingId(empId);
-  //   }
-  // };
 
   // Cancel editing
   const handleCancelEdit = () => {
@@ -512,27 +380,6 @@ const legendStats = useMemo(() => {
   };
 
 
-  // Save edited data
-  // const handleSaveEdit = async () => {
-  //   const { patternByDay, _id } = editData;
-  //   if (!editData) return;
-
-  //   const updates = Object.entries(patternByDay)
-  //     .filter(([_, value]) => value !== null);
-
-  //   for (const [day, pattern] of updates) {
-  //     await dispatch(
-  //       updateAttendance({
-  //         user: _id,
-  //         date: `${currentMonthInfo.year}-${currentMonthInfo.month + 1}-${day}`,
-  //         pattern, // "D" | "M" | "N" | "P" | "R"
-  //       })
-  //     );
-  //   }
-
-  //   dispatch(getDepartmentWiseUsers());
-  //   setEditingId(null);
-  //   setEditData(null);
   // };
   const handleSaveEdit = async () => {
     // console.log(editData)
@@ -561,6 +408,7 @@ const legendStats = useMemo(() => {
         updateAttendance({
           user: _id,
           remarks,
+          workingHour: editData?.schedule
         })
       );
 
@@ -587,6 +435,7 @@ const legendStats = useMemo(() => {
             currentMonthInfo.month + 1
           ).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
           pattern: backendStatus,
+          workingHour: editData.schedule,
           remarks, // optional
         })
       );
@@ -600,48 +449,7 @@ const legendStats = useMemo(() => {
 
 
 
-  // Delete employee
-  // const handleDeleteEmployee = async (empId) => {
-  //   if (!window.confirm('Are you sure you want to delete this employee?')) return;
 
-  //   try {
-  //     console.log('Deleting employee:', empId);
-  //     await new Promise(resolve => setTimeout(resolve, 300));
-
-  //     onEmployeeDeleted(empId);
-  //     alert('Employee deleted successfully!');
-  //   } catch (error) {
-  //     console.error('Error deleting employee:', error);
-  //     alert('Failed to delete employee');
-  //   }
-  // };
-  // const handleDeleteEmployee = async (empId) => {
-  //   if (!window.confirm('Are you sure you want to delete this employee attendance?')) {
-  //     return;
-  //   }
-
-  //   try {
-  //   
-  //     const resultAction = await dispatch(
-  //       deleteAttendance({ user: empId })
-  //     );
-
-  //    
-  //     if (deleteAttendance.rejected.match(resultAction)) {
-  //       throw new Error(resultAction.payload || "Delete failed");
-  //     }
-
-
-  //     dispatch(getDepartmentWiseUsers());
-
-  //     alert('Attendance deleted successfully!');
-  //   } catch (error) {
-  //     console.error('Error deleting attendance:', error);
-  //     alert('Failed to delete attendance');
-  //   }
-  // };
-
-  // Handle day click for status change
 
   const handleDayClick = (day, empId, event) => {
     if (!hasEditAccess || editingId !== empId) return;
@@ -657,29 +465,6 @@ const legendStats = useMemo(() => {
     });
   };
 
-  // Change status for a specific day
-  // const handleStatusChange = (statusKey) => {
-  //   if (showStatusMenu.dayIndex !== null && showStatusMenu.empId === editingId && editData) {
-  //     const newPattern = [...editData.pattern];
-
-  //     // Ensure pattern length matches days shown
-  //     if (newPattern.length < daysToShow.length) {
-  //       const fillLength = daysToShow.length - newPattern.length;
-  //       newPattern.push(...Array(fillLength).fill(3)); // Fill with Absent (backend: 3)
-  //     }
-
-  //     // Convert frontend status to backend value
-  //     const frontendStatus = FRONTEND_STATUS_MAP[statusKey];
-  //     const backendValue = frontendStatus?.backendValue !== undefined
-  //       ? frontendStatus.backendValue
-  //       : 3; // Default to Absent (backend में 3)
-
-  //     newPattern[showStatusMenu.dayIndex] = backendValue;
-  //     const totals = calculateTotals(newPattern);
-  //     setEditData({ ...editData, pattern: newPattern, ...totals });
-  //   }
-  //   setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
-  // };
 
   const handleStatusChange = (statusKey) => {
     const day = showStatusMenu.dayIndex;
@@ -867,7 +652,6 @@ const legendStats = useMemo(() => {
           </div>
           {isRoleAccess && (
             <div className="relative p-1">
-              {/* <Filter size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" /> */}
               <select
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
@@ -994,35 +778,12 @@ const legendStats = useMemo(() => {
                         )}
                       </td>
 
-                      {/* Dynamic Day Cells for current month */}
-                      {/* {daysToShow.map((day, dayIndex) => {
-                        const statusCode = frontendPattern[dayIndex];
-                        console.log(statusCode)
-                        const statusInfo = FRONTEND_STATUS_MAP[statusCode] || FRONTEND_STATUS_MAP['D']; // Default to Day
-                        // console.log(statusInfo)
-                        return (
-                          <td key={dayIndex} className="px-1 py-3">
-                            <div
-                              onClick={(e) => handleDayClick(dayIndex, emp._id || emp.id, e)}
-                              className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold transition ${statusInfo.className} ${hasEditAccess && isEditing ? 'cursor-pointer hover:ring-2 hover:ring-white hover:scale-110' : 'cursor-default'
-                                }`}
-                              title={`Day ${day} - ${statusInfo.fullName}`}
-                            >
-                              {statusInfo.label}
-                            </div>
-                          </td>
-                        );
-                      })} */}
-
-
                       {daysToShow.map(day => {
                         const statusCode = isEditing
                           ? editData?.patternByDay?.[day] ?? emp.patternByDay?.[day]
                           : emp.patternByDay?.[day] ?? 'D';
-                        // console.log(statusCode)
-                        // console.log(FRONTEND_STATUS_MAP)
+
                         const statusInfo = FRONTEND_STATUS_MAP[statusCode];
-                        // console.log(statusInfo)
                         return (
                           <td key={day} className="px-1 py-3">
                             <div
@@ -1040,42 +801,20 @@ const legendStats = useMemo(() => {
 
 
 
-                      {/* Total Columns */}
                       <td className="px-4 py-3 text-center">
-                        {/* {isEditing ? (
-                          <input
-                            type="number"
-                            value={editData?.totalDayShift || 0}
-                            onChange={(e) => handleManualTotalChange('totalDayShift', e.target.value)}
-                            className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-yellow-500"
-                          />
-                        ) : ( */}
+
                         <span className="text-sm font-medium text-yellow-300">{totals?.totalDayShift}</span>
                         {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {/* {isEditing ? (
-                          <input
-                            type="number"
-                            value={editData?.totalMidShift || 0}
-                            onChange={(e) => handleManualTotalChange('totalMidShift', e.target.value)}
-                            className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-orange-500"
-                          />
-                        ) : ( */}
+
                         <span className="text-sm font-medium text-orange-300">{totals?.totalMidShift}</span>
                         {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {/* {isEditing ? (
-                          <input
-                            type="number"
-                            value={editData?.totalNightShift || 0}
-                            onChange={(e) => handleManualTotalChange('totalNightShift', e.target.value)}
-                            className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-purple-500"
-                          />
-                        ) : ( */}
+
                         <span className="text-sm font-medium text-purple-300">{totals?.totalNightShift}</span>
                         {/* )} */}
                       </td>
@@ -1083,8 +822,7 @@ const legendStats = useMemo(() => {
                       <td className="px-4 py-3 text-center">
                         {/* {isEditing ? (
                           <input
-                            type="number"
-                            // value={editData?.totalProbation || 0}
+                            type="number" // value={editData?.totalProbation || 0}
                             onChange={(e) => handleManualTotalChange('totalProbation', e.target.value)}
                             className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-blue-500"
                           />

@@ -356,7 +356,7 @@ export const updateDayOffStatus = createAsyncThunk(
 // =============== UPDATE ATTENDANCE (ADMIN / CHECKER) ===============
 export const updateAttendance = createAsyncThunk(
   "attendance/updateAttendance",
-  async ({ user, date, pattern, remarks }, { rejectWithValue }) => {
+  async ({ user, date, pattern, remarks, workingHour }, { rejectWithValue }) => {
     try {
       const url =
         date && date !== "undefined"
@@ -367,6 +367,7 @@ export const updateAttendance = createAsyncThunk(
         {
           ...(pattern !== undefined && { pattern }),
           ...(remarks !== undefined && { remarks }),
+          ...(workingHour !== undefined && { workingHour }),
         }
       );
 
@@ -387,7 +388,7 @@ export const deleteAttendance = createAsyncThunk(
   async ({ user }, { rejectWithValue }) => {
     try {
       const { data } = await axiosInstance.delete(
-       `/attendance/delete-attendance/${user}`
+        `/attendance/delete-attendance/${user}`
 
       );
 
