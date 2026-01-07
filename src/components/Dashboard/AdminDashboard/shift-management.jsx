@@ -313,12 +313,7 @@ const ShiftManagement = () => {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                       Employee
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Date Hired
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Salary
-                    </th>
+                  
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                       Current Shift
                     </th>
@@ -368,25 +363,7 @@ const ShiftManagement = () => {
                           </div>
                         </td>
 
-                        {/* Date Hired Column */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-slate-300 text-sm">
-                            <Calendar className="w-4 h-4 text-slate-500" />
-                            <span className="font-medium">{formatDate(employee.dateHired)}</span>
-                          </div>
-                        </td>
-
-                        {/* Salary Column */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`font-semibold text-sm ${employee.salary < 20000 ? "text-red-400" : "text-emerald-400"
-                                }`}
-                            >
-                              {formatPHP(employee.salary)}
-                            </span>
-                          </div>
-                        </td>
+                  
 
                         {/* Current Shift Column */}
                         <td className="px-6 py-4">
