@@ -185,6 +185,8 @@ const OverallAttendanceDashboard = () => {
     });
   }, [departmentAttendance, searchTerm, selectedDept, selectedStatus]);
   // console.log(filteredData)
+  const clockedInUsers = filteredData.filter(emp => emp.clockIn);
+// console.log(clockedInUsers)
   const getCurrentWeekDates = () => {
     const now = new Date();
     const startOfWeek = new Date(now);
@@ -1186,12 +1188,12 @@ const OverallAttendanceDashboard = () => {
               //     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
               //   </div>
               // ) :
-              filteredData.length === 0 ? (
+              clockedInUsers.length === 0 ? (
                 <div className="col-span-full text-center text-gray-400 py-10">
                   No records found
                 </div>
               ) : (
-                filteredData.map((emp) => (
+                clockedInUsers.map((emp) => (
                   <div
                     key={emp._id}
                     onClick={() => setSelectedCard(emp)}

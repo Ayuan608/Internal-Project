@@ -492,7 +492,7 @@ const ManpowerStatusSection = () => {
                             <span
                               className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${colors.badge}`}
                             >
-                              {row.status}
+                              {row.status || "Active"}
                             </span>
                           </span>
                         </td>
