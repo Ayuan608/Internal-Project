@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Edit2, Save, X, Download, FileText, Search, Trash2, Filter } from 'lucide-react';
+import { Edit2, Save, X, Download, FileText, Search } from 'lucide-react';
 import { updateAttendance, getDepartmentWiseUsers } from '../../../redux/attendenceSlice';
 import { useDispatch } from 'react-redux';
-// Department wise colors
+
 const DEPARTMENT_COLORS = {
   'CSR': { bg: 'bg-blue-500/20', text: 'text-blue-300', border: 'border-blue-700/30' },
   'Withdraw': { bg: 'bg-green-500/20', text: 'text-green-300', border: 'border-green-700/30' },
@@ -34,17 +34,6 @@ const Shift_COLORS = {
   },
 };
 
-// Backend → Frontend (for display)
-const BACKEND_TO_FRONTEND_STATUS = {
-  D: 'D',
-  M: 'M',
-  N: 'N',
-  PS: 'PS',
-  // R: 'RD',
-  RD: 'RD'
-};
-
-// Frontend → Backend (for saving)
 const FRONTEND_TO_BACKEND_STATUS = {
   D: 'D',
   M: 'M',
@@ -53,8 +42,6 @@ const FRONTEND_TO_BACKEND_STATUS = {
   RD: 'RD'
 };
 
-
-// Frontend status mapping - ONLY 5 STATUSES
 const FRONTEND_STATUS_MAP = {
   D: {
     label: 'D',
@@ -78,23 +65,22 @@ const FRONTEND_STATUS_MAP = {
     label: 'PS',
     className: 'bg-blue-600 text-white',
     fullName: 'Probation',
-    backendValue: 'PS', // Backend में 'PS' है Probation
+    backendValue: 'PS',
   },
   RD: {
     label: 'RD',
     className: 'bg-red-600 text-white',
     fullName: 'Rest Day',
-    backendValue: "RD",  // Backend में 2 है Rest Day
+    backendValue: "RD",
   },
 };
 
-// Get current month and year
 const getCurrentMonthYear = () => {
   const now = new Date();
   return {
     year: now.getFullYear(),
-    month: now.getMonth(), // 0-indexed
-    currentDay: now.getDate() // Current day of month
+    month: now.getMonth(),
+    currentDay: now.getDate()
   };
 };
 
@@ -107,7 +93,6 @@ export default function AttendanceTable({
   onEmployeeDeleted = () => { },
   onAttendanceUpdated = () => { }
 }) {
-
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState(null);
   const [selectedDept, setSelectedDept] = useState("All Departments");
@@ -121,95 +106,71 @@ export default function AttendanceTable({
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentMonthInfo, setCurrentMonthInfo] = useState(getCurrentMonthYear());
-  const isRoleAccess =
-    role === "Super-Admin" || role === "Admin";
+  const [localData, setLocalData] = useState(data); // Local state for immediate updates
+  
+  const isRoleAccess = role === "Super-Admin" || role === "Admin";
   const dispatch = useDispatch();
 
-  // Update current date every day
+  // Update local data when props change
+  useEffect(() => {
+    setLocalData(data);
+  }, [data]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMonthInfo(getCurrentMonthYear());
     }, 24 * 60 * 60 * 1000);
-
     return () => clearInterval(interval);
   }, []);
-
 
   const today = new Date();
 
   const daysToShow = useMemo(() => {
     const selectedYear = selectedMonth.getFullYear();
     const selectedMonthIndex = selectedMonth.getMonth();
-
     const currentYear = today.getFullYear();
     const currentMonthIndex = today.getMonth();
+    const totalDaysInSelectedMonth = new Date(selectedYear, selectedMonthIndex + 1, 0).getDate();
 
-    const totalDaysInSelectedMonth = new Date(
-      selectedYear,
-      selectedMonthIndex + 1,
-      0
-    ).getDate();
-
-
-    if (
-      selectedYear < currentYear ||
-      (selectedYear === currentYear && selectedMonthIndex < currentMonthIndex)
-    ) {
+    if (selectedYear < currentYear || (selectedYear === currentYear && selectedMonthIndex < currentMonthIndex)) {
       return Array.from({ length: totalDaysInSelectedMonth }, (_, i) => i + 1);
     }
 
-
-    if (
-      selectedYear === currentYear &&
-      selectedMonthIndex === currentMonthIndex
-    ) {
+    if (selectedYear === currentYear && selectedMonthIndex === currentMonthIndex) {
       return Array.from({ length: today.getDate() }, (_, i) => i + 1);
     }
 
     return [];
   }, [selectedMonth]);
 
-  console.log(daysToShow)
-
   const hasEditAccess = useMemo(() => {
     return role === 'Admin' || role === 'Super-Admin';
   }, [role]);
 
-
-  // Convert backend pattern to frontend status
   const convertBackendPattern = (backendPattern) => {
-
     if (!Array.isArray(backendPattern)) return [];
-
     return backendPattern.map(code => {
-      // Convert to string first
       const codeStr = code.toString();
-
-      // If it's already a frontend code (D, M, N, PS, RD), return as is
       if (Object.keys(FRONTEND_STATUS_MAP).includes(codeStr)) {
         return codeStr;
       }
-
-      // Convert backend numeric codes
-      return FRONTEND_TO_BACKEND_STATUS[code] || 'D'; // Default to Day
+      return FRONTEND_TO_BACKEND_STATUS[code] || 'D';
     });
   };
 
   const filteredEmployees = useMemo(() => {
-    return data.filter(emp => {
+    return localData.filter(emp => {
       const matchesSearch =
         emp.FullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesDept =
-        selectedDept === "All Departments" ||
-        emp.department === selectedDept;
+        selectedDept === "All Departments" || emp.department === selectedDept;
 
       return matchesSearch && matchesDept;
     });
-  }, [data, searchTerm, selectedDept]);
-
+  }, [localData, searchTerm, selectedDept]);
 
   const calculateTotals = (patternByDay = {}) => {
     const totals = {
@@ -218,23 +179,23 @@ export default function AttendanceTable({
       totalNightShift: 0,
       totalProbation: 0,
       totalRestDay: 0,
-      totalAbsent: 0,
-      totalLeave: 0,
       totalAttendance: 0,
     };
 
     for (const day of daysToShow) {
       const status = patternByDay?.[day];
-
       switch (status) {
         case 'D':
           totals.totalDayShift++;
+          totals.totalAttendance++;
           break;
         case 'M':
           totals.totalMidShift++;
+          totals.totalAttendance++;
           break;
         case 'N':
           totals.totalNightShift++;
+          totals.totalAttendance++;
           break;
         case 'PS':
           totals.totalProbation++;
@@ -242,47 +203,24 @@ export default function AttendanceTable({
         case 'RD':
           totals.totalRestDay++;
           break;
-        case 'A':
-          totals.totalAbsent++;
-          break;
-        case 'L':
-          totals.totalLeave++;
-          break;
         default:
           break;
       }
     }
 
-    totals.totalAttendance =
-      totals.totalDayShift +
-      totals.totalMidShift +
-      totals.totalNightShift;
-
     return totals;
   };
 
-
-
   const stats = useMemo(() => {
-    let dayShift = 0,
-      midShift = 0,
-      nightShift = 0,
-      probation = 0,
-      restDay = 0,
-      absent = 0,
-      leave = 0,
-      totalAttendance = 0;
+    let dayShift = 0, midShift = 0, nightShift = 0, probation = 0, restDay = 0, totalAttendance = 0;
 
     filteredEmployees.forEach(emp => {
       const totals = calculateTotals(emp.patternByDay);
-
       dayShift += totals.totalDayShift;
       midShift += totals.totalMidShift;
       nightShift += totals.totalNightShift;
       probation += totals.totalProbation;
       restDay += totals.totalRestDay;
-      absent += totals.totalAbsent;
-      leave += totals.totalLeave;
       totalAttendance += totals.totalAttendance;
     });
 
@@ -292,13 +230,10 @@ export default function AttendanceTable({
       nightShift,
       probation,
       restDay,
-      absent,
-      leave,
       totalAttendance,
       totalEmployees: filteredEmployees.length,
     };
   }, [filteredEmployees, daysToShow]);
-
 
   const legendStats = useMemo(() => {
     const stats = {
@@ -313,10 +248,8 @@ export default function AttendanceTable({
 
     filteredEmployees.forEach(emp => {
       const patternByDay = emp.patternByDay || {};
-
       for (const day of daysToShow) {
         const status = patternByDay[day];
-
         if (stats[status]) {
           stats[status].count++;
           totalStatuses++;
@@ -325,34 +258,26 @@ export default function AttendanceTable({
     });
 
     Object.keys(stats).forEach(key => {
-      stats[key].percentage =
-        totalStatuses > 0
-          ? ((stats[key].count / totalStatuses) * 100).toFixed(1)
-          : 0;
+      stats[key].percentage = totalStatuses > 0 ? ((stats[key].count / totalStatuses) * 100).toFixed(1) : 0;
     });
 
     return stats;
   }, [filteredEmployees, daysToShow]);
 
-
   const getDepartmentColor = (department) => {
     const dept = department || '';
-    const deptKey = Object.keys(DEPARTMENT_COLORS).find(key =>
-      dept.toLowerCase().includes(key.toLowerCase())
-    );
+    const deptKey = Object.keys(DEPARTMENT_COLORS).find(key => dept.toLowerCase().includes(key.toLowerCase()));
     return DEPARTMENT_COLORS[deptKey] || DEPARTMENT_COLORS.default;
   };
+
   const getShiftColor = (Shift) => {
     const shift = Shift || '';
-    const shiftKey = Object.keys(Shift_COLORS).find(key =>
-      shift.toLowerCase().includes(key.toLowerCase())
-    );
+    const shiftKey = Object.keys(Shift_COLORS).find(key => shift.toLowerCase().includes(key.toLowerCase()));
     return Shift_COLORS[shiftKey] || Shift_COLORS.default;
   };
 
   const handleStartEdit = (empId) => {
-    const emp = data.find(e => e._id === empId);
-
+    const emp = localData.find(e => e._id === empId);
     const totals = calculateTotals(emp.patternByDay);
 
     const patternByDay = {};
@@ -372,90 +297,105 @@ export default function AttendanceTable({
     setEditingId(empId);
   };
 
-  // Cancel editing
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditData(null);
     setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null });
   };
 
-
-  // };
-  const handleSaveEdit = async () => {
-    // console.log(editData)
-    if (!editData) return;
-
-    const { _id, patternByDay, remarks } = editData;
-
-
-    const originalUser = filteredEmployees.find(
-      emp => emp._id === _id
-    );
-    // console.log(originalUser)
-    if (!originalUser) return;
-
-
-    const isRemarksChanged =
-      remarks !== (originalUser.remarks || "");
-
-    const isPatternChanged = Object.entries(patternByDay).some(
-      ([day, status]) =>
-        status !== originalUser.patternByDay?.[day]
-    );
-
-    if (isRemarksChanged && !isPatternChanged) {
-      await dispatch(
-        updateAttendance({
-          user: _id,
-          remarks,
-          workingHour: editData?.schedule
-        })
-      );
-
-      dispatch(getDepartmentWiseUsers());
-      setEditingId(null);
-      setEditData(null);
-      return;
-    }
-
-
-    for (const [day, frontendStatus] of Object.entries(patternByDay)) {
-      const backendStatus =
-        FRONTEND_TO_BACKEND_STATUS[frontendStatus];
-
-
-      if (backendStatus === originalUser.patternByDay?.[day]) {
-        continue;
-      }
-
-      await dispatch(
-        updateAttendance({
-          user: _id,
-          date: `${currentMonthInfo.year}-${String(
-            currentMonthInfo.month + 1
-          ).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
-          pattern: backendStatus,
-          workingHour: editData.schedule,
-          remarks, // optional
-        })
-      );
-    }
-
-    dispatch(getDepartmentWiseUsers());
-    setEditingId(null);
-    setEditData(null);
+  // यह function local data ko immediately update करेगा
+  const updateLocalEmployee = (empId, updates) => {
+    setLocalData(prev => prev.map(emp => 
+      emp._id === empId ? { ...emp, ...updates } : emp
+    ));
   };
 
+  const handleSaveEdit = async () => {
+    if (!editData) return;
+    
+    const { _id, patternByDay, remarks, schedule } = editData;
+    const originalUser = filteredEmployees.find(emp => emp._id === _id);
+    if (!originalUser) return;
 
+    setIsSaving(true);
 
+    // Check what changed
+    const isRemarksChanged = remarks !== (originalUser.remarks || "");
+    const isScheduleChanged = schedule !== (originalUser.workingHour || "8:00 AM - 5:00 PM");
+    const isPatternChanged = Object.entries(patternByDay).some(
+      ([day, status]) => status !== originalUser.patternByDay?.[day]
+    );
 
+    try {
+      // IMMEDIATELY UPDATE LOCAL STATE
+      const updates = {};
+      if (isScheduleChanged) updates.workingHour = schedule;
+      if (isRemarksChanged) updates.remarks = remarks;
+      
+      // Auto-calculate shift based on schedule
+      let shift = "Day";
+      if (schedule.toLowerCase().includes("11:00 pm") || schedule.toLowerCase().includes("night")) {
+        shift = "Night";
+      } else if (schedule.toLowerCase().includes("12:00") || schedule.toLowerCase().includes("mid")) {
+        shift = "Mid";
+      }
+      updates.Shift = shift;
+      
+      // Update pattern if changed
+      if (isPatternChanged) {
+        updates.patternByDay = patternByDay;
+      }
+      
+      // Update local state immediately
+      updateLocalEmployee(_id, updates);
 
+      // Now make API calls
+      if (isScheduleChanged && !isPatternChanged && !isRemarksChanged) {
+        await dispatch(updateAttendance({
+          user: _id,
+          workingHour: schedule,
+          remarks: remarks || ""
+        }));
+      }
+      else if (isPatternChanged) {
+        for (const [day, frontendStatus] of Object.entries(patternByDay)) {
+          const backendStatus = FRONTEND_TO_BACKEND_STATUS[frontendStatus];
+          if (backendStatus !== originalUser.patternByDay?.[day]) {
+            await dispatch(updateAttendance({
+              user: _id,
+              date: `${currentMonthInfo.year}-${String(currentMonthInfo.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+              pattern: backendStatus,
+              workingHour: schedule,
+              remarks,
+            }));
+          }
+        }
+      }
+      else if (isRemarksChanged) {
+        await dispatch(updateAttendance({
+          user: _id,
+          workingHour: schedule,
+          remarks
+        }));
+      }
+
+      // Refresh from backend to sync
+      dispatch(getDepartmentWiseUsers());
+      onAttendanceUpdated();
+    } catch (error) {
+      console.error("Error saving:", error);
+      // Revert on error
+      setLocalData(data);
+    } finally {
+      setIsSaving(false);
+      setEditingId(null);
+      setEditData(null);
+    }
+  };
 
   const handleDayClick = (day, empId, event) => {
     if (!hasEditAccess || editingId !== empId) return;
-
     const rect = event.currentTarget.getBoundingClientRect();
-
     setShowStatusMenu({
       show: true,
       dayIndex: day,
@@ -465,10 +405,8 @@ export default function AttendanceTable({
     });
   };
 
-
   const handleStatusChange = (statusKey) => {
     const day = showStatusMenu.dayIndex;
-
     setEditData(prev => ({
       ...prev,
       patternByDay: {
@@ -476,29 +414,21 @@ export default function AttendanceTable({
         [day]: statusKey
       }
     }));
-
     setShowStatusMenu({ show: false });
   };
 
-
-
-  // Handle remarks change
   const handleRemarksChange = (e) => {
     setEditData({ ...editData, remarks: e.target.value });
   };
 
-  // Handle manual total change
-  const handleManualTotalChange = (field, value) => {
-    const numValue = parseInt(value) || 0;
-    setEditData({ ...editData, [field]: numValue });
-  };
-
-  // Handle schedule change
   const handleScheduleChange = (e) => {
-    setEditData({ ...editData, schedule: e.target.value });
+    const newSchedule = e.target.value;
+    setEditData(prev => ({ 
+      ...prev, 
+      schedule: newSchedule 
+    }));
   };
 
-  // Export to CSV
   const exportToCSV = () => {
     const headers = [
       'Head Count',
@@ -517,14 +447,18 @@ export default function AttendanceTable({
     ];
 
     const rows = filteredEmployees.map((emp, index) => {
-      const pattern = emp.pattern || [];
-      const frontendPattern = convertBackendPattern(pattern);
-      const totals = calculateTotals(pattern);
+      const patternByDay = emp.patternByDay || {};
+      const dayStatuses = daysToShow.map(day => {
+        const status = patternByDay[day];
+        if (!status) {
+          if (emp.Shift === 'Night') return 'N';
+          if (emp.Shift === 'Mid') return 'M';
+          return 'D';
+        }
+        return status;
+      });
 
-      // Ensure pattern has correct length
-      const displayPattern = frontendPattern.length >= daysToShow.length
-        ? frontendPattern.slice(0, daysToShow.length)
-        : [...frontendPattern, ...Array(daysToShow.length - frontendPattern.length).fill('D')];
+      const totals = calculateTotals(patternByDay);
 
       return [
         index + 1,
@@ -533,9 +467,9 @@ export default function AttendanceTable({
         emp.department || 'N/A',
         emp.workingHour || '8:00 AM - 5:00 PM',
         emp.remarks || '',
-        ...displayPattern.map(code => {
-          const status = FRONTEND_STATUS_MAP[code];
-          return status ? status.label : 'D'; // Default to 'D'
+        ...dayStatuses.map(status => {
+          const statusInfo = FRONTEND_STATUS_MAP[status];
+          return statusInfo ? statusInfo.label : 'D';
         }),
         totals.totalDayShift,
         totals.totalMidShift,
@@ -556,24 +490,19 @@ export default function AttendanceTable({
     link.click();
     URL.revokeObjectURL(url);
   };
+
   const departmentOptions = useMemo(() => {
     const set = new Set();
-
     filteredEmployees.forEach(emp => {
       if (emp.department) {
         set.add(emp.department);
       }
     });
-
     return ["All Departments", ...Array.from(set)];
   }, [filteredEmployees]);
 
-
-
-
   return (
     <div className="min-h-screen text-slate-100">
-      {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
@@ -598,7 +527,6 @@ export default function AttendanceTable({
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <div className="bg-gradient-to-br from-blue-900/40 to-blue-900/20 border border-blue-700/50 rounded-lg p-4">
             <div className="text-xs text-blue-300 mb-1">Total Employees</div>
@@ -637,7 +565,6 @@ export default function AttendanceTable({
         </div>
       </div>
 
-      {/* Search Bar */}
       <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -657,7 +584,6 @@ export default function AttendanceTable({
                 onChange={(e) => setSelectedDept(e.target.value)}
                 className="h-9 rounded-lg border border-slate-700 bg-slate-900/80 pl-6 pr-3 text-xs text-slate-200 outline-none ring-0 focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
               >
-
                 {departmentOptions.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
@@ -667,12 +593,11 @@ export default function AttendanceTable({
             </div>
           )}
           <div className="text-sm text-slate-400 whitespace-nowrap">
-            Showing {filteredEmployees.length} of {data.length} employees
+            Showing {filteredEmployees.length} of {localData.length} employees
           </div>
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px]">
@@ -686,7 +611,6 @@ export default function AttendanceTable({
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Schedule</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Remarks</th>
 
-                {/* Dynamic Day Headers - Current Month Days */}
                 {daysToShow.map(day => (
                   <th key={day} className="px-1 py-3 text-center text-xs font-semibold text-slate-300 uppercase">
                     {day}
@@ -700,7 +624,6 @@ export default function AttendanceTable({
                 <th className="px-4 py-3 text-center text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Rest</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Total</th>
 
-                {/* Actions column for Admin/SuperAdmin */}
                 {hasEditAccess && (
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Actions</th>
                 )}
@@ -716,13 +639,8 @@ export default function AttendanceTable({
               ) : (
                 filteredEmployees.map((emp, index) => {
                   const isEditing = editingId === (emp._id || emp.id);
-                  const pattern = isEditing ? editData?.pattern : (emp.pattern || []);
-                  const frontendPattern = convertBackendPattern(pattern);
-
                   const totals = calculateTotals(emp.patternByDay);
-                  // console.log(totals)
                   const deptColor = getDepartmentColor(emp.department);
-
                   const shiftColor = getShiftColor(emp?.Shift);
 
                   return (
@@ -740,21 +658,17 @@ export default function AttendanceTable({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap 
-  ${shiftColor.bg} ${shiftColor.text} border ${shiftColor.border}`}
-                        >
+                        <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${shiftColor.bg} ${shiftColor.text} border ${shiftColor.border}`}>
                           {emp?.Shift || 'N/A'}
                         </span>
                       </td>
-                      {/* Schedule Column */}
                       <td className="px-4 py-3 text-sm text-slate-300 whitespace-nowrap">
                         {isEditing ? (
                           <input
                             type="text"
                             value={editData?.schedule || emp.workingHour || '8:00 AM - 5:00 PM'}
                             onChange={handleScheduleChange}
-                            className="w-32 px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300 focus:outline-none focus:border-blue-500"
+                            className="w-40 px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300 focus:outline-none focus:border-blue-500"
                             placeholder="e.g., 8:00 AM - 5:00 PM"
                           />
                         ) : (
@@ -762,7 +676,6 @@ export default function AttendanceTable({
                         )}
                       </td>
 
-                      {/* Remarks Column */}
                       <td className="px-4 py-3 text-sm">
                         {isEditing ? (
                           <textarea
@@ -789,9 +702,9 @@ export default function AttendanceTable({
                             <div
                               onClick={(e) => handleDayClick(day, emp._id, e)}
                               className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold
-          ${statusInfo?.className}
-          ${hasEditAccess && isEditing ? 'cursor-pointer hover:ring-2' : ''}
-        `}
+                                ${statusInfo?.className}
+                                ${hasEditAccess && isEditing ? 'cursor-pointer hover:ring-2' : ''}
+                              `}
                             >
                               {statusInfo?.label}
                             </div>
@@ -799,65 +712,30 @@ export default function AttendanceTable({
                         );
                       })}
 
-
-
                       <td className="px-4 py-3 text-center">
-
                         <span className="text-sm font-medium text-yellow-300">{totals?.totalDayShift}</span>
-                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-
                         <span className="text-sm font-medium text-orange-300">{totals?.totalMidShift}</span>
-                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-
                         <span className="text-sm font-medium text-purple-300">{totals?.totalNightShift}</span>
-                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {/* {isEditing ? (
-                          <input
-                            type="number" // value={editData?.totalProbation || 0}
-                            onChange={(e) => handleManualTotalChange('totalProbation', e.target.value)}
-                            className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-blue-500"
-                          />
-                        ) : ( */}
                         <span className="text-sm font-medium text-blue-300">{totals?.totalProbation}</span>
-                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {/* {isEditing ? (
-                          <input
-                            type="number"
-                            value={editData?.totalRestDay || 0}
-                            onChange={(e) => handleManualTotalChange('totalRestDay', e.target.value)}
-                            className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-green-500"
-                          />
-                        ) : ( */}
                         <span className="text-sm font-medium text-green-300">{totals?.totalRestDay}</span>
-                        {/* )} */}
                       </td>
 
                       <td className="px-4 py-3 text-center">
-                        {/* {isEditing ? (
-                          <input
-                            type="number"
-                            value={editData?.totalAttendance || 0}
-                            onChange={(e) => handleManualTotalChange('totalAttendance', e.target.value)}
-                            className="w-12 px-1 py-1 bg-slate-800 border border-slate-600 rounded text-center text-sm text-white focus:outline-none focus:border-emerald-500"
-                          />
-                        ) : ( */}
                         <span className="text-sm font-bold text-emerald-300">{totals?.totalAttendance}</span>
-                        {/* )} */}
                       </td>
 
-                      {/* Action Buttons - Only for Admin/SuperAdmin */}
                       {hasEditAccess && (
                         <td className="px-4 py-3">
                           {isEditing ? (
@@ -890,14 +768,6 @@ export default function AttendanceTable({
                                 <Edit2 className="w-3 h-3" />
                                 Edit
                               </button>
-                              <button
-                                onClick={() => handleDeleteEmployee(emp._id || emp.id)}
-                                className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-white text-sm flex items-center gap-1"
-                                title="Delete employee"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                                Delete
-                              </button>
                             </div>
                           )}
                         </td>
@@ -911,13 +781,11 @@ export default function AttendanceTable({
         </div>
       </div>
 
-      {/* Status Menu - Only shows for Admin/SuperAdmin in edit mode */}
       {showStatusMenu.show && hasEditAccess && (
         <>
           <div
             className="fixed inset-0 z-40"
             onClick={() => setShowStatusMenu({ show: false, dayIndex: null, x: 0, y: 0, empId: null })}
-
           />
           <div
             className="fixed z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-2 min-w-[220px]"
@@ -942,7 +810,6 @@ export default function AttendanceTable({
         </>
       )}
 
-      {/* Legend - ONLY 5 STATUSES */}
       <div className="mt-6 bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
         <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
           <FileText className="w-4 h-4" />
@@ -950,15 +817,9 @@ export default function AttendanceTable({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           {Object.entries(FRONTEND_STATUS_MAP).map(([key, value]) => {
-
-
             const stat = legendStats[key];
-
             return (
-              <div
-                key={key}
-                className="flex items-center gap-3 px-4 py-3 bg-slate-800/50 rounded-lg hover:bg-slate-800/70 transition"
-              >
+              <div key={key} className="flex items-center gap-3 px-4 py-3 bg-slate-800/50 rounded-lg hover:bg-slate-800/70 transition">
                 <div className="flex items-center gap-3">
                   <span className={`w-10 h-10 rounded flex items-center justify-center text-sm font-bold ${value.className}`}>
                     {value.label}
@@ -978,7 +839,6 @@ export default function AttendanceTable({
           })}
         </div>
 
-        {/* Legend Description */}
         <div className="mt-4 pt-4 border-t border-slate-700/50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex items-center gap-2">
@@ -997,36 +857,13 @@ export default function AttendanceTable({
               <span className="text-blue-400 text-lg">🔵</span>
               <span className="text-sm text-slate-300">PS – Probation (Blue)</span>
             </div>
-            <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
               <span className="text-green-400 text-lg">🟩</span>
               <span className="text-sm text-slate-300">RD – Rest day (Green)</span>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Instructions for Admin/SuperAdmin */}
-      {(role === 'Admin' || role === 'SuperAdmin') && (
-        <div className="mt-6 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-300 mb-2 flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            {role === 'SuperAdmin' ? 'Super Admin' : 'Admin'} Instructions
-          </h3>
-          <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside">
-            <li>Click <strong>Edit</strong> button to modify employee attendance records</li>
-            <li>Click <strong>Delete</strong> button to remove employees from the system</li>
-            <li>Click on individual day cells to change attendance status</li>
-            <li>Manually adjust <strong>total counts</strong> in the respective columns</li>
-            <li>Add <strong>remarks</strong> for special notes (late, undertime, shift changes, etc.)</li>
-            <li>Click <strong>Save</strong> to apply changes or <strong>Cancel</strong> to discard</li>
-            <li>Use <strong>Export CSV</strong> to download attendance records</li>
-            <li>Days automatically increase as month progresses (Current: Day {daysToShow.length}/{daysInMonth})</li>
-            <li className="text-yellow-400 font-semibold">
-              {role === 'SuperAdmin' ? 'SUPER ADMIN HAS FULL ACCESS TO ALL FEATURES!' : 'Admin has full access to edit and manage attendance'}
-            </li>
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
